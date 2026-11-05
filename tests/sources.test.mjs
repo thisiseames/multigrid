@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSource, buildEmbedUrl, extractIframeSrc, isBlockedMixedContent } from '../src/sources.js';
+import { parseSource, buildEmbedUrl, extractIframeSrc, isBlockedMixedContent, localInput } from '../src/sources.js';
 
 const env = { hostname: 'thisiseames.github.io', origin: 'https://thisiseames.github.io', protocol: 'https:' };
 const embed = (input, opts = { muted: true, autoplay: true }) => {
@@ -104,6 +104,67 @@ test('kick: channels and player links', () => {
   assert.equal(embed('https://player.kick.com/xqc?muted=false').url.pathname, '/xqc');
   assert.equal(parseSource('https://kick.com/browse').ok, false);
   assert.equal(parseSource('https://kick.com/xqc/videos/abc-123').kind, 'iframe');
+});
+
+test('tiktok: video links become the official player', () => {
+  for (const input of [
+    'https://www.tiktok.com/@scout2015/video/6718335390845095173',
+    'https://www.tiktok.com/@scout2015/video/6718335390845095173?is_from_webapp=1&sender_device=pc',
+    'tiktok.com/@scout2015/video/6718335390845095173',
+    'https://m.tiktok.com/@scout2015/video/6718335390845095173',
+    'https://www.tiktok.com/player/v1/6718335390845095173',
+    'https://www.tiktok.com/embed/v2/6718335390845095173',
+    '<blockquote cite="x"></blockquote><iframe src="https://www.tiktok.com/player/v1/6718335390845095173"></iframe>',
+  ]) {
+    const { source, url } = embed(input);
+    assert.equal(source.kind, 'tiktok', input);
+    assert.equal(url.origin + url.pathname, 'https://www.tiktok.com/player/v1/6718335390845095173', input);
+    assert.equal(url.searchParams.get('autoplay'), '1', input);
+  }
+  assert.equal(parseSource('https://www.tiktok.com/@scout2015/video/6718335390845095173').label, 'TikTok · @scout2015');
+});
+
+test('tiktok: short links and non-video pages explain themselves', () => {
+  for (const input of ['https://vm.tiktok.com/ZMabc/', 'https://vt.tiktok.com/ZSabc/', 'https://www.tiktok.com/t/ZTabc/']) {
+    assert.match(parseSource(input).error, /Short links/, input);
+  }
+  assert.match(parseSource('https://www.tiktok.com/@scout2015').error, /isn't a video/);
+  assert.match(parseSource('https://www.tiktok.com/foryou').error, /isn't a video/);
+});
+
+test('x: post links from either address become the player', () => {
+  for (const input of [
+    'https://x.com/NASA/status/1882886092866621448',
+    'https://twitter.com/NASA/status/1882886092866621448',
+    'https://mobile.twitter.com/NASA/status/1882886092866621448?s=20',
+    'https://www.x.com/NASA/status/1882886092866621448/video/1',
+    'x.com/i/status/1882886092866621448',
+    'https://platform.twitter.com/embed/Tweet.html?id=1882886092866621448',
+  ]) {
+    const { source, url } = embed(input);
+    assert.equal(source.kind, 'x', input);
+    assert.equal(url.origin + url.pathname, 'https://platform.twitter.com/embed/Tweet.html', input);
+    assert.equal(url.searchParams.get('id'), '1882886092866621448', input);
+  }
+  assert.equal(parseSource('https://x.com/NASA/status/1882886092866621448').label, 'X · @NASA');
+  assert.equal(parseSource('https://x.com/i/status/1882886092866621448').label, 'X · 1882886092866621448');
+});
+
+test('x: short links and non-post pages explain themselves', () => {
+  assert.match(parseSource('https://t.co/abc123').error, /Short links/);
+  assert.match(parseSource('https://x.com/NASA').error, /isn't a post/);
+  assert.match(parseSource('https://twitter.com/home').error, /isn't a post/);
+});
+
+test('local files: only the name and a pointer id are stored, never a path', () => {
+  const input = localInput('abc-123', 'My clip: final (1).mov');
+  const source = parseSource(input);
+  assert.equal(source.kind, 'file');
+  assert.equal(source.localId, 'abc-123');
+  assert.equal(source.label, 'My clip: final (1).mov');
+  assert.equal(source.openUrl, null);
+  assert.equal(parseSource('local:').ok, false);
+  assert.equal(parseSource('local:bad id with spaces:x').ok, false);
 });
 
 test('hls: direct streams', () => {
