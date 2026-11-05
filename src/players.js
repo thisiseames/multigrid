@@ -341,6 +341,11 @@ const TIKTOK_ERRORS = {
 };
 
 function tiktokPlayer(source, options) {
+  if (source.tiktok.profile) {
+    const frame = makeFrame(buildEmbedUrl(source, options, options.env));
+    frame.className = 'frame-card';
+    return closedPlayer(frame, options);
+  }
   const { muted, volume, autoplay, env, onError } = options;
   const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
   const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;

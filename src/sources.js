@@ -177,7 +177,13 @@ function parseTikTok(url, host, input) {
     if (id) return make(id);
   }
   if (first?.startsWith('@') && second === 'video' && /^\d+$/.test(third || '')) return make(third, first);
-  return fail(input, "This TikTok page isn't a video. Paste the link to one video.");
+  // An account shows TikTok's profile card: its recent videos. TikTok has no live player.
+  if (/^@[\w.]{2,24}$/.test(first || '') && (!second || second === 'live')) {
+    return {
+      ok: true, input, kind: 'tiktok', label: `TikTok · ${first}`, openUrl: url.href, tiktok: { profile: first.slice(1) },
+    };
+  }
+  return fail(input, "This TikTok page isn't a video or an account. Paste the link to one video, or to an account.");
 }
 
 function parseX(url, host, input) {
@@ -328,6 +334,11 @@ export function buildEmbedUrl(source, { muted, autoplay }, env) {
   if (source.kind === 'kick') {
     const params = new URLSearchParams({ muted: String(Boolean(muted)), autoplay: String(Boolean(autoplay)) });
     return `https://player.kick.com/${source.kick.path}?${params}`;
+  }
+  if (source.kind === 'tiktok' && source.tiktok.profile) {
+    // The card only loads with the details TikTok's own embed code adds.
+    const params = new URLSearchParams({ lang: 'en-US', referrer: `${env.origin}/` });
+    return `https://www.tiktok.com/embed/@${source.tiktok.profile}?${params}`;
   }
   if (source.kind === 'tiktok') {
     // TikTok has no "start muted" setting that can be undone, so sound is set by message.
