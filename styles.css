@@ -249,6 +249,8 @@ body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top));
 /* An X post is a fixed-width card. Matching its color scheme stops the browser painting
    white behind it, and the card sits centred on the tile's black. */
 .tile-body iframe.frame-post { color-scheme: light; max-width: 550px; margin: 0 auto; }
+/* A TikTok account is TikTok's own profile card, which is no wider than this. */
+.tile-body iframe.frame-card { color-scheme: light; max-width: 780px; margin: 0 auto; }
 
 /* The first child of a Twitch holder is its own iframe, which fills the same way. */
 body.is-dragging iframe, body.is-dragging video { pointer-events: none; }
