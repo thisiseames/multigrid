@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="description" content="Arrange your own video streams in a flexible grid.">
+  <title>MULTIGRID</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="topbar" class="topbar">
+    <span class="wordmark">MULTIGRID</span>
+    <button id="layout-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
+      <span id="layout-icon" class="layout-icon"></span>
+      <span id="layout-name" class="bar-button-text"></span>
+      <span class="chevron" data-icon="chevron"></span>
+    </button>
+    <span class="spacer"><span id="toast" class="toast" role="status" hidden></span></span>
+    <button id="hidden-button" class="bar-button quiet" type="button" aria-haspopup="true" aria-expanded="false" hidden></button>
+    <button id="mute-all" class="icon-button" type="button" hidden></button>
+    <button id="saved-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
+      <span data-icon="saved" class="narrow-only"></span>
+      <span class="bar-button-text wide-only">Saved</span>
+    </button>
+    <button id="help-button" class="icon-button" type="button" aria-label="How it works" title="How it works"><span data-icon="help"></span></button>
+    <button id="fullscreen-button" class="icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><span data-icon="expand"></span></button>
+    <button id="add-button" class="add-button" type="button">
+      <span data-icon="plus"></span><span class="wide-only">Add stream</span>
+    </button>
+  </header>
+  <div id="top-hotzone" class="top-hotzone" aria-hidden="true"></div>
+
+  <main id="stage" class="stage">
+    <div id="grid" class="grid"></div>
+    <section id="welcome" class="welcome" hidden>
+      <h1>Paste a stream to begin</h1>
+      <form id="welcome-form" class="welcome-form">
+        <input id="welcome-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Link or iframe code">
+        <button class="add-button" type="submit">Add</button>
+      </form>
+      <p id="welcome-message" class="source-message" role="status"></p>
+      <p class="welcome-note">Twitch, YouTube, Kick, .m3u8 streams, iframe code, or a link from any other site. Some sites refuse to play elsewhere. <button id="welcome-help" class="text-button" type="button">How it works</button></p>
+      <h2>Or start from an empty layout</h2>
+      <div id="starters" class="starters"></div>
+    </section>
+  </main>
+
+  <div id="layout-menu" class="popover layout-menu" hidden></div>
+  <div id="saved-menu" class="popover saved-menu" hidden></div>
+  <div id="hidden-menu" class="popover hidden-menu" hidden></div>
+
+  <dialog id="source-dialog" class="dialog">
+    <form id="source-form" method="dialog">
+      <h2 id="source-title">Add stream</h2>
+      <textarea id="source-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
+      <p id="source-message" class="source-message" role="status"></p>
+      <div class="dialog-actions">
+        <button id="source-cancel" class="plain-button" type="button">Cancel</button>
+        <button id="source-submit" class="add-button" type="submit">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog" class="dialog help">
+    <div class="help-head">
+      <h2>How MULTIGRID works</h2>
+      <button id="help-close" class="icon-button" type="button" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <p>You bring the streams. MULTIGRID arranges them. Video goes straight from each provider to you.</p>
+    <dl class="help-list">
+      <dt>Twitch</dt><dd>Channel, video and clip links. Twitch only plays on sites it's told about, so MULTIGRID adds this site's address automatically: <code id="parent-host"></code>.</dd>
+      <dt>YouTube</dt><dd>Watch, youtu.be, live, Shorts and embed links. A channel name like <code>@name/live</code> can't be played elsewhere, so copy the link from the stream's Share button. YouTube allows one video at a time to start on its own, so other YouTube tiles wait for a click.</dd>
+      <dt>Kick</dt><dd>Channel links and player.kick.com links. Muting reloads the tile, because that's the only control Kick's player offers.</dd>
+      <dt>.m3u8</dt><dd>Direct HLS streams. The stream's server has to allow outside players, and the link must be https.</dd>
+      <dt>Iframe code</dt><dd>Only the address in <code>src</code> is used. The rest of the code is ignored and never run.</dd>
+      <dt>Anything else</dt><dd>Tried as it is. Many sites refuse to play inside other sites, and a browser usually can't tell MULTIGRID when that happens. If a tile stays blank or shows a refusal, the site is blocking it. Its sound can't be controlled from here either.</dd>
+    </dl>
+    <h3>Arranging</h3>
+    <p>Drag a tile's top bar onto another tile to swap them. Choose Custom in the layout menu to drag the lines between tiles, or drag a tile's corner to change how much space it takes.</p>
+    <p>Twitch asks for tiles of at least 400 × 300. Smaller tiles may need a click to start.</p>
+    <h3>Saving</h3>
+    <p>Your layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
+  </dialog>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
