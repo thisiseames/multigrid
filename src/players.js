@@ -29,16 +29,12 @@ function loadScript(src) {
   return scripts.get(src);
 }
 
-function makeFrame(src, { sandboxed = false } = {}) {
+function makeFrame(src) {
   const frame = document.createElement('iframe');
   frame.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
   frame.allowFullscreen = true;
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
   frame.title = 'Video player';
-  if (sandboxed) {
-    // A pasted page may run and play, but it can't navigate MULTIGRID away.
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms');
-  }
   frame.src = src;
   return frame;
 }
@@ -265,7 +261,9 @@ function hlsPlayer(source, options) {
 }
 
 function genericPlayer(source) {
-  const frame = makeFrame(source.url, { sandboxed: true });
+  // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
+  // page from another site out of MULTIGRID and its saved layouts.
+  const frame = makeFrame(source.url);
   return {
     el: frame,
     canMute: false,
