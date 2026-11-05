@@ -64,8 +64,9 @@ const YOUTUBE_ERRORS = {
   2: "YouTube says this video's link isn't valid.",
   5: "This video can't play in this browser.",
   100: 'This video is private, removed or not found.',
-  101: "The owner of this video doesn't allow it to play on other sites.",
-  150: "The owner of this video doesn't allow it to play on other sites.",
+  // YouTube also sends these two for a video that doesn't exist.
+  101: "YouTube won't play this here. Its owner may not allow other sites, or the video may not exist.",
+  150: "YouTube won't play this here. Its owner may not allow other sites, or the video may not exist.",
   152: "YouTube won't play this video on other sites.",
   153: 'YouTube needs to know which site this is, and your browser hid that. A privacy setting or extension may be the cause.',
 };

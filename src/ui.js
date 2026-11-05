@@ -193,4 +193,9 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closePopovers();
 });
 // A click inside a video's own frame never reaches this page, but it does take focus away.
-window.addEventListener('blur', closePopovers);
+// A player can also take focus by itself, so the menu stays if the mouse is still on it.
+window.addEventListener('blur', () => {
+  for (const [popover, button] of openPopovers) {
+    if (!popover.matches(':hover') && !button.matches(':hover')) closePopovers();
+  }
+});
