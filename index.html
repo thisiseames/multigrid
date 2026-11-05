@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uEy6OuBJudPn3JncjdMTfJ2fqnO0POImHF49e8DL9rc=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
+  <style>html { background: #0b0b0c; } body { visibility: hidden; }</style>
 </head>
 <body>
   <header id="topbar" class="topbar">
@@ -73,6 +73,8 @@
     </form>
   </dialog>
 
+  <dialog id="favorite-box" class="dialog favorite-box"></dialog>
+
   <dialog id="help-dialog" class="dialog help">
     <div class="help-head">
       <h2>How MULTIGRID works</h2>
@@ -94,10 +96,27 @@
     <p>Drag a tile's top bar onto another tile to swap them. Choose Custom in the layout menu to drag the lines between tiles, or drag a tile's corner to change how much space it takes.</p>
     <p>Twitch asks for tiles of at least 400 × 300. Smaller tiles may need a click to start.</p>
     <h3>Saving</h3>
-    <p>Click a tile's star to keep it in Favorites, at the top of Add stream. Your favorites and layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
+    <p>Click a tile's star to name it and keep it in Favorites, at the top of Add stream, with an optional folder. Click a filled star to change it. Your favorites and layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
   </dialog>
 
   <input id="file-input" type="file" accept="video/*,.mkv,.mov" hidden>
-  <script type="module" src="src/app.js"></script>
+  <script type="module">
+    // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
+    // also updates the browser's copy. If a check fails, what the browser already has is used.
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/layout.js', 'src/local-files.js', 'src/players.js', 'src/sources.js', 'src/storage.js', 'src/ui.js'];
+    await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
+      .then((response) => response.arrayBuffer())
+      .catch(() => {})));
+    await new Promise((done) => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'styles.css';
+      link.onload = done;
+      link.onerror = done;
+      document.head.append(link);
+    });
+    document.body.style.visibility = 'visible';
+    await import('./src/app.js');
+  </script>
 </body>
 </html>
