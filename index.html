@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uEy6OuBJudPn3JncjdMTfJ2fqnO0POImHF49e8DL9rc=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-E80zE9QRtoMqi7p5wPbNp9o0RwFKrrnF/TEu29Axgik=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -21,7 +21,7 @@
     </button>
     <span class="spacer"><span id="toast" class="toast" role="status" hidden></span></span>
     <button id="hidden-button" class="bar-button quiet" type="button" aria-haspopup="true" aria-expanded="false" hidden></button>
-    <button id="mute-all" class="icon-button" type="button" hidden></button>
+    <button id="mixer-button" class="icon-button" type="button" aria-controls="mixer" hidden></button>
     <button id="saved-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
       <span data-icon="saved" class="narrow-only"></span>
       <span class="bar-button-text wide-only">Saved</span>
@@ -33,6 +33,7 @@
     </button>
   </header>
   <div id="top-hotzone" class="top-hotzone" aria-hidden="true"></div>
+  <section id="mixer" class="mixer" aria-label="Sound mixer" hidden></section>
 
   <main id="stage" class="stage">
     <div id="grid" class="grid"></div>
@@ -84,14 +85,17 @@
     <dl class="help-list">
       <dt>Twitch</dt><dd>Channel, video and clip links. Twitch only plays on sites it's told about, so MULTIGRID adds this site's address automatically: <code id="parent-host"></code>.</dd>
       <dt>YouTube</dt><dd>Watch, youtu.be, live, Shorts and embed links. A channel name like <code>@name/live</code> can't be played elsewhere, so copy the link from the stream's Share button. YouTube allows one video at a time to start on its own, so other YouTube tiles wait for a click.</dd>
-      <dt>Kick</dt><dd>Channel links and player.kick.com links. Muting reloads the tile, because that's the only control Kick's player offers.</dd>
+      <dt>Kick</dt><dd>Channel links and player.kick.com links. Muting reloads the tile, because that's the only control Kick's player offers, unless the MULTIGRID Sound extension is installed.</dd>
       <dt>TikTok</dt><dd>Links to one video. Short links like <code>vm.tiktok.com</code> can't be opened from here, so open them and copy the full address.</dd>
-      <dt>X</dt><dd>Links to a post. The tile shows the whole post with its video, and its sound can't be controlled from here. Short <code>t.co</code> links need the full address too.</dd>
+      <dt>X</dt><dd>Links to a post. The tile shows the whole post with its video. Its sound needs the MULTIGRID Sound extension. Short <code>t.co</code> links need the full address too.</dd>
       <dt>Your files</dt><dd>Drop or choose video files in Add stream. They play from this computer and are never uploaded. Chrome can reopen them next visit after a click. Other browsers ask you to choose the file again. MP4 with H.264 is the safest format.</dd>
       <dt>.m3u8</dt><dd>Direct HLS streams. The stream's server has to allow outside players, and the link must be https.</dd>
       <dt>Iframe code</dt><dd>Only the address in <code>src</code> is used. The rest of the code is ignored and never run.</dd>
-      <dt>Anything else</dt><dd>Tried as it is. Many sites refuse to play inside other sites, and a browser usually can't tell MULTIGRID when that happens. If a tile stays blank or shows a refusal, the site is blocking it. Its sound can't be controlled from here either.</dd>
+      <dt>Anything else</dt><dd>Tried as it is. Many sites refuse to play inside other sites, and a browser usually can't tell MULTIGRID when that happens. If a tile stays blank or shows a refusal, the site is blocking it. Its sound needs the MULTIGRID Sound extension.</dd>
     </dl>
+    <h3>Sound</h3>
+    <p>The speaker in the top bar opens the mixer, a row with every stream by name. Mute or unmute one, or change its level, without hunting for it in the grid.</p>
+    <p>Pasted iframe code and links from other sites keep their sound to themselves. In Chrome on a computer, the MULTIGRID Sound extension lets the mixer reach them, and gives Kick and TikTok a level too. iPhones set levels with the phone's own buttons, so the mixer shows mute only there.</p>
     <h3>Arranging</h3>
     <p>Drag a tile's top bar onto another tile to swap them. Choose Custom in the layout menu to drag the lines between tiles, or drag a tile's corner to change how much space it takes.</p>
     <p>Twitch asks for tiles of at least 400 × 300. Smaller tiles may need a click to start.</p>
@@ -103,7 +107,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/layout.js', 'src/local-files.js', 'src/players.js', 'src/sources.js', 'src/storage.js', 'src/ui.js'];
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/layout.js', 'src/local-files.js', 'src/mixer.js', 'src/players.js', 'src/sources.js', 'src/storage.js', 'src/ui.js'];
     await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.arrayBuffer())
       .catch(() => {})));

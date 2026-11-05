@@ -106,6 +106,51 @@ body.is-fullscreen .topbar:hover,
 body.is-fullscreen .topbar:focus-within,
 body.is-fullscreen.show-bar .topbar { transform: none; }
 
+/* Sound mixer: a row of its own, because Twitch stops if anything covers it */
+.mixer {
+  flex: none;
+  height: 40px;
+  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.mixer-all { flex: none; height: 26px; padding: 0 9px; border-radius: 6px; color: var(--text-2); white-space: nowrap; }
+.mixer-all:hover { background: var(--hover); color: var(--text); }
+.mixer-channels {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mixer-channels::-webkit-scrollbar { display: none; }
+.channel {
+  flex: none;
+  height: 30px;
+  padding: 0 10px 0 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--raised);
+  border-radius: 7px;
+}
+.channel-mute { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: var(--text-2); }
+.channel-mute:hover { background: var(--hover); }
+.channel-mute.is-on { color: var(--accent); }
+.channel-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.channel.is-muted .channel-name { color: var(--text-2); }
+.channel-level { width: 84px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.channel.is-muted .channel-level { opacity: 0.6; }
+.channel.no-control { padding-left: 10px; color: var(--text-2); cursor: help; }
+.channel-note { font-size: 11px; white-space: nowrap; }
+
 /* Stage and grid */
 .stage {
   flex: 1;
@@ -572,6 +617,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .strip-actions button, .strip-actions a { width: 28px; height: 28px; }
   .row-actions button { width: 32px; height: 32px; }
   .favorite-box input, .favorites .saved-row input { font-size: 16px; }
+  .channel-mute { width: 32px; height: 32px; }
+  .channel { height: 34px; }
 }
 
 @media (max-width: 640px) {
@@ -585,6 +632,9 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .bar-button { padding: 0 6px; }
   .layout-menu { width: calc(100vw - 16px); }
   .welcome { align-self: flex-start; }
+  .channel-level { display: none; }
+  .channel-name { max-width: 110px; }
+  .mixer { gap: 6px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: 0; }
   .help-list { grid-template-columns: 1fr; gap: 2px; }
   .help-list dd { margin-bottom: 8px; }
   .toast {
