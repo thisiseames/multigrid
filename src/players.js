@@ -9,7 +9,9 @@
 // Problems are reported through onError(message). Only a parsed source's address is ever
 // used: nothing pasted by the user reaches the page as HTML.
 
+import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
+import { el } from './ui.js';
 
 const scripts = new Map();
 
@@ -260,6 +262,157 @@ function hlsPlayer(source, options) {
   };
 }
 
+const TIKTOK_ERRORS = {
+  1001: "TikTok can't find this video. It may be private or removed.",
+  2001: "TikTok's servers couldn't load this video. Try again in a moment.",
+  3001: "This TikTok video couldn't play.",
+};
+
+function tiktokPlayer(source, options) {
+  const { muted, autoplay, env, onError } = options;
+  const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
+  let wanted = muted;
+  let ready = false;
+  let playing = false;
+  const send = (type) => frame.contentWindow?.postMessage({ type, 'x-tiktok-player': true }, '*');
+  const onMessage = (event) => {
+    if (event.source !== frame.contentWindow || !event.data?.['x-tiktok-player']) return;
+    if (event.data.type === 'onPlayerReady') {
+      ready = true;
+      if (wanted) send('mute'); else send('unMute');
+      if (autoplay) send('play');
+    } else if (event.data.type === 'onStateChange') {
+      playing = event.data.value === 1 || event.data.value === 3;
+    } else if (event.data.type === 'onPlayerError') {
+      const message = TIKTOK_ERRORS[event.data.value?.errorCode];
+      if (message) onError(message);
+    }
+  };
+  return {
+    el: frame,
+    canMute: true,
+    start() {
+      window.addEventListener('message', onMessage);
+    },
+    setMuted(next) {
+      wanted = next;
+      if (!ready) return;
+      const resume = playing;
+      send(next ? 'mute' : 'unMute');
+      // Changing the sound can stop the player, so carry on if it was playing.
+      if (resume) send('play');
+    },
+    destroy() {
+      window.removeEventListener('message', onMessage);
+      frame.removeAttribute('src');
+    },
+  };
+}
+
+function xPlayer(source, options) {
+  const frame = makeFrame(buildEmbedUrl(source, options, options.env));
+  frame.className = 'frame-post';
+  return {
+    el: frame,
+    canMute: false,
+    start() {},
+    setMuted() {},
+    destroy() {
+      frame.removeAttribute('src');
+    },
+  };
+}
+
+const FILE_ACCESS_EVENT = 'multigrid:file-access';
+
+function filePlayer(source, options) {
+  const { muted, autoplay, onError } = options;
+  const holder = document.createElement('div');
+  holder.className = 'player-fill';
+  const video = document.createElement('video');
+  video.controls = true;
+  video.setAttribute('playsinline', '');
+  if (muted) video.setAttribute('muted', '');
+  video.muted = muted;
+  let objectUrl = null;
+  let destroyed = false;
+
+  const badFormat = "This browser can't play this file's format. MP4 with H.264 is the safest choice.";
+  video.addEventListener('error', () => {
+    if (video.getAttribute('src')) onError(badFormat);
+  });
+  video.addEventListener('loadedmetadata', () => {
+    // A video track the browser can't decode can leave sound with no picture.
+    if (!video.videoWidth) {
+      onError(badFormat);
+      return;
+    }
+    if (autoplay) video.play().catch(() => {});
+  });
+
+  const play = (file) => {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    video.src = objectUrl;
+    holder.replaceChildren(video);
+  };
+
+  const prompt = (message, buttonText, action) => {
+    const button = el('button', { type: 'button', textContent: buttonText, on: { click: action } });
+    holder.replaceChildren(el('div', { class: 'tile-error' },
+      el('p', { textContent: message }),
+      el('div', { class: 'tile-error-actions' }, button)));
+  };
+
+  const askToChoose = (moved) => {
+    const message = moved
+      ? `${source.name} isn't where it was. It may have moved or been renamed.`
+      : `${source.name} is on your computer and isn't loaded right now.`;
+    prompt(message, 'Choose the file', async () => {
+      const file = await chooseAgain(source.localId);
+      if (file && !destroyed) play(file);
+    });
+  };
+
+  // Allowing one file can allow them all ("Allow on every visit"), so waiting tiles recheck.
+  const recheck = () => findFile(source.localId).then((result) => {
+    if (result.file) handle(result);
+  });
+
+  const handle = (result) => {
+    if (destroyed) return;
+    if (result.file) {
+      window.removeEventListener(FILE_ACCESS_EVENT, recheck);
+      play(result.file);
+    } else if (result.needsClick) {
+      window.addEventListener(FILE_ACCESS_EVENT, recheck);
+      prompt(`${source.name} is ready to reopen.`, 'Reopen file', async () => {
+        const next = await reopen(source.localId);
+        handle(next);
+        if (next.file) window.dispatchEvent(new Event(FILE_ACCESS_EVENT));
+      });
+    } else askToChoose(result.moved);
+  };
+
+  return {
+    el: holder,
+    canMute: true,
+    start() {
+      findFile(source.localId).then(handle);
+    },
+    setMuted(next) {
+      video.muted = next;
+    },
+    destroy() {
+      destroyed = true;
+      window.removeEventListener(FILE_ACCESS_EVENT, recheck);
+      video.removeAttribute('src');
+      video.load();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    },
+  };
+}
+
 function genericPlayer(source) {
   // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
   // page from another site out of MULTIGRID and its saved layouts.
@@ -279,6 +432,9 @@ const PLAYERS = {
   youtube: youtubePlayer,
   twitch: twitchPlayer,
   kick: addressMutedPlayer,
+  tiktok: tiktokPlayer,
+  x: xPlayer,
+  file: filePlayer,
   hls: hlsPlayer,
   iframe: genericPlayer,
 };

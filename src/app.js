@@ -7,6 +7,7 @@ import {
   presetById, presetDiagram, removeTile, resizeTile, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { GridView } from './grid-view.js';
+import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
   deleteSaved, findSaved, listSaved, loadCurrent, openSaved, renameSaved, restoreSavedItem, saveCurrent, saveNamed,
@@ -156,6 +157,29 @@ function removeStream(id) {
   commit();
 }
 
+/** Adds chosen files, one tile each. The first takes the place the dialog was opened for. */
+function addFiles(chosen, target = { mode: 'add' }) {
+  if (!chosen.length) return;
+  const replacing = target.mode === 'replace';
+  const room = replacing ? 1 : MAX_STREAMS - streamCount(ws);
+  chosen.slice(0, room).forEach((item, index) => {
+    addStream(registerChosen(item), index === 0 ? target : { mode: 'add' });
+  });
+  const left = chosen.length - room;
+  if (left > 0) {
+    toast(replacing
+      ? 'Only the first file was used, because a tile holds one.'
+      : `${left} ${left === 1 ? 'file' : 'files'} left out, because ${MAX_STREAMS} streams is the limit.`);
+  }
+}
+
+async function pickFilesFor(target) {
+  const chosen = await chooseFiles({ multiple: target.mode !== 'replace' });
+  if (!chosen.length) return;
+  if ($('source-dialog').open) $('source-dialog').close();
+  addFiles(chosen, target);
+}
+
 function describe(source) {
   if (!source.ok) return { text: source.error, error: true };
   if (isBlockedMixedContent(source, env)) {
@@ -177,7 +201,8 @@ function openSourceDialog(target) {
   const replacing = target.mode === 'replace';
   $('source-title').textContent = replacing ? 'Replace stream' : 'Add stream';
   $('source-submit').textContent = replacing ? 'Replace' : 'Add';
-  $('source-input').value = replacing ? tileById(target.id)?.input ?? '' : '';
+  const current = replacing ? tileById(target.id)?.input ?? '' : '';
+  $('source-input').value = current.startsWith('local:') ? '' : current;
   showSourceMessage($('source-message'), '', false);
   openDialog($('source-dialog'));
   $('source-input').select();
@@ -226,6 +251,34 @@ for (const dialog of [$('source-dialog'), $('help-dialog')]) {
   });
 }
 $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }));
+
+$('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
+$('welcome-files').addEventListener('click', () => pickFilesFor({ mode: 'add' }));
+
+// A file dropped anywhere else must not make the browser navigate away from the workspace.
+for (const type of ['dragover', 'drop']) {
+  window.addEventListener(type, (event) => {
+    if (event.dataTransfer?.types?.includes('Files')) event.preventDefault();
+  });
+}
+for (const zone of [$('file-zone'), $('welcome')]) {
+  zone.addEventListener('dragover', (event) => {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    zone.classList.add('is-drop');
+  });
+  zone.addEventListener('dragleave', (event) => {
+    if (!zone.contains(event.relatedTarget)) zone.classList.remove('is-drop');
+  });
+  zone.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    zone.classList.remove('is-drop');
+    const target = $('source-dialog').open ? sourceTarget : { mode: 'add' };
+    const chosen = await filesFromDrop(event.dataTransfer);
+    if ($('source-dialog').open) $('source-dialog').close();
+    addFiles(chosen, target);
+  });
+}
 
 /* ---------- Welcome ---------- */
 

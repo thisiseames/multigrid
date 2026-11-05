@@ -90,7 +90,7 @@ class TileView {
       this.muteButton,
       this.fullButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
-      this.source.ok ? el('a', {
+      this.source.ok && this.source.openUrl ? el('a', {
         href: this.source.openUrl,
         target: '_blank',
         rel: 'noopener noreferrer',
@@ -147,7 +147,7 @@ class TileView {
     const { handlers } = this.grid;
     const actions = el('div', { class: 'tile-error-actions' },
       el('button', { type: 'button', textContent: 'Replace', on: { click: () => handlers.onReplace(this.id) } }),
-      this.source?.ok ? el('a', { href: this.source.openUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open on its site' }) : null,
+      this.source?.ok && this.source.openUrl ? el('a', { href: this.source.openUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open on its site' }) : null,
       el('button', { type: 'button', textContent: 'Remove', on: { click: () => handlers.onRemove(this.id) } }));
     this.body.replaceChildren(el('div', { class: 'tile-error', role: 'alert' },
       el('p', { textContent: message }),

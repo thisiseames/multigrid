@@ -154,6 +154,63 @@ function parseTwitch(url, host, input) {
   return make('channel', first.toLowerCase());
 }
 
+const SHORT_LINK = 'Short links can\'t be opened from here. Open it, then copy the full address.';
+
+function parseTikTok(url, host, input) {
+  if (host === 'vm.tiktok.com' || host === 'vt.tiktok.com') return fail(input, SHORT_LINK);
+  const segments = url.pathname.split('/').filter(Boolean);
+  if (segments[0] === 't') return fail(input, SHORT_LINK);
+  const make = (id, author) => ({
+    ok: true, input, kind: 'tiktok',
+    label: `TikTok · ${author || id}`,
+    openUrl: url.href,
+    tiktok: { id },
+  });
+  const [first, second, third] = segments;
+  if (first === 'player' && second === 'v1' && /^\d+$/.test(third || '')) return make(third);
+  if (first === 'embed') {
+    const id = segments.find((part) => /^\d{6,}$/.test(part));
+    if (id) return make(id);
+  }
+  if (first?.startsWith('@') && second === 'video' && /^\d+$/.test(third || '')) return make(third, first);
+  return fail(input, "This TikTok page isn't a video. Paste the link to one video.");
+}
+
+function parseX(url, host, input) {
+  if (host === 't.co') return fail(input, SHORT_LINK);
+  const make = (id, author) => ({
+    ok: true, input, kind: 'x',
+    label: `X · ${author && author !== 'i' ? `@${author}` : id}`,
+    openUrl: url.href,
+    x: { id },
+  });
+  if (host === 'platform.twitter.com') {
+    const id = url.searchParams.get('id');
+    return /^\d+$/.test(id || '') ? make(id) : fail(input, 'This X player link has no post in it.');
+  }
+  const segments = url.pathname.split('/').filter(Boolean);
+  const status = segments.findIndex((part) => part === 'status' || part === 'statuses');
+  if (status >= 0 && /^\d+$/.test(segments[status + 1] || '')) {
+    return make(segments[status + 1], status > 0 ? segments[status - 1] : null);
+  }
+  return fail(input, "This X page isn't a post. Paste the link to the post with the video.");
+}
+
+function parseLocal(input) {
+  const match = input.match(/^local:([\w-]+):(.*)$/s);
+  if (!match) return fail(input, "That isn't a link. Paste a full address or iframe code.");
+  let name = match[2];
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    // A damaged name still identifies the file; show it as it is.
+  }
+  return { ok: true, input, kind: 'file', label: name, name, localId: match[1], openUrl: null };
+}
+
+/** The stored form of a file on this computer. The file itself is never stored. */
+export const localInput = (id, name) => `local:${id}:${encodeURIComponent(name)}`;
+
 function parseKick(url, host, input) {
   const segments = url.pathname.split('/').filter(Boolean);
   const make = (path) => ({
@@ -180,6 +237,7 @@ function parseKick(url, host, input) {
 export function parseSource(raw) {
   const input = String(raw ?? '').trim();
   if (!input) return fail(input, 'Paste a link or iframe code.');
+  if (input.startsWith('local:')) return parseLocal(input);
 
   let text = input;
   if (/^</.test(input) || /<iframe\b/i.test(input)) {
@@ -203,6 +261,11 @@ export function parseSource(raw) {
   if (host === 'kick.com' || host === 'player.kick.com') {
     const kick = parseKick(url, host, input);
     if (kick) return kick;
+  }
+  if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) return parseTikTok(url, host, input);
+  if (host === 'x.com' || host === 'twitter.com' || host === 'mobile.twitter.com' || host === 'mobile.x.com'
+    || host === 'platform.twitter.com' || host === 't.co') {
+    return parseX(url, host, input);
   }
   if (/\.m3u8$/i.test(url.pathname)) {
     return { ok: true, input, kind: 'hls', label: `HLS · ${host}`, openUrl: url.href, url: url.href };
@@ -256,6 +319,13 @@ export function buildEmbedUrl(source, { muted, autoplay }, env) {
   if (source.kind === 'kick') {
     const params = new URLSearchParams({ muted: String(Boolean(muted)), autoplay: String(Boolean(autoplay)) });
     return `https://player.kick.com/${source.kick.path}?${params}`;
+  }
+  if (source.kind === 'tiktok') {
+    // TikTok has no "start muted" setting that can be undone, so sound is set by message.
+    return `https://www.tiktok.com/player/v1/${source.tiktok.id}?autoplay=${autoplay ? 1 : 0}&rel=0`;
+  }
+  if (source.kind === 'x') {
+    return `https://platform.twitter.com/embed/Tweet.html?id=${source.x.id}&theme=dark&dnt=true&hideThread=true`;
   }
   return source.url;
 }
