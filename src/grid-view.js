@@ -100,9 +100,10 @@ class TileView {
         aria: { label: 'Open on its own site' },
       }, icon('open')) : null,
       iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)));
+    this.labelEl = el('span', { class: 'strip-label', textContent: label, title: label });
     const strip = el('header', { class: 'strip' },
       el('span', { class: 'strip-grip', aria: { hidden: 'true' } }, icon('grip')),
-      el('span', { class: 'strip-label', textContent: label, title: label }),
+      this.labelEl,
       actions);
     this.grid.attachTileDrag(this, strip);
     return strip;
@@ -118,7 +119,11 @@ class TileView {
     this.muteButton.replaceChildren(icon(this.tile.muted ? 'muted' : 'sound'));
     this.muteButton.classList.toggle('is-on', !this.tile.muted);
     if (this.starButton) {
-      const favorite = this.grid.handlers.isFavorite(this.tile.input);
+      const favoriteTitle = this.grid.handlers.favoriteName(this.tile.input);
+      const favorite = favoriteTitle !== null;
+      const tileLabel = favoriteTitle ?? this.source.label;
+      this.labelEl.textContent = tileLabel;
+      this.labelEl.title = tileLabel;
       const starLabel = favorite ? 'Remove from favorites' : 'Add to favorites';
       this.starButton.title = starLabel;
       this.starButton.setAttribute('aria-label', starLabel);
@@ -440,8 +445,7 @@ export class GridView {
           coverage.add();
           document.body.classList.add('is-dragging');
           view.root.classList.add('is-lifted');
-          const label = view.source?.ok ? view.source.label : 'Stream';
-          ghost = el('div', { class: 'drag-ghost', textContent: label });
+          ghost = el('div', { class: 'drag-ghost', textContent: view.labelEl?.textContent || 'Stream' });
           document.body.append(ghost);
         }
         ghost.style.left = `${moveEvent.clientX + 12}px`;

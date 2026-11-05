@@ -10,7 +10,7 @@ import { GridView } from './grid-view.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  addFavorite, deleteSaved, findSaved, isFavorite, listFavorites, listSaved, loadCurrent, openSaved, removeFavorite,
+  addFavorite, deleteSaved, favoriteName, findSaved, isFavorite, listFavorites, listSaved, loadCurrent, openSaved, removeFavorite,
   renameFavorite, renameSaved, restoreSavedItem, saveCurrent, saveNamed,
 } from './storage.js';
 import {
@@ -41,7 +41,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     commit();
   },
   onLayoutAdjusted: commit,
-  isFavorite,
+  favoriteName,
   onToggleFavorite(id) {
     const tile = tileById(id);
     if (!tile) return;
@@ -60,7 +60,8 @@ const tileById = (id) => ws.tiles.find((tile) => tile.id === id);
 
 function labelOf(tile) {
   const source = parseSource(tile.input);
-  return source.ok ? source.label : 'Not playable';
+  if (!source.ok) return 'Not playable';
+  return favoriteName(tile.input) ?? source.label;
 }
 
 function commit() {
@@ -219,6 +220,7 @@ function favoriteRow(item, getTarget, refresh) {
       const name = input.value.trim();
       if (save && name && name !== item.name) {
         renameFavorite(item.input, name);
+        render();
         refresh();
       } else {
         showNormal();

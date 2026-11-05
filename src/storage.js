@@ -82,7 +82,9 @@ export function listFavorites() {
   return Array.isArray(list) ? list.filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string') : [];
 }
 
-export const isFavorite = (input) => listFavorites().some((item) => item.input === input);
+export const favoriteName = (input) => listFavorites().find((item) => item.input === input)?.name ?? null;
+
+export const isFavorite = (input) => favoriteName(input) !== null;
 
 export function addFavorite(input, name) {
   return write(FAVORITES_KEY, [{ input, name }, ...listFavorites().filter((item) => item.input !== input)]);
