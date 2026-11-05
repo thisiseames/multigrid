@@ -103,7 +103,7 @@ body.is-fullscreen .topbar {
 }
 body.is-fullscreen .top-hotzone { display: block; position: fixed; top: 0; left: 0; right: 0; height: 6px; z-index: 29; }
 body.is-fullscreen .topbar:hover,
-body.is-fullscreen .topbar:focus-within,
+body.is-fullscreen .topbar:has(:focus-visible),
 body.is-fullscreen.show-bar .topbar { transform: none; }
 
 /* Sound mixer: a row of its own, because Twitch stops if anything covers it */
@@ -150,6 +150,9 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 .channel.is-muted .channel-level { opacity: 0.6; }
 .channel.no-control { padding-left: 10px; color: var(--text-2); cursor: help; }
 .channel-note { font-size: 11px; white-space: nowrap; }
+
+/* In fullscreen the bar returns over this row, and exactly this tall it stops short of the video */
+body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top)); }
 
 /* Stage and grid */
 .stage {
