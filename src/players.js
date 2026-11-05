@@ -4,6 +4,8 @@
 //   start()   begins playback; called once `el` is in the page
 //   canMute   whether this player's sound can be controlled from here
 //   setMuted  changes the sound
+//   canVolume whether its level can be changed too
+//   setVolume changes the level, 0 to 100
 //   destroy() stops everything
 //
 // Problems are reported through onError(message). Only a parsed source's address is ever
@@ -41,18 +43,65 @@ function makeFrame(src) {
   return frame;
 }
 
+// iPhones leave the level to the phone's own buttons, and setting it does nothing.
+const levelWorks = (() => {
+  const probe = document.createElement('audio');
+  probe.volume = 0.5;
+  return probe.volume === 0.5;
+})();
+
+/** The MULTIGRID Sound extension says it's here. It can reach a player inside any embed. */
+const hasSoundExtension = () => document.documentElement.dataset.multigridSound === '1';
+
+function extensionSound(frame, muted, volume) {
+  const wanted = { muted, volume };
+  const send = () => frame.contentWindow?.postMessage({ multigridSound: { muted: wanted.muted, volume: wanted.volume / 100 } }, '*');
+  const onMessage = (event) => {
+    if (event.source === frame.contentWindow && event.data?.multigridSoundAsk) send();
+  };
+  return {
+    start() {
+      window.addEventListener('message', onMessage);
+      frame.addEventListener('load', send);
+      // A browser may hold back sound until the first click on the page.
+      window.addEventListener('pointerdown', send, { once: true });
+    },
+    setMuted(next) {
+      wanted.muted = next;
+      send();
+    },
+    setVolume(next) {
+      wanted.volume = next;
+      send();
+    },
+    stop() {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener('pointerdown', send);
+    },
+  };
+}
+
 /** Players whose only sound control is their address: changing it reloads the player. */
 function addressMutedPlayer(source, options) {
-  const { muted, autoplay, env } = options;
+  const { muted, volume, autoplay, env } = options;
   const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
+  const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
   return {
     el: frame,
     canMute: true,
-    start() {},
+    canVolume: Boolean(extension) && levelWorks,
+    start() {
+      extension?.start();
+    },
     setMuted(next) {
-      frame.src = buildEmbedUrl(source, { muted: next, autoplay: true }, env);
+      if (extension) extension.setMuted(next);
+      else frame.src = buildEmbedUrl(source, { muted: next, autoplay: true }, env);
+    },
+    setVolume(next) {
+      extension?.setVolume(next);
     },
     destroy() {
+      extension?.stop();
       frame.removeAttribute('src');
     },
   };
@@ -70,14 +119,16 @@ const YOUTUBE_ERRORS = {
 };
 
 function youtubePlayer(source, options) {
-  const { muted, autoplay, env, onError, onCapability } = options;
+  const { muted, volume, autoplay, env, onError, onCapability } = options;
   const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
   let api = null;
   let wanted = muted;
+  let level = volume;
   let destroyed = false;
   const self = {
     el: frame,
     canMute: true,
+    canVolume: levelWorks,
     start() {
       window.YT = window.YT || {};
       const ready = new Promise((resolve) => {
@@ -95,6 +146,7 @@ function youtubePlayer(source, options) {
           events: {
             onReady() {
               api = player;
+              api.setVolume(level);
               if (wanted) api.mute(); else api.unMute();
             },
             onError(event) {
@@ -105,6 +157,7 @@ function youtubePlayer(source, options) {
       }).catch(() => {
         // The video still plays; only our button goes, because it couldn't do anything.
         self.canMute = false;
+        self.canVolume = false;
         onCapability();
       });
     },
@@ -112,6 +165,10 @@ function youtubePlayer(source, options) {
       wanted = next;
       if (!api) return;
       if (next) api.mute(); else api.unMute();
+    },
+    setVolume(next) {
+      level = next;
+      api?.setVolume(next);
     },
     destroy() {
       destroyed = true;
@@ -128,18 +185,20 @@ function twitchPlayer(source, options) {
   // Clips aren't supported by Twitch's scripted player, so they use the plain address.
   if (type === 'clip') return addressMutedPlayer(source, { ...options, autoplay: options.autoplay });
 
-  const { muted, autoplay, env } = options;
+  const { muted, volume, autoplay, env } = options;
   const holder = document.createElement('div');
   holder.className = 'player-fill';
   holder.id = `twitch-embed-${twitchEmbedCount++}`;
   let api = null;
   let fallback = null;
   let wanted = muted;
+  let level = volume;
   let destroyed = false;
   let wasPlaying = false;
   return {
     el: holder,
     canMute: true,
+    canVolume: levelWorks,
     // Twitch stops when covered, and doesn't start again by itself.
     rememberPlayback() {
       wasPlaying = api ? !api.isPaused() : autoplay;
@@ -168,10 +227,11 @@ function twitchPlayer(source, options) {
         player.addEventListener(window.Twitch.Player.READY, () => {
           api = player;
           if (wanted !== muted) api.setMuted(wanted);
+          api.setVolume(level / 100);
         });
       }).catch(() => {
         if (destroyed) return;
-        fallback = addressMutedPlayer(source, { ...options, muted: wanted });
+        fallback = addressMutedPlayer(source, { ...options, muted: wanted, volume: level });
         holder.append(fallback.el);
       });
     },
@@ -179,6 +239,11 @@ function twitchPlayer(source, options) {
       wanted = next;
       if (api) api.setMuted(next);
       else if (fallback) fallback.setMuted(next);
+    },
+    setVolume(next) {
+      level = next;
+      if (api) api.setVolume(next / 100);
+      else fallback?.setVolume(next);
     },
     destroy() {
       destroyed = true;
@@ -188,10 +253,11 @@ function twitchPlayer(source, options) {
 }
 
 function hlsPlayer(source, options) {
-  const { muted, autoplay, onError } = options;
+  const { muted, volume, autoplay, onError } = options;
   const video = document.createElement('video');
   video.controls = true;
   video.setAttribute('playsinline', '');
+  video.volume = volume / 100;
   // Safari decides on autoplay from the attribute, not just the property.
   if (muted) video.setAttribute('muted', '');
   video.muted = muted;
@@ -236,6 +302,7 @@ function hlsPlayer(source, options) {
   return {
     el: video,
     canMute: true,
+    canVolume: levelWorks,
     start() {
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         // Native playback gives no reason when it fails, so hls.js is asked as a second
@@ -253,6 +320,9 @@ function hlsPlayer(source, options) {
     setMuted(next) {
       video.muted = next;
     },
+    setVolume(next) {
+      video.volume = next / 100;
+    },
     destroy() {
       destroyed = true;
       hls?.destroy();
@@ -269,8 +339,9 @@ const TIKTOK_ERRORS = {
 };
 
 function tiktokPlayer(source, options) {
-  const { muted, autoplay, env, onError } = options;
+  const { muted, volume, autoplay, env, onError } = options;
   const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
+  const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
   let wanted = muted;
   let ready = false;
   let playing = false;
@@ -291,19 +362,49 @@ function tiktokPlayer(source, options) {
   return {
     el: frame,
     canMute: true,
+    canVolume: Boolean(extension) && levelWorks,
     start() {
       window.addEventListener('message', onMessage);
+      extension?.start();
     },
     setMuted(next) {
       wanted = next;
+      extension?.setMuted(next);
       if (!ready) return;
       const resume = playing;
       send(next ? 'mute' : 'unMute');
       // Changing the sound can stop the player, so carry on if it was playing.
       if (resume) send('play');
     },
+    setVolume(next) {
+      extension?.setVolume(next);
+    },
     destroy() {
+      extension?.stop();
       window.removeEventListener('message', onMessage);
+      frame.removeAttribute('src');
+    },
+  };
+}
+
+/** A player MULTIGRID can't talk to. Its sound is only reachable through the extension. */
+function closedPlayer(frame, { muted, volume }) {
+  const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
+  return {
+    el: frame,
+    canMute: Boolean(extension),
+    canVolume: Boolean(extension) && levelWorks,
+    start() {
+      extension?.start();
+    },
+    setMuted(next) {
+      extension?.setMuted(next);
+    },
+    setVolume(next) {
+      extension?.setVolume(next);
+    },
+    destroy() {
+      extension?.stop();
       frame.removeAttribute('src');
     },
   };
@@ -312,26 +413,19 @@ function tiktokPlayer(source, options) {
 function xPlayer(source, options) {
   const frame = makeFrame(buildEmbedUrl(source, options, options.env));
   frame.className = 'frame-post';
-  return {
-    el: frame,
-    canMute: false,
-    start() {},
-    setMuted() {},
-    destroy() {
-      frame.removeAttribute('src');
-    },
-  };
+  return closedPlayer(frame, options);
 }
 
 const FILE_ACCESS_EVENT = 'multigrid:file-access';
 
 function filePlayer(source, options) {
-  const { muted, autoplay, onError } = options;
+  const { muted, volume, autoplay, onError } = options;
   const holder = document.createElement('div');
   holder.className = 'player-fill';
   const video = document.createElement('video');
   video.controls = true;
   video.setAttribute('playsinline', '');
+  video.volume = volume / 100;
   if (muted) video.setAttribute('muted', '');
   video.muted = muted;
   let objectUrl = null;
@@ -397,11 +491,15 @@ function filePlayer(source, options) {
   return {
     el: holder,
     canMute: true,
+    canVolume: levelWorks,
     start() {
       findFile(source.localId).then(handle);
     },
     setMuted(next) {
       video.muted = next;
+    },
+    setVolume(next) {
+      video.volume = next / 100;
     },
     destroy() {
       destroyed = true;
@@ -413,19 +511,10 @@ function filePlayer(source, options) {
   };
 }
 
-function genericPlayer(source) {
+function genericPlayer(source, options) {
   // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
   // page from another site out of MULTIGRID and its saved layouts.
-  const frame = makeFrame(source.url);
-  return {
-    el: frame,
-    canMute: false,
-    start() {},
-    setMuted() {},
-    destroy() {
-      frame.removeAttribute('src');
-    },
-  };
+  return closedPlayer(makeFrame(source.url), options);
 }
 
 const PLAYERS = {

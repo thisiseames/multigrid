@@ -9,10 +9,11 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
+import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  deleteSaved, favoriteName, findSaved, isFolderClosed, listFavorites, listFolders, listSaved, loadCurrent, openSaved, removeFavorite,
-  renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite, saveNamed, setFolderClosed,
+  deleteSaved, favoriteName, findSaved, isFolderClosed, isMixerOpen, listFavorites, listFolders, listSaved, loadCurrent, openSaved, removeFavorite,
+  renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen,
 } from './storage.js';
 import {
   closePopovers, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -37,6 +38,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onReplace: (id) => openSourceDialog({ mode: 'replace', id }),
   onRemove: removeStream,
   onToggleMute: toggleMute,
+  onPlayerChanged: () => renderSound(),
   onSwap(a, b) {
     swapTiles(ws, a, b);
     commit();
@@ -55,6 +57,15 @@ const grid = new GridView($('grid'), $('stage'), env, {
 });
 
 const tileById = (id) => ws.tiles.find((tile) => tile.id === id);
+
+const mixer = createMixer($('mixer'), {
+  labelOf,
+  player: (tile) => grid.viewFor(tile.id)?.player,
+  onToggleMute: toggleMute,
+  onVolume: changeVolume,
+  onVolumeDone: commit,
+  onMuteAll: muteAll,
+});
 
 function labelOf(tile) {
   const source = parseSource(tile.input);
@@ -93,7 +104,7 @@ function render() {
   $('hidden-button').textContent = `${hidden} hidden`;
   if (hidden === 0 && !$('hidden-menu').hidden) closePopovers();
 
-  renderMuteAll();
+  renderSound();
 }
 
 function currentDiagram() {
@@ -104,15 +115,20 @@ function muteableTiles() {
   return ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && grid.viewFor(tile.id)?.player?.canMute);
 }
 
-function renderMuteAll() {
-  const button = $('mute-all');
-  const streams = ws.tiles.some((tile) => isStream(tile) && isVisible(tile));
-  button.hidden = !streams;
+function renderSound() {
+  const button = $('mixer-button');
+  const streams = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile));
+  button.hidden = !streams.length;
   const anyAudible = muteableTiles().some((tile) => !tile.muted);
-  const label = anyAudible ? 'Mute all' : 'Unmute all';
+  const open = isMixerOpen();
+  const label = open ? 'Close sound mixer' : 'Open sound mixer';
   button.title = label;
   button.setAttribute('aria-label', label);
+  button.setAttribute('aria-expanded', String(open));
   button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'));
+
+  const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player);
+  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length));
 }
 
 /* ---------- Sound ---------- */
@@ -120,8 +136,29 @@ function renderMuteAll() {
 function toggleMute(id) {
   const tile = tileById(id);
   tile.muted = !tile.muted;
-  grid.viewFor(id)?.setMuted(tile.muted);
+  const view = grid.viewFor(id);
+  // Sound coming back at zero would look like the button did nothing.
+  if (!tile.muted && tile.volume === 0) {
+    tile.volume = 50;
+    view?.setVolume(tile.volume);
+  }
+  view?.setMuted(tile.muted);
   commit();
+}
+
+/** The slider moving. Saved when it's let go, because this fires for every step. */
+function changeVolume(id, volume) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  tile.volume = volume;
+  view?.setVolume(volume);
+  const muted = volume === 0;
+  if (muted !== tile.muted) {
+    tile.muted = muted;
+    view?.setMuted(muted);
+  }
+  view?.syncControls();
+  renderSound();
 }
 
 function muteAll() {
@@ -160,6 +197,7 @@ function addStream(input, target = { mode: 'add' }) {
     if (!slot || isStream(slot)) slot = makeRoom(ws);
     slot.input = input;
     slot.muted = true;
+    slot.volume = 100;
   }
   ws.started = true;
   commit();
@@ -709,7 +747,10 @@ fullscreen.onChange(renderFullscreenButton);
 $('top-hotzone').addEventListener('pointerenter', () => document.body.classList.add('show-bar'));
 $('topbar').addEventListener('pointerleave', () => document.body.classList.remove('show-bar'));
 
-$('mute-all').addEventListener('click', muteAll);
+$('mixer-button').addEventListener('click', () => {
+  setMixerOpen(!isMixerOpen());
+  renderSound();
+});
 $('help-button').addEventListener('click', () => openDialog($('help-dialog')));
 $('help-close').addEventListener('click', () => $('help-dialog').close());
 $('parent-host').textContent = env.hostname;

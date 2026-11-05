@@ -71,10 +71,17 @@ class TileView {
     this.autoplayed = autoplay;
     this.player = createPlayer(this.source, {
       muted: tile.muted,
+      volume: tile.volume,
       autoplay,
       env,
-      onError: (message) => this.showError(message),
-      onCapability: () => this.syncControls(),
+      onError: (message) => {
+        this.showError(message);
+        this.grid.handlers.onPlayerChanged();
+      },
+      onCapability: () => {
+        this.syncControls();
+        this.grid.handlers.onPlayerChanged();
+      },
     });
     if (!this.player) return;
     this.body.append(this.player.el);
@@ -173,6 +180,10 @@ class TileView {
 
   setMuted(muted) {
     this.player?.setMuted(muted);
+  }
+
+  setVolume(volume) {
+    this.player?.setVolume?.(volume);
   }
 
   teardown() {

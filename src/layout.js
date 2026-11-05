@@ -124,7 +124,7 @@ export function emptyWorkspace() {
   return { v: 1, presetId: 'equal', minSlots: 0, started: false, fit: true, cols: [1], rows: [1], tiles: [] };
 }
 
-const emptyTile = (place) => ({ id: uid(), input: null, muted: true, place });
+const emptyTile = (place) => ({ id: uid(), input: null, muted: true, volume: 100, place });
 
 /** Pours the streams into a preset. Any that don't fit stay in the workspace, hidden. */
 export function applyPreset(ws, presetId, minSlots = 0) {
@@ -380,6 +380,7 @@ export function removeTile(ws, id) {
   tile.input = null;
   tile.label = undefined;
   tile.muted = true;
+  tile.volume = 100;
   // Keep the id out of use so a stale player can never be matched to a new stream.
   tile.id = uid();
   const hidden = hiddenTiles(ws)[0];

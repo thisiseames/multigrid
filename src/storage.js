@@ -8,6 +8,7 @@ const CURRENT_KEY = 'multigrid.current.v1';
 const SAVED_KEY = 'multigrid.workspaces.v1';
 const FAVORITES_KEY = 'multigrid.favorites.v1';
 const CLOSED_FOLDERS_KEY = 'multigrid.favorites.closed.v1';
+const MIXER_KEY = 'multigrid.mixer.v1';
 
 function read(key) {
   try {
@@ -48,6 +49,7 @@ function sanitize(raw) {
       id: uid(),
       input: tile.input || null,
       muted: tile.muted !== false,
+      volume: Number.isFinite(tile.volume) ? Math.min(100, Math.max(0, Math.round(tile.volume))) : 100,
       place: tile.place ? { ...tile.place } : null,
     });
   }
@@ -72,9 +74,14 @@ function snapshot(ws) {
     fit: ws.fit,
     cols: ws.cols,
     rows: ws.rows,
-    tiles: ws.tiles.map(({ input, muted, place }) => ({ input, muted, place })),
+    tiles: ws.tiles.map(({ input, muted, volume, place }) => ({ input, muted, volume, place })),
   };
 }
+
+/* The mixer row starts open, and stays however it was left. */
+
+export const isMixerOpen = () => read(MIXER_KEY) !== false;
+export const setMixerOpen = (open) => write(MIXER_KEY, open);
 
 /* Favorites hold what was pasted, a name and an optional folder, newest first. */
 
