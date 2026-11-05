@@ -43,7 +43,8 @@
         <button class="add-button" type="submit">Add</button>
       </form>
       <p id="welcome-message" class="source-message" role="status"></p>
-      <p class="welcome-note">Twitch, YouTube, Kick, .m3u8 streams, iframe code, or a link from any other site. Some sites refuse to play elsewhere. <button id="welcome-help" class="text-button" type="button">How it works</button></p>
+      <p class="welcome-note">Twitch, YouTube, Kick, TikTok, X, .m3u8 streams, iframe code, or a link from any other site. Some sites refuse to play elsewhere. <button id="welcome-help" class="text-button" type="button">How it works</button></p>
+      <p class="welcome-note"><button id="welcome-files" class="text-button" type="button">Choose video files from this computer</button>, or drop them here.</p>
       <h2>Or start from an empty layout</h2>
       <div id="starters" class="starters"></div>
     </section>
@@ -58,6 +59,11 @@
       <h2 id="source-title">Add stream</h2>
       <textarea id="source-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
       <p id="source-message" class="source-message" role="status"></p>
+      <button id="file-zone" class="file-zone" type="button">
+        <span data-icon="upload"></span>
+        <span class="file-zone-title">Drop video files or click to choose</span>
+        <span class="file-zone-note">They play from this computer and are never uploaded.</span>
+      </button>
       <div class="dialog-actions">
         <button id="source-cancel" class="plain-button" type="button">Cancel</button>
         <button id="source-submit" class="add-button" type="submit">Add</button>
@@ -75,6 +81,9 @@
       <dt>Twitch</dt><dd>Channel, video and clip links. Twitch only plays on sites it's told about, so MULTIGRID adds this site's address automatically: <code id="parent-host"></code>.</dd>
       <dt>YouTube</dt><dd>Watch, youtu.be, live, Shorts and embed links. A channel name like <code>@name/live</code> can't be played elsewhere, so copy the link from the stream's Share button. YouTube allows one video at a time to start on its own, so other YouTube tiles wait for a click.</dd>
       <dt>Kick</dt><dd>Channel links and player.kick.com links. Muting reloads the tile, because that's the only control Kick's player offers.</dd>
+      <dt>TikTok</dt><dd>Links to one video. Short links like <code>vm.tiktok.com</code> can't be opened from here, so open them and copy the full address.</dd>
+      <dt>X</dt><dd>Links to a post. The tile shows the whole post with its video, and its sound can't be controlled from here. Short <code>t.co</code> links need the full address too.</dd>
+      <dt>Your files</dt><dd>Drop or choose video files in Add stream. They play from this computer and are never uploaded. Chrome can reopen them next visit after a click. Other browsers ask you to choose the file again. MP4 with H.264 is the safest format.</dd>
       <dt>.m3u8</dt><dd>Direct HLS streams. The stream's server has to allow outside players, and the link must be https.</dd>
       <dt>Iframe code</dt><dd>Only the address in <code>src</code> is used. The rest of the code is ignored and never run.</dd>
       <dt>Anything else</dt><dd>Tried as it is. Many sites refuse to play inside other sites, and a browser usually can't tell MULTIGRID when that happens. If a tile stays blank or shows a refusal, the site is blocking it. Its sound can't be controlled from here either.</dd>
@@ -86,6 +95,7 @@
     <p>Your layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
   </dialog>
 
+  <input id="file-input" type="file" accept="video/*,.mkv,.mov" hidden>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>
