@@ -336,7 +336,7 @@ function folderSection(folder, items, getTarget) {
 
 /** Fills one of the two places favorites appear. Hidden entirely when there are none. */
 function renderFavorites(holder, getTarget) {
-  const favorites = listFavorites();
+  const favorites = listFavorites().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
   holder.hidden = favorites.length === 0;
   const loose = favorites.filter((item) => !item.group);
   const scroll = holder.querySelector('.favorites-body')?.scrollTop ?? 0;
