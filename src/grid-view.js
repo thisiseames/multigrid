@@ -86,7 +86,9 @@ class TileView {
     const label = this.source.ok ? this.source.label : 'Not playable';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
+    this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onToggleFavorite(this.id)) : null;
     const actions = el('div', { class: 'strip-actions' },
+      this.starButton,
       this.muteButton,
       this.fullButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
@@ -115,6 +117,14 @@ class TileView {
     this.muteButton.setAttribute('aria-label', label);
     this.muteButton.replaceChildren(icon(this.tile.muted ? 'muted' : 'sound'));
     this.muteButton.classList.toggle('is-on', !this.tile.muted);
+    if (this.starButton) {
+      const favorite = this.grid.handlers.isFavorite(this.tile.input);
+      const starLabel = favorite ? 'Remove from favorites' : 'Add to favorites';
+      this.starButton.title = starLabel;
+      this.starButton.setAttribute('aria-label', starLabel);
+      this.starButton.replaceChildren(icon(favorite ? 'starFilled' : 'star'));
+      this.starButton.classList.toggle('is-favorite', favorite);
+    }
     this.syncFullscreen();
   }
 
@@ -164,6 +174,7 @@ class TileView {
     this.player = null;
     this.muteButton = null;
     this.fullButton = null;
+    this.starButton = null;
     this.body = null;
   }
 

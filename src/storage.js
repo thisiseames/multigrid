@@ -6,6 +6,7 @@ import { emptyWorkspace, uid } from './layout.js';
 
 const CURRENT_KEY = 'multigrid.current.v1';
 const SAVED_KEY = 'multigrid.workspaces.v1';
+const FAVORITES_KEY = 'multigrid.favorites.v1';
 
 function read(key) {
   try {
@@ -72,6 +73,27 @@ function snapshot(ws) {
     rows: ws.rows,
     tiles: ws.tiles.map(({ input, muted, place }) => ({ input, muted, place })),
   };
+}
+
+/* Favorites hold what was pasted plus a name, newest first. */
+
+export function listFavorites() {
+  const list = read(FAVORITES_KEY);
+  return Array.isArray(list) ? list.filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string') : [];
+}
+
+export const isFavorite = (input) => listFavorites().some((item) => item.input === input);
+
+export function addFavorite(input, name) {
+  return write(FAVORITES_KEY, [{ input, name }, ...listFavorites().filter((item) => item.input !== input)]);
+}
+
+export function removeFavorite(input) {
+  return write(FAVORITES_KEY, listFavorites().filter((item) => item.input !== input));
+}
+
+export function renameFavorite(input, name) {
+  return write(FAVORITES_KEY, listFavorites().map((item) => (item.input === input ? { input, name } : item)));
 }
 
 export const loadCurrent = () => sanitize(read(CURRENT_KEY)) || emptyWorkspace();

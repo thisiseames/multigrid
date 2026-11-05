@@ -10,7 +10,8 @@ import { GridView } from './grid-view.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  deleteSaved, findSaved, listSaved, loadCurrent, openSaved, renameSaved, restoreSavedItem, saveCurrent, saveNamed,
+  addFavorite, deleteSaved, findSaved, isFavorite, listFavorites, listSaved, loadCurrent, openSaved, removeFavorite,
+  renameFavorite, renameSaved, restoreSavedItem, saveCurrent, saveNamed,
 } from './storage.js';
 import {
   closePopovers, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -40,6 +41,14 @@ const grid = new GridView($('grid'), $('stage'), env, {
     commit();
   },
   onLayoutAdjusted: commit,
+  isFavorite,
+  onToggleFavorite(id) {
+    const tile = tileById(id);
+    if (!tile) return;
+    const saved = isFavorite(tile.input) ? removeFavorite(tile.input) : addFavorite(tile.input, labelOf(tile));
+    if (!saved) toast("Couldn't save. This browser's storage may be full or turned off.");
+    render();
+  },
   onResizeTile(id, rect) {
     const covered = resizeTile(ws, id, rect);
     commit();
@@ -66,6 +75,7 @@ function render() {
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
   $('stage').style.alignItems = '';
+  if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
 
   const custom = ws.presetId === 'custom';
@@ -139,6 +149,10 @@ function muteAll() {
 /* ---------- Adding, replacing, removing ---------- */
 
 function addStream(input, target = { mode: 'add' }) {
+  if (target.mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
+    toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
+    return;
+  }
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
     if (tile) tile.input = input;
@@ -155,6 +169,88 @@ function addStream(input, target = { mode: 'add' }) {
 function removeStream(id) {
   removeTile(ws, id);
   commit();
+}
+
+/* ---------- Favorites ---------- */
+
+function favoriteRow(item, getTarget, refresh) {
+  const row = el('li', { class: 'saved-row' });
+  const showNormal = () => {
+    row.replaceChildren(
+      el('button', {
+        type: 'button',
+        class: 'saved-open',
+        title: `Add ${item.name}`,
+        on: {
+          click() {
+            const target = getTarget();
+            if ($('source-dialog').open) $('source-dialog').close();
+            addStream(item.input, target);
+          },
+        },
+      }, el('b', { textContent: item.name })),
+      el('span', { class: 'row-actions' },
+        iconButton('pencil', 'Rename', showRename),
+        iconButton('trash', 'Remove from favorites', showConfirm)));
+  };
+  const showConfirm = () => {
+    row.replaceChildren(
+      el('span', { class: 'favorite-confirm', textContent: `Remove ${item.name}?` }),
+      el('button', {
+        type: 'button',
+        class: 'text-button favorite-confirm-action',
+        textContent: 'Remove',
+        on: {
+          click() {
+            removeFavorite(item.input);
+            render();
+            refresh();
+          },
+        },
+      }),
+      el('button', { type: 'button', class: 'favorite-confirm-action', textContent: 'Keep', on: { click: showNormal } }));
+  };
+  const showRename = () => {
+    const input = el('input', { type: 'text', value: item.name, maxLength: 80, aria: { label: 'New name' } });
+    let finished = false;
+    const finish = (save) => {
+      if (finished) return;
+      finished = true;
+      const name = input.value.trim();
+      if (save && name && name !== item.name) {
+        renameFavorite(item.input, name);
+        refresh();
+      } else {
+        showNormal();
+      }
+    };
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        finish(true);
+      } else if (event.key === 'Escape') {
+        // Esc cancels the rename, not the whole Add stream box.
+        event.preventDefault();
+        event.stopPropagation();
+        finish(false);
+      }
+    });
+    input.addEventListener('blur', () => finish(true));
+    row.replaceChildren(input);
+    input.select();
+  };
+  showNormal();
+  return row;
+}
+
+/** Fills one of the two places favorites appear. Hidden entirely when there are none. */
+function renderFavorites(holder, getTarget) {
+  const favorites = listFavorites();
+  holder.hidden = favorites.length === 0;
+  const refresh = () => renderFavorites(holder, getTarget);
+  holder.replaceChildren(
+    el('h2', { class: 'favorites-title', textContent: 'Favorites' }),
+    el('ul', { class: 'saved-list favorites-list' }, ...favorites.map((item) => favoriteRow(item, getTarget, refresh))));
 }
 
 /** Adds chosen files, one tile each. The first takes the place the dialog was opened for. */
@@ -204,6 +300,7 @@ function openSourceDialog(target) {
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
   $('source-input').value = current.startsWith('local:') ? '' : current;
   showSourceMessage($('source-message'), '', false);
+  renderFavorites($('source-favorites'), () => sourceTarget);
   openDialog($('source-dialog'));
   $('source-input').select();
   if (replacing) updateSourceMessage();
