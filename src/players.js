@@ -229,6 +229,8 @@ function twitchPlayer(source, options) {
           if (wanted !== muted) api.setMuted(wanted);
           api.setVolume(level / 100);
         });
+        // Twitch goes back to its own level after an ad, so ask again when the stream starts.
+        player.addEventListener(window.Twitch.Player.PLAYING, () => api?.setVolume(level / 100));
       }).catch(() => {
         if (destroyed) return;
         fallback = addressMutedPlayer(source, { ...options, muted: wanted, volume: level });
