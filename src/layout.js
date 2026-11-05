@@ -66,6 +66,8 @@ export const PRESETS = [
   { id: 'stack', name: 'Vertical stack', sample: 3, build: (n) => cells(1, Math.max(n, 2)) },
   { id: 'row', name: 'Horizontal row', sample: 3, build: (n) => cells(Math.max(n, 2), 1) },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
+  { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
+  { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
   { id: 'grid3', name: '3 × 3', fixed: 9, build: () => cells(3, 3) },
   { id: 'grid4', name: '4 × 4', fixed: 16, build: () => cells(4, 4) },
   { id: 'featured', name: 'Featured', hint: 'One big, the rest small', sample: 6, build: featured },
