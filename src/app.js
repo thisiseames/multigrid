@@ -16,7 +16,7 @@ import {
   renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen,
 } from './storage.js';
 import {
-  closePopovers, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
+  closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
 } from './ui.js';
 
 const env = { hostname: location.hostname, origin: location.origin, protocol: location.protocol };
@@ -737,19 +737,50 @@ function renderFullscreenButton() {
 }
 
 $('fullscreen-button').hidden = !fullscreen.enabled();
+// The bar slides across the video on its way out, which is enough to stop Twitch.
+function coverDuringFullscreenChange() {
+  coverage.add();
+  setTimeout(() => coverage.remove(), 800);
+}
+
 $('fullscreen-button').addEventListener('click', () => {
+  coverDuringFullscreenChange();
   if (fullscreen.element()) fullscreen.exit();
   else fullscreen.enter(document.documentElement);
 });
+fullscreen.onChange(coverDuringFullscreenChange);
 fullscreen.onChange(renderFullscreenButton);
 
 // In fullscreen the bar is out of the way; the very top edge of the screen brings it back.
-$('top-hotzone').addEventListener('pointerenter', () => document.body.classList.add('show-bar'));
-$('topbar').addEventListener('pointerleave', () => document.body.classList.remove('show-bar'));
+// With the mixer closed it comes back over the video, which Twitch counts as being covered.
+let barCovers = false;
+function syncBarCover() {
+  const bar = $('topbar');
+  const shown = document.body.classList.contains('show-bar') || bar.matches(':hover, :has(:focus-visible)');
+  const covers = document.body.classList.contains('is-fullscreen') && $('mixer').hidden && shown;
+  if (covers === barCovers) return;
+  barCovers = covers;
+  if (covers) coverage.add();
+  else coverage.remove();
+}
+
+$('top-hotzone').addEventListener('pointerenter', () => {
+  document.body.classList.add('show-bar');
+  syncBarCover();
+});
+$('topbar').addEventListener('pointerleave', () => {
+  document.body.classList.remove('show-bar');
+  syncBarCover();
+});
+$('topbar').addEventListener('pointerenter', syncBarCover);
+$('topbar').addEventListener('focusin', syncBarCover);
+$('topbar').addEventListener('focusout', () => setTimeout(syncBarCover));
+fullscreen.onChange(syncBarCover);
 
 $('mixer-button').addEventListener('click', () => {
   setMixerOpen(!isMixerOpen());
   renderSound();
+  syncBarCover();
 });
 $('help-button').addEventListener('click', () => openDialog($('help-dialog')));
 $('help-close').addEventListener('click', () => $('help-dialog').close());
