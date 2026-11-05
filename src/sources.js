@@ -109,11 +109,15 @@ function parseYouTube(url, host, input) {
   if (first === 'live' || first === 'shorts' || first === 'v' || first === 'e') {
     return video(second) || fail(input, 'This YouTube link has no video ID.');
   }
+  // Every channel has a playlist of its uploads, newest first: its ID with UC changed to UU.
+  if (first === 'channel' && /^UC[\w-]+$/.test(second || '') && third === 'videos') {
+    return make({ list: `UU${second.slice(2)}` }, 'channel');
+  }
   if (first === 'channel' && /^UC[\w-]+$/.test(second || '') && (third === 'live' || !third)) {
     return make({ channel: second }, 'live channel');
   }
   if (first?.startsWith('@') || first === 'c' || first === 'user') {
-    return fail(input, "YouTube can't play a channel by its name in another site. Open the live stream and copy the link from its Share button instead.");
+    return fail(input, "YouTube can't play a channel by its name in another site. For its newest videos, paste the channel ID instead: on the channel's page, click …more, then Share channel, then Copy channel ID. For a live stream, copy the link from its Share button.");
   }
   return fail(input, "This YouTube page isn't a video. Paste a link to a video, live stream or playlist.");
 }
@@ -244,6 +248,11 @@ export function parseSource(raw) {
     const src = extractIframeSrc(input);
     if (!src) return fail(input, "That code has no iframe with a src, so there's nothing to play.");
     text = src;
+  }
+
+  // A YouTube channel ID on its own, as YouTube's "Copy channel ID" gives it.
+  if (/^UC[\w-]{22}$/.test(text)) {
+    return parseYouTube(new URL(`https://www.youtube.com/channel/${text}/videos`), 'youtube.com', input);
   }
 
   const url = toUrl(text);
