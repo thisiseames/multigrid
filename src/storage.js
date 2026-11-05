@@ -7,6 +7,7 @@ import { emptyWorkspace, uid } from './layout.js';
 const CURRENT_KEY = 'multigrid.current.v1';
 const SAVED_KEY = 'multigrid.workspaces.v1';
 const FAVORITES_KEY = 'multigrid.favorites.v1';
+const CLOSED_FOLDERS_KEY = 'multigrid.favorites.closed.v1';
 
 function read(key) {
   try {
@@ -75,27 +76,77 @@ function snapshot(ws) {
   };
 }
 
-/* Favorites hold what was pasted plus a name, newest first. */
+/* Favorites hold what was pasted, a name and an optional folder, newest first. */
+
+const sameFolder = (a, b) => a.toLocaleLowerCase() === b.toLocaleLowerCase();
+const cleanFolder = (folder) => (typeof folder === 'string' ? folder.trim() : '');
 
 export function listFavorites() {
   const list = read(FAVORITES_KEY);
-  return Array.isArray(list) ? list.filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string') : [];
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string')
+    .map(({ input, name, group }) => ({ input, name, group: cleanFolder(group) }));
 }
 
 export const favoriteName = (input) => listFavorites().find((item) => item.input === input)?.name ?? null;
 
-export const isFavorite = (input) => favoriteName(input) !== null;
+/** Every folder in use, A to Z. A folder exists only while a favorite is in it. */
+export function listFolders() {
+  const folders = [];
+  for (const { group } of listFavorites()) {
+    if (group && !folders.some((folder) => sameFolder(folder, group))) folders.push(group);
+  }
+  return folders.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
 
-export function addFavorite(input, name) {
-  return write(FAVORITES_KEY, [{ input, name }, ...listFavorites().filter((item) => item.input !== input)]);
+/** Adds a favorite, or changes one in place. "news" joins a folder already called "News". */
+export function saveFavorite(input, name, folder = '') {
+  const typed = cleanFolder(folder);
+  const group = listFolders().find((existing) => sameFolder(existing, typed)) ?? typed;
+  const list = listFavorites();
+  const item = { input, name, group };
+  const at = list.findIndex((other) => other.input === input);
+  if (at === -1) list.unshift(item);
+  else list[at] = item;
+  const saved = write(FAVORITES_KEY, list);
+  // Otherwise it would land out of sight in a closed folder.
+  if (saved && group) setFolderClosed(group, false);
+  return saved;
 }
 
 export function removeFavorite(input) {
   return write(FAVORITES_KEY, listFavorites().filter((item) => item.input !== input));
 }
 
-export function renameFavorite(input, name) {
-  return write(FAVORITES_KEY, listFavorites().map((item) => (item.input === input ? { input, name } : item)));
+/** Renaming onto another folder's name puts the two together. */
+export function renameFolder(from, to) {
+  const typed = cleanFolder(to);
+  if (!typed) return false;
+  const existing = listFolders().find((folder) => sameFolder(folder, typed) && !sameFolder(folder, from));
+  const group = existing ?? typed;
+  const wasClosed = isFolderClosed(from);
+  const saved = write(FAVORITES_KEY, listFavorites().map((item) => (
+    item.group && sameFolder(item.group, from) ? { ...item, group } : item
+  )));
+  if (saved) {
+    setFolderClosed(from, false);
+    setFolderClosed(group, Boolean(wasClosed && !existing));
+  }
+  return saved;
+}
+
+const closedFolders = () => {
+  const list = read(CLOSED_FOLDERS_KEY);
+  return Array.isArray(list) ? list.filter((key) => typeof key === 'string') : [];
+};
+
+export const isFolderClosed = (folder) => closedFolders().includes(folder.toLocaleLowerCase());
+
+export function setFolderClosed(folder, closed) {
+  const key = folder.toLocaleLowerCase();
+  const others = closedFolders().filter((other) => other !== key);
+  return write(CLOSED_FOLDERS_KEY, closed ? [...others, key] : others);
 }
 
 export const loadCurrent = () => sanitize(read(CURRENT_KEY)) || emptyWorkspace();

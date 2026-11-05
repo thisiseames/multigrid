@@ -86,7 +86,8 @@ class TileView {
     const label = this.source.ok ? this.source.label : 'Not playable';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
-    this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onToggleFavorite(this.id)) : null;
+    this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
+    this.starButton?.classList.add('strip-star');
     const actions = el('div', { class: 'strip-actions' },
       this.starButton,
       this.muteButton,
@@ -124,7 +125,7 @@ class TileView {
       const tileLabel = favoriteTitle ?? this.source.label;
       this.labelEl.textContent = tileLabel;
       this.labelEl.title = tileLabel;
-      const starLabel = favorite ? 'Remove from favorites' : 'Add to favorites';
+      const starLabel = favorite ? 'Edit favorite' : 'Add to favorites';
       this.starButton.title = starLabel;
       this.starButton.setAttribute('aria-label', starLabel);
       this.starButton.replaceChildren(icon(favorite ? 'starFilled' : 'star'));

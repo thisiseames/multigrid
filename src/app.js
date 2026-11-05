@@ -6,12 +6,13 @@ import {
   MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, hiddenTiles, isStream, isVisible, makeRoom,
   presetById, presetDiagram, removeTile, resizeTile, showHidden, streamCount, swapTiles,
 } from './layout.js';
+import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  addFavorite, deleteSaved, favoriteName, findSaved, isFavorite, listFavorites, listSaved, loadCurrent, openSaved, removeFavorite,
-  renameFavorite, renameSaved, restoreSavedItem, saveCurrent, saveNamed,
+  deleteSaved, favoriteName, findSaved, isFolderClosed, listFavorites, listFolders, listSaved, loadCurrent, openSaved, removeFavorite,
+  renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite, saveNamed, setFolderClosed,
 } from './storage.js';
 import {
   closePopovers, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -42,12 +43,9 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   favoriteName,
-  onToggleFavorite(id) {
+  onEditFavorite(id, anchor) {
     const tile = tileById(id);
-    if (!tile) return;
-    const saved = isFavorite(tile.input) ? removeFavorite(tile.input) : addFavorite(tile.input, labelOf(tile));
-    if (!saved) toast("Couldn't save. This browser's storage may be full or turned off.");
-    render();
+    if (tile) editFavorite(tile.input, labelOf(tile), anchor);
   },
   onResizeTile(id, rect) {
     const covered = resizeTile(ws, id, rect);
@@ -174,7 +172,35 @@ function removeStream(id) {
 
 /* ---------- Favorites ---------- */
 
-function favoriteRow(item, getTarget, refresh) {
+const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turned off.";
+
+/** Tile labels and both favorites lists read from saved favorites, so all of them redraw. */
+function refreshFavorites() {
+  render();
+  if ($('source-dialog').open) renderFavorites($('source-favorites'), () => sourceTarget);
+}
+
+function editFavorite(input, suggestedName, anchor) {
+  const current = listFavorites().find((item) => item.input === input);
+  openFavoriteBox({
+    anchor,
+    title: current ? 'Edit favorite' : 'Add to favorites',
+    name: current?.name ?? suggestedName,
+    folder: current?.group ?? '',
+    folders: listFolders(),
+    removable: Boolean(current),
+    onSave(name, folder) {
+      if (!saveFavorite(input, name, folder)) toast(STORAGE_FULL);
+      refreshFavorites();
+    },
+    onRemove() {
+      removeFavorite(input);
+      refreshFavorites();
+    },
+  });
+}
+
+function favoriteRow(item, getTarget) {
   const row = el('li', { class: 'saved-row' });
   const showNormal = () => {
     row.replaceChildren(
@@ -191,7 +217,7 @@ function favoriteRow(item, getTarget, refresh) {
         },
       }, el('b', { textContent: item.name })),
       el('span', { class: 'row-actions' },
-        iconButton('pencil', 'Rename', showRename),
+        iconButton('pencil', 'Edit', (event) => editFavorite(item.input, item.name, event.currentTarget)),
         iconButton('trash', 'Remove from favorites', showConfirm)));
   };
   const showConfirm = () => {
@@ -204,24 +230,49 @@ function favoriteRow(item, getTarget, refresh) {
         on: {
           click() {
             removeFavorite(item.input);
-            render();
-            refresh();
+            refreshFavorites();
           },
         },
       }),
       el('button', { type: 'button', class: 'favorite-confirm-action', textContent: 'Keep', on: { click: showNormal } }));
   };
+  showNormal();
+  return row;
+}
+
+/** One folder: its name opens and closes it, and the edit button renames it in place. */
+function folderSection(folder, items, getTarget) {
+  const list = el('ul', { class: 'saved-list favorites-list' }, ...items.map((item) => favoriteRow(item, getTarget)));
+  const head = el('div', { class: 'saved-row folder-head' });
+  const showNormal = () => {
+    const closed = isFolderClosed(folder);
+    list.hidden = closed;
+    const toggle = el('button', {
+      type: 'button',
+      class: `folder-toggle${closed ? ' is-closed' : ''}`,
+      title: closed ? `Open ${folder}` : `Close ${folder}`,
+      aria: { expanded: String(!closed) },
+      on: {
+        click() {
+          setFolderClosed(folder, !closed);
+          showNormal();
+          if ($('source-dialog').open && !$('welcome').hidden) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
+          head.querySelector('.folder-toggle').focus();
+        },
+      },
+    }, icon('chevron', 14), el('b', { textContent: folder }), el('small', { textContent: String(items.length) }));
+    head.replaceChildren(toggle, el('span', { class: 'row-actions' }, iconButton('pencil', 'Rename folder', showRename)));
+  };
   const showRename = () => {
-    const input = el('input', { type: 'text', value: item.name, maxLength: 80, aria: { label: 'New name' } });
+    const input = el('input', { type: 'text', value: folder, maxLength: 40, aria: { label: 'Folder name' } });
     let finished = false;
     const finish = (save) => {
       if (finished) return;
       finished = true;
       const name = input.value.trim();
-      if (save && name && name !== item.name) {
-        renameFavorite(item.input, name);
-        render();
-        refresh();
+      if (save && name && name !== folder) {
+        if (!renameFolder(folder, name)) toast(STORAGE_FULL);
+        refreshFavorites();
       } else {
         showNormal();
       }
@@ -238,21 +289,24 @@ function favoriteRow(item, getTarget, refresh) {
       }
     });
     input.addEventListener('blur', () => finish(true));
-    row.replaceChildren(input);
+    head.replaceChildren(input);
     input.select();
   };
   showNormal();
-  return row;
+  return el('section', { class: 'folder' }, head, list);
 }
 
 /** Fills one of the two places favorites appear. Hidden entirely when there are none. */
 function renderFavorites(holder, getTarget) {
   const favorites = listFavorites();
   holder.hidden = favorites.length === 0;
-  const refresh = () => renderFavorites(holder, getTarget);
-  holder.replaceChildren(
-    el('h2', { class: 'favorites-title', textContent: 'Favorites' }),
-    el('ul', { class: 'saved-list favorites-list' }, ...favorites.map((item) => favoriteRow(item, getTarget, refresh))));
+  const loose = favorites.filter((item) => !item.group);
+  const scroll = holder.querySelector('.favorites-body')?.scrollTop ?? 0;
+  const body = el('div', { class: 'favorites-body' },
+    loose.length ? el('ul', { class: 'saved-list favorites-list' }, ...loose.map((item) => favoriteRow(item, getTarget))) : null,
+    ...listFolders().map((folder) => folderSection(folder, favorites.filter((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()), getTarget)));
+  holder.replaceChildren(el('h2', { class: 'favorites-title', textContent: 'Favorites' }), body);
+  body.scrollTop = scroll;
 }
 
 /** Adds chosen files, one tile each. The first takes the place the dialog was opened for. */
