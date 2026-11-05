@@ -189,6 +189,8 @@ body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top));
 }
 .grid.stacked .tile { flex: none; }
 .grid.stacked .tile-body { flex: none; aspect-ratio: 16 / 9; }
+/* A TikTok card isn't video-shaped, so stacked on a phone it gets its own height. */
+.grid.stacked .tile-body:has(.frame-card) { aspect-ratio: auto; height: 490px; }
 .tile.maximized { position: fixed; inset: 0; margin: 0; z-index: 40; border-radius: 0; padding-top: env(safe-area-inset-top); }
 .grid.stacked .tile.maximized { height: auto; }
 .grid.stacked .tile.maximized .tile-body { flex: 1; aspect-ratio: auto; }
@@ -251,7 +253,7 @@ body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top));
 .tile-body iframe.frame-post { color-scheme: light; max-width: 550px; margin: 0 auto; }
 /* A TikTok account is TikTok's own profile card, no bigger than this. It sits centred, and
    scrolls inside itself in a smaller tile. */
-.tile-body iframe.frame-card { color-scheme: light; max-width: 780px; max-height: 600px; margin: auto; }
+.tile-body iframe.frame-card { color-scheme: light; max-width: 780px; max-height: 490px; margin: auto; }
 
 /* The first child of a Twitch holder is its own iframe, which fills the same way. */
 body.is-dragging iframe, body.is-dragging video { pointer-events: none; }
