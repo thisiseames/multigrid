@@ -44,11 +44,6 @@ const grid = new GridView($('grid'), $('stage'), env, {
     commit();
     if (covered.length) toast(`${labelOf(covered[0])} moved to Hidden, because the tile covered it.`);
   },
-  onHintDismissed(id) {
-    const tile = tileById(id);
-    if (tile) tile.hintDismissed = true;
-    saveCurrent(ws);
-  },
 });
 
 const tileById = (id) => ws.tiles.find((tile) => tile.id === id);
@@ -145,10 +140,7 @@ function muteAll() {
 function addStream(input, target = { mode: 'add' }) {
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
-    if (tile) {
-      tile.input = input;
-      tile.hintDismissed = false;
-    }
+    if (tile) tile.input = input;
   } else {
     let slot = target.mode === 'fill' ? tileById(target.id) : null;
     if (!slot || isStream(slot)) slot = makeRoom(ws);

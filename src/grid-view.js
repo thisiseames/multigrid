@@ -9,8 +9,6 @@ import { createPlayer } from './players.js';
 import { parseSource } from './sources.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
-const HINT_DELAY_MS = 6000;
-
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
 const template = (tracks) => tracks.map((size) => `minmax(0, ${size}fr)`).join(' ');
 const gridArea = ({ c, r, cs, rs }) => `${r + 1} / ${c + 1} / span ${rs} / span ${cs}`;
@@ -23,7 +21,6 @@ class TileView {
     this.player = null;
     this.input = undefined;
     this.source = null;
-    this.hintTimer = null;
     this.root = el('article', { class: 'tile' });
     this.root.dataset.id = tile.id;
     grid.gridEl.append(this.root);
@@ -82,10 +79,6 @@ class TileView {
     if (!this.player) return;
     this.body.append(this.player.el);
     this.player.start();
-
-    if (this.source.kind === 'iframe' && !tile.hintDismissed) {
-      this.hintTimer = setTimeout(() => this.showHint(), HINT_DELAY_MS);
-    }
   }
 
   buildStrip() {
@@ -149,7 +142,6 @@ class TileView {
   }
 
   showError(message) {
-    this.clearHint();
     this.player?.destroy();
     this.player = null;
     const { handlers } = this.grid;
@@ -163,31 +155,11 @@ class TileView {
     this.syncControls();
   }
 
-  showHint() {
-    const { handlers } = this.grid;
-    // This sits in the strip, because a site that does play shouldn't have its controls covered.
-    const message = 'Blank or refused? This site may block playing elsewhere.';
-    this.hint = el('div', { class: 'tile-hint' },
-      el('span', { textContent: message, title: message }),
-      iconButton('close', 'Dismiss this note', () => {
-        this.clearHint();
-        handlers.onHintDismissed(this.id);
-      }));
-    this.strip?.querySelector('.strip-actions').before(this.hint);
-  }
-
-  clearHint() {
-    clearTimeout(this.hintTimer);
-    this.hint?.remove();
-    this.hint = null;
-  }
-
   setMuted(muted) {
     this.player?.setMuted(muted);
   }
 
   teardown() {
-    this.clearHint();
     this.player?.destroy();
     this.player = null;
     this.muteButton = null;

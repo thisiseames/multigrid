@@ -46,7 +46,6 @@ function sanitize(raw) {
       id: uid(),
       input: tile.input || null,
       muted: tile.muted !== false,
-      hintDismissed: Boolean(tile.hintDismissed),
       place: tile.place ? { ...tile.place } : null,
     });
   }
@@ -71,7 +70,7 @@ function snapshot(ws) {
     fit: ws.fit,
     cols: ws.cols,
     rows: ws.rows,
-    tiles: ws.tiles.map(({ input, muted, hintDismissed, place }) => ({ input, muted, hintDismissed, place })),
+    tiles: ws.tiles.map(({ input, muted, place }) => ({ input, muted, place })),
   };
 }
 
