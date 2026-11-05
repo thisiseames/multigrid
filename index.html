@@ -45,6 +45,7 @@
       <p id="welcome-message" class="source-message" role="status"></p>
       <p class="welcome-note">Twitch, YouTube, Kick, TikTok, X, .m3u8 streams, iframe code, or a link from any other site. Some sites refuse to play elsewhere. <button id="welcome-help" class="text-button" type="button">How it works</button></p>
       <p class="welcome-note"><button id="welcome-files" class="text-button" type="button">Choose video files from this computer</button>, or drop them here.</p>
+      <div id="welcome-favorites" class="favorites" hidden></div>
       <h2>Or start from an empty layout</h2>
       <div id="starters" class="starters"></div>
     </section>
@@ -57,6 +58,7 @@
   <dialog id="source-dialog" class="dialog">
     <form id="source-form" method="dialog">
       <h2 id="source-title">Add stream</h2>
+      <div id="source-favorites" class="favorites" hidden></div>
       <textarea id="source-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
       <p id="source-message" class="source-message" role="status"></p>
       <button id="file-zone" class="file-zone" type="button">
@@ -92,7 +94,7 @@
     <p>Drag a tile's top bar onto another tile to swap them. Choose Custom in the layout menu to drag the lines between tiles, or drag a tile's corner to change how much space it takes.</p>
     <p>Twitch asks for tiles of at least 400 × 300. Smaller tiles may need a click to start.</p>
     <h3>Saving</h3>
-    <p>Your layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
+    <p>Click a tile's star to keep it in Favorites, at the top of Add stream. Your favorites and layouts are kept in this browser on this device, and aren't shared with your other devices.</p>
   </dialog>
 
   <input id="file-input" type="file" accept="video/*,.mkv,.mov" hidden>

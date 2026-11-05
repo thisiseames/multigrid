@@ -483,6 +483,16 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .dialog h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
 .dialog textarea { display: block; resize: vertical; min-height: 72px; line-height: 1.4; font-size: max(13px, 16px); }
+.strip-actions button.is-favorite { color: var(--accent); }
+.dialog .favorites { margin-bottom: 10px; }
+.dialog .favorites-title, .welcome .favorites-title { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.welcome .favorites { margin-top: 24px; }
+.favorites-list { margin: 0; max-height: 176px; overflow-y: auto; }
+.favorites .saved-open { padding: 5px 8px; }
+.favorites .saved-row input { margin: 2px 4px; height: 28px; font-size: 13px; }
+.favorite-confirm { flex: 1; min-width: 0; padding: 6px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.favorite-confirm-action { flex: none; padding: 4px 8px; border-radius: 4px; }
+.favorite-confirm-action:hover { background: var(--hover); }
 .file-zone {
   display: flex;
   flex-direction: column;
