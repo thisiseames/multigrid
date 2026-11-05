@@ -105,3 +105,20 @@ test('the latest-file check covers every source file', () => {
   assert.deepEqual(listed.filter((file) => file.startsWith('src/')).sort(), sources.map((file) => `src/${file}`).sort());
   assert.ok(listed.includes('index.html') && listed.includes('styles.css'));
 });
+
+const { loadCurrent, saveCurrent } = await import('../src/storage.js');
+const { emptyWorkspace } = await import('../src/layout.js');
+
+test('a stream saved before volumes existed starts at full level, and odd levels are tidied', () => {
+  const ws = emptyWorkspace();
+  ws.tiles.push({ id: 't', input: 'https://example.com/a', muted: true, volume: 40, place: null });
+  saveCurrent(ws);
+  assert.equal(loadCurrent().tiles[0].volume, 40);
+  const raw = JSON.parse(store.get('multigrid.current.v1'));
+  delete raw.tiles[0].volume;
+  store.set('multigrid.current.v1', JSON.stringify(raw));
+  assert.equal(loadCurrent().tiles[0].volume, 100);
+  raw.tiles[0].volume = 900;
+  store.set('multigrid.current.v1', JSON.stringify(raw));
+  assert.equal(loadCurrent().tiles[0].volume, 100);
+});
