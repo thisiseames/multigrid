@@ -279,21 +279,6 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 }
 .tile-error-actions button:hover, .tile-error-actions a:hover { background: #2a2a2e; }
 
-.strip:has(.tile-hint) .strip-label { flex: 0 1 auto; max-width: 45%; }
-.tile-hint {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 8px;
-  font-size: 11px;
-  color: var(--text-2);
-}
-.tile-hint span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tile-hint button { width: 22px; height: 22px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; }
-.tile-hint button:hover { background: var(--hover); color: var(--text); }
-
 /* Custom mode: every handle sits beside the video, never on it. Twitch pauses a player the
    moment anything overlaps it, and YouTube doesn't allow overlaps. So tiles move apart to
    leave room for the dividers, and gain a thin footer for their bottom corners. */
