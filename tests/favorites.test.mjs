@@ -122,3 +122,40 @@ test('a stream saved before volumes existed starts at full level, and odd levels
   store.set('multigrid.current.v1', JSON.stringify(raw));
   assert.equal(loadCurrent().tiles[0].volume, 100);
 });
+
+test('favorites travel through a link and come back the same, without files from this computer', async () => {
+  const { packFavorites, transferableFavorites, unpackFavorites } = await import('../src/storage.js');
+  saveFavorite('https://example.com/embed/cnn', 'CNN', 'News');
+  saveFavorite('<iframe src="https://example.com/sky?x=1&y=é"></iframe>', 'Sky Sports 1', 'Sports');
+  saveFavorite('https://youtube.com/watch?v=abc', 'Loose');
+  saveFavorite('local:abc123:clip.mp4', 'My clip');
+  const { items, left } = transferableFavorites();
+  assert.equal(left, 1);
+  const code = await packFavorites(items);
+  assert.match(code, /^[\w-]+$/);
+  assert.deepEqual(await unpackFavorites(code), items);
+});
+
+test('a damaged or made-up favorites link gives nothing', async () => {
+  const { unpackFavorites } = await import('../src/storage.js');
+  assert.equal(await unpackFavorites('not-a-real-code'), null);
+  assert.equal(await unpackFavorites(''), null);
+});
+
+test('importing adds only what is new, keeps names here, and joins folders whatever the capitals', async () => {
+  const { importFavorites, newFavorites } = await import('../src/storage.js');
+  saveFavorite('a', 'A here', 'News');
+  const incoming = [
+    { input: 'a', name: 'A there', group: 'news' },
+    { input: 'b', name: 'B', group: 'news' },
+    { input: 'c', name: 'C', group: 'Sports' },
+    { input: 'c', name: 'C twice', group: 'Sports' },
+  ];
+  assert.equal(newFavorites(incoming).length, 2);
+  assert.equal(importFavorites(incoming), 2);
+  assert.equal(favoriteName('a'), 'A here');
+  assert.deepEqual(listFolders(), ['News', 'Sports']);
+  assert.equal(listFavorites().find((item) => item.input === 'b').group, 'News');
+  assert.equal(importFavorites(incoming), 0);
+  assert.equal(listFavorites().length, 3);
+});
