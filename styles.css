@@ -540,6 +540,17 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .dialog .favorites { margin-bottom: 10px; }
 .favorites-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; }
 .favorites-send { font-size: 12px; }
+.favorites-search { position: relative; display: flex; align-items: center; margin: 2px 0 6px; color: var(--text-2); }
+.favorites-search > span:first-child { position: absolute; left: 9px; pointer-events: none; }
+.favorites-search input { width: 100%; min-width: 0; height: 32px; padding: 0 30px 0 29px; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); font: inherit; font-size: 13px; }
+.favorites-search input::placeholder { color: var(--text-2); }
+.favorites-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.favorites-search input:focus { outline: none; border-color: var(--accent); }
+.favorites-search button { position: absolute; right: 3px; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; color: var(--text-2); }
+.favorites-search button:hover { background: var(--hover); color: var(--text); }
+.favorites-search button[hidden] { display: none; }
+.favorites-empty { margin: 6px 8px; font-size: 13px; color: var(--text-2); }
+@media (max-width: 640px), (pointer: coarse) { .favorites-search input { font-size: 16px; height: 36px; } }
 .receive { width: min(360px, calc(100vw - 24px)); }
 .receive-note { margin: 0; font-size: 13px; color: var(--text-2); }
 .dialog .favorites-title, .welcome .favorites-title { margin: 0; font-size: 12px; font-weight: 500; color: var(--text-2); }
