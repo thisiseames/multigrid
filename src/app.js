@@ -396,6 +396,18 @@ async function receiveFavorites() {
   if (!location.hash.startsWith(TRANSFER_PREFIX)) return;
   const code = location.hash.slice(TRANSFER_PREFIX.length);
   history.replaceState(null, '', location.pathname + location.search);
+  offerFavorites(code);
+}
+
+/** A favorites link pasted where a stream goes. Home Screen apps have no address bar, so this is how they take one. */
+function pastedFavorites(text) {
+  const at = text.indexOf(TRANSFER_PREFIX);
+  return at === -1 ? null : text.slice(at + TRANSFER_PREFIX.length).trim().split(/\s/)[0];
+}
+
+const PASTED_NOTE = 'A favorites link. Press Add to bring them in.';
+
+async function offerFavorites(code) {
   const items = await unpackFavorites(code);
   if (!items) {
     toast("This favorites link didn't come through whole. Send it again.");
@@ -494,11 +506,21 @@ function updateSourceMessage() {
     showSourceMessage($('source-message'), '', false);
     return;
   }
+  if (pastedFavorites(value)) {
+    showSourceMessage($('source-message'), PASTED_NOTE, false);
+    return;
+  }
   const { text, error } = describe(parseSource(value));
   showSourceMessage($('source-message'), text, error);
 }
 
 function submitSource() {
+  const code = pastedFavorites($('source-input').value);
+  if (code) {
+    $('source-dialog').close();
+    offerFavorites(code);
+    return;
+  }
   const source = parseSource($('source-input').value);
   const description = describe(source);
   if (!source.ok || (description.error && source.ok)) {
@@ -576,6 +598,13 @@ function buildStarters() {
 
 $('welcome-form').addEventListener('submit', (event) => {
   event.preventDefault();
+  const code = pastedFavorites($('welcome-input').value);
+  if (code) {
+    $('welcome-input').value = '';
+    showSourceMessage($('welcome-message'), '', false);
+    offerFavorites(code);
+    return;
+  }
   const source = parseSource($('welcome-input').value);
   const { text, error } = describe(source);
   if (error) {
@@ -590,6 +619,10 @@ $('welcome-input').addEventListener('input', () => {
   const value = $('welcome-input').value;
   if (!value.trim()) {
     showSourceMessage($('welcome-message'), '', false);
+    return;
+  }
+  if (pastedFavorites(value)) {
+    showSourceMessage($('welcome-message'), PASTED_NOTE, false);
     return;
   }
   const { text, error } = describe(parseSource(value));
