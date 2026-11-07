@@ -12,8 +12,9 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  deleteSaved, favoriteName, findSaved, isFolderClosed, isMixerOpen, listFavorites, listFolders, listSaved, loadCurrent, openSaved, removeFavorite,
-  renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen,
+  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, listFavorites, listFolders, listSaved,
+  loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
+  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites,
 } from './storage.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -343,8 +344,95 @@ function renderFavorites(holder, getTarget) {
   const body = el('div', { class: 'favorites-body' },
     loose.length ? el('ul', { class: 'saved-list favorites-list' }, ...loose.map((item) => favoriteRow(item, getTarget))) : null,
     ...listFolders().map((folder) => folderSection(folder, favorites.filter((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()), getTarget)));
-  holder.replaceChildren(el('h2', { class: 'favorites-title', textContent: 'Favorites' }), body);
+  const send = el('button', {
+    type: 'button',
+    class: 'text-button favorites-send',
+    textContent: onPhone() ? 'Send to computer' : 'Send to phone',
+    on: { click: sendFavorites },
+  });
+  holder.replaceChildren(el('div', { class: 'favorites-head' }, el('h2', { class: 'favorites-title', textContent: 'Favorites' }), send), body);
   body.scrollTop = scroll;
+}
+
+/* ---------- Favorites on another device ---------- */
+
+const onPhone = () => window.matchMedia('(pointer: coarse)').matches;
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** Copies a link holding every favorite, and offers the share sheet where there is one. */
+async function sendFavorites() {
+  const { items, left } = transferableFavorites();
+  const files = left ? ` ${plural(left, 'file')} from this device ${left === 1 ? 'stays' : 'stay'} here.` : '';
+  if (!items.length) {
+    toast(`There are no favorites to send.${files}`);
+    return;
+  }
+  const url = `${location.origin}${location.pathname}${TRANSFER_PREFIX}${await packFavorites(items)}`;
+  const where = onPhone() ? 'your computer' : 'your phone';
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(url);
+    copied = true;
+  } catch {}
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'MULTIGRID favorites', url });
+      toast(`Sent ${plural(items.length, 'favorite')}. Open the link on ${where}.${files}`);
+      return;
+    } catch (error) {
+      if (error?.name !== 'AbortError' && !copied) {
+        toast("Couldn't copy the link. Try again.");
+        return;
+      }
+    }
+  }
+  toast(copied
+    ? `Link with ${plural(items.length, 'favorite')} copied. Text it to yourself and open it on ${where}.${files}`
+    : "Couldn't copy the link. Try again.");
+}
+
+/** A favorites link opened here asks before adding anything, then leaves the address bar clean. */
+async function receiveFavorites() {
+  if (!location.hash.startsWith(TRANSFER_PREFIX)) return;
+  const code = location.hash.slice(TRANSFER_PREFIX.length);
+  history.replaceState(null, '', location.pathname + location.search);
+  const items = await unpackFavorites(code);
+  if (!items) {
+    toast("This favorites link didn't come through whole. Send it again.");
+    return;
+  }
+  const fresh = newFavorites(items);
+  if (!fresh.length) {
+    toast(`All ${plural(items.length, 'favorite')} from that link are already here.`);
+    return;
+  }
+  const folders = new Set(fresh.filter((item) => item.group).map((item) => item.group.toLocaleLowerCase())).size;
+  const already = items.length - fresh.length;
+  const box = $('receive-dialog');
+  box.replaceChildren(
+    el('h2', { textContent: `Add ${plural(fresh.length, 'favorite')}${folders ? ` in ${plural(folders, 'folder')}` : ''}?` }),
+    el('p', { class: 'receive-note', textContent: already === 1
+      ? 'One more from the link is already here, and stays as it is.'
+      : already
+        ? `${already} more from the link are already here, and stay as they are.`
+        : 'Favorites already on this device stay as they are.' }),
+    el('div', { class: 'dialog-actions' },
+      el('button', { type: 'button', class: 'plain-button', textContent: 'Cancel', on: { click: () => box.close() } }),
+      el('button', {
+        type: 'button',
+        class: 'add-button',
+        textContent: 'Add',
+        on: {
+          click() {
+            box.close();
+            const added = importFavorites(fresh);
+            if (added < 0) toast(STORAGE_FULL);
+            else toast(`Added ${plural(added, 'favorite')}. They're in Add stream.`);
+            refreshFavorites();
+          },
+        },
+      })));
+  openDialog(box);
 }
 
 /** Adds chosen files, one tile each. The first takes the place the dialog was opened for. */
@@ -789,3 +877,6 @@ $('parent-host').textContent = env.hostname;
 hydrateIcons();
 buildStarters();
 render();
+receiveFavorites();
+// A link opened in a tab where MULTIGRID is already open only changes the address after the #.
+window.addEventListener('hashchange', receiveFavorites);

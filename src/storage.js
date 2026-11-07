@@ -143,6 +143,82 @@ export function renameFolder(from, to) {
   return saved;
 }
 
+/* Moving favorites to another device: they travel squeezed into the part of a link after
+   the #, which browsers never send to the website. Files from this computer stay behind,
+   because the other device can't open them. */
+
+export const TRANSFER_PREFIX = '#fav1=';
+const MAX_TRANSFER = 500;
+
+const toBase64Url = (bytes) => {
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const fromBase64Url = (code) => {
+  const text = atob(code.replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(text, (char) => char.charCodeAt(0));
+};
+
+const squeeze = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+
+/** The favorites that can travel, and how many files had to stay. */
+export function transferableFavorites() {
+  const all = listFavorites();
+  const items = all.filter((item) => !item.input.startsWith('local:'));
+  return { items, left: all.length - items.length };
+}
+
+export async function packFavorites(items) {
+  const json = JSON.stringify(items.map(({ input, name, group }) => (group ? [input, name, group] : [input, name])));
+  return toBase64Url(await squeeze(new TextEncoder().encode(json), new CompressionStream('deflate-raw')));
+}
+
+/** Anything that isn't a list of favorites gives null. A link could come from anywhere. */
+export async function unpackFavorites(code) {
+  try {
+    const json = new TextDecoder().decode(await squeeze(fromBase64Url(code), new DecompressionStream('deflate-raw')));
+    const list = JSON.parse(json);
+    if (!Array.isArray(list) || list.length === 0 || list.length > MAX_TRANSFER) return null;
+    const items = [];
+    for (const entry of list) {
+      if (!Array.isArray(entry) || entry.length < 2 || entry.length > 3 || !entry.every((part) => typeof part === 'string')) return null;
+      const [input, name, group = ''] = entry;
+      if (!input.trim() || !name.trim() || input.length > 4000 || name.length > 200 || group.length > 40) return null;
+      if (input.startsWith('local:')) continue;
+      items.push({ input, name: name.trim(), group: cleanFolder(group) });
+    }
+    return items.length ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The ones this device doesn't have yet. A stream already saved here keeps its name here. */
+export function newFavorites(items) {
+  const have = new Set(listFavorites().map((item) => item.input));
+  const seen = new Set();
+  return items.filter((item) => {
+    if (have.has(item.input) || seen.has(item.input)) return false;
+    seen.add(item.input);
+    return true;
+  });
+}
+
+/** Adds them in one save. A folder joins one already here with the same name, any capitals. */
+export function importFavorites(items) {
+  const fresh = newFavorites(items);
+  if (!fresh.length) return 0;
+  const folders = listFolders();
+  const placed = fresh.map((item) => {
+    const existing = item.group && folders.find((folder) => sameFolder(folder, item.group));
+    if (item.group && !existing) folders.push(item.group);
+    return { ...item, group: existing || item.group };
+  });
+  return write(FAVORITES_KEY, [...placed, ...listFavorites()]) ? fresh.length : -1;
+}
+
 const closedFolders = () => {
   const list = read(CLOSED_FOLDERS_KEY);
   return Array.isArray(list) ? list.filter((key) => typeof key === 'string') : [];
