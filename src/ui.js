@@ -11,6 +11,7 @@ const ICON_PATHS = {
   help: '<circle cx="8" cy="8" r="5.75"/><path d="M6.3 6.4a1.75 1.75 0 1 1 2.6 1.5c-.6.35-.9.7-.9 1.35"/><path d="M8 11.3v.01"/>',
   expand: '<path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/>',
   collapse: '<path d="M6 3v3H3M13 6h-3V3M10 13v-3h3M3 10h3v3"/>',
+  search: '<circle cx="7" cy="7" r="4.25"/><path d="m10.25 10.25 3.25 3.25"/>',
   close: '<path d="m4.5 4.5 7 7M11.5 4.5l-7 7"/>',
   replace: '<path d="M2.8 6.5a5.3 5.3 0 0 1 9.4-1.6l1 1.3M13.2 3.2v3h-3M13.2 9.5a5.3 5.3 0 0 1-9.4 1.6l-1-1.3M2.8 12.8v-3h3"/>',
   open: '<path d="M6.5 3H3v10h10V9.5M9 3h4v4M13 3 7.5 8.5"/>',

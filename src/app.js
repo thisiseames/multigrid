@@ -280,11 +280,13 @@ function favoriteRow(item, getTarget) {
 }
 
 /** One folder: its name opens and closes it, and the edit button renames it in place. */
-function folderSection(folder, items, getTarget) {
+function folderSection(folder, items, getTarget, searching = false) {
   const list = el('ul', { class: 'saved-list favorites-list' }, ...items.map((item) => favoriteRow(item, getTarget)));
   const head = el('div', { class: 'saved-row folder-head' });
+  // While searching, folders open so matches show, and opening or closing one isn't remembered.
+  let searchClosed = false;
   const showNormal = () => {
-    const closed = isFolderClosed(folder);
+    const closed = searching ? searchClosed : isFolderClosed(folder);
     list.hidden = closed;
     const toggle = el('button', {
       type: 'button',
@@ -293,7 +295,8 @@ function folderSection(folder, items, getTarget) {
       aria: { expanded: String(!closed) },
       on: {
         click() {
-          setFolderClosed(folder, !closed);
+          if (searching) searchClosed = !closed;
+          else setFolderClosed(folder, !closed);
           showNormal();
           if ($('source-dialog').open && !$('welcome').hidden) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
           head.querySelector('.folder-toggle').focus();
@@ -336,22 +339,84 @@ function folderSection(folder, items, getTarget) {
 }
 
 /** Fills one of the two places favorites appear. Hidden entirely when there are none. */
-function renderFavorites(holder, getTarget) {
-  const favorites = listFavorites().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
-  holder.hidden = favorites.length === 0;
+const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+
+/** The search box belongs to its holder and outlives redraws, so typing never loses its place. */
+function favoritesSearch(holder) {
+  if (holder.search) return holder.search;
+  const input = el('input', {
+    type: 'search',
+    placeholder: 'Search favorites',
+    autocomplete: 'off',
+    autocapitalize: 'off',
+    spellcheck: false,
+    enterKeyHint: 'search',
+    aria: { label: 'Search favorites' },
+  });
+  const clear = iconButton('close', 'Clear search', () => {
+    input.value = '';
+    fillFavorites(holder);
+    input.focus();
+  });
+  const wrap = el('div', { class: 'favorites-search' }, icon('search', 14), input, clear);
+  input.addEventListener('input', () => fillFavorites(holder));
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') event.preventDefault();
+    if (event.key === 'Escape' && input.value) {
+      // Esc empties the search first, rather than closing Add stream.
+      event.preventDefault();
+      event.stopPropagation();
+      input.value = '';
+      fillFavorites(holder);
+    }
+  });
+  holder.search = { wrap, input, clear };
+  return holder.search;
+}
+
+/** The list under the search box: everything, or what matches a name or a folder name. */
+function fillFavorites(holder) {
+  const { input, clear } = favoritesSearch(holder);
+  const query = input.value.trim().toLocaleLowerCase();
+  clear.hidden = !query;
+  const matches = (text) => text.toLocaleLowerCase().includes(query);
+  const favorites = listFavorites().sort(byName).filter((item) => !query || matches(item.name) || (item.group && matches(item.group)));
+  const getTarget = holder.getTarget;
   const loose = favorites.filter((item) => !item.group);
-  const scroll = holder.querySelector('.favorites-body')?.scrollTop ?? 0;
+  const old = holder.querySelector('.favorites-body');
+  const scroll = old?.scrollTop ?? 0;
+  const folders = listFolders()
+    .map((folder) => [folder, favorites.filter((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase())])
+    .filter(([, items]) => items.length);
   const body = el('div', { class: 'favorites-body' },
     loose.length ? el('ul', { class: 'saved-list favorites-list' }, ...loose.map((item) => favoriteRow(item, getTarget))) : null,
-    ...listFolders().map((folder) => folderSection(folder, favorites.filter((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()), getTarget)));
+    ...folders.map(([folder, items]) => folderSection(folder, items, getTarget, Boolean(query))),
+    favorites.length ? null : el('p', { class: 'favorites-empty', textContent: 'No favorites match' }));
+  if (old) old.replaceWith(body);
+  body.scrollTop = query ? 0 : scroll;
+  return body;
+}
+
+/** Fills one of the two places favorites appear. Hidden entirely when there are none. */
+function renderFavorites(holder, getTarget) {
+  holder.hidden = listFavorites().length === 0;
+  holder.getTarget = getTarget;
+  const { wrap } = favoritesSearch(holder);
   const send = el('button', {
     type: 'button',
     class: 'text-button favorites-send',
     textContent: onPhone() ? 'Send to computer' : 'Send to phone',
     on: { click: sendFavorites },
   });
-  holder.replaceChildren(el('div', { class: 'favorites-head' }, el('h2', { class: 'favorites-title', textContent: 'Favorites' }), send), body);
-  body.scrollTop = scroll;
+  const head = el('div', { class: 'favorites-head' }, el('h2', { class: 'favorites-title', textContent: 'Favorites' }), send);
+  const current = holder.querySelector('.favorites-body');
+  if (current && holder.firstElementChild?.classList.contains('favorites-head')) {
+    holder.firstElementChild.replaceWith(head);
+    fillFavorites(holder);
+  } else {
+    holder.replaceChildren(head, wrap, el('div', { class: 'favorites-body' }));
+    fillFavorites(holder);
+  }
 }
 
 /* ---------- Favorites on another device ---------- */
@@ -494,6 +559,7 @@ function openSourceDialog(target) {
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
   $('source-input').value = current.startsWith('local:') ? '' : current;
   showSourceMessage($('source-message'), '', false);
+  if ($('source-favorites').search) $('source-favorites').search.input.value = '';
   renderFavorites($('source-favorites'), () => sourceTarget);
   openDialog($('source-dialog'));
   $('source-input').select();
