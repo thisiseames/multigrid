@@ -67,8 +67,8 @@ class TileView {
       return;
     }
 
-    const autoplay = this.source.kind !== 'youtube' || !this.grid.isYouTubeAutoplayTaken(this);
-    this.autoplayed = autoplay;
+    // Every tile starts by itself, muted. Browsers allow that for any number of videos.
+    const autoplay = true;
     this.player = createPlayer(this.source, {
       muted: tile.muted,
       volume: tile.volume,
@@ -237,13 +237,6 @@ export class GridView {
 
   get isCustom() {
     return this.ws?.presetId === 'custom' && !this.isStacked;
-  }
-
-  isYouTubeAutoplayTaken(asking) {
-    for (const view of this.views.values()) {
-      if (view !== asking && view.source?.kind === 'youtube' && view.player && view.autoplayed) return true;
-    }
-    return false;
   }
 
   viewFor(id) {

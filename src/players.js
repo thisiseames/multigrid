@@ -118,9 +118,31 @@ const YOUTUBE_ERRORS = {
   153: 'YouTube needs to know which site this is, and your browser hid that. A privacy setting or extension may be the cause.',
 };
 
+/* YouTube's player can't always load a channel's uploads list on its own. In about three
+   browser sessions in ten it shows "Video unavailable", and reloading doesn't help. Starting
+   from the newest video, with the list behind it, plays every time. YouTube's oEmbed answer
+   for the list names that video in its thumbnail, and it's allowed to be read from here. */
+const newestCache = new Map();
+
+function newestUpload(list) {
+  const cached = newestCache.get(list);
+  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return Promise.resolve(cached.id);
+  const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/playlist?list=${list}`)}`;
+  return fetch(url, { signal: AbortSignal.timeout?.(4000) })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      const id = String(data?.thumbnail_url ?? '').match(/\/vi(?:_webp)?\/([\w-]{11})\//)?.[1] ?? null;
+      if (id) newestCache.set(list, { id, at: Date.now() });
+      return id;
+    })
+    .catch(() => null);
+}
+
 function youtubePlayer(source, options) {
   const { muted, volume, autoplay, env, onError, onCapability } = options;
-  const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
+  const { id, list, channel } = source.youtube;
+  const isUploads = Boolean(list?.startsWith('UU') && !id && !channel);
+  const frame = makeFrame(isUploads ? 'about:blank' : buildEmbedUrl(source, { muted, autoplay }, env));
   let api = null;
   let wanted = muted;
   let level = volume;
@@ -129,7 +151,14 @@ function youtubePlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: levelWorks,
-    start() {
+    async start() {
+      if (isUploads) {
+        // If the lookup fails, the list's own address is still worth a try.
+        const newest = await newestUpload(list);
+        if (destroyed) return;
+        const startFrom = newest ? { ...source, youtube: { ...source.youtube, id: newest } } : source;
+        frame.src = buildEmbedUrl(startFrom, { muted: wanted, autoplay }, env);
+      }
       window.YT = window.YT || {};
       const ready = new Promise((resolve) => {
         if (window.YT.Player) return resolve();
