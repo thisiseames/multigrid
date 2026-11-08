@@ -8,6 +8,7 @@ import {
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
+import { clock, guideUpdated, loadGuide, nowAndNext } from './guide.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
@@ -216,6 +217,7 @@ const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turne
 /** Tile labels and both favorites lists read from saved favorites, so all of them redraw. */
 function refreshFavorites() {
   render();
+  syncGuideButton();
   if ($('source-dialog').open) renderFavorites($('source-favorites'), () => sourceTarget);
 }
 
@@ -254,7 +256,7 @@ function favoriteRow(item, getTarget) {
             addStream(item.input, target);
           },
         },
-      }, el('b', { textContent: item.name })),
+      }, el('b', { textContent: item.name }), onNowLine(item)),
       el('span', { class: 'row-actions' },
         iconButton('pencil', 'Edit', (event) => editFavorite(item.input, item.name, event.currentTarget)),
         iconButton('trash', 'Remove from favorites', showConfirm)));
@@ -419,6 +421,111 @@ function renderFavorites(holder, getTarget) {
   }
 }
 
+/* ---------- TV guide ---------- */
+
+/** "On now" under a favorite's name, for favorites that are TV channels. */
+function onNowLine(item) {
+  const listing = nowAndNext(item.name, parseSource(item.input));
+  if (!listing) return null;
+  const text = listing.current ? listing.current.title : `${clock(listing.next.start)} ${listing.next.title}`;
+  return el('small', { class: 'favorite-now', textContent: text, title: text });
+}
+
+/** Redraws favorites where they're showing, without touching the grid. */
+function refreshFavoriteLists() {
+  if (!$('welcome').hidden) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
+  if ($('source-dialog').open) renderFavorites($('source-favorites'), () => sourceTarget);
+}
+
+/** Favorites with listings, in the same folders and order as everywhere else. */
+function guideSections() {
+  const favorites = listFavorites().sort(byName);
+  const sections = [];
+  const withListings = (items) => items
+    .map((item) => ({ item, listing: nowAndNext(item.name, parseSource(item.input)) }))
+    .filter(({ listing }) => listing);
+  const loose = withListings(favorites.filter((item) => !item.group));
+  if (loose.length) sections.push({ folder: '', rows: loose });
+  for (const folder of listFolders()) {
+    const rows = withListings(favorites.filter((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
+    if (rows.length) sections.push({ folder, rows });
+  }
+  return { sections, total: favorites.length };
+}
+
+function syncGuideButton() {
+  $('guide-button').hidden = !guideSections().sections.length;
+}
+
+function guideRow({ item, listing }) {
+  const { current, next } = listing;
+  const now = Date.now();
+  const lines = [];
+  if (current) {
+    const done = Math.min(1, Math.max(0, (now - current.start) / (current.end - current.start)));
+    lines.push(el('span', { class: 'guide-now' },
+      el('b', { textContent: current.title }),
+      el('small', { textContent: `until ${clock(current.end)}` })));
+    lines.push(el('span', { class: 'guide-bar', aria: { hidden: 'true' } }, el('span', { style: `width:${Math.round(done * 100)}%` })));
+  }
+  if (next) lines.push(el('span', { class: 'guide-next', textContent: `${clock(next.start)}  ${next.title}` }));
+  return el('li', {},
+    el('button', {
+      type: 'button',
+      class: 'guide-row',
+      title: `Add ${item.name}`,
+      on: {
+        click() {
+          $('guide-dialog').close();
+          addStream(item.input);
+        },
+      },
+    }, el('span', { class: 'guide-channel', textContent: item.name }), el('span', { class: 'guide-shows' }, ...lines)));
+}
+
+let guideTimer = null;
+
+function renderGuide() {
+  const box = $('guide-dialog');
+  const { sections, total } = guideSections();
+  const updated = guideUpdated();
+  const shown = sections.reduce((sum, section) => sum + section.rows.length, 0);
+  const scroll = box.querySelector('.guide-body')?.scrollTop ?? 0;
+  const body = el('div', { class: 'guide-body' },
+    ...sections.map(({ folder, rows }) => el('section', { class: 'guide-section' },
+      folder ? el('h3', { textContent: folder }) : null,
+      el('ul', { class: 'guide-list' }, ...rows.map(guideRow)))),
+    sections.length
+      ? null
+      : el('p', { class: 'guide-empty', textContent: updated ? 'None of your favorites have a TV schedule.' : "The guide couldn't load. Try again in a minute." }),
+    shown < total
+      ? el('p', { class: 'guide-note', textContent: `${plural(total - shown, 'other favorite')} ${total - shown === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
+      : null);
+  box.replaceChildren(
+    el('div', { class: 'help-head' },
+      el('div', {}, el('h2', { textContent: 'TV guide' }), updated ? el('small', { class: 'guide-updated', textContent: `Updated ${clock(updated)}` }) : null),
+      iconButton('close', 'Close', () => box.close())),
+    body);
+  body.scrollTop = scroll;
+}
+
+async function openGuide() {
+  renderGuide();
+  openDialog($('guide-dialog'));
+  clearInterval(guideTimer);
+  // While it's open, the "now" bars move and finished shows roll over.
+  guideTimer = setInterval(() => {
+    if (!$('guide-dialog').open) return clearInterval(guideTimer);
+    loadGuide().then(renderGuide);
+  }, 60 * 1000);
+  if (await loadGuide()) renderGuide();
+}
+
+$('guide-button').addEventListener('click', openGuide);
+$('guide-dialog').addEventListener('click', (event) => {
+  if (event.target === $('guide-dialog')) $('guide-dialog').close();
+});
+
 /* ---------- Favorites on another device ---------- */
 
 const onPhone = () => window.matchMedia('(pointer: coarse)').matches;
@@ -561,6 +668,7 @@ function openSourceDialog(target) {
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').search) $('source-favorites').search.input.value = '';
   renderFavorites($('source-favorites'), () => sourceTarget);
+  loadGuide().then((changed) => changed && $('source-dialog').open && renderFavorites($('source-favorites'), () => sourceTarget));
   openDialog($('source-dialog'));
   $('source-input').select();
   if (replacing) updateSourceMessage();
@@ -977,5 +1085,9 @@ hydrateIcons();
 buildStarters();
 render();
 receiveFavorites();
+loadGuide().then(() => {
+  syncGuideButton();
+  refreshFavoriteLists();
+});
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);

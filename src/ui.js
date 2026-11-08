@@ -19,6 +19,7 @@ const ICON_PATHS = {
   muted: '<path d="M2.5 6.2v3.6h2.3l3.2 2.7V3.5L4.8 6.2z"/><path d="m10.6 6.3 3.2 3.4M13.8 6.3l-3.2 3.4"/>',
   grip: '<path d="M6 4v.01M10 4v.01M6 8v.01M10 8v.01M6 12v.01M10 12v.01"/>',
   saved: '<path d="M4 2.8h8v10.6l-4-2.8-4 2.8z"/>',
+  guide: '<rect x="2" y="4" width="12" height="8.5" rx="1.3"/><path d="m6 1.8 2 2.2 2-2.2M5 14.2h6"/>',
   pencil: '<path d="m3 13 .7-2.8 7-7a1.4 1.4 0 0 1 2.1 2.1l-7 7z"/>',
   trash: '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/>',
   update: '<path d="m3.5 8.5 3 3 6-7"/>',
