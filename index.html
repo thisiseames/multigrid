@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-E80zE9QRtoMqi7p5wPbNp9o0RwFKrrnF/TEu29Axgik=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MeTxO8K2Y8QdOGkYFksExl8oW/gZlpJezrYsCfzfXAw=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -23,6 +23,10 @@
     <span class="spacer"><span id="toast" class="toast" role="status" hidden></span></span>
     <button id="hidden-button" class="bar-button quiet" type="button" aria-haspopup="true" aria-expanded="false" hidden></button>
     <button id="mixer-button" class="icon-button" type="button" aria-controls="mixer" hidden></button>
+    <button id="guide-button" class="bar-button" type="button" title="TV guide" aria-label="TV guide" hidden>
+      <span data-icon="guide" class="narrow-only"></span>
+      <span class="bar-button-text wide-only">Guide</span>
+    </button>
     <button id="saved-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
       <span data-icon="saved" class="narrow-only"></span>
       <span class="bar-button-text wide-only">Saved</span>
@@ -77,6 +81,7 @@
 
   <dialog id="favorite-box" class="dialog favorite-box"></dialog>
   <dialog id="receive-dialog" class="dialog receive"></dialog>
+  <dialog id="guide-dialog" class="dialog guide" aria-label="TV guide"></dialog>
 
   <dialog id="help-dialog" class="dialog help">
     <div class="help-head">
@@ -95,6 +100,8 @@
       <dt>Iframe code</dt><dd>Only the address in <code>src</code> is used. The rest of the code is ignored and never run.</dd>
       <dt>Anything else</dt><dd>Tried as it is. Many sites refuse to play inside other sites, and a browser usually can't tell MULTIGRID when that happens. If a tile stays blank or shows a refusal, the site is blocking it. Its sound needs the MULTIGRID Sound extension.</dd>
     </dl>
+    <h3>TV guide</h3>
+    <p>Guide in the top bar shows what's on now and next for favorites that are TV channels, matched by their names, like CNN or Sky Sports Premier League. Favorites also show what's on beside their names. Shows, YouTube channels and streaming services have no schedule. Times are in this device's time zone.</p>
     <h3>Sound</h3>
     <p>The speaker in the top bar opens the mixer, a row with every stream by name. Mute or unmute one, or change its level, without hunting for it in the grid.</p>
     <p>Pasted iframe code and links from other sites keep their sound to themselves. In Chrome on a computer, the MULTIGRID Sound extension lets the mixer reach them, and gives Kick and TikTok a level too. iPhones set levels with the phone's own buttons, so the mixer shows mute only there.</p>
@@ -109,7 +116,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/layout.js', 'src/local-files.js', 'src/mixer.js', 'src/players.js', 'src/sources.js', 'src/storage.js', 'src/ui.js'];
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/mixer.js', 'src/players.js', 'src/sources.js', 'src/storage.js', 'src/ui.js'];
     await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.arrayBuffer())
       .catch(() => {})));
