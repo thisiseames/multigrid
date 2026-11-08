@@ -49,14 +49,15 @@ async function sky(list) {
   return out;
 }
 
-/* TV Passport (US and Canada): one page per channel per day, in Eastern time, 6:00 am to 6:00 am. */
-function easternToEpoch(text) {
+/* TV Passport (US and Canada): one page per channel per day, 6:00 am to 6:00 am. Its times are in the time zone it
+   guesses for whoever asks (GitHub's computers aren't in Eastern), and the page says which one it used. */
+function localToEpoch(text, timeZone) {
   const [date, time] = text.split(' ');
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mm, ss] = time.split(':').map(Number);
   const guess = Date.UTC(y, m - 1, d, hh, mm, ss);
   const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
+    timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
   }).formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
   const seenAs = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
   return Math.round((guess + (guess - seenAs)) / 1000);
@@ -64,12 +65,24 @@ function easternToEpoch(text) {
 
 const decode = (text) => text.replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
+function pageTimeZone(html) {
+  const select = html.match(/<select[^>]*id="timezone_selector"[^>]*>([\s\S]*?)<\/select>/)?.[1] ?? '';
+  const zone = select.match(/<option value="([^"]+)"[^>]*selected/)?.[1];
+  try {
+    if (zone) new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    return zone || 'America/New_York';
+  } catch {
+    return 'America/New_York';
+  }
+}
+
 function tvpassportRows(html) {
   const rows = [];
+  const zone = pageTimeZone(html);
   for (const match of html.matchAll(/<div[^>]*data-listDateTime="([^"]+)"[^>]*>/g)) {
     const tag = match[0];
     const field = (name) => decode(tag.match(new RegExp(`data-${name}="([^"]*)"`))?.[1] ?? '');
-    const start = easternToEpoch(match[1]);
+    const start = localToEpoch(match[1], zone);
     const minutes = Number(field('duration'));
     const show = field('showName');
     const episode = field('episodeTitle');
