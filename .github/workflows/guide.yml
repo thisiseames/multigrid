@@ -1,0 +1,34 @@
+# Refreshes guide.json, MULTIGRID's TV guide, every 3 hours. Free on a public repository.
+name: guide
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: guide
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-guide.mjs
+      - name: Save the new guide
+        run: |
+          git config user.name "multigrid-guide"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add guide.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update TV guide"
+          git pull --rebase
+          git push
