@@ -698,3 +698,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .guide { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); padding: 14px 12px 8px; }
   .guide-row { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ---------- TikTok feeds ---------- */
+.tile-body iframe.frame-feed { color-scheme: light; max-width: 420px; margin: 0 auto; }
+.feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 3 / 4; max-height: 78vh; }
