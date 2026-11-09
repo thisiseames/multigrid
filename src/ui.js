@@ -23,6 +23,8 @@ const ICON_PATHS = {
   pencil: '<path d="m3 13 .7-2.8 7-7a1.4 1.4 0 0 1 2.1 2.1l-7 7z"/>',
   trash: '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/>',
   update: '<path d="m3.5 8.5 3 3 6-7"/>',
+  back: '<path d="M10 3.5 5.5 8l4.5 4.5"/>',
+  next: '<path d="m6 3.5 4.5 4.5L6 12.5"/>',
 };
 
 export function icon(name, size = 16) {

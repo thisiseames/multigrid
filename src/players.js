@@ -13,7 +13,7 @@
 
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
-import { el } from './ui.js';
+import { el, iconButton } from './ui.js';
 
 const scripts = new Map();
 
@@ -369,12 +369,125 @@ const TIKTOK_ERRORS = {
   3001: "This TikTok video couldn't play.",
 };
 
+/* A TikTok account plays as a feed: its latest videos, one after another, in TikTok's own
+   player. The list comes from feeds.json, which the GitHub job refreshes every 3 hours,
+   because a page isn't allowed to read TikTok's account card itself. */
+let feeds = null;
+let feedsAt = 0;
+
+function loadFeeds() {
+  if (feeds && Date.now() - feedsAt < 15 * 60 * 1000) return Promise.resolve(feeds);
+  return fetch('feeds.json', { cache: 'no-cache' })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      if (data?.tiktok && typeof data.tiktok === 'object') {
+        feeds = data;
+        feedsAt = Date.now();
+      }
+      return feeds;
+    })
+    .catch(() => feeds);
+}
+
+function tiktokFeedPlayer(source, options) {
+  const { muted, volume, onError } = options;
+  const profile = source.tiktok.profile.toLowerCase();
+  const frame = makeFrame('about:blank');
+  frame.className = 'frame-feed';
+  const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
+  let videos = [];
+  let index = 0;
+  let wanted = muted;
+  let ready = false;
+  let playing = false;
+  let advanced = false;
+  let progressed = false;
+  let destroyed = false;
+  const send = (type) => frame.contentWindow?.postMessage({ type, 'x-tiktok-player': true }, '*');
+  const show = (at) => {
+    if (!videos.length || destroyed) return;
+    index = (at + videos.length) % videos.length;
+    ready = false;
+    // Until the new video says it's ready, end signals still arriving from the last one don't count.
+    advanced = true;
+    progressed = false;
+    const params = new URLSearchParams({ autoplay: '1', muted: wanted ? '1' : '0', loop: '0', rel: '0', native_context_menu: '0', closed_caption: '0' });
+    frame.src = `https://www.tiktok.com/player/v1/${videos[index]}?${params}`;
+    counter.textContent = `${index + 1}/${videos.length}`;
+  };
+  const next = () => {
+    if (advanced) return;
+    advanced = true;
+    show(index + 1);
+  };
+  const onMessage = (event) => {
+    if (event.source !== frame.contentWindow || !event.data?.['x-tiktok-player']) return;
+    const { type, value } = event.data;
+    if (type === 'onPlayerReady') {
+      ready = true;
+      advanced = false;
+      send(wanted ? 'mute' : 'unMute');
+      send('play');
+    } else if (type === 'onStateChange') {
+      playing = value === 1 || value === 3;
+      if (value === 0 && progressed) next();
+    } else if (type === 'onCurrentTime') {
+      // The ended signal doesn't always come, so the clock decides too, but only for a video
+      // that really played. A phone that blocks autoplay mustn't race through the feed.
+      const current = Number(value?.currentTime);
+      const duration = Number(value?.duration);
+      if (current >= 1) progressed = true;
+      if (progressed && duration > 0 && current >= duration - 0.4) next();
+    } else if (type === 'onPlayerError') {
+      // A removed or private video moves the feed along. Blocked autoplay waits for a tap.
+      if (TIKTOK_ERRORS[value?.errorCode]) setTimeout(next, 800);
+    }
+  };
+  const counter = el('span', { class: 'feed-count', textContent: '' });
+  const stripButtons = [
+    iconButton('back', 'Previous video', () => show(index - 1)),
+    counter,
+    iconButton('next', 'Next video', () => show(index + 1)),
+  ];
+  return {
+    el: frame,
+    canMute: true,
+    canVolume: Boolean(extension) && levelWorks,
+    stripButtons,
+    async start() {
+      window.addEventListener('message', onMessage);
+      extension?.start();
+      const data = await loadFeeds();
+      if (destroyed) return;
+      videos = data?.tiktok?.[profile]?.videos?.filter((id) => /^\d{15,25}$/.test(id)) ?? [];
+      if (!videos.length) {
+        onError(`The feed for @${source.tiktok.profile} isn't set up yet. Ask Claude to add it to MULTIGRID's TikTok feeds.`);
+        return;
+      }
+      show(0);
+    },
+    setMuted(next) {
+      wanted = next;
+      extension?.setMuted(next);
+      if (!ready) return;
+      const resume = playing;
+      send(next ? 'mute' : 'unMute');
+      if (resume) send('play');
+    },
+    setVolume(next) {
+      extension?.setVolume(next);
+    },
+    destroy() {
+      destroyed = true;
+      extension?.stop();
+      window.removeEventListener('message', onMessage);
+      frame.removeAttribute('src');
+    },
+  };
+}
+
 function tiktokPlayer(source, options) {
-  if (source.tiktok.profile) {
-    const frame = makeFrame(buildEmbedUrl(source, options, options.env));
-    frame.className = 'frame-card';
-    return closedPlayer(frame, options);
-  }
+  if (source.tiktok.profile) return tiktokFeedPlayer(source, options);
   const { muted, volume, autoplay, env, onError } = options;
   const frame = makeFrame(buildEmbedUrl(source, { muted, autoplay }, env));
   const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;

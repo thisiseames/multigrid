@@ -84,6 +84,8 @@ class TileView {
       },
     });
     if (!this.player) return;
+    // A feed adds its own Back and Next to the tile's top bar.
+    if (this.player.stripButtons) this.strip.querySelector('.strip-actions')?.prepend(...this.player.stripButtons);
     this.body.append(this.player.el);
     this.player.start();
   }
