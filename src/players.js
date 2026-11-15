@@ -147,17 +147,45 @@ function youtubePlayer(source, options) {
   let wanted = muted;
   let level = volume;
   let destroyed = false;
+
+  // A channel or playlist gets Back, Next and where it is, like a TikTok feed. They show once
+  // YouTube has loaded the list, because until then there's nothing to move through.
+  const counter = el('span', { class: 'feed-count', textContent: '' });
+  const listButtons = list ? [
+    iconButton('back', 'Previous video', () => api?.previousVideo()),
+    counter,
+    iconButton('next', 'Next video', () => api?.nextVideo()),
+  ] : null;
+  const playlist = () => (api?.getPlaylist?.() ?? null);
+  const showPlace = () => {
+    if (!listButtons) return;
+    const items = playlist();
+    const known = Boolean(items?.length > 1);
+    for (const node of listButtons) node.hidden = !known;
+    if (known) counter.textContent = `${Math.max(0, api.getPlaylistIndex()) + 1}/${items.length}`;
+  };
+  listButtons?.forEach((node) => { node.hidden = true; });
+
   const self = {
     el: frame,
     canMute: true,
     canVolume: levelWorks,
+    stripButtons: listButtons,
     async start() {
       if (isUploads) {
-        // If the lookup fails, the list's own address is still worth a try.
-        const newest = await newestUpload(list);
+        // The channel's videos-only list leaves Shorts out. A channel with nothing but Shorts
+        // has no such list, so it plays everything. If both lookups fail, the plain address is
+        // still worth a try.
+        const videosOnly = `UULF${list.slice(2)}`;
+        let chosen = videosOnly;
+        let newest = await newestUpload(videosOnly);
+        if (!newest) {
+          chosen = list;
+          newest = await newestUpload(list);
+        }
         if (destroyed) return;
-        const startFrom = newest ? { ...source, youtube: { ...source.youtube, id: newest } } : source;
-        frame.src = buildEmbedUrl(startFrom, { muted: wanted, autoplay }, env);
+        const youtube = newest ? { ...source.youtube, id: newest, list: chosen } : source.youtube;
+        frame.src = buildEmbedUrl({ ...source, youtube }, { muted: wanted, autoplay }, env);
       }
       window.YT = window.YT || {};
       const ready = new Promise((resolve) => {
@@ -177,8 +205,18 @@ function youtubePlayer(source, options) {
               api = player;
               api.setVolume(level);
               if (wanted) api.mute(); else api.unMute();
+              showPlace();
+            },
+            onStateChange() {
+              showPlace();
             },
             onError(event) {
+              // One video in a list that won't play here shouldn't stop the whole tile.
+              const items = playlist();
+              if (items?.length > 1 && api.getPlaylistIndex() < items.length - 1) {
+                api.nextVideo();
+                return;
+              }
               onError(YOUTUBE_ERRORS[event.data] || `YouTube couldn't play this (code ${event.data}).`);
             },
           },
