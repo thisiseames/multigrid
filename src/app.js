@@ -602,7 +602,7 @@ async function fillStandings() {
       standingsTable(league, group)));
     const notes = [];
     if (league.zones) notes.push(el('p', { class: 'standings-key' }, ...league.zones.map((band) => el('span', { class: `key ${band.cls}`, textContent: `${band.from}–${band.to} ${band.label}` })), el('span', { class: 'key', textContent: `${league.zones.at(-1).to + 1}+ out` })));
-    if (league.highlight) notes.push(el('p', { class: 'standings-key' }, el('span', { class: 'key is-mine', textContent: league.highlight }), groups.divisionName ? el('span', { class: 'key is-division', textContent: groups.divisionName }) : null));
+    if (league.highlight) notes.push(el('p', { class: 'standings-key' }, el('span', { class: 'key is-mine', textContent: league.highlightLabel ?? league.highlight }), groups.divisionName ? el('span', { class: 'key is-division', textContent: groups.divisionName }) : null));
     if (league.groups && groups.length > shownGroups.length || (league.groups && standingsAllGroups)) {
       notes.push(el('button', {
         type: 'button',

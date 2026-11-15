@@ -4,10 +4,10 @@
 const FEED = 'https://site.api.espn.com/apis/v2/sports';
 
 export const LEAGUES = [
-  { id: 'pl', name: 'Premier League', path: 'soccer/eng.1', kind: 'soccer' },
+  { id: 'pl', name: 'Premier League', path: 'soccer/eng.1', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United' },
   { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1', kind: 'soccer' },
   {
-    id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions', kind: 'soccer',
+    id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United',
     zones: [{ from: 1, to: 8, cls: 'zone-in', label: 'Last 16' }, { from: 9, to: 24, cls: 'zone-playoff', label: 'Playoff round' }],
   },
   { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations', kind: 'soccer', groups: true },
