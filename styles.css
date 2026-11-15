@@ -712,3 +712,34 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .mixer-one.is-on .mixer-one-track { background: var(--accent); }
 .mixer-one.is-on .mixer-one-track::after { transform: translateX(11px); }
 .mixer-one[hidden] { display: none; }
+
+/* ---------- Standings ---------- */
+.standings { width: min(560px, calc(100vw - 16px)); max-height: calc(100dvh - 80px); padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.standings[hidden] { display: none; }
+.standings-tabs { flex: none; display: flex; flex-wrap: wrap; gap: 2px 2px; padding: 8px 8px 6px; border-bottom: 1px solid var(--border); }
+.standings-tabs::-webkit-scrollbar { display: none; }
+.standings-tab { flex: none; height: 28px; padding: 0 10px; border-radius: 7px; color: var(--text-2); white-space: nowrap; font-size: 13px; }
+.standings-tab:hover { background: var(--hover); color: var(--text); }
+.standings-tab.is-on { background: var(--raised); color: var(--text); font-weight: 500; }
+.standings-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 4px 10px 6px; }
+.standings-group h3 { margin: 10px 2px 2px; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.standings-table th { padding: 6px 6px; white-space: nowrap; font-size: 11.5px; font-weight: 500; color: var(--text-2); text-align: right; border-bottom: 1px solid var(--border); }
+.standings-table td { padding: 5px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.standings-table th:first-child, .standings-table td:first-child { width: 34px; text-align: left; color: var(--text-2); }
+.standings-table .team { text-align: left; width: 100%; max-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.standings-table td.team { color: var(--text); }
+.standings-table tr.zone-in td:first-child { box-shadow: inset 3px 0 0 var(--accent); padding-left: 9px; }
+.standings-table tr.zone-playoff td:first-child { box-shadow: inset 3px 0 0 #c9a227; padding-left: 9px; }
+.standings-table tr.is-division td.team { font-weight: 500; }
+.standings-table tr.is-mine td { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); font-weight: 600; }
+.standings-key { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 2px 2px; font-size: 11.5px; color: var(--text-2); }
+.standings-key .key { display: inline-flex; align-items: center; gap: 5px; }
+.standings-key .key::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--border-strong); }
+.standings-key .key.zone-in::before { background: var(--accent); }
+.standings-key .key.zone-playoff::before { background: #c9a227; }
+.standings-key .key.is-mine::before { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.standings-key .key.is-division::before { background: var(--text-2); }
+.standings-more { margin: 10px 2px 4px; font-size: 13px; }
+.standings-note { margin: 16px 4px; font-size: 13px; color: var(--text-2); }
+.standings-updated { flex: none; margin: 0; padding: 6px 12px 8px; font-size: 11.5px; color: var(--text-2); border-top: 1px solid var(--border); }
