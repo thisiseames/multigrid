@@ -9,6 +9,7 @@ const SAVED_KEY = 'multigrid.workspaces.v1';
 const FAVORITES_KEY = 'multigrid.favorites.v1';
 const CLOSED_FOLDERS_KEY = 'multigrid.favorites.closed.v1';
 const MIXER_KEY = 'multigrid.mixer.v1';
+const ONE_SOUND_KEY = 'multigrid.onesound.v1';
 
 function read(key) {
   try {
@@ -82,6 +83,10 @@ function snapshot(ws) {
 
 export const isMixerOpen = () => read(MIXER_KEY) !== false;
 export const setMixerOpen = (open) => write(MIXER_KEY, open);
+
+/* "One sound" starts on: unmuting one stream mutes the rest. Off, any number can play. */
+export const isOneSound = () => read(ONE_SOUND_KEY) !== false;
+export const setOneSound = (on) => write(ONE_SOUND_KEY, Boolean(on));
 
 /* Favorites hold what was pasted, a name and an optional folder, newest first. */
 

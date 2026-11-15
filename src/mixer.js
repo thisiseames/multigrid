@@ -3,10 +3,16 @@
 
 import { el, icon } from './ui.js';
 
-export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onVolumeDone, onMuteAll }) {
+export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne }) {
+  const oneButton = el('button', {
+    class: 'mixer-one',
+    type: 'button',
+    title: 'One sound: turning a stream on turns the others off',
+    on: { click: onToggleOne },
+  }, el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: 'One sound' }));
   const allButton = el('button', { class: 'mixer-all', type: 'button', on: { click: onMuteAll } });
   const channels = el('div', { class: 'mixer-channels' });
-  root.append(allButton, channels);
+  root.append(oneButton, allButton, channels);
   let drawn = '';
   const rows = new Map();
 
@@ -50,8 +56,11 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
   }
 
   return {
-    render(tiles, allLabel, canMuteAny) {
+    render(tiles, allLabel, canMuteAny, oneSound) {
       root.hidden = !tiles.length;
+      oneButton.hidden = !canMuteAny;
+      oneButton.setAttribute('aria-pressed', String(oneSound));
+      oneButton.classList.toggle('is-on', oneSound);
       allButton.textContent = allLabel;
       allButton.hidden = !canMuteAny;
       // Only rebuilt when the list changes, so a slider isn't replaced while it's being dragged.

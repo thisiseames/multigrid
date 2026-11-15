@@ -13,7 +13,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
-  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, listFavorites, listFolders, listSaved,
+  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites,
 } from './storage.js';
@@ -67,6 +67,7 @@ const mixer = createMixer($('mixer'), {
   onVolume: changeVolume,
   onVolumeDone: commit,
   onMuteAll: muteAll,
+  onToggleOne: toggleOneSound,
 });
 
 function labelOf(tile) {
@@ -130,10 +131,34 @@ function renderSound() {
   button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'));
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player);
-  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length));
+  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound());
 }
 
 /* ---------- Sound ---------- */
+
+/** With One sound on, the stream just given sound is the only one with it. */
+function muteOthers(id) {
+  if (!isOneSound()) return;
+  for (const other of muteableTiles()) {
+    if (other.id === id || other.muted) continue;
+    other.muted = true;
+    const view = grid.viewFor(other.id);
+    view?.setMuted(true);
+    view?.syncControls();
+  }
+}
+
+function toggleOneSound() {
+  const on = !isOneSound();
+  setOneSound(on);
+  // Turning it on while several are playing keeps the first one that is, in grid order.
+  if (on) {
+    const keep = muteableTiles().find((tile) => !tile.muted);
+    if (keep) muteOthers(keep.id);
+  }
+  commit();
+  toast(on ? 'One sound: turning a stream on now turns the others off.' : 'Any number of streams can have sound now.');
+}
 
 function toggleMute(id) {
   const tile = tileById(id);
@@ -145,6 +170,7 @@ function toggleMute(id) {
     view?.setVolume(tile.volume);
   }
   view?.setMuted(tile.muted);
+  if (!tile.muted) muteOthers(id);
   commit();
 }
 
@@ -158,6 +184,7 @@ function changeVolume(id, volume) {
   if (muted !== tile.muted) {
     tile.muted = muted;
     view?.setMuted(muted);
+    if (!muted) muteOthers(id);
   }
   view?.syncControls();
   renderSound();
@@ -166,6 +193,8 @@ function changeVolume(id, volume) {
 function muteAll() {
   const reachable = muteableTiles();
   const muted = reachable.some((tile) => !tile.muted);
+  // Asking for every stream's sound means One sound has to step aside.
+  if (!muted && isOneSound()) setOneSound(false);
   for (const tile of reachable) {
     if (tile.muted !== muted) {
       tile.muted = muted;
