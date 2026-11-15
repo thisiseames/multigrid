@@ -9,13 +9,14 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideUpdated, loadGuide, nowAndNext } from './guide.js';
+import { LEAGUES, loadLeague } from './standings.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
-  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites,
+  saveNamed, setFolderClosed, setMixerOpen, lastStandings, setLastStandings, transferableFavorites, unpackFavorites,
 } from './storage.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -554,6 +555,106 @@ $('guide-button').addEventListener('click', openGuide);
 $('guide-dialog').addEventListener('click', (event) => {
   if (event.target === $('guide-dialog')) $('guide-dialog').close();
 });
+
+/* ---------- Standings ---------- */
+
+let standingsLeague = LEAGUES.find((league) => league.id === lastStandings()) ?? LEAGUES[0];
+let standingsAllGroups = false;
+let standingsTimer = null;
+let standingsAsked = 0;
+
+function standingsTable(league, group) {
+  const soccer = league.kind === 'soccer';
+  const head = soccer ? ['#', 'Team', 'P', 'GD', 'Pts'] : league.kind === 'nfl' ? ['Seed', 'Team', 'W–L'] : ['Seed', 'Team', 'W–L', 'GB'];
+  const body = group.rows.map((item, index) => {
+    const place = soccer ? (item.rank ?? index + 1) : (item.seed ?? index + 1);
+    const record = item.ties ? `${item.wins}–${item.losses}–${item.ties}` : `${item.wins}–${item.losses}`;
+    const cells = soccer ? [place, item.name, item.played, item.gd, item.points]
+      : league.kind === 'nfl' ? [place, item.name, record] : [place, item.name, record, item.behind];
+    const zone = league.zones?.find((band) => place >= band.from && place <= band.to);
+    const mine = league.highlight && item.full.includes(league.highlight);
+    const cls = [zone?.cls, mine ? 'is-mine' : '', item.division ? 'is-division' : ''].filter(Boolean).join(' ');
+    return el('tr', { class: cls }, ...cells.map((value, column) => el('td', {
+      class: column === 1 ? 'team' : '',
+      textContent: String(value),
+      title: column === 1 ? item.full : '',
+    })));
+  });
+  return el('table', { class: 'standings-table' },
+    el('thead', {}, el('tr', {}, ...head.map((text, column) => el('th', { class: column === 1 ? 'team' : '', textContent: text })))),
+    el('tbody', {}, ...body));
+}
+
+async function fillStandings() {
+  const menu = $('standings-menu');
+  const league = standingsLeague;
+  const asked = ++standingsAsked;
+  const body = menu.querySelector('.standings-body');
+  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  try {
+    const groups = await loadLeague(league);
+    if (asked !== standingsAsked || menu.hidden) return;
+    let shownGroups = groups;
+    if (league.groups && !standingsAllGroups) shownGroups = groups.filter((group) => /^Group A\d/.test(group.name));
+    if (!shownGroups.length) shownGroups = groups;
+    const parts = shownGroups.map((group) => el('section', { class: 'standings-group' },
+      league.groups ? el('h3', { textContent: group.name }) : null,
+      standingsTable(league, group)));
+    const notes = [];
+    if (league.zones) notes.push(el('p', { class: 'standings-key' }, ...league.zones.map((band) => el('span', { class: `key ${band.cls}`, textContent: `${band.from}–${band.to} ${band.label}` })), el('span', { class: 'key', textContent: `${league.zones.at(-1).to + 1}+ out` })));
+    if (league.highlight) notes.push(el('p', { class: 'standings-key' }, el('span', { class: 'key is-mine', textContent: league.highlight }), groups.divisionName ? el('span', { class: 'key is-division', textContent: groups.divisionName }) : null));
+    if (league.groups && groups.length > shownGroups.length || (league.groups && standingsAllGroups)) {
+      notes.push(el('button', {
+        type: 'button',
+        class: 'text-button standings-more',
+        textContent: standingsAllGroups ? 'Show League A only' : `Show all ${groups.length} groups`,
+        on: { click() { standingsAllGroups = !standingsAllGroups; fillStandings(); } },
+      }));
+    }
+    const scroll = body.scrollTop;
+    body.replaceChildren(...notes.filter((node) => node.tagName !== 'BUTTON'), ...parts, ...notes.filter((node) => node.tagName === 'BUTTON'));
+    body.scrollTop = scroll;
+    menu.querySelector('.standings-updated').textContent = `Updated ${clock(Date.now())} · ESPN`;
+  } catch {
+    if (asked !== standingsAsked || menu.hidden) return;
+    body.replaceChildren(el('p', { class: 'standings-note', textContent: "Standings couldn't load. ESPN didn't answer, so try again in a minute." }));
+  }
+}
+
+function buildStandings() {
+  const menu = $('standings-menu');
+  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...LEAGUES.map((league) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `standings-tab${league === standingsLeague ? ' is-on' : ''}`,
+    aria: { selected: String(league === standingsLeague) },
+    textContent: league.name,
+    on: {
+      click(event) {
+        standingsLeague = league;
+        standingsAllGroups = false;
+        setLastStandings(league.id);
+        for (const tab of tabs.children) {
+          const on = tab === event.currentTarget;
+          tab.classList.toggle('is-on', on);
+          tab.setAttribute('aria-selected', String(on));
+        }
+        menu.querySelector('.standings-body').replaceChildren();
+        fillStandings();
+      },
+    },
+  })));
+  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  fillStandings();
+  clearInterval(standingsTimer);
+  standingsTimer = setInterval(() => {
+    if ($('standings-menu').hidden) return clearInterval(standingsTimer);
+    fillStandings();
+  }, 60 * 1000);
+  requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+}
+
+$('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
 
 /* ---------- Favorites on another device ---------- */
 
