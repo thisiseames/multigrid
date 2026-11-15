@@ -11,6 +11,7 @@ export const TABS = [
   { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1' },
   { id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions' },
   { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations' },
+  { id: 'united', name: 'Man United', united: true },
   { id: 'niners', name: '49ers', team: { path: 'football/nfl', id: 'sf', league: 'NFL' } },
   { id: 'raptors', name: 'Raptors', team: { path: 'basketball/nba', id: 'tor', league: 'NBA' } },
 ];
@@ -139,7 +140,7 @@ export async function loadTab(tab, now = Date.now()) {
     if (!sections.length) throw new Error('No team answered');
     return sections;
   }
-  const matches = tab.team ? await teamMatches(tab.team) : await leagueMatches(tab.path, tab.name, now);
+  const matches = tab.united ? await manUnitedMatches(now) : tab.team ? await teamMatches(tab.team) : await leagueMatches(tab.path, tab.name, now);
   return [{ title: '', matches: inWindow(matches, now) }];
 }
 
