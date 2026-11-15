@@ -650,7 +650,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .narrow-only { display: inline-flex; }
   .add-button { padding: 0; width: 32px; margin-left: 2px; }
   form .add-button, .welcome .add-button { width: auto; padding: 0 14px; }
-  #saved-button { width: 28px; padding: 0; }
+  #saved-button, #reader-button, #matches-button, #standings-button, #guide-button { width: 28px; padding: 0; justify-content: center; }
   #layout-name { display: none; }
   .bar-button { padding: 0 6px; }
   .layout-menu { width: calc(100vw - 16px); }
@@ -762,3 +762,39 @@ button.match-row:hover, button.match-row:focus-visible { background: var(--hover
 .match-tv.is-yours { color: var(--accent); }
 .match-tv.is-yours::before { content: '▶ '; }
 @media (max-width: 640px) { .match-row { grid-template-columns: 62px 1fr; } .match-tv { grid-column: 2; max-width: none; } }
+
+/* ---------- Reader ---------- */
+.reader { width: min(600px, calc(100vw - 16px)); }
+.reader-list { list-style: none; margin: 0; padding: 0; }
+.reader-item + .reader-item { border-top: 1px solid var(--border); }
+.reader-row { display: flex; gap: 10px; width: 100%; padding: 9px 6px; text-align: left; color: var(--text); border-radius: 7px; }
+.reader-row:hover, .reader-row:focus-visible { background: var(--hover); }
+.reader-thumb { flex: none; width: 78px; height: 56px; object-fit: cover; border-radius: 6px; background: var(--raised); }
+.reader-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.reader-source { font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reader-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.reader-snippet { font-size: 12.5px; color: var(--text-2); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.reader-item.is-read .reader-title, .reader-item.is-read .reader-snippet { color: var(--text-2); font-weight: 400; }
+.reader-item.is-read .reader-thumb { opacity: 0.55; }
+.reader-locked { margin: 10px 4px 6px; padding: 8px 10px; font-size: 12.5px; color: var(--text-2); background: var(--raised); border-radius: 8px; }
+.tile-body .reader-story { position: absolute; inset: 0; overflow-y: auto; padding: 18px 22px 28px; background: #121214; color: var(--text); font-size: 15px; line-height: 1.6; -webkit-overflow-scrolling: touch; }
+.reader-story h1 { margin: 2px 0 12px; font-size: 21px; line-height: 1.25; }
+.reader-meta { margin: 0; font-size: 12px; color: var(--text-2); }
+.reader-hero { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; margin: 4px 0 14px; }
+.reader-body img { display: block; max-width: 100%; height: auto; border-radius: 6px; margin: 10px auto; }
+.reader-body figcaption { font-size: 12px; color: var(--text-2); }
+.reader-body a { color: var(--accent); }
+.reader-body blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid var(--border-strong); color: var(--text-2); }
+.reader-summary { color: var(--text-2); }
+.reader-note { font-size: 13px; color: var(--text-2); }
+.reader-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; }
+.tile-body iframe.reader-real { background: #fff; }
+@media (max-width: 640px) { .reader-thumb { width: 64px; height: 48px; } .tile-body .reader-story { padding: 14px 14px 24px; } }
+.grid.stacked .tile-body:has(.reader-story) { aspect-ratio: auto; height: 72vh; }
+.tile-body .audio-tile { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 18px 22px; background: #121214; }
+.audio-label { margin: 0; font-size: 12px; color: var(--text-2); }
+.audio-title { margin: 0 0 10px; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--text); }
+.audio-tile audio { width: 100%; }
+
+/* A phone's top bar holds every button, so the name steps aside to keep Add stream on screen. */
+@media (max-width: 480px) { .wordmark { display: none; } }
