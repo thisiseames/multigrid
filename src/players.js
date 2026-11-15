@@ -14,6 +14,7 @@
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { el, iconButton } from './ui.js';
+import { ago, hasKey, itemById, loadIndex, openStory, safeFragment } from './reader.js';
 
 const scripts = new Map();
 
@@ -597,6 +598,97 @@ function closedPlayer(frame, { muted, volume }) {
   };
 }
 
+/* A podcast episode: the browser's own audio player, with the episode's title above it. */
+function audioPlayer(source, options) {
+  const { muted, volume, autoplay, onError } = options;
+  const audio = document.createElement('audio');
+  audio.controls = true;
+  audio.preload = 'metadata';
+  audio.volume = volume / 100;
+  audio.muted = muted;
+  audio.addEventListener('error', () => onError("This episode didn't load. Its server may be offline."), { once: true });
+  const box = el('div', { class: 'audio-tile' },
+    el('p', { class: 'audio-label', textContent: 'Podcast' }),
+    el('p', { class: 'audio-title', textContent: source.label }),
+    audio);
+  return {
+    el: box,
+    canMute: true,
+    canVolume: levelWorks,
+    start() {
+      audio.src = source.url;
+      if (autoplay) audio.play().catch(() => {});
+    },
+    setMuted(next) { audio.muted = next; },
+    setVolume(next) { audio.volume = next / 100; },
+    destroy() {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+    },
+  };
+}
+
+/* A Reader story, laid out to read. With the MULTIGRID Sound extension on a computer, the
+   real page can replace it in the same tile, because the extension lifts the block on it. */
+function readerPlayer(source) {
+  const box = el('article', { class: 'reader-story' });
+  let destroyed = false;
+  const realPage = (link) => {
+    const frame = makeFrame(link);
+    frame.className = 'reader-real';
+    box.replaceWith(frame);
+    self.el = frame;
+  };
+  const actions = (link) => el('p', { class: 'reader-actions' },
+    hasSoundExtension() ? el('button', { type: 'button', class: 'text-button', textContent: 'Show the real page here', on: { click: () => realPage(link) } }) : null,
+    el('a', { class: 'text-button', href: link, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open the real page' }));
+  const self = {
+    el: box,
+    canMute: false,
+    canVolume: false,
+    silent: true,
+    async start() {
+      box.replaceChildren(el('p', { class: 'reader-note', textContent: 'Loading…' }));
+      await loadIndex();
+      const item = itemById(source.readerId);
+      let story = null;
+      try {
+        story = await openStory(source.readerId);
+      } catch {
+        story = null;
+      }
+      if (destroyed) return;
+      const link = story?.link || item?.page || item?.link || '';
+      const title = story?.title || item?.title || source.label;
+      const parts = [
+        el('p', { class: 'reader-meta', textContent: [item?.source, item ? ago(item.time) : '', story?.byline].filter(Boolean).join(' · ') }),
+        el('h1', { textContent: title }),
+      ];
+      const picture = item?.image || story?.image;
+      if (story?.html) {
+        if (picture && !story.html.includes(picture)) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
+        parts.push(el('div', { class: 'reader-body' }, safeFragment(story.html)));
+      } else {
+        if (picture) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
+        if (item?.summary) parts.push(el('p', { class: 'reader-summary', textContent: item.summary }));
+        parts.push(el('p', { class: 'reader-note', textContent: !hasKey()
+          ? "This device isn't unlocked yet. Open your Reader unlock link on it once to read whole stories here."
+          : item?.hasText === false || item?.textTried ? "This site doesn't let its stories be read outside its own page." : 'This story is still being collected. Try again in a few minutes.' }));
+      }
+      if (link) parts.push(actions(link));
+      box.replaceChildren(...parts);
+    },
+    setMuted() {},
+    setVolume() {},
+    destroy() {
+      destroyed = true;
+      self.el.removeAttribute?.('src');
+    },
+  };
+  return self;
+}
+
 function xPlayer(source, options) {
   const frame = makeFrame(buildEmbedUrl(source, options, options.env));
   frame.className = 'frame-post';
@@ -713,6 +805,8 @@ const PLAYERS = {
   file: filePlayer,
   hls: hlsPlayer,
   iframe: genericPlayer,
+  reader: readerPlayer,
+  audio: audioPlayer,
 };
 
 /** Returns a player, or throws-free null with onError called if it can't even be tried. */

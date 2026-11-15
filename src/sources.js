@@ -218,6 +218,34 @@ function parseLocal(input) {
   return { ok: true, input, kind: 'file', label: name, name, localId: match[1], openUrl: null };
 }
 
+/** A Reader story: reader:<id>:<title>. Its text is fetched and unlocked when it plays. */
+function parseReader(input) {
+  const match = input.match(/^reader:([a-f0-9]{16}):?(.*)$/s);
+  if (!match) return fail(input, "That isn't a link. Paste a full address or iframe code.");
+  let title = match[2] || 'Story';
+  try {
+    title = decodeURIComponent(title);
+  } catch {
+    // Shown as it is.
+  }
+  return { ok: true, input, kind: 'reader', label: title, readerId: match[1], openUrl: null };
+}
+export const readerInput = (id, title) => `reader:${id}:${encodeURIComponent(title.slice(0, 120))}`;
+
+/** A podcast episode: audio:<title>|<address>. Played with the browser's own audio player. */
+function parseAudio(input) {
+  const match = input.match(/^audio:([^|]*)\|(https:\/\/.+)$/s);
+  if (!match) return fail(input, "That isn't a link. Paste a full address or iframe code.");
+  let title = match[1] || 'Podcast';
+  try {
+    title = decodeURIComponent(title);
+  } catch {
+    // Shown as it is.
+  }
+  return { ok: true, input, kind: 'audio', label: title, url: match[2], openUrl: match[2] };
+}
+export const audioInput = (title, url) => `audio:${encodeURIComponent(title.slice(0, 120))}|${url}`;
+
 /** The stored form of a file on this computer. The file itself is never stored. */
 export const localInput = (id, name) => `local:${id}:${encodeURIComponent(name)}`;
 
@@ -248,6 +276,8 @@ export function parseSource(raw) {
   const input = String(raw ?? '').trim();
   if (!input) return fail(input, 'Paste a link or iframe code.');
   if (input.startsWith('local:')) return parseLocal(input);
+  if (input.startsWith('reader:')) return parseReader(input);
+  if (input.startsWith('audio:')) return parseAudio(input);
 
   let text = input;
   if (/^</.test(input) || /<iframe\b/i.test(input)) {

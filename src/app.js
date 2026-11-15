@@ -11,9 +11,10 @@ import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, nowAndNext } from './guide.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, isMine, loadTab } from './matches.js';
+import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markRead, readIds, saveKey } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
-import { isBlockedMixedContent, parseSource } from './sources.js';
+import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -132,7 +133,7 @@ function renderSound() {
   button.setAttribute('aria-expanded', String(open));
   button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'));
 
-  const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player);
+  const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound());
 }
 
@@ -205,7 +206,7 @@ function muteAll() {
   }
   commit();
   const others = ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && !reachable.includes(tile));
-  const playing = others.filter((tile) => grid.viewFor(tile.id)?.player);
+  const playing = others.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   if (playing.length) {
     const names = playing.slice(0, 2).map(labelOf).join(', ');
     const more = playing.length > 2 ? ` and ${playing.length - 2} more` : '';
@@ -657,6 +658,109 @@ function buildStandings() {
 
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
 
+/* ---------- Reader ---------- */
+
+const READER_TAB_KEY = 'multigrid.readertab.v1';
+let readerTab = (() => { try { return localStorage.getItem(READER_TAB_KEY) || 'All'; } catch { return 'All'; } })();
+let readerTimer = null;
+let readerAsked = 0;
+
+function openItem(item) {
+  markRead(item.id);
+  closePopovers();
+  if (item.kind === 'youtube' && item.video) addStream(`https://www.youtube.com/watch?v=${item.video}`);
+  else if (item.kind === 'podcast' && item.audio) addStream(audioInput(`${item.source}: ${item.title}`, item.audio));
+  else addStream(readerInput(item.id, item.title));
+}
+
+function readerRow(item, read) {
+  const label = item.kind === 'youtube' ? 'Video' : item.kind === 'podcast' ? 'Podcast' : '';
+  return el('li', { class: `reader-item${read ? ' is-read' : ''}` }, el('button', {
+    type: 'button',
+    class: 'reader-row',
+    on: { click: () => openItem(item) },
+  },
+  item.image ? el('img', { class: 'reader-thumb', src: item.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
+  el('span', { class: 'reader-text' },
+    el('span', { class: 'reader-source', textContent: [item.source, ago(item.time), label].filter(Boolean).join(' · ') }),
+    el('span', { class: 'reader-title', textContent: item.title }),
+    item.summary ? el('span', { class: 'reader-snippet', textContent: item.summary }) : null)));
+}
+
+async function fillReader() {
+  const menu = $('reader-menu');
+  const asked = ++readerAsked;
+  const body = menu.querySelector('.standings-body');
+  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  const data = await loadIndex(true);
+  if (asked !== readerAsked || menu.hidden) return;
+  if (!data) {
+    body.replaceChildren(el('p', { class: 'standings-note', textContent: "The Reader couldn't load. Try again in a minute." }));
+    return;
+  }
+  const items = data.items.filter((item) => readerTab === 'All' || item.group === readerTab).slice(0, readerTab === 'All' ? 120 : 200);
+  const read = readIds();
+  const scroll = body.scrollTop;
+  body.replaceChildren(
+    hasKey() ? null : el('p', { class: 'reader-locked', textContent: "This device isn't unlocked, so stories show their summary only. Open your Reader unlock link here once to read them in full." }),
+    items.length ? el('ul', { class: 'reader-list' }, ...items.map((item) => readerRow(item, read.has(item.id)))) : el('p', { class: 'standings-note', textContent: 'Nothing here yet.' }));
+  body.scrollTop = scroll;
+  menu.querySelector('.standings-updated').textContent = `Updated ${ago(data.updated)} · ${data.items.length} stories`;
+}
+
+function buildReader() {
+  const menu = $('reader-menu');
+  const groups = ['All', 'News', 'Sport', 'Man United', 'Entertainment', 'Tech', 'Travel', 'Podcasts & Video'];
+  if (!groups.includes(readerTab)) readerTab = 'All';
+  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...groups.map((name) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `standings-tab${name === readerTab ? ' is-on' : ''}`,
+    aria: { selected: String(name === readerTab) },
+    textContent: name,
+    on: {
+      click(event) {
+        readerTab = name;
+        try { localStorage.setItem(READER_TAB_KEY, name); } catch {}
+        for (const other of tabs.children) {
+          const on = other === event.currentTarget;
+          other.classList.toggle('is-on', on);
+          other.setAttribute('aria-selected', String(on));
+        }
+        menu.querySelector('.standings-body').replaceChildren();
+        fillReader();
+      },
+    },
+  })));
+  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  fillReader();
+  clearInterval(readerTimer);
+  readerTimer = setInterval(() => {
+    if ($('reader-menu').hidden) return clearInterval(readerTimer);
+    fillReader();
+  }, 5 * 60 * 1000);
+}
+
+$('reader-button').addEventListener('click', () => togglePopover($('reader-button'), $('reader-menu'), buildReader));
+
+/** The Reader's unlock link, opened or pasted into Add stream. */
+function unlockReader(key) {
+  if (saveKey(key)) {
+    toast('Reader unlocked on this device. Stories now open in full.');
+    // Stories already on screen were drawn locked, so they're drawn again.
+    for (const tile of ws.tiles) if (tile.input?.startsWith('reader:')) grid.viewFor(tile.id)?.player?.start();
+  }
+  else toast("That unlock link didn't come through whole. Copy it again.");
+}
+function receiveReaderKey() {
+  if (!location.hash.startsWith(KEY_PREFIX)) return false;
+  const key = keyFromText(location.hash);
+  history.replaceState(null, '', location.pathname + location.search);
+  unlockReader(key);
+  return true;
+}
+window.addEventListener('hashchange', receiveReaderKey);
+
 /* ---------- Matches ---------- */
 
 let matchesTab = MATCH_TABS.find((tab) => tab.id === lastMatches()) ?? MATCH_TABS[0];
@@ -945,6 +1049,10 @@ function updateSourceMessage() {
     showSourceMessage($('source-message'), '', false);
     return;
   }
+  if (keyFromText(value)) {
+    showSourceMessage($('source-message'), 'A Reader unlock link. Press Add to unlock this device.', false);
+    return;
+  }
   if (pastedFavorites(value)) {
     showSourceMessage($('source-message'), PASTED_NOTE, false);
     return;
@@ -954,6 +1062,12 @@ function updateSourceMessage() {
 }
 
 function submitSource() {
+  const readerKey = keyFromText($('source-input').value);
+  if (readerKey) {
+    $('source-dialog').close();
+    unlockReader(readerKey);
+    return;
+  }
   const code = pastedFavorites($('source-input').value);
   if (code) {
     $('source-dialog').close();
@@ -1037,6 +1151,12 @@ function buildStarters() {
 
 $('welcome-form').addEventListener('submit', (event) => {
   event.preventDefault();
+  const readerKey = keyFromText($('welcome-input').value);
+  if (readerKey) {
+    $('welcome-input').value = '';
+    unlockReader(readerKey);
+    return;
+  }
   const code = pastedFavorites($('welcome-input').value);
   if (code) {
     $('welcome-input').value = '';
@@ -1058,6 +1178,10 @@ $('welcome-input').addEventListener('input', () => {
   const value = $('welcome-input').value;
   if (!value.trim()) {
     showSourceMessage($('welcome-message'), '', false);
+    return;
+  }
+  if (keyFromText(value)) {
+    showSourceMessage($('welcome-message'), 'A Reader unlock link. Press Add to unlock this device.', false);
     return;
   }
   if (pastedFavorites(value)) {
@@ -1349,6 +1473,7 @@ $('parent-host').textContent = env.hostname;
 hydrateIcons();
 buildStarters();
 render();
+receiveReaderKey();
 receiveFavorites();
 loadGuide().then(() => {
   syncGuideButton();
