@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NbUObf4hSQOs/A693sy88W+AP2snNPlj+z8dpKsWtwA=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ekpmK+IrsfPzcNGb8dUG//HcyaxO9VVUM/Cp6xPYOaY=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -23,6 +23,10 @@
     <span class="spacer"><span id="toast" class="toast" role="status" hidden></span></span>
     <button id="hidden-button" class="bar-button quiet" type="button" aria-haspopup="true" aria-expanded="false" hidden></button>
     <button id="mixer-button" class="icon-button" type="button" aria-controls="mixer" hidden></button>
+    <button id="matches-button" class="bar-button" type="button" title="Matches" aria-label="Matches" aria-haspopup="true" aria-expanded="false">
+      <span data-icon="calendar" class="narrow-only"></span>
+      <span class="bar-button-text wide-only">Matches</span>
+    </button>
     <button id="standings-button" class="bar-button" type="button" title="Standings" aria-label="Standings" aria-haspopup="true" aria-expanded="false">
       <span data-icon="table" class="narrow-only"></span>
       <span class="bar-button-text wide-only">Standings</span>
@@ -64,6 +68,7 @@
   <div id="layout-menu" class="popover layout-menu" hidden></div>
   <div id="saved-menu" class="popover saved-menu" hidden></div>
   <div id="standings-menu" class="popover standings" hidden></div>
+  <div id="matches-menu" class="popover standings matches" hidden></div>
   <div id="hidden-menu" class="popover hidden-menu" hidden></div>
 
   <dialog id="source-dialog" class="dialog">
@@ -121,7 +126,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/mixer.js', 'src/players.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ui.js'];
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/matches.js', 'src/mixer.js', 'src/players.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ui.js'];
     await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.arrayBuffer())
       .catch(() => {})));

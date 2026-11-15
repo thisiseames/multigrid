@@ -743,3 +743,22 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .standings-more { margin: 10px 2px 4px; font-size: 13px; }
 .standings-note { margin: 16px 4px; font-size: 13px; color: var(--text-2); }
 .standings-updated { flex: none; margin: 0; padding: 6px 12px 8px; font-size: 11.5px; color: var(--text-2); border-top: 1px solid var(--border); }
+
+/* ---------- Matches ---------- */
+.match-day { margin: 12px 2px 4px; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.match-list { list-style: none; margin: 0; padding: 0; }
+.match + .match { border-top: 1px solid var(--border); }
+.match-row { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 10px; width: 100%; padding: 7px 6px; text-align: left; color: var(--text); border-radius: 7px; }
+button.match-row:hover, button.match-row:focus-visible { background: var(--hover); }
+.match-when { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.match-when.is-live { color: #e5484d; font-weight: 600; }
+.match-teams { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.match-team { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.match-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.match-score { flex: none; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.match-team.is-winner .match-score, .match-team.is-winner .match-name { color: var(--text); font-weight: 600; }
+.match-team.is-mine .match-name { color: var(--accent); font-weight: 600; }
+.match-tv { max-width: 120px; font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.match-tv.is-yours { color: var(--accent); }
+.match-tv.is-yours::before { content: '▶ '; }
+@media (max-width: 640px) { .match-row { grid-template-columns: 62px 1fr; } .match-tv { grid-column: 2; max-width: none; } }
