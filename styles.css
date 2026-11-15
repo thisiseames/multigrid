@@ -703,3 +703,4 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .tile-body iframe.frame-feed { color-scheme: light; max-width: 420px; margin: 0 auto; }
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 3 / 4; max-height: 78vh; }
+.strip-actions [hidden] { display: none !important; }
