@@ -93,6 +93,11 @@ const STANDINGS_KEY = 'multigrid.standings.v1';
 export const lastStandings = () => (typeof read(STANDINGS_KEY) === 'string' ? read(STANDINGS_KEY) : null);
 export const setLastStandings = (id) => write(STANDINGS_KEY, id);
 
+/* Which matches tab was open last. */
+const MATCHES_KEY = 'multigrid.matches.v1';
+export const lastMatches = () => (typeof read(MATCHES_KEY) === 'string' ? read(MATCHES_KEY) : null);
+export const setLastMatches = (id) => write(MATCHES_KEY, id);
+
 /* Favorites hold what was pasted, a name and an optional folder, newest first. */
 
 const sameFolder = (a, b) => a.toLocaleLowerCase() === b.toLocaleLowerCase();

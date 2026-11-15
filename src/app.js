@@ -8,15 +8,16 @@ import {
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
-import { clock, guideUpdated, loadGuide, nowAndNext } from './guide.js';
+import { clock, guideKey, guideUpdated, loadGuide, nowAndNext } from './guide.js';
 import { LEAGUES, loadLeague } from './standings.js';
+import { TABS as MATCH_TABS, isMine, loadTab } from './matches.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { isBlockedMixedContent, parseSource } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
-  saveNamed, setFolderClosed, setMixerOpen, lastStandings, setLastStandings, transferableFavorites, unpackFavorites,
+  saveNamed, setFolderClosed, setMixerOpen, lastStandings, setLastStandings, lastMatches, setLastMatches, transferableFavorites, unpackFavorites,
 } from './storage.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -655,6 +656,140 @@ function buildStandings() {
 }
 
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
+
+/* ---------- Matches ---------- */
+
+let matchesTab = MATCH_TABS.find((tab) => tab.id === lastMatches()) ?? MATCH_TABS[0];
+let matchesTimer = null;
+let matchesAsked = 0;
+
+// ESPN's channel names that differ from what a favorite would be called.
+const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file']);
+
+/** A favorite showing one of the game's channels, if there is one. */
+function favoriteForChannels(names) {
+  const favorites = listFavorites().filter((item) => !NOT_CHANNELS.has(parseSource(item.input).kind));
+  for (const name of names) {
+    const key = guideKey(name);
+    const wanted = [key, CHANNEL_ALIASES[key]].filter(Boolean);
+    const hit = favorites.find((item) => wanted.includes(guideKey(item.name)));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+function dayLabel(time) {
+  const day = new Date(time);
+  day.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((day - today) / 86400000);
+  if (diff === 0) return `Today · ${dayFormat.format(day)}`;
+  if (diff === 1) return `Tomorrow · ${dayFormat.format(day)}`;
+  if (diff === -1) return `Yesterday · ${dayFormat.format(day)}`;
+  return dayFormat.format(day);
+}
+
+function matchRow(match) {
+  const shows = match.state !== 'pre';
+  const when = match.state === 'in' ? match.detail : match.state === 'post' ? (match.detail || 'Final') : clock(match.start);
+  const team = (side) => el('span', { class: `match-team${isMine(side) ? ' is-mine' : ''}${match.state === 'post' && side.winner ? ' is-winner' : ''}` },
+    el('span', { class: 'match-name', textContent: side.name, title: side.full }),
+    shows ? el('span', { class: 'match-score', textContent: side.score }) : null);
+  const favorite = match.tv.length ? favoriteForChannels(match.tv) : null;
+  const channel = match.tv.length ? el('span', { class: `match-tv${favorite ? ' is-yours' : ''}`, textContent: match.tv.slice(0, 2).join(' · ') }) : null;
+  const inner = [
+    el('span', { class: `match-when${match.state === 'in' ? ' is-live' : ''}`, textContent: when }),
+    el('span', { class: 'match-teams' }, team(match.home), team(match.away)),
+    channel,
+  ];
+  if (!favorite) return el('li', { class: 'match' }, el('div', { class: 'match-row' }, ...inner));
+  return el('li', { class: 'match' }, el('button', {
+    type: 'button',
+    class: 'match-row',
+    title: `Watch on ${favorite.name}`,
+    on: {
+      click() {
+        closePopovers();
+        addStream(favorite.input);
+        toast(`Added ${favorite.name}.`);
+      },
+    },
+  }, ...inner));
+}
+
+function matchList(matches) {
+  const parts = [];
+  let current = '';
+  let list = null;
+  for (const match of matches) {
+    const label = dayLabel(match.start);
+    if (label !== current) {
+      current = label;
+      list = el('ul', { class: 'match-list' });
+      parts.push(el('h4', { class: 'match-day', textContent: label }), list);
+    }
+    list.append(matchRow(match));
+  }
+  return parts;
+}
+
+async function fillMatches() {
+  const menu = $('matches-menu');
+  const tab = matchesTab;
+  const asked = ++matchesAsked;
+  const body = menu.querySelector('.standings-body');
+  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  try {
+    const sections = await loadTab(tab);
+    if (asked !== matchesAsked || menu.hidden) return;
+    const parts = sections.map((section) => el('section', { class: 'standings-group' },
+      section.title ? el('h3', { textContent: section.title }) : null,
+      ...(section.matches.length ? matchList(section.matches) : [el('p', { class: 'standings-note', textContent: 'No games in the next two weeks.' })])));
+    const scroll = body.scrollTop;
+    body.replaceChildren(...parts);
+    body.scrollTop = scroll;
+    menu.querySelector('.standings-updated').textContent = `Updated ${clock(Date.now())} · ESPN · Times in your time zone`;
+  } catch {
+    if (asked !== matchesAsked || menu.hidden) return;
+    body.replaceChildren(el('p', { class: 'standings-note', textContent: "Matches couldn't load. ESPN didn't answer, so try again in a minute." }));
+  }
+}
+
+function buildMatches() {
+  const menu = $('matches-menu');
+  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...MATCH_TABS.map((tab) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `standings-tab${tab === matchesTab ? ' is-on' : ''}`,
+    aria: { selected: String(tab === matchesTab) },
+    textContent: tab.name,
+    on: {
+      click(event) {
+        matchesTab = tab;
+        setLastMatches(tab.id);
+        for (const other of tabs.children) {
+          const on = other === event.currentTarget;
+          other.classList.toggle('is-on', on);
+          other.setAttribute('aria-selected', String(on));
+        }
+        menu.querySelector('.standings-body').replaceChildren();
+        fillMatches();
+      },
+    },
+  })));
+  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  fillMatches();
+  clearInterval(matchesTimer);
+  matchesTimer = setInterval(() => {
+    if ($('matches-menu').hidden) return clearInterval(matchesTimer);
+    fillMatches();
+  }, 60 * 1000);
+}
+
+$('matches-button').addEventListener('click', () => togglePopover($('matches-button'), $('matches-menu'), buildMatches));
 
 /* ---------- Favorites on another device ---------- */
 

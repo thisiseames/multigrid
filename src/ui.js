@@ -24,6 +24,7 @@ const ICON_PATHS = {
   trash: '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/>',
   update: '<path d="m3.5 8.5 3 3 6-7"/>',
   back: '<path d="M10 3.5 5.5 8l4.5 4.5"/>',
+  calendar: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.8h11M5.5 2v3M10.5 2v3"/>',
   table: '<rect x="2.5" y="3" width="11" height="10" rx="1.2"/><path d="M2.5 6.3h11M2.5 9.6h11M6 3v10"/>',
   next: '<path d="m6 3.5 4.5 4.5L6 12.5"/>',
 };
