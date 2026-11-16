@@ -520,9 +520,15 @@ function favoriteCard(item, holder) {
     favoriteArt(item.name, source),
     el('span', { class: 'fcard-text' },
       el('b', { textContent: item.name, title: item.name }),
-      el('small', {},
-        el('span', { class: 'fcard-kind', textContent: kindName(item, source) }),
-        nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null))),
+      (() => {
+        // A plain website gets no label: it says nothing about the favorite.
+        const kind = kindName(item, source);
+        const label = kind === 'Website' ? '' : kind;
+        if (!label && !nowText) return null;
+        return el('small', {},
+          label ? el('span', { class: 'fcard-kind', textContent: label }) : null,
+          nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null);
+      })())),
     el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16)));
   return card;
 }
