@@ -11,7 +11,7 @@ import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, nowAndNext, showsBetween } from './guide.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
-import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markRead, readIds, saveKey } from './reader.js';
+import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
@@ -891,6 +891,7 @@ $('standings-button').addEventListener('click', () => togglePopover($('standings
 /* ---------- Reader ---------- */
 
 const READER_TAB_KEY = 'multigrid.readertab.v1';
+const READER_GROUPS = ['All', 'News', 'Sport', 'Man United', 'Entertainment', 'Tech', 'Travel', 'Podcasts & Video'];
 let readerTab = (() => { try { return localStorage.getItem(READER_TAB_KEY) || 'All'; } catch { return 'All'; } })();
 let readerTimer = null;
 let readerAsked = 0;
@@ -903,51 +904,132 @@ function openItem(item) {
   else addStream(readerInput(item.id, item.title));
 }
 
+const inTab = (item, tab) => tab === 'All' || item.group === tab;
+
+function readerPicture(item, cls) {
+  if (!item.image) return null;
+  return el('img', {
+    class: cls,
+    src: item.image,
+    alt: '',
+    loading: 'lazy',
+    decoding: 'async',
+    referrerPolicy: 'no-referrer',
+    on: { error(event) { event.currentTarget.closest('.rrow-thumb, .rhero-media')?.classList.add('is-missing'); event.currentTarget.remove(); } },
+  });
+}
+
+function kindBadge(item) {
+  if (item.kind === 'youtube') return el('span', { class: 'rkind is-video' }, icon('play'), 'Video');
+  if (item.kind === 'podcast') return el('span', { class: 'rkind is-podcast' }, icon('sound'), 'Listen');
+  return null;
+}
+
+function readerSource(item) {
+  return el('span', { class: 'rsource' },
+    el('span', { class: 'rsource-name', style: `color:${sourceColor(item.source)}`, textContent: item.source }),
+    el('span', { class: 'rsource-time', textContent: ago(item.time) }));
+}
+
+/** The big card at the top of a tab. */
+function readerHero(item, read) {
+  return el('button', { type: 'button', class: `rhero${read ? ' is-read' : ''}`, on: { click: () => openItem(item) } },
+    el('span', { class: 'rhero-media' }, readerPicture(item, 'rhero-img'), kindBadge(item)),
+    el('span', { class: 'rhero-text' },
+      readerSource(item),
+      el('span', { class: 'rhero-title', textContent: item.title }),
+      item.summary ? el('span', { class: 'rhero-summary', textContent: item.summary }) : null));
+}
+
 function readerRow(item, read) {
-  const label = item.kind === 'youtube' ? 'Video' : item.kind === 'podcast' ? 'Podcast' : '';
-  return el('li', { class: `reader-item${read ? ' is-read' : ''}` }, el('button', {
-    type: 'button',
-    class: 'reader-row',
-    on: { click: () => openItem(item) },
-  },
-  item.image ? el('img', { class: 'reader-thumb', src: item.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
-  el('span', { class: 'reader-text' },
-    el('span', { class: 'reader-source', textContent: [item.source, ago(item.time), label].filter(Boolean).join(' · ') }),
-    el('span', { class: 'reader-title', textContent: item.title }),
-    item.summary ? el('span', { class: 'reader-snippet', textContent: item.summary }) : null)));
+  return el('li', { class: `rrow${read ? ' is-read' : ''}` }, el('button', { type: 'button', class: 'rrow-main', on: { click: () => openItem(item) } },
+    el('span', { class: 'rrow-text' },
+      readerSource(item),
+      el('span', { class: 'rrow-title', textContent: item.title }),
+      item.summary ? el('span', { class: 'rrow-summary', textContent: item.summary }) : null),
+    item.image ? el('span', { class: 'rrow-thumb' }, readerPicture(item, 'rrow-img'), kindBadge(item))
+      : kindBadge(item) ? el('span', { class: 'rrow-thumb is-blank' }, kindBadge(item)) : null));
+}
+
+/** "Last hour", "Earlier today", "Yesterday", then dates. */
+function readerWhen(time, now = Date.now()) {
+  if (now - time < 3600000) return 'Last hour';
+  const day = new Date(time);
+  day.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - day) / 86400000);
+  if (diff <= 0) return 'Earlier today';
+  if (diff === 1) return 'Yesterday';
+  return dayFormat.format(new Date(time));
+}
+
+function readerTabs(data) {
+  const read = readIds();
+  const tabs = $('reader-menu').querySelector('.matches-tabs');
+  for (const button of tabs.children) {
+    const unread = data ? data.items.filter((item) => inTab(item, button.dataset.tab) && !read.has(item.id)).length : 0;
+    button.querySelector('.rcount').textContent = unread ? String(unread) : '';
+  }
 }
 
 async function fillReader() {
   const menu = $('reader-menu');
   const asked = ++readerAsked;
-  const body = menu.querySelector('.standings-body');
-  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  const body = menu.querySelector('.matches-body');
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const data = await loadIndex(true);
   if (asked !== readerAsked || menu.hidden) return;
   if (!data) {
-    body.replaceChildren(el('p', { class: 'standings-note', textContent: "The Reader couldn't load. Try again in a minute." }));
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "The Reader couldn't load. Try again in a minute." }));
     return;
   }
-  const items = data.items.filter((item) => readerTab === 'All' || item.group === readerTab).slice(0, readerTab === 'All' ? 120 : 200);
+  readerTabs(data);
   const read = readIds();
+  const items = data.items.filter((item) => inTab(item, readerTab)).sort((a, b) => b.time - a.time).slice(0, 300);
+  const unread = items.filter((item) => !read.has(item.id));
+  const top = items.find((item) => item.image && !read.has(item.id)) || items.find((item) => item.image) || null;
+  const rest = items.filter((item) => item !== top);
+  const parts = [];
+  if (!hasKey()) parts.push(el('p', { class: 'rlocked' }, icon('reader'), "This device isn't unlocked, so stories open as a summary. Open your Reader unlock link here once to read them in full."));
+  parts.push(el('div', { class: 'rtools' },
+    el('span', { textContent: unread.length ? `${unread.length} unread` : 'All caught up' }),
+    unread.length ? el('button', {
+      type: 'button',
+      class: 'rmark',
+      textContent: 'Mark all as read',
+      on: { click() { markAllRead(items.map((item) => item.id)); fillReader(); } },
+    }) : null));
+  if (!items.length) parts.push(el('p', { class: 'match-quiet is-empty', textContent: 'Nothing here yet.' }));
+  if (top) parts.push(readerHero(top, read.has(top.id)));
+  let heading = '';
+  let list = null;
+  for (const item of rest) {
+    const when = readerWhen(item.time);
+    if (when !== heading) {
+      heading = when;
+      list = el('ul', { class: 'rlist' });
+      parts.push(el('h4', { class: 'match-day', textContent: when }), list);
+    }
+    list.append(readerRow(item, read.has(item.id)));
+  }
   const scroll = body.scrollTop;
-  body.replaceChildren(
-    hasKey() ? null : el('p', { class: 'reader-locked', textContent: "This device isn't unlocked, so stories show their summary only. Open your Reader unlock link here once to read them in full." }),
-    items.length ? el('ul', { class: 'reader-list' }, ...items.map((item) => readerRow(item, read.has(item.id)))) : el('p', { class: 'standings-note', textContent: 'Nothing here yet.' }));
+  body.replaceChildren(...parts);
   body.scrollTop = scroll;
-  menu.querySelector('.standings-updated').textContent = `Updated ${ago(data.updated)} · ${data.items.length} stories`;
+  const stale = Date.now() - data.updated > 2 * 3600000;
+  const footer = menu.querySelector('.matches-updated');
+  footer.classList.toggle('is-stale', stale);
+  footer.textContent = `Updated ${ago(data.updated)} · ${data.items.length} stories`;
 }
 
 function buildReader() {
   const menu = $('reader-menu');
-  const groups = ['All', 'News', 'Sport', 'Man United', 'Entertainment', 'Tech', 'Travel', 'Podcasts & Video'];
-  if (!groups.includes(readerTab)) readerTab = 'All';
-  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...groups.map((name) => el('button', {
+  if (!READER_GROUPS.includes(readerTab)) readerTab = 'All';
+  const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...READER_GROUPS.map((name) => el('button', {
     type: 'button',
     role: 'tab',
-    class: `standings-tab${name === readerTab ? ' is-on' : ''}`,
+    class: `matches-tab${name === readerTab ? ' is-on' : ''}`,
     aria: { selected: String(name === readerTab) },
-    textContent: name,
     on: {
       click(event) {
         readerTab = name;
@@ -957,12 +1039,17 @@ function buildReader() {
           other.classList.toggle('is-on', on);
           other.setAttribute('aria-selected', String(on));
         }
-        menu.querySelector('.standings-body').replaceChildren();
+        event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        const body = menu.querySelector('.matches-body');
+        body.replaceChildren();
+        body.scrollTop = 0;
         fillReader();
       },
     },
-  })));
-  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  }, el('span', { textContent: name }), el('span', { class: 'rcount' }))));
+  for (const [index, button] of [...tabs.children].entries()) button.dataset.tab = READER_GROUPS[index];
+  menu.replaceChildren(tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillReader();
   clearInterval(readerTimer);
   readerTimer = setInterval(() => {

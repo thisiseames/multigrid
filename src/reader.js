@@ -107,3 +107,16 @@ export function safeFragment(html) {
   };
   return build(doc.body.firstChild);
 }
+
+/** Marks a batch as read in one save, for "Mark all as read". */
+export function markAllRead(ids) {
+  const all = [...readIds(), ...ids];
+  write(READ_STORE, JSON.stringify([...new Set(all)].slice(-1500)));
+}
+
+/** Each source gets its own steady colour, light enough to read on the dark panel. */
+export function sourceColor(name = '') {
+  let hash = 0;
+  for (const char of String(name)) hash = (hash * 31 + char.codePointAt(0)) % 360;
+  return `hsl(${hash} 70% 72%)`;
+}

@@ -14,7 +14,7 @@
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { el, iconButton } from './ui.js';
-import { ago, hasKey, itemById, loadIndex, openStory, safeFragment } from './reader.js';
+import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 
 const scripts = new Map();
 
@@ -641,8 +641,8 @@ function readerPlayer(source) {
     self.el = frame;
   };
   const actions = (link) => el('p', { class: 'reader-actions' },
-    hasSoundExtension() ? el('button', { type: 'button', class: 'text-button', textContent: 'Show the real page here', on: { click: () => realPage(link) } }) : null,
-    el('a', { class: 'text-button', href: link, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open the real page' }));
+    hasSoundExtension() ? el('button', { type: 'button', class: 'reader-pill', textContent: 'Show the real page here', on: { click: () => realPage(link) } }) : null,
+    el('a', { class: 'reader-pill', href: link, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open the real page' }));
   const self = {
     el: box,
     canMute: false,
@@ -662,7 +662,9 @@ function readerPlayer(source) {
       const link = story?.link || item?.page || item?.link || '';
       const title = story?.title || item?.title || source.label;
       const parts = [
-        el('p', { class: 'reader-meta', textContent: [item?.source, item ? ago(item.time) : '', story?.byline].filter(Boolean).join(' · ') }),
+        el('p', { class: 'reader-meta' },
+          item?.source ? el('span', { class: 'reader-src', style: `color:${sourceColor(item.source)}`, textContent: item.source }) : null,
+          el('span', { textContent: [item ? ago(item.time) : '', story?.byline].filter(Boolean).join(' · ') })),
         el('h1', { textContent: title }),
       ];
       const picture = item?.image || story?.image;
@@ -677,7 +679,7 @@ function readerPlayer(source) {
           : item?.hasText === false || item?.textTried ? "This site doesn't let its stories be read outside its own page." : 'This story is still being collected. Try again in a few minutes.' }));
       }
       if (link) parts.push(actions(link));
-      box.replaceChildren(...parts);
+      box.replaceChildren(el('div', { class: 'reader-page' }, ...parts));
     },
     setMuted() {},
     setVolume() {},
