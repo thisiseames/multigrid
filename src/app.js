@@ -548,7 +548,7 @@ function showDetails(item, show) {
   const color = teamColorOf(show);
   const close = () => sheet.remove();
   const sheet = el('div', { class: 'gdetail', on: { click(event) { if (event.target === sheet) close(); } } },
-    el('div', { class: 'gdetail-card', role: 'dialog', aria: { label: show.title }, style: color ? `--team:${color}` : '' },
+    el('div', { class: 'gdetail-card', role: 'dialog', tabIndex: -1, aria: { label: show.title }, style: color ? `--team:${color}` : '' },
       el('div', { class: 'gdetail-top' },
         el('span', { class: 'gdetail-channel', textContent: item.name }),
         iconButton('close', 'Close', close)),
@@ -562,7 +562,7 @@ function showDetails(item, show) {
       show.about ? el('p', { class: 'gdetail-about', textContent: show.about }) : el('p', { class: 'gdetail-about is-quiet', textContent: 'No description for this one.' }),
       el('div', { class: 'gdetail-actions' }, guideWatchButton(item, `Watch ${item.name}`))));
   box.append(sheet);
-  sheet.querySelector('.gdetail-card button')?.focus();
+  sheet.querySelector('.gdetail-card')?.focus({ preventScroll: true });
 }
 
 /* Now: one card per channel. */
