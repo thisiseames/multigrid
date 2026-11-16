@@ -474,6 +474,37 @@ function artPicture(art, url, fallBack, checkStandIn = false) {
   art.replaceChildren(img);
 }
 
+/* Series posters from TVmaze's free TV database. A device remembers each answer for a week. */
+const POSTER_STORE = 'multigrid.posters.v1';
+const POSTER_DAYS = 7;
+const posterAsks = new Map();
+const readPosters = () => { try { return JSON.parse(localStorage.getItem(POSTER_STORE) || '{}') || {}; } catch { return {}; } };
+const isSeriesFolder = (folder) => /series|shows?\b/i.test(folder || '');
+
+function posterFor(name) {
+  const key = name.trim().toLocaleLowerCase();
+  const known = readPosters()[key];
+  if (known && Date.now() - known.at < POSTER_DAYS * 86400000) return Promise.resolve(known.url || null);
+  if (posterAsks.has(key)) return posterAsks.get(key);
+  const ask = fetch(`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(name.trim())}`, { signal: AbortSignal.timeout?.(6000) })
+    .then((response) => (response.status === 404 ? {} : response.ok ? response.json() : null))
+    .then((show) => {
+      if (!show) return null; // A busy moment: try again next time instead of remembering nothing.
+      const raw = show.image?.medium || '';
+      const url = raw.startsWith('http://') ? `https://${raw.slice(7)}` : raw;
+      try {
+        const all = readPosters();
+        all[key] = { url: /^https:\/\//.test(url) ? url : '', at: Date.now() };
+        localStorage.setItem(POSTER_STORE, JSON.stringify(all));
+      } catch { /* not remembered, asked again next time */ }
+      return /^https:\/\//.test(url) ? url : null;
+    })
+    .catch(() => null)
+    .finally(() => posterAsks.delete(key));
+  posterAsks.set(key, ask);
+  return ask;
+}
+
 /** A TV channel's logo, a YouTube picture, or one quiet grey icon for what it is. */
 function favoriteArt(item, source) {
   const art = el('span', { class: 'fart' });
@@ -506,6 +537,16 @@ function favoriteArt(item, source) {
     return art;
   }
   quiet();
+  if (isSeriesFolder(item.group)) {
+    posterFor(item.name).then((url) => {
+      if (!url) return;
+      const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+      const poster = el('img', { class: 'fart-poster', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+      poster.addEventListener('error', quiet, { once: true });
+      art.className = 'fart is-poster';
+      art.replaceChildren(backdrop, poster);
+    });
+  }
   return art;
 }
 
