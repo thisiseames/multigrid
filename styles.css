@@ -676,27 +676,91 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 
 /* ---------- TV guide ---------- */
 .favorite-now { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-2); font-size: 11.5px; }
-.guide { width: min(620px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); flex-direction: column; padding-bottom: 8px; }
+.guide { position: relative; width: min(1000px, calc(100vw - 24px)); height: min(760px, calc(100dvh - 32px)); padding: 0; flex-direction: column; overflow: hidden; background: #141416; }
 .guide[open] { display: flex; }
-.guide .help-head { align-items: flex-start; }
-.guide-updated { display: block; margin-top: 2px; font-size: 12px; color: var(--text-2); }
-.guide-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
-.guide-section h3 { position: sticky; top: 0; z-index: 1; margin: 0; padding: 10px 8px 4px; background: var(--raised); font-size: 12px; font-weight: 500; color: var(--text-2); }
-.guide-list { list-style: none; margin: 0; padding: 0; }
-.guide-row { display: grid; grid-template-columns: minmax(96px, 30%) 1fr; gap: 12px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; color: var(--text); }
-.guide-row:hover, .guide-row:focus-visible { background: var(--hover); }
-.guide-channel { font-weight: 600; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
-.guide-shows { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.guide-now { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.guide-now b { flex: 1; min-width: 0; font-weight: 500; font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.guide-now small { flex: none; font-size: 12px; color: var(--text-2); }
-.guide-bar { display: block; height: 3px; border-radius: 2px; background: var(--border-strong); overflow: hidden; }
-.guide-bar > span { display: block; height: 100%; background: var(--accent); }
-.guide-next { font-size: 12px; color: var(--text-2); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.guide-empty, .guide-note { margin: 12px 8px 4px; font-size: 13px; color: var(--text-2); }
+.ghead { flex: none; display: flex; align-items: center; gap: 12px; padding: 14px 14px 10px 18px; }
+.ghead-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ghead-title h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.ghead-title small { font-size: 12px; color: var(--text-2); }
+.gviews { flex: none; display: flex; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.07); }
+.gview { height: 28px; padding: 0 14px; border-radius: 999px; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.gview.is-on { background: var(--text); color: #111; }
+.gfolders { border-bottom: 1px solid var(--border); padding-top: 2px; }
+.gbody { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 12px; }
+.gnote { margin: 14px 4px 4px; font-size: 12.5px; color: var(--text-2); }
+.live-badge.is-small { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .04em; }
+.team-mark { display: inline-block; flex: none; width: 4px; height: 1em; margin-right: 8px; border-radius: 2px; background: var(--team); vertical-align: -2px; }
+.gbar { position: relative; display: block; flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.gbar > span { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--accent); }
+
+/* Now */
+.gnow-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 10px; }
+.gnow { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); }
+.gnow.is-mine { background: linear-gradient(135deg, color-mix(in srgb, var(--team) 22%, var(--surface)), var(--surface) 65%); }
+.gnow-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; color: var(--text); }
+.gnow-channel { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+.gnow-channel > span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gnow-title { display: flex; align-items: center; min-width: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gnow-title { display: block; }
+.gnow-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gnow-progress .gbar { flex: 1 0 100%; }
+.gnow-next { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12.5px; color: var(--text-2); }
+.gnow-next b { margin-right: 6px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.gnow .match-watch { flex: none; align-self: center; }
+
+/* Timeline */
+.gbody.is-timeline { padding: 0; }
+.gtl { position: relative; width: calc(var(--chan) + var(--track)); --chan: 150px; }
+.gtl-head { position: sticky; top: 0; z-index: 3; display: flex; height: 34px; background: #141416; border-bottom: 1px solid var(--border); }
+.gtl-corner { position: sticky; left: 0; z-index: 4; flex: none; width: var(--chan); display: flex; align-items: center; padding-left: 16px; background: #141416; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
+.gtl-marks { position: relative; flex: none; }
+.gtl-mark { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 8px; border-left: 1px solid var(--border); font-size: 11.5px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gtl-lines { position: relative; padding-bottom: 12px; }
+.gtl-now { position: absolute; top: 0; bottom: 0; z-index: 0; width: 2px; margin-left: calc(var(--chan) - 1px); background: rgba(255, 90, 95, .7); pointer-events: none; }
+.gtl-now-head { position: absolute; bottom: 0; width: 2px; height: 10px; margin-left: -1px; background: #ff5a5f; }
+.gtl-now-head::before { content: ''; position: absolute; bottom: 6px; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: #ff5a5f; }
+.gtl-row { position: relative; z-index: 1; }
+.gtl-row { display: flex; height: 64px; border-bottom: 1px solid var(--border); }
+.gtl-channel { position: sticky; left: 0; z-index: 2; flex: none; width: var(--chan); display: flex; align-items: center; padding: 0 10px 0 16px; background: #18181b; border-right: 1px solid var(--border); text-align: left; font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.25; }
+.gtl-channel > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gtl-channel:hover { background: #1f1f23; }
+.gtl-track { position: relative; flex: none; }
+.gtl-show { position: absolute; top: 6px; bottom: 6px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0 10px; border-radius: 9px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); text-align: left; color: var(--text); overflow: hidden; }
+.gtl-show:hover { background: #26262a; }
+.gtl-show.is-now { background: linear-gradient(90deg, #2c3348 var(--done, 0%), #222327 var(--done, 0%)); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.gtl-show.is-now.is-mine { background: linear-gradient(90deg, color-mix(in srgb, var(--team) 34%, var(--surface)) var(--done, 0%), color-mix(in srgb, var(--team) 16%, var(--surface)) var(--done, 0%)); }
+.gtl-show.is-past { opacity: .45; }
+.gtl-show.is-mine { box-shadow: inset 3px 0 0 var(--team); background: color-mix(in srgb, var(--team) 16%, var(--surface)); }
+.gtl-title { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gtl-title { display: block; }
+.gtl-title .live-dot { display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.gtl-time { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+
+/* Show details */
+.gdetail { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.55); }
+.gdetail-card { --team: var(--accent); width: min(460px, 100%); max-height: 100%; overflow: auto; padding: 16px 18px 18px; border-radius: 18px; background: #1c1c1f; border: 1px solid var(--border-strong); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.gdetail-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.gdetail-channel { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); }
+.gdetail-title { margin: 0 0 8px; font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.gdetail-when { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.gdetail-card .gnow-progress { margin-top: 12px; }
+.gdetail-about { margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: var(--text); }
+.gdetail-about.is-quiet { color: var(--text-2); }
+.gdetail-actions { display: flex; margin-top: 16px; }
+.gdetail-actions .match-watch { height: 38px; padding: 0 16px; font-size: 14px; }
 @media (max-width: 640px) {
-  .guide { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); padding: 14px 12px 8px; }
-  .guide-row { grid-template-columns: 1fr; gap: 4px; }
+  .guide { width: 100vw; height: 100dvh; max-width: 100vw; max-height: 100dvh; margin: 0; border-radius: 0; border: 0; }
+  .ghead { padding: 12px 10px 8px 14px; gap: 8px; }
+  .ghead-title h2 { font-size: 17px; }
+  .gview { padding: 0 11px; }
+  .gbody { padding: 10px 8px; }
+  .gnow-list { grid-template-columns: minmax(0, 1fr); }
+  .gtl { --chan: 104px; }
+  .gtl-channel { padding: 0 8px 0 12px; font-size: 12px; }
+  .gtl-corner { padding-left: 12px; }
+  .gdetail { align-items: flex-end; padding: 0; }
+  .gdetail-card { width: 100%; border-radius: 18px 18px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
 }
 
 /* ---------- TikTok feeds ---------- */
