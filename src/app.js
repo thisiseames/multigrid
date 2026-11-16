@@ -10,7 +10,7 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, nowAndNext } from './guide.js';
 import { LEAGUES, loadLeague } from './standings.js';
-import { TABS as MATCH_TABS, isMine, loadTab } from './matches.js';
+import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markRead, readIds, saveKey } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
@@ -766,6 +766,10 @@ window.addEventListener('hashchange', receiveReaderKey);
 let matchesTab = MATCH_TABS.find((tab) => tab.id === lastMatches()) ?? MATCH_TABS[0];
 let matchesTimer = null;
 let matchesAsked = 0;
+let matchesFetched = 0;
+let matchesLive = false;
+const matchOpen = new Set();
+const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
@@ -784,44 +788,162 @@ function favoriteForChannels(names) {
 }
 
 const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-function dayLabel(time) {
+const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
+const monthDay = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+function daysAway(time) {
   const day = new Date(time);
   day.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const diff = Math.round((day - today) / 86400000);
-  if (diff === 0) return `Today · ${dayFormat.format(day)}`;
-  if (diff === 1) return `Tomorrow · ${dayFormat.format(day)}`;
-  if (diff === -1) return `Yesterday · ${dayFormat.format(day)}`;
-  return dayFormat.format(day);
+  return Math.round((day - today) / 86400000);
+}
+function dayLabel(time) {
+  const diff = daysAway(time);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  return dayFormat.format(new Date(time));
+}
+/** "Today", "Sat" within the week, "Nov 29" further out: it has to fit a narrow column. */
+function shortDay(time) {
+  const diff = daysAway(time);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  return diff > 1 && diff < 7 ? weekday.format(new Date(time)) : monthDay.format(new Date(time));
 }
 
-function matchRow(match) {
-  const shows = match.state !== 'pre';
-  const when = match.state === 'in' ? match.detail : match.state === 'post' ? (match.detail || 'Final') : clock(match.start);
-  const team = (side) => el('span', { class: `match-team${isMine(side) ? ' is-mine' : ''}${match.state === 'post' && side.winner ? ' is-winner' : ''}` },
-    el('span', { class: 'match-name', textContent: side.name, title: side.full }),
-    shows ? el('span', { class: 'match-score', textContent: side.score }) : null);
+function crestOf(side, size) {
+  if (!side.logo) return el('span', { class: 'crest crest-blank', style: `--size:${size}px`, textContent: (side.abbr || side.name).slice(0, 3) });
+  const img = el('img', { class: 'crest', style: `--size:${size}px`, src: crest(side.logo, size * 2), alt: '', width: size, height: size, loading: 'lazy', decoding: 'async' });
+  img.addEventListener('error', () => img.replaceWith(el('span', { class: 'crest crest-blank', style: `--size:${size}px`, textContent: (side.abbr || side.name).slice(0, 3) })), { once: true });
+  return img;
+}
+
+function liveBadge(match) {
+  return el('span', { class: 'live-badge' }, el('span', { class: 'live-dot' }), match.detail || 'Live');
+}
+
+function finalText(match) {
+  if (match.sport === 'soccer/all') return /pen|aet/i.test(match.detail) ? match.detail : 'FT';
+  return match.detail && match.detail !== 'Final' ? match.detail : 'Final';
+}
+
+function watchButton(match, compact = false) {
   const favorite = match.tv.length ? favoriteForChannels(match.tv) : null;
-  const channel = match.tv.length ? el('span', { class: `match-tv${favorite ? ' is-yours' : ''}`, textContent: match.tv.slice(0, 2).join(' · ') }) : null;
-  const inner = [
-    el('span', { class: `match-when${match.state === 'in' ? ' is-live' : ''}`, textContent: when }),
-    el('span', { class: 'match-teams' }, team(match.home), team(match.away)),
-    channel,
-  ];
-  if (!favorite) return el('li', { class: 'match' }, el('div', { class: 'match-row' }, ...inner));
-  return el('li', { class: 'match' }, el('button', {
+  if (!favorite) return null;
+  return el('button', {
     type: 'button',
-    class: 'match-row',
+    class: `match-watch${compact ? ' is-compact' : ''}`,
     title: `Watch on ${favorite.name}`,
     on: {
-      click() {
+      click(event) {
+        event.stopPropagation();
         closePopovers();
         addStream(favorite.input);
         toast(`Added ${favorite.name}.`);
       },
     },
-  }, ...inner));
+  }, icon('play'), compact ? 'Watch' : `Watch on ${favorite.name}`);
+}
+
+const moment = {
+  goal: () => el('span', { class: 'mo-icon mo-goal', aria: { label: 'Goal' } }),
+  yellow: () => el('span', { class: 'mo-icon mo-card is-yellow', aria: { label: 'Yellow card' } }),
+  red: () => el('span', { class: 'mo-icon mo-card is-red', aria: { label: 'Red card' } }),
+};
+
+function detailsBody(match, details) {
+  const parts = [];
+  if (details.moments?.length) {
+    parts.push(el('ol', { class: 'moments' }, ...details.moments.map((item) => {
+      const who = el('span', { class: 'mo-who' }, moment[item.kind](), el('span', { class: 'mo-name', textContent: item.player || '—' }),
+        item.note ? el('span', { class: 'mo-note', textContent: item.note }) : null);
+      return el('li', { class: `mo${item.home ? ' is-home' : ' is-away'}${item.kind === 'goal' ? ' is-goal' : ''}` },
+        item.home ? who : el('span'), el('span', { class: 'mo-minute', textContent: item.minute }), item.home ? el('span') : who);
+    })));
+  } else if (details.periods?.home?.length) {
+    const count = Math.max(details.periods.home.length, details.periods.away.length);
+    const regular = match.sport === 'basketball/nba' || match.sport === 'football/nfl' ? 4 : count;
+    const heads = Array.from({ length: count }, (_, i) => (i < regular ? String(i + 1) : i === regular ? 'OT' : `${i - regular + 1}OT`));
+    const row = (side, lines) => el('tr', { class: side.winner ? 'is-winner' : '' },
+      el('th', { scope: 'row' }, crestOf(side, 16), el('span', { textContent: side.abbr || side.name })),
+      ...heads.map((_, i) => el('td', { textContent: lines[i] ?? '' })),
+      el('td', { class: 'total', textContent: side.score }));
+    parts.push(el('table', { class: 'periods' },
+      el('thead', {}, el('tr', {}, el('th', {}), ...heads.map((head) => el('th', { textContent: head })), el('th', { class: 'total', textContent: 'T' }))),
+      el('tbody', {}, row(match.home, details.periods.home), row(match.away, details.periods.away))));
+  } else if (match.state !== 'pre') {
+    parts.push(el('p', { class: 'match-quiet', textContent: match.sport === 'soccer/all' ? 'No goals or cards yet.' : 'No score by quarter yet.' }));
+  }
+  const facts = [details.venue || match.venue, match.tv.length ? match.tv.slice(0, 3).join(' · ') : ''].filter(Boolean);
+  const watch = watchButton(match);
+  if (facts.length || watch) {
+    parts.push(el('div', { class: 'match-facts' },
+      el('span', { class: 'match-facts-text' }, ...facts.map((text, i) => el('span', { class: i ? 'fact-tv' : 'fact-venue', textContent: text }))),
+      watch));
+  }
+  return parts;
+}
+
+function fillDetails(match, holder, refresh = false) {
+  if (match.state === 'pre') {
+    holder.replaceChildren(...detailsBody(match, { venue: match.venue }));
+    return;
+  }
+  const known = matchDetails.get(match.id);
+  if (known && !(refresh && match.state === 'in')) {
+    if (known.data) holder.replaceChildren(...detailsBody(match, known.data));
+    if (known.data || known.failed) return;
+  }
+  if (!known?.data) holder.replaceChildren(el('p', { class: 'match-quiet', textContent: 'Loading…' }));
+  const entry = { data: known?.data || null, failed: false };
+  matchDetails.set(match.id, entry);
+  loadDetails(match).then((data) => {
+    entry.data = data;
+    if (holder.isConnected) holder.replaceChildren(...detailsBody(match, data));
+  }).catch(() => {
+    entry.failed = true;
+    if (holder.isConnected && !entry.data) holder.replaceChildren(...detailsBody(match, { venue: match.venue, moments: match.moments }));
+  });
+}
+
+/** One game: status on the left, both teams with crests and scores, a tap opens the details. */
+function matchRow(match, { withDay = false, result = '' } = {}) {
+  const shows = match.state !== 'pre';
+  const status = match.state === 'in' ? liveBadge(match)
+    : match.state === 'post' ? el('span', { class: 'mrow-final' }, withDay ? el('span', { class: 'mrow-day', textContent: shortDay(match.start) }) : null, finalText(match))
+      : el('span', { class: 'mrow-time' }, withDay ? el('span', { class: 'mrow-day', textContent: shortDay(match.start) }) : null, clock(match.start));
+  const team = (side, other) => el('span', { class: `mrow-team${isMine(side) ? ' is-mine' : ''}${match.state === 'post' && (side.winner || Number(side.score) > Number(other.score)) ? ' is-winner' : ''}${match.state === 'post' && (other.winner || Number(other.score) > Number(side.score)) ? ' is-loser' : ''}` },
+    crestOf(side, 20),
+    el('span', { class: 'mrow-name', textContent: side.name, title: side.full }),
+    shows ? el('span', { class: 'mrow-score', textContent: side.score }) : null);
+  const open = matchOpen.has(match.id);
+  const details = el('div', { class: 'mrow-details' });
+  const item = el('li', { class: `mrow${open ? ' is-open' : ''}${match.state === 'in' ? ' is-live' : ''}` });
+  const watch = watchButton(match, true);
+  const tv = !watch && match.tv.length ? el('span', { class: 'mrow-tv', textContent: match.tv[0] }) : null;
+  const main = el('button', {
+    type: 'button',
+    class: 'mrow-main',
+    aria: { expanded: String(open) },
+    on: {
+      click() {
+        const now = !matchOpen.has(match.id);
+        if (now) matchOpen.add(match.id); else matchOpen.delete(match.id);
+        item.classList.toggle('is-open', now);
+        main.setAttribute('aria-expanded', String(now));
+        if (now) fillDetails(match, details);
+      },
+    },
+  },
+  el('span', { class: 'mrow-status' }, status, result ? el('span', { class: `result is-${result}`, textContent: result }) : null),
+  el('span', { class: 'mrow-teams' }, team(match.home, match.away), team(match.away, match.home)),
+  el('span', { class: 'mrow-end' }, tv, el('span', { class: 'mrow-chevron' }, icon('chevron'))));
+  item.append(main, details);
+  if (watch) main.querySelector('.mrow-end').prepend(watch);
+  if (open) fillDetails(match, details, true);
+  return item;
 }
 
 function matchList(matches) {
@@ -832,42 +954,82 @@ function matchList(matches) {
     const label = dayLabel(match.start);
     if (label !== current) {
       current = label;
-      list = el('ul', { class: 'match-list' });
-      parts.push(el('h4', { class: 'match-day', textContent: label }), list);
+      list = el('ul', { class: 'mrow-list' });
+      parts.push(el('h4', { class: 'match-day' }, el('span', { textContent: label }),
+        daysAway(match.start) >= -1 && daysAway(match.start) <= 1 ? el('span', { class: 'match-day-date', textContent: dayFormat.format(new Date(match.start)) }) : null), list);
     }
     list.append(matchRow(match));
   }
   return parts;
 }
 
-async function fillMatches() {
+/** The big card at the top of each of my teams: the game on now, or the next one. */
+function heroCard(match, label) {
+  const shows = match.state !== 'pre';
+  const team = (side, other) => el('div', { class: `hero-team${shows && (side.winner || Number(side.score) > Number(other.score)) ? ' is-winner' : ''}` },
+    crestOf(side, 44), el('span', { class: 'hero-name', textContent: side.name, title: side.full }));
+  const middle = shows
+    ? el('div', { class: 'hero-mid' }, el('span', { class: 'hero-score' }, el('span', { textContent: match.home.score }), el('span', { class: 'hero-dash', textContent: '–' }), el('span', { textContent: match.away.score })),
+      match.state === 'in' ? liveBadge(match) : el('span', { class: 'hero-sub', textContent: finalText(match) }))
+    : el('div', { class: 'hero-mid' }, el('span', { class: 'hero-time', textContent: clock(match.start) }), el('span', { class: 'hero-sub', textContent: dayLabel(match.start) === dayFormat.format(new Date(match.start)) ? dayLabel(match.start) : `${dayLabel(match.start)} · ${dayFormat.format(new Date(match.start))}` }));
+  const facts = [match.venue, match.tv.slice(0, 2).join(' · ')].filter(Boolean).join('  ·  ');
+  const watch = watchButton(match);
+  return el('div', { class: `hero${match.state === 'in' ? ' is-live' : ''}` },
+    el('div', { class: 'hero-top' }, el('span', { class: `hero-label${match.state === 'in' ? ' is-live' : ''}`, textContent: label }), match.league ? el('span', { class: 'hero-league', textContent: match.league }) : null),
+    el('div', { class: 'hero-main' }, team(match.home, match.away), middle, team(match.away, match.home)),
+    facts || watch ? el('div', { class: 'hero-foot' }, facts ? el('span', { class: 'hero-facts', textContent: facts }) : null, watch) : null);
+}
+
+function teamCardView({ card }) {
+  const { team, form, last, live, next } = card;
+  const later = live ? next : next.slice(1);
+  const hero = live ? heroCard(live, 'Live') : next[0] ? heroCard(next[0], 'Next') : null;
+  return el('section', { class: 'team-card', style: team.color ? `--team:${team.color}` : '' },
+    el('header', { class: 'team-head' },
+      team.logo ? crestOf({ ...team, abbr: '' }, 30) : null,
+      el('div', { class: 'team-title' }, el('h3', { textContent: team.name }), team.record ? el('span', { class: 'team-record', textContent: team.record }) : null),
+      form.length ? el('div', { class: 'form', title: 'Last five results, oldest first', aria: { label: `Form: ${form.join(' ')}` } },
+        ...form.map((result) => el('span', { class: `form-dot is-${result}`, textContent: result }))) : null),
+    hero || el('p', { class: 'match-quiet', textContent: 'No games coming up.' }),
+    last || later.length ? el('ul', { class: 'mrow-list team-rows' },
+      last ? el('li', { class: 'team-rows-head', textContent: 'Last result' }) : null,
+      last ? matchRow(last, { withDay: true, result: outcome(last) }) : null,
+      later.length ? el('li', { class: 'team-rows-head', textContent: 'Coming up' }) : null,
+      ...later.map((match) => matchRow(match, { withDay: true }))) : null);
+}
+
+async function fillMatches(force = true) {
   const menu = $('matches-menu');
   const tab = matchesTab;
+  // While no game is live, once every five minutes is plenty.
+  if (!force && !matchesLive && Date.now() - matchesFetched < 5 * 60 * 1000) return;
   const asked = ++matchesAsked;
-  const body = menu.querySelector('.standings-body');
-  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  const body = menu.querySelector('.matches-body');
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   try {
     const sections = await loadTab(tab);
     if (asked !== matchesAsked || menu.hidden) return;
-    const parts = sections.map((section) => el('section', { class: 'standings-group' },
-      section.title ? el('h3', { textContent: section.title }) : null,
-      ...(section.matches.length ? matchList(section.matches) : [el('p', { class: 'standings-note', textContent: 'No games in the next two weeks.' })])));
+    matchesFetched = Date.now();
+    matchesLive = sections.some((section) => (section.card ? [section.card.live] : section.matches).some((match) => match?.state === 'in'));
+    const parts = sections.map((section) => (section.card ? teamCardView(section)
+      : el('section', { class: 'matches-group' }, ...(section.matches.length ? matchList(section.matches)
+        : [el('p', { class: 'match-quiet is-empty', textContent: 'No games in the next two weeks.' })]))));
     const scroll = body.scrollTop;
     body.replaceChildren(...parts);
     body.scrollTop = scroll;
-    menu.querySelector('.standings-updated').textContent = `Updated ${clock(Date.now())} · ESPN · Times in your time zone`;
+    menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())} · ESPN · Times in your time zone`;
   } catch {
     if (asked !== matchesAsked || menu.hidden) return;
-    body.replaceChildren(el('p', { class: 'standings-note', textContent: "Matches couldn't load. ESPN didn't answer, so try again in a minute." }));
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "Matches couldn't load. ESPN didn't answer, so try again in a minute." }));
   }
 }
 
 function buildMatches() {
   const menu = $('matches-menu');
-  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...MATCH_TABS.map((tab) => el('button', {
+  const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...MATCH_TABS.map((tab) => el('button', {
     type: 'button',
     role: 'tab',
-    class: `standings-tab${tab === matchesTab ? ' is-on' : ''}`,
+    class: `matches-tab${tab === matchesTab ? ' is-on' : ''}`,
     aria: { selected: String(tab === matchesTab) },
     textContent: tab.name,
     on: {
@@ -879,17 +1041,21 @@ function buildMatches() {
           other.classList.toggle('is-on', on);
           other.setAttribute('aria-selected', String(on));
         }
-        menu.querySelector('.standings-body').replaceChildren();
+        event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        const body = menu.querySelector('.matches-body');
+        body.replaceChildren();
+        body.scrollTop = 0;
         fillMatches();
       },
     },
   })));
-  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  menu.replaceChildren(tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillMatches();
   clearInterval(matchesTimer);
   matchesTimer = setInterval(() => {
     if ($('matches-menu').hidden) return clearInterval(matchesTimer);
-    fillMatches();
+    fillMatches(false);
   }, 60 * 1000);
 }
 

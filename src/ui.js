@@ -28,6 +28,7 @@ const ICON_PATHS = {
   calendar: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.8h11M5.5 2v3M10.5 2v3"/>',
   table: '<rect x="2.5" y="3" width="11" height="10" rx="1.2"/><path d="M2.5 6.3h11M2.5 9.6h11M6 3v10"/>',
   next: '<path d="m6 3.5 4.5 4.5L6 12.5"/>',
+  play: '<path fill="currentColor" stroke="none" d="M5 3.3v9.4a.5.5 0 0 0 .76.43l7.4-4.7a.5.5 0 0 0 0-.86l-7.4-4.7A.5.5 0 0 0 5 3.3z"/>',
 };
 
 export function icon(name, size = 16) {

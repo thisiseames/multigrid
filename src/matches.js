@@ -4,6 +4,8 @@
 
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports';
 export const MY_TEAMS = ['Manchester United', '49ers', 'Raptors'];
+// Team schedules leave out colours, so mine are written down.
+const TEAM_COLORS = { 'Man United': '#da291c', '49ers': '#aa0000', Raptors: '#ce1141' };
 
 export const TABS = [
   { id: 'mine', name: 'My teams', mine: true },
@@ -17,6 +19,37 @@ export const TABS = [
 ];
 
 const DAY = 86400000;
+
+/** "Bruno Fernandes" becomes "B. Fernandes", the way score apps fit names in. One-word names stay. */
+export function shortName(name = '') {
+  const parts = String(name).trim().split(/\s+/);
+  return parts.length < 2 ? parts[0] || '' : `${parts[0][0]}. ${parts.slice(1).join(' ')}`;
+}
+
+/** What a tapped game opens to: goals and cards for football, the score by quarter otherwise. */
+export async function loadDetails(match) {
+  const answer = await getJSON(`${SITE}/${match.sport}/summary?event=${encodeURIComponent(match.id)}`);
+  const venue = answer.gameInfo?.venue?.fullName || match.venue;
+  if (match.sport === 'soccer/all') {
+    const list = [];
+    for (const item of answer.keyEvents ?? []) {
+      const text = item.type?.text || '';
+      const kind = item.scoringPlay ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : '';
+      if (!kind) continue;
+      list.push({
+        kind,
+        minute: item.clock?.displayValue || '',
+        player: shortName(item.participants?.[0]?.athlete?.displayName || ''),
+        note: /own goal/i.test(text) ? 'OG' : /penalty/i.test(text) ? 'pen' : '',
+        home: String(item.team?.id ?? '') === match.home.id,
+      });
+    }
+    return { venue, moments: list.length ? list : match.moments };
+  }
+  const sides = answer.header?.competitions?.[0]?.competitors ?? [];
+  const lines = (where) => (sides.find((item) => item.homeAway === where)?.linescores ?? []).map((item) => item.displayValue ?? item.value ?? '');
+  return { venue, periods: { home: lines('home'), away: lines('away') } };
+}
 const getJSON = (url) => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout?.(10000) })
   .then((response) => {
     if (!response.ok) throw new Error(`ESPN answered ${response.status}`);
@@ -29,19 +62,50 @@ const scoreOf = (competitor) => {
   return text == null || text === '' ? '' : String(text);
 };
 
+/** ESPN's crests are 500px; its image service hands back a small copy instead. */
+export function crest(url, size = 56) {
+  if (typeof url !== 'string' || !url.startsWith('https://a.espncdn.com/i/')) return url || '';
+  return `https://a.espncdn.com/combiner/i?img=${url.slice('https://a.espncdn.com'.length)}&w=${size}&h=${size}`;
+}
+
+const hex = (value) => (/^[0-9a-f]{6}$/i.test(value || '') ? `#${value}` : '');
+
 function side(competitor) {
   const team = competitor?.team ?? {};
+  const record = competitor?.records?.[0]?.summary || competitor?.record?.[0]?.displayValue || '';
   return {
     name: team.shortDisplayName || team.displayName || team.name || '?',
     full: team.displayName || team.name || '',
+    abbr: team.abbreviation || '',
     id: String(team.id ?? ''),
+    logo: team.logo || team.logos?.[0]?.href || '',
+    color: hex(team.color),
+    record,
     score: scoreOf(competitor),
     winner: Boolean(competitor?.winner),
   };
 }
 
+/** Goals and cards, each with its minute, player and which side it was for. */
+function moments(game, home) {
+  const list = [];
+  for (const item of game.details ?? []) {
+    const text = item.type?.text || '';
+    const kind = item.scoringPlay || /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : '';
+    if (!kind) continue;
+    list.push({
+      kind,
+      minute: item.clock?.displayValue || '',
+      player: item.athletesInvolved?.[0]?.shortName || shortName(item.athletesInvolved?.[0]?.displayName || ''),
+      note: item.ownGoal ? 'OG' : item.penaltyKick ? 'pen' : '',
+      home: String(item.team?.id ?? '') === home.id,
+    });
+  }
+  return list;
+}
+
 /** One game, the same shape whichever ESPN feed it came from. */
-export function toMatch(event, league = '') {
+export function toMatch(event, league = '', sport = 'soccer/all') {
   const game = event.competitions?.[0] ?? {};
   const status = game.status?.type ?? event.status?.type ?? {};
   const competitors = game.competitors ?? [];
@@ -52,15 +116,19 @@ export function toMatch(event, league = '') {
     for (const name of broadcast.names ?? []) tv.push(name);
     if (broadcast.media?.shortName) tv.push(broadcast.media.shortName);
   }
+  const homeSide = side(home);
   return {
     id: String(event.id ?? ''),
     start: Date.parse(event.date || game.date || ''),
     league: league || event.league?.abbreviation || '',
     state: status.state || 'pre',
     detail: status.shortDetail || status.detail || '',
-    home: side(home),
+    home: homeSide,
     away: side(away),
     tv: [...new Set(tv.filter(Boolean))],
+    sport,
+    venue: game.venue?.fullName || '',
+    moments: moments(game, homeSide),
   };
 }
 
@@ -84,7 +152,7 @@ const unique = (matches) => [...new Map(matches.map((match) => [match.id || `${m
 async function leagueMatches(path, name, now = Date.now()) {
   const months = [...new Set([monthKey(now - DAY), monthKey(now), monthKey(now + 14 * DAY)])];
   const answers = await Promise.all(months.map((month) => getJSON(`${SITE}/${path}/scoreboard?dates=${month}&limit=300`)));
-  return unique(answers.flatMap((answer) => (answer.events ?? []).map((event) => toMatch(event, name))));
+  return unique(answers.flatMap((answer) => (answer.events ?? []).map((event) => toMatch(event, name, path.startsWith('soccer') ? 'soccer/all' : path))));
 }
 
 async function teamMatches({ path, id, league }) {
@@ -93,11 +161,11 @@ async function teamMatches({ path, id, league }) {
     getJSON(`${SITE}/${path}/teams/${id}/schedule`),
     getJSON(`${SITE}/${path}/scoreboard`).catch(() => ({ events: [] })),
   ]);
-  const live = new Map((today.events ?? []).map((event) => [String(event.id), toMatch(event, league)]));
+  const live = new Map((today.events ?? []).map((event) => [String(event.id), toMatch(event, league, path)]));
   return (schedule.events ?? []).map((event) => {
-    const match = toMatch(event, league);
+    const match = toMatch(event, league, path);
     const fresh = live.get(match.id);
-    return fresh ? { ...match, state: fresh.state, detail: fresh.detail, home: fresh.home, away: fresh.away, tv: match.tv.length ? match.tv : fresh.tv } : match;
+    return fresh ? { ...match, state: fresh.state, detail: fresh.detail, home: fresh.home, away: fresh.away, moments: fresh.moments, tv: match.tv.length ? match.tv : fresh.tv } : match;
   });
 }
 
@@ -115,13 +183,33 @@ async function manUnitedMatches(now = Date.now()) {
   return unique(all);
 }
 
-/** A team's last result and next three games. */
-function lastAndNext(matches, now = Date.now()) {
+/** How a finished game went for one of my teams: W, D or L. */
+export function outcome(match) {
+  const mine = isMine(match.home) ? match.home : isMine(match.away) ? match.away : null;
+  if (!mine || match.state !== 'post') return '';
+  const other = mine === match.home ? match.away : match.home;
+  const [a, b] = [Number(mine.score), Number(other.score)];
+  if (mine.winner || (Number.isFinite(a) && Number.isFinite(b) && a > b)) return 'W';
+  if (other.winner || (Number.isFinite(a) && Number.isFinite(b) && a < b)) return 'L';
+  return 'D';
+}
+
+/** One of my teams: its crest and colour, form, last result, a game on now, and what's next. */
+export function teamCard(title, matches, now = Date.now()) {
   const sorted = matches.filter((match) => Number.isFinite(match.start)).sort((a, b) => a.start - b.start);
   const done = sorted.filter((match) => match.state === 'post');
-  const live = sorted.filter((match) => match.state === 'in');
-  const next = sorted.filter((match) => match.state === 'pre' && match.start > now - 4 * 3600000).slice(0, 3);
-  return [...done.slice(-1), ...live, ...next];
+  const live = sorted.find((match) => match.state === 'in') || null;
+  const ahead = sorted.filter((match) => match.state === 'pre' && match.start > now - 4 * 3600000);
+  const sides = sorted.flatMap((match) => [match.home, match.away]).filter(isMine);
+  const team = sides.find((item) => item.logo) || sides[0] || { name: title, full: title, logo: '', color: '' };
+  return {
+    title,
+    team: { name: title, logo: team.logo, color: TEAM_COLORS[title] || team.color, record: sorted.some((match) => match.sport !== 'soccer/all') ? [...sides].reverse().find((item) => item.record)?.record || '' : '' },
+    form: done.slice(-5).map(outcome).filter(Boolean),
+    last: done.at(-1) || null,
+    live,
+    next: ahead.slice(0, 3),
+  };
 }
 
 /** What a tab shows: [{ title, matches }]. Days are grouped when it's drawn. */
@@ -136,7 +224,7 @@ export async function loadTab(tab, now = Date.now()) {
       { title: 'Man United', matches: united },
       { title: '49ers', matches: niners },
       { title: 'Raptors', matches: raptors },
-    ].filter((section) => section.matches).map((section) => ({ ...section, matches: lastAndNext(section.matches, now) }));
+    ].filter((section) => section.matches).map((section) => ({ card: teamCard(section.title, section.matches, now) }));
     if (!sections.length) throw new Error('No team answered');
     return sections;
   }
