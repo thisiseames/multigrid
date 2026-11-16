@@ -1137,3 +1137,27 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .addp-actions button { flex: 1; height: 44px; }
   .addp .addp-paste textarea { font-size: 16px; }
 }
+
+/* Crop */
+.crop-frame { position: absolute; inset: 0; overflow: hidden; }
+.crop-inner { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.strip-actions button.is-on { color: var(--accent); }
+.crop-editor { position: absolute; inset: 0; z-index: 5; touch-action: none; }
+.crop-shade { position: absolute; inset: 0; background: rgba(0, 0, 0, .62); pointer-events: none; }
+.crop-box { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); pointer-events: none; }
+.crop-handle { position: absolute; pointer-events: auto; touch-action: none; }
+.crop-handle::after { content: ''; position: absolute; background: #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.crop-handle.is-t, .crop-handle.is-b { left: 0; right: 0; height: 28px; cursor: ns-resize; }
+.crop-handle.is-t { top: -3px; } .crop-handle.is-b { bottom: -3px; }
+.crop-handle.is-l, .crop-handle.is-r { top: 0; bottom: 0; width: 28px; cursor: ew-resize; }
+.crop-handle.is-l { left: -3px; } .crop-handle.is-r { right: -3px; }
+.crop-handle.is-t::after { left: 50%; top: 3px; width: 44px; height: 6px; transform: translateX(-50%); }
+.crop-handle.is-b::after { left: 50%; bottom: 3px; width: 44px; height: 6px; transform: translateX(-50%); }
+.crop-handle.is-l::after { left: 3px; top: 50%; width: 6px; height: 44px; transform: translateY(-50%); }
+.crop-handle.is-r::after { right: 3px; top: 50%; width: 6px; height: 44px; transform: translateY(-50%); }
+.crop-tools { position: absolute; left: 0; right: 0; top: 0; height: var(--strip); z-index: 6; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 0 6px; background: #1b1b1f; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.crop-hint { margin-right: auto; }
+.crop-hint { padding: 0 8px 0 10px; font-size: 12px; color: var(--text-2); }
+.crop-tools button { height: calc(var(--strip) - 6px); min-height: 20px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text); background: rgba(255,255,255,.08); }
+.crop-tools .crop-done { background: var(--accent); color: var(--accent-ink); }
+
