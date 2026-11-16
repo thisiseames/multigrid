@@ -1099,9 +1099,13 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .fcard { position: relative; min-width: 0; display: flex; align-items: center; border-radius: 12px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); }
 .fcard:hover { background: #1d1d21; }
 .fcard-main { flex: 1; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 10px; padding: 9px 0 9px 8px; text-align: left; color: var(--text); }
-.fart { flex: none; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; display: flex; }
-.fart.is-picture { width: 64px; }
+.fart { flex: none; width: 72px; height: 44px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1f1f23; }
 .fart img { width: 100%; height: 100%; object-fit: cover; }
+.fart.is-icon { color: var(--text-2); }
+.fart.is-logo { padding: 6px 8px; }
+.fart.is-logo img { object-fit: contain; }
+.fart.is-logo.is-dark { background: #232327; }
+.fart.is-logo.is-light { background: #ececef; }
 .fart-letter { flex: 1; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--hue) 22%, #19191c); color: var(--hue); font-size: 19px; font-weight: 800; }
 .fcard-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .fcard-text b { font-size: 13.5px; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1125,7 +1129,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .addp form { height: 100%; }
   .addp-grid-wrap { max-height: none; }
   .addp-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .fart, .fart.is-picture { width: 40px; height: 40px; }
+  .fart { width: 64px; height: 40px; }
   .addp-actions { margin-top: auto; padding-bottom: calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #141416; }
   .addp-actions button { flex: 1; height: 44px; }
   .addp .addp-paste textarea { font-size: 16px; }
