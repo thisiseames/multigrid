@@ -8,7 +8,7 @@ import {
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
-import { clock, guideKey, guideUpdated, loadGuide, nowAndNext } from './guide.js';
+import { clock, guideKey, guideUpdated, loadGuide, nowAndNext, showsBetween } from './guide.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markRead, readIds, saveKey } from './reader.js';
@@ -489,73 +489,221 @@ function syncGuideButton() {
   $('guide-button').hidden = !guideSections().sections.length;
 }
 
-function guideRow({ item, listing }) {
-  const { current, next } = listing;
-  const now = Date.now();
-  const lines = [];
-  if (current) {
-    const done = Math.min(1, Math.max(0, (now - current.start) / (current.end - current.start)));
-    lines.push(el('span', { class: 'guide-now' },
-      el('b', { textContent: current.title }),
-      el('small', { textContent: `until ${clock(current.end)}` })));
-    lines.push(el('span', { class: 'guide-bar', aria: { hidden: 'true' } }, el('span', { style: `width:${Math.round(done * 100)}%` })));
-  }
-  if (next) lines.push(el('span', { class: 'guide-next', textContent: `${clock(next.start)}  ${next.title}` }));
-  return el('li', {},
-    el('button', {
-      type: 'button',
-      class: 'guide-row',
-      title: `Add ${item.name}`,
-      on: {
-        click() {
-          $('guide-dialog').close();
-          addStream(item.input);
-        },
-      },
-    }, el('span', { class: 'guide-channel', textContent: item.name }), el('span', { class: 'guide-shows' }, ...lines)));
+const GUIDE_VIEW_KEY = 'multigrid.guideview.v1';
+const GUIDE_FOLDER_KEY = 'multigrid.guidefolder.v1';
+const remember = (key, fallback) => { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } };
+const keep = (key, value) => { try { localStorage.setItem(key, value); } catch { /* the choice just isn't remembered */ } };
+let guideView = remember(GUIDE_VIEW_KEY, 'now') === 'timeline' ? 'timeline' : 'now';
+let guideFolder = remember(GUIDE_FOLDER_KEY, '');
+let guideTimer = null;
+
+// Shows about my teams get the team's colour.
+const GUIDE_TEAMS = [
+  { pattern: /\bman(chester)? (united|utd)\b|\bmufc\b|\bmutv\b/i, color: '#da291c' },
+  { pattern: /\b49ers\b/i, color: '#aa0000' },
+  { pattern: /\braptors\b/i, color: '#ce1141' },
+];
+const teamColorOf = (show) => GUIDE_TEAMS.find((team) => team.pattern.test(`${show.title} ${show.about}`))?.color ?? '';
+
+const minutesLeft = (show) => Math.max(1, Math.round((show.end - Date.now()) / 60000));
+const durationText = (minutes) => (minutes >= 60 ? `${Math.floor(minutes / 60)} hr${minutes % 60 ? ` ${minutes % 60} min` : ''}` : `${minutes} min`);
+const progressOf = (show) => Math.min(1, Math.max(0, (Date.now() - show.start) / (show.end - show.start)));
+
+function liveTag() {
+  return el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE');
 }
 
-let guideTimer = null;
+/** The channels the guide shows right now: favorites with listings, in the chosen folder. */
+function guideChannels() {
+  const { sections } = guideSections();
+  const folders = sections.map((section) => section.folder).filter(Boolean);
+  if (guideFolder && !folders.some((folder) => folder.toLocaleLowerCase() === guideFolder.toLocaleLowerCase())) guideFolder = '';
+  const rows = sections
+    .filter((section) => !guideFolder || section.folder.toLocaleLowerCase() === guideFolder.toLocaleLowerCase())
+    .flatMap((section) => section.rows);
+  return { rows, folders };
+}
+
+function watchChannel(item) {
+  $('guide-dialog').close();
+  addStream(item.input);
+}
+
+function guideWatchButton(item, label = 'Watch') {
+  return el('button', {
+    type: 'button',
+    class: 'match-watch',
+    title: `Watch ${item.name}`,
+    on: { click(event) { event.stopPropagation(); watchChannel(item); } },
+  }, icon('play'), label);
+}
+
+/** The card that opens over the guide when a show is tapped. */
+function showDetails(item, show) {
+  const box = $('guide-dialog');
+  box.querySelector('.gdetail')?.remove();
+  const now = Date.now();
+  const onNow = show.start <= now && now < show.end;
+  const day = dayLabel(show.start);
+  const color = teamColorOf(show);
+  const close = () => sheet.remove();
+  const sheet = el('div', { class: 'gdetail', on: { click(event) { if (event.target === sheet) close(); } } },
+    el('div', { class: 'gdetail-card', role: 'dialog', aria: { label: show.title }, style: color ? `--team:${color}` : '' },
+      el('div', { class: 'gdetail-top' },
+        el('span', { class: 'gdetail-channel', textContent: item.name }),
+        iconButton('close', 'Close', close)),
+      el('h3', { class: 'gdetail-title' }, color ? el('span', { class: 'team-mark' }) : null, show.title),
+      el('div', { class: 'gdetail-when' },
+        show.live ? liveTag() : null,
+        el('span', { textContent: `${day === 'Today' ? '' : `${day} · `}${clock(show.start)} – ${clock(show.end)} · ${durationText(Math.round((show.end - show.start) / 60000))}` })),
+      onNow ? el('div', { class: 'gnow-progress' },
+        el('span', { class: 'gbar' }, el('span', { style: `width:${Math.round(progressOf(show) * 100)}%` })),
+        el('span', { textContent: `${durationText(minutesLeft(show))} left` })) : null,
+      show.about ? el('p', { class: 'gdetail-about', textContent: show.about }) : el('p', { class: 'gdetail-about is-quiet', textContent: 'No description for this one.' }),
+      el('div', { class: 'gdetail-actions' }, guideWatchButton(item, `Watch ${item.name}`))));
+  box.append(sheet);
+  sheet.querySelector('.gdetail-card button')?.focus();
+}
+
+/* Now: one card per channel. */
+function nowCard({ item, listing }) {
+  const { current, next } = listing;
+  const show = current || next;
+  const color = teamColorOf(show);
+  const meta = current
+    ? el('div', { class: 'gnow-progress' },
+      el('span', { class: 'gbar' }, el('span', { style: `width:${Math.round(progressOf(current) * 100)}%` })),
+      el('span', { textContent: `until ${clock(current.end)} · ${durationText(minutesLeft(current))} left` }))
+    : el('div', { class: 'gnow-progress' }, el('span', { textContent: `Starts ${clock(show.start)}` }));
+  const later = current && next ? el('span', { class: 'gnow-next' }, el('b', { textContent: clock(next.start) }), next.title) : null;
+  return el('li', { class: `gnow${color ? ' is-mine' : ''}`, style: color ? `--team:${color}` : '' },
+    el('button', { type: 'button', class: 'gnow-main', on: { click: () => showDetails(item, show) } },
+      el('span', { class: 'gnow-channel' }, el('span', { textContent: item.name }), current?.live ? liveTag() : null),
+      el('span', { class: 'gnow-title' }, color ? el('span', { class: 'team-mark' }) : null, show.title),
+      meta,
+      later),
+    guideWatchButton(item));
+}
+
+/* Timeline: channels down the side, half hours across, a line at right now. */
+const PER_MINUTE = 4;
+function timelineView(rows) {
+  const now = Date.now();
+  const half = 30 * 60000;
+  // It starts at the current half hour, so what's on now begins at the left edge with its title showing.
+  const from = Math.floor(now / half) * half;
+  const to = from + 8 * 3600000;
+  const x = (time) => ((Math.min(Math.max(time, from), to) - from) / 60000) * PER_MINUTE;
+  const width = x(to);
+  const marks = [];
+  for (let time = from; time < to; time += half) {
+    marks.push(el('span', { class: 'gtl-mark', style: `left:${x(time)}px`, textContent: clock(time) }));
+  }
+  const lines = rows.map(({ item }) => {
+    const shows = showsBetween(item.name, parseSource(item.input), from, to);
+    return el('div', { class: 'gtl-row' },
+      el('button', { type: 'button', class: 'gtl-channel', title: `Watch ${item.name}`, on: { click: () => watchChannel(item) } }, el('span', { textContent: item.name })),
+      el('div', { class: 'gtl-track', style: `width:${width}px` }, ...shows.map((show) => {
+        const color = teamColorOf(show);
+        const onNow = show.start <= now && now < show.end;
+        const left = x(show.start);
+        const size = Math.max(2, x(show.end) - left - 3);
+        return el('button', {
+          type: 'button',
+          class: `gtl-show${onNow ? ' is-now' : ''}${show.end <= now ? ' is-past' : ''}${color ? ' is-mine' : ''}`,
+          style: `left:${left}px;width:${size}px${color ? `;--team:${color}` : ''}${onNow ? `;--done:${Math.round(((now - Math.max(show.start, from)) / (show.end - Math.max(show.start, from))) * 100)}%` : ''}`,
+          title: `${show.title} · ${clock(show.start)}–${clock(show.end)}`,
+          on: { click: () => showDetails(item, show) },
+        },
+        el('span', { class: 'gtl-title' }, show.live ? el('span', { class: 'live-dot' }) : null, show.title),
+        el('span', { class: 'gtl-time', textContent: `${clock(show.start)} – ${clock(show.end)}` }));
+      })));
+  });
+  return el('div', { class: 'gtl', style: `--track:${width}px` },
+    el('div', { class: 'gtl-head' }, el('span', { class: 'gtl-corner', textContent: dayLabel(now) }), el('div', { class: 'gtl-marks', style: `width:${width}px` }, ...marks, el('span', { class: 'gtl-now-head', style: `left:${x(now)}px` }))),
+    el('div', { class: 'gtl-body' }, el('div', { class: 'gtl-lines' }, ...lines)));
+}
 
 function renderGuide() {
   const box = $('guide-dialog');
-  const { sections, total } = guideSections();
+  const { total } = guideSections();
+  const { rows, folders } = guideChannels();
   const updated = guideUpdated();
-  const shown = sections.reduce((sum, section) => sum + section.rows.length, 0);
-  const scroll = box.querySelector('.guide-body')?.scrollTop ?? 0;
-  const body = el('div', { class: 'guide-body' },
-    ...sections.map(({ folder, rows }) => el('section', { class: 'guide-section' },
-      folder ? el('h3', { textContent: folder }) : null,
-      el('ul', { class: 'guide-list' }, ...rows.map(guideRow)))),
-    sections.length
-      ? null
-      : el('p', { class: 'guide-empty', textContent: updated ? 'None of your favorites have a TV schedule.' : "The guide couldn't load. Try again in a minute." }),
-    shown < total
-      ? el('p', { class: 'guide-note', textContent: `${plural(total - shown, 'other favorite')} ${total - shown === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
-      : null);
+  const oldScroll = box.querySelector('.gbody');
+  const keepTop = oldScroll?.scrollTop ?? 0;
+  const keepLeft = oldScroll?.scrollLeft ?? null;
+  const detail = box.querySelector('.gdetail');
+
+  const views = el('div', { class: 'gviews', role: 'tablist' }, ...[['now', 'Now'], ['timeline', 'Timeline']].map(([id, label]) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `gview${guideView === id ? ' is-on' : ''}`,
+    aria: { selected: String(guideView === id) },
+    textContent: label,
+    on: { click() { guideView = id; keep(GUIDE_VIEW_KEY, id); box.querySelector('.gbody')?.remove(); renderGuide(); } },
+  })));
+  const pills = folders.length ? el('div', { class: 'matches-tabs gfolders' }, ...['', ...folders].map((folder) => el('button', {
+    type: 'button',
+    class: `matches-tab${guideFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
+    textContent: folder || 'All',
+    on: { click() { guideFolder = folder; keep(GUIDE_FOLDER_KEY, folder); box.querySelector('.gbody')?.remove(); renderGuide(); } },
+  }))) : null;
+
+  let body;
+  if (!rows.length) {
+    body = el('div', { class: 'gbody' }, el('p', { class: 'match-quiet is-empty', textContent: updated ? 'None of your favorites have a TV schedule.' : "The guide couldn't load. Try again in a minute." }));
+  } else if (guideView === 'timeline') {
+    body = el('div', { class: 'gbody is-timeline' }, timelineView(rows));
+  } else {
+    const shown = guideSections().sections.reduce((sum, section) => sum + section.rows.length, 0);
+    body = el('div', { class: 'gbody' },
+      el('ul', { class: 'gnow-list' }, ...rows.map(nowCard)),
+      shown < total && !guideFolder
+        ? el('p', { class: 'gnote', textContent: `${plural(total - shown, 'other favorite')} ${total - shown === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
+        : null);
+  }
+
   box.replaceChildren(
-    el('div', { class: 'help-head' },
-      el('div', {}, el('h2', { textContent: 'TV guide' }), updated ? el('small', { class: 'guide-updated', textContent: `Updated ${clock(updated)}` }) : null),
+    el('div', { class: 'ghead' },
+      el('div', { class: 'ghead-title' }, el('h2', { textContent: 'TV guide' }), updated ? el('small', { textContent: `Updated ${clock(updated)}` }) : null),
+      views,
       iconButton('close', 'Close', () => box.close())),
+    pills,
     body);
-  body.scrollTop = scroll;
+  if (detail) box.append(detail);
+  body.scrollTop = keepTop;
+  if (guideView === 'timeline' && rows.length) {
+    body.scrollLeft = keepLeft ?? 0;
+  }
+  requestAnimationFrame(() => pills?.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
 }
 
 async function openGuide() {
   renderGuide();
   openDialog($('guide-dialog'));
   clearInterval(guideTimer);
-  // While it's open, the "now" bars move and finished shows roll over.
+  // While it's open, the progress bars and the now line move, and finished shows roll over.
   guideTimer = setInterval(() => {
     if (!$('guide-dialog').open) return clearInterval(guideTimer);
     loadGuide().then(renderGuide);
   }, 60 * 1000);
-  if (await loadGuide()) renderGuide();
+  if (await loadGuide()) {
+    $('guide-dialog').querySelector('.gbody')?.remove();
+    renderGuide();
+  }
 }
 
 $('guide-button').addEventListener('click', openGuide);
 $('guide-dialog').addEventListener('click', (event) => {
   if (event.target === $('guide-dialog')) $('guide-dialog').close();
+});
+$('guide-dialog').addEventListener('close', () => $('guide-dialog').querySelector('.gdetail')?.remove());
+$('guide-dialog').addEventListener('keydown', (event) => {
+  const detail = $('guide-dialog').querySelector('.gdetail');
+  if (event.key === 'Escape' && detail) {
+    event.preventDefault();
+    detail.remove();
+  }
 });
 
 /* ---------- Standings ---------- */

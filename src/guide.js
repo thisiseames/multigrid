@@ -37,11 +37,18 @@ export function listingsFor(name, source) {
   if (!Array.isArray(rows)) return null;
   const now = Date.now();
   const shows = rows
-    .filter((row) => Array.isArray(row) && row.length === 3)
-    .map(([start, end, title]) => ({ start: start * 1000, end: end * 1000, title: String(title) }))
+    .filter((row) => Array.isArray(row) && row.length >= 3 && row.length <= 5)
+    .map(([start, end, title, about = '', flags = '']) => ({
+      start: start * 1000, end: end * 1000, title: String(title), about: String(about), live: String(flags).includes('L'),
+    }))
     .filter((show) => show.end > now)
     .sort((a, b) => a.start - b.start);
   return shows.length ? shows : null;
+}
+
+/** Shows from `from` to `to` for a favorite, for the timeline. */
+export function showsBetween(name, source, from, to) {
+  return (listingsFor(name, source) ?? []).filter((show) => show.end > from && show.start < to);
 }
 
 /** What's on now and what's next. Either can be missing, e.g. between listings. */
