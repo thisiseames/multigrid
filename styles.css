@@ -1106,6 +1106,9 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .fart.is-logo img { object-fit: contain; }
 .fart.is-logo.is-dark { background: #232327; }
 .fart.is-logo.is-light { background: #ececef; }
+.fart.is-poster { position: relative; }
+.fart.is-poster .fart-backdrop { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); object-fit: cover; filter: blur(10px) brightness(.6); }
+.fart.is-poster .fart-poster { position: relative; width: auto; height: 100%; object-fit: contain; box-shadow: 0 0 10px rgba(0,0,0,.5); }
 .fart-letter { flex: 1; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--hue) 22%, #19191c); color: var(--hue); font-size: 19px; font-weight: 800; }
 .fcard-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .fcard-text b { font-size: 13.5px; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
