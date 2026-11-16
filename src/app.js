@@ -565,70 +565,149 @@ let standingsAllGroups = false;
 let standingsTimer = null;
 let standingsAsked = 0;
 
+const GOOD_ZONES = new Set(['ucl', 'uel', 'uecl', 'playoff']);
+const ordinal = (n) => {
+  const tail = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
+  return `${n}${tail}`;
+};
+const placeOf = (league, item, index) => (league.kind === 'soccer' ? (item.rank ?? index + 1) : (item.seed ?? index + 1));
+const recordOf = (item) => (item.ties ? `${item.wins}–${item.losses}–${item.ties}` : `${item.wins}–${item.losses}`);
+const gamesBack = (a, b) => ((Number(b.wins) - Number(a.wins)) + (Number(a.losses) - Number(b.losses))) / 2;
+
+/** One line on where my team stands: in a zone, or how far off the next one. */
+function standingNote(league, rows, mine) {
+  const index = rows.indexOf(mine);
+  const place = placeOf(league, mine, index);
+  if (league.kind === 'soccer') {
+    if (mine.zone && mine.zone.kind === 'out') return { kind: 'out', text: /relegat/i.test(mine.zone.label) ? 'In the relegation zone' : mine.zone.label };
+    if (mine.zone && GOOD_ZONES.has(mine.zone.kind)) {
+      const text = mine.zone.kind === 'playoff' ? `In a ${mine.zone.label.toLowerCase().replace(/s$/, '')} spot` : `In the ${mine.zone.label} places`;
+      return { kind: mine.zone.kind, text };
+    }
+    const above = rows.slice(0, index).reverse().find((item) => item.zone && GOOD_ZONES.has(item.zone.kind));
+    if (above) {
+      const gap = Number(above.points) - Number(mine.points);
+      return { kind: above.zone.kind, text: gap > 0 ? `${plural(gap, 'pt')} off the ${above.zone.label} places` : `Level on points with the ${above.zone.label} places` };
+    }
+    return null;
+  }
+  const cut = league.lines ?? [];
+  const playoffs = cut[0]?.after ?? 0;
+  const playIn = cut[1]?.after ?? 0;
+  if (place <= playoffs) return { kind: 'ucl', text: league.kind === 'nba' ? 'In a playoff spot' : 'In playoff position' };
+  if (playIn && place <= playIn) return { kind: 'playoff', text: 'In a play-in spot' };
+  const target = rows.find((item, i) => placeOf(league, item, i) === (playIn || playoffs));
+  if (!target) return null;
+  const back = gamesBack(mine, target);
+  return { kind: 'out', text: `${plural(back, 'game')} back of the ${playIn ? 'play-in' : 'playoffs'}` };
+}
+
+function standingCard(league, rows) {
+  const mine = league.highlight && rows.find((item) => item.full.includes(league.highlight));
+  if (!mine) return null;
+  const index = rows.indexOf(mine);
+  const place = placeOf(league, mine, index);
+  const soccer = league.kind === 'soccer';
+  const sub = soccer ? `${plural(Number(mine.points), 'pt')} · ${mine.played} played · GD ${mine.gd}`
+    : [recordOf(mine), mine.streak ? `Streak ${mine.streak}` : ''].filter(Boolean).join(' · ');
+  const note = standingNote(league, rows, mine);
+  return el('section', { class: 'stand-card', style: league.color ? `--team:${league.color}` : '' },
+    el('div', { class: 'stand-card-main' },
+      crestOf({ name: mine.name, abbr: mine.abbr, logo: mine.logo }, 40),
+      el('div', { class: 'stand-card-text' },
+        el('h3', { textContent: league.highlightLabel ?? mine.name }),
+        el('span', { class: 'stand-card-sub', textContent: sub })),
+      el('div', { class: 'stand-card-place' },
+        el('span', { class: 'stand-card-num', textContent: ordinal(place) }),
+        el('span', { class: 'stand-card-of', textContent: soccer ? `of ${rows.length}` : 'seed' }))),
+    note ? el('div', { class: `stand-card-note zone-${note.kind}` }, el('span', { class: 'zone-dot' }), note.text) : null);
+}
+
 function standingsTable(league, group) {
   const soccer = league.kind === 'soccer';
-  const head = soccer ? ['#', 'Team', 'P', 'GD', 'Pts'] : league.kind === 'nfl' ? ['Seed', 'Team', 'W–L'] : ['Seed', 'Team', 'W–L', 'GB'];
-  const body = group.rows.map((item, index) => {
-    const place = soccer ? (item.rank ?? index + 1) : (item.seed ?? index + 1);
-    const record = item.ties ? `${item.wins}–${item.losses}–${item.ties}` : `${item.wins}–${item.losses}`;
-    const cells = soccer ? [place, item.name, item.played, item.gd, item.points]
-      : league.kind === 'nfl' ? [place, item.name, record] : [place, item.name, record, item.behind];
-    const zone = league.zones?.find((band) => place >= band.from && place <= band.to);
+  const cols = soccer
+    ? [['#', 'pos'], ['Team', 'team'], ['P', ''], ['W', 'wide'], ['D', 'wide'], ['L', 'wide'], ['GD', ''], ['Pts', 'pts']]
+    : league.kind === 'nfl'
+      ? [['Seed', 'pos'], ['Team', 'team'], ['W–L', 'rec'], ['Pct', ''], ['Strk', 'strk']]
+      : [['Seed', 'pos'], ['Team', 'team'], ['W–L', 'rec'], ['GB', ''], ['L10', 'wide'], ['Strk', 'strk']];
+  const body = [];
+  group.rows.forEach((item, index) => {
+    const place = placeOf(league, item, index);
     const mine = league.highlight && item.full.includes(league.highlight);
-    const cls = [zone?.cls, mine ? 'is-mine' : '', item.division ? 'is-division' : ''].filter(Boolean).join(' ');
-    return el('tr', { class: cls }, ...cells.map((value, column) => el('td', {
-      class: column === 1 ? 'team' : '',
-      textContent: String(value),
-      title: column === 1 ? item.full : '',
-    })));
+    const move = soccer && item.move ? el('span', { class: `move ${item.move > 0 ? 'is-up' : 'is-down'}`, title: `${item.move > 0 ? 'Up' : 'Down'} ${Math.abs(item.move)} since last round`, textContent: item.move > 0 ? '▲' : '▼' }) : null;
+    const team = el('td', { class: 'team', title: item.full },
+      el('span', { class: 'team-cell' }, crestOf({ name: item.name, abbr: item.abbr, logo: item.logo }, 20),
+        el('span', { class: 'team-name', textContent: item.name }),
+        item.division ? el('span', { class: 'division-dot', title: 'Same division as the 49ers' }) : null));
+    const streak = (value) => el('td', { class: `strk ${/^W/.test(value) ? 'is-win' : /^L/.test(value) ? 'is-loss' : ''}`, textContent: value || '–' });
+    const values = soccer ? [item.played, item.wins, item.draws, item.losses, item.gd, item.points]
+      : league.kind === 'nfl' ? [recordOf(item), item.pct] : [recordOf(item), item.behind, item.last10];
+    const cells = values.map((value, i) => el('td', { class: cols[i + 2][1], textContent: value === '' || value == null ? '–' : String(value) }));
+    if (!soccer) cells.push(streak(item.streak));
+    body.push(el('tr', { class: [item.zone ? `zone-${item.zone.kind}` : '', mine ? 'is-mine' : ''].filter(Boolean).join(' ') },
+      el('td', { class: 'pos' }, el('span', { textContent: String(place) }), move), team, ...cells));
+    const line = league.lines?.find((cut) => cut.after === place);
+    if (line && index < group.rows.length - 1) body.push(el('tr', { class: 'cut' }, el('td', { colSpan: cols.length }, el('span', { textContent: line.label }))));
   });
-  return el('table', { class: 'standings-table' },
-    el('thead', {}, el('tr', {}, ...head.map((text, column) => el('th', { class: column === 1 ? 'team' : '', textContent: text })))),
+  return el('table', { class: `stand-table is-${league.kind}`, style: league.color ? `--team:${league.color}` : '' },
+    el('thead', {}, el('tr', {}, ...cols.map(([text, cls]) => el('th', { class: cls, textContent: text })))),
     el('tbody', {}, ...body));
+}
+
+function standingsKey(league, groups) {
+  const zones = new Map();
+  for (const group of groups) for (const item of group.rows) if (item.zone && !zones.has(item.zone.label)) zones.set(item.zone.label, item.zone.kind);
+  const chips = [...zones].map(([label, kind]) => el('span', { class: `key zone-${kind}` }, el('span', { class: 'zone-dot' }), label));
+  if (groups.divisionName) chips.push(el('span', { class: 'key' }, el('span', { class: 'division-dot' }), groups.divisionName));
+  return chips.length ? el('div', { class: 'stand-key' }, ...chips) : null;
 }
 
 async function fillStandings() {
   const menu = $('standings-menu');
   const league = standingsLeague;
   const asked = ++standingsAsked;
-  const body = menu.querySelector('.standings-body');
-  if (!body.firstChild) body.replaceChildren(el('p', { class: 'standings-note', textContent: 'Loading…' }));
+  const body = menu.querySelector('.matches-body');
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 6 }, () => el('span', { class: 'skeleton is-thin' }))));
   try {
     const groups = await loadLeague(league);
     if (asked !== standingsAsked || menu.hidden) return;
     let shownGroups = groups;
     if (league.groups && !standingsAllGroups) shownGroups = groups.filter((group) => /^Group A\d/.test(group.name));
     if (!shownGroups.length) shownGroups = groups;
-    const parts = shownGroups.map((group) => el('section', { class: 'standings-group' },
-      league.groups ? el('h3', { textContent: group.name }) : null,
-      standingsTable(league, group)));
-    const notes = [];
-    if (league.zones) notes.push(el('p', { class: 'standings-key' }, ...league.zones.map((band) => el('span', { class: `key ${band.cls}`, textContent: `${band.from}–${band.to} ${band.label}` })), el('span', { class: 'key', textContent: `${league.zones.at(-1).to + 1}+ out` })));
-    if (league.highlight) notes.push(el('p', { class: 'standings-key' }, el('span', { class: 'key is-mine', textContent: league.highlightLabel ?? league.highlight }), groups.divisionName ? el('span', { class: 'key is-division', textContent: groups.divisionName }) : null));
-    if (league.groups && groups.length > shownGroups.length || (league.groups && standingsAllGroups)) {
-      notes.push(el('button', {
+    const parts = [];
+    const card = !league.groups && standingCard(league, groups[0].rows);
+    if (card) parts.push(card);
+    for (const group of shownGroups) {
+      parts.push(el('section', { class: 'stand-group' },
+        league.groups ? el('h4', { class: 'match-day', textContent: group.name }) : null,
+        el('div', { class: 'stand-wrap' }, standingsTable(league, group))));
+    }
+    const key = standingsKey(league, shownGroups);
+    if (key) parts.push(key);
+    if (league.groups && (groups.length > shownGroups.length || standingsAllGroups)) {
+      parts.push(el('button', {
         type: 'button',
-        class: 'text-button standings-more',
+        class: 'stand-more',
         textContent: standingsAllGroups ? 'Show League A only' : `Show all ${groups.length} groups`,
         on: { click() { standingsAllGroups = !standingsAllGroups; fillStandings(); } },
       }));
     }
     const scroll = body.scrollTop;
-    body.replaceChildren(...notes.filter((node) => node.tagName !== 'BUTTON'), ...parts, ...notes.filter((node) => node.tagName === 'BUTTON'));
+    body.replaceChildren(...parts);
     body.scrollTop = scroll;
-    menu.querySelector('.standings-updated').textContent = `Updated ${clock(Date.now())} · ESPN`;
+    menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())} · ESPN`;
   } catch {
     if (asked !== standingsAsked || menu.hidden) return;
-    body.replaceChildren(el('p', { class: 'standings-note', textContent: "Standings couldn't load. ESPN didn't answer, so try again in a minute." }));
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "Standings couldn't load. ESPN didn't answer, so try again in a minute." }));
   }
 }
 
 function buildStandings() {
   const menu = $('standings-menu');
-  const tabs = el('div', { class: 'standings-tabs', role: 'tablist' }, ...LEAGUES.map((league) => el('button', {
+  const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...LEAGUES.map((league) => el('button', {
     type: 'button',
     role: 'tab',
-    class: `standings-tab${league === standingsLeague ? ' is-on' : ''}`,
+    class: `matches-tab${league === standingsLeague ? ' is-on' : ''}`,
     aria: { selected: String(league === standingsLeague) },
     textContent: league.name,
     on: {
@@ -641,19 +720,22 @@ function buildStandings() {
           tab.classList.toggle('is-on', on);
           tab.setAttribute('aria-selected', String(on));
         }
-        menu.querySelector('.standings-body').replaceChildren();
+        event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        const body = menu.querySelector('.matches-body');
+        body.replaceChildren();
+        body.scrollTop = 0;
         fillStandings();
       },
     },
   })));
-  menu.replaceChildren(tabs, el('div', { class: 'standings-body' }), el('p', { class: 'standings-updated', textContent: '' }));
+  menu.replaceChildren(tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillStandings();
   clearInterval(standingsTimer);
   standingsTimer = setInterval(() => {
     if ($('standings-menu').hidden) return clearInterval(standingsTimer);
     fillStandings();
-  }, 60 * 1000);
-  requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  }, 5 * 60 * 1000);
 }
 
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
