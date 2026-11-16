@@ -1,9 +1,11 @@
 # Refreshes guide.json (the TV guide) and feeds.json (TikTok feeds) every 3 hours. Free on a public repository.
+# GitHub drops many scheduled runs when it's busy, so it tries every 30 minutes and each try
+# stops straight away unless the guide is nearly 3 hours old.
 name: guide
 
 on:
   schedule:
-    - cron: '17 */3 * * *'
+    - cron: '17,47 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,14 +21,24 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Is the guide fresh enough already?
+        id: fresh
+        run: |
+          age=$(node -e "const d=require('./guide.json'); console.log(Math.round((Date.now()/1000-d.updated)/60))" 2>/dev/null || echo 9999)
+          echo "Guide is $age minutes old."
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$age" -lt 165 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
+        if: steps.fresh.outputs.skip != 'true'
         with:
           node-version: 22
       - run: node tools/build-guide.mjs
+        if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
       - run: node tools/build-feeds.mjs
+        if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
       - name: Save the new guide
+        if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "multigrid-guide"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
