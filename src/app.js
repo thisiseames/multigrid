@@ -250,7 +250,7 @@ const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turne
 function refreshFavorites() {
   render();
   syncGuideButton();
-  if ($('source-dialog').open) renderFavorites($('source-favorites'), () => sourceTarget);
+  if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
 
 function editFavorite(input, suggestedName, anchor) {
@@ -453,6 +453,190 @@ function renderFavorites(holder, getTarget) {
   }
 }
 
+/* ---------- Add stream: favorites as cards ---------- */
+
+let addFolder = '';
+const KIND_NAMES = {
+  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
+  hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story',
+};
+const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
+
+/** A YouTube video's picture, or the first letter on the name's own colour. */
+function favoriteArt(name, source) {
+  const id = source.kind === 'youtube' ? source.youtube?.id : '';
+  const letter = () => el('span', { class: 'fart-letter', style: `--hue:${sourceColor(name)}`, textContent: (name.match(/[\p{L}\p{N}]/u)?.[0] || '?').toLocaleUpperCase() });
+  if (!id) return el('span', { class: 'fart' }, letter());
+  const art = el('span', { class: 'fart is-picture' });
+  const img = el('img', { src: `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+  const fallBack = () => { art.classList.remove('is-picture'); img.replaceWith(letter()); };
+  img.addEventListener('error', fallBack, { once: true });
+  // A removed video gets YouTube's small grey stand-in instead of an error.
+  img.addEventListener('load', () => { if (img.naturalWidth <= 120) fallBack(); }, { once: true });
+  art.append(img);
+  return art;
+}
+
+function favoriteCard(item, holder) {
+  const source = parseSource(item.input);
+  const card = el('li', { class: 'fcard' });
+  const listing = nowAndNext(item.name, source);
+  const nowText = listing ? (listing.current ? listing.current.title : `${clock(listing.next.start)} ${listing.next.title}`) : '';
+  const closeMenu = () => card.querySelector('.fcard-menu')?.remove();
+  const menu = () => {
+    closeMenu();
+    const box = el('div', { class: 'fcard-menu' });
+    const action = (name, label, cls, onClick) => {
+      const button = iconButton(name, label, onClick);
+      if (cls) button.classList.add(cls);
+      return button;
+    };
+    const normal = () => box.replaceChildren(
+      el('span', { class: 'fcard-ask', textContent: item.name }),
+      action('pencil', `Edit ${item.name}`, '', () => { closeMenu(); editFavorite(item.input, item.name, card); }),
+      action('trash', `Remove ${item.name}`, 'is-danger', confirm),
+      action('close', 'Cancel', 'is-quiet', closeMenu));
+    const confirm = () => box.replaceChildren(
+      el('span', { class: 'fcard-ask', textContent: 'Remove?' }),
+      el('button', { type: 'button', class: 'is-danger is-word', textContent: 'Remove', on: { click() { removeFavorite(item.input); refreshFavorites(); } } }),
+      action('close', 'Keep', 'is-quiet', normal));
+    normal();
+    card.append(box);
+    box.querySelector('button')?.focus();
+  };
+  card.append(
+    el('button', {
+      type: 'button',
+      class: 'fcard-main',
+      title: `Add ${item.name}`,
+      on: {
+        click() {
+          const target = holder.getTarget();
+          if ($('source-dialog').open) $('source-dialog').close();
+          addStream(item.input, target);
+        },
+      },
+    },
+    favoriteArt(item.name, source),
+    el('span', { class: 'fcard-text' },
+      el('b', { textContent: item.name, title: item.name }),
+      el('small', {},
+        el('span', { class: 'fcard-kind', textContent: kindName(item, source) }),
+        nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null))),
+    el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16)));
+  return card;
+}
+
+function addSearchBox(holder) {
+  if (holder.addSearch) return holder.addSearch;
+  const input = el('input', {
+    type: 'search', placeholder: 'Search favorites', autocomplete: 'off', autocapitalize: 'off', spellcheck: false, enterKeyHint: 'search', aria: { label: 'Search favorites' },
+  });
+  const clear = iconButton('close', 'Clear search', () => { input.value = ''; fillAddFavorites(holder); input.focus(); });
+  input.addEventListener('input', () => fillAddFavorites(holder));
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') event.preventDefault();
+    if (event.key === 'Escape' && input.value) {
+      event.preventDefault();
+      event.stopPropagation();
+      input.value = '';
+      fillAddFavorites(holder);
+    }
+  });
+  holder.addSearch = { wrap: el('div', { class: 'favorites-search' }, icon('search', 14), input, clear), input, clear };
+  return holder.addSearch;
+}
+
+/** The folder pills, with a pencil to rename the folder that's chosen. */
+function addFolderPills(holder, folders) {
+  const row = el('div', { class: 'matches-tabs addp-pills' });
+  const pills = () => {
+    row.replaceChildren(...['', ...folders].map((folder) => el('button', {
+      type: 'button',
+      class: `matches-tab${addFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
+      textContent: folder || 'All',
+      on: { click() { addFolder = folder; fillAddFavorites(holder); } },
+    })), ...(addFolder ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+  };
+  const rename = () => {
+    const input = el('input', { type: 'text', value: addFolder, maxLength: 40, class: 'addp-rename', aria: { label: 'Folder name' } });
+    let finished = false;
+    const finish = (save) => {
+      if (finished) return;
+      finished = true;
+      const name = input.value.trim();
+      if (save && name && name !== addFolder) {
+        if (!renameFolder(addFolder, name)) toast(STORAGE_FULL);
+        addFolder = listFolders().find((folder) => folder.toLocaleLowerCase() === name.toLocaleLowerCase()) ?? name;
+        refreshFavorites();
+      } else {
+        pills();
+      }
+    };
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+      else if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(true));
+    row.replaceChildren(input);
+    input.select();
+  };
+  pills();
+  return row;
+}
+
+function fillAddFavorites(holder) {
+  const { input, clear } = addSearchBox(holder);
+  const query = input.value.trim().toLocaleLowerCase();
+  clear.hidden = !query;
+  const all = listFavorites().sort(byName);
+  const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
+  if (addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
+  const matches = (text) => text.toLocaleLowerCase().includes(query);
+  const shown = query
+    ? all.filter((item) => matches(item.name) || (item.group && matches(item.group)))
+    : all.filter((item) => !addFolder || item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase());
+  const old = holder.querySelector('.addp-grid-wrap');
+  const scroll = old?.scrollTop ?? 0;
+  const grid = el('div', { class: 'addp-grid-wrap' },
+    shown.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)))
+      : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
+  const pills = folders.length && !query ? addFolderPills(holder, folders) : null;
+  const oldPills = holder.querySelector('.addp-pills');
+  if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
+  if (old) old.replaceWith(grid);
+  grid.scrollTop = query ? 0 : scroll;
+  return { pills, grid };
+}
+
+function renderAddFavorites(holder, getTarget) {
+  holder.hidden = listFavorites().length === 0;
+  holder.getTarget = getTarget;
+  const { wrap } = addSearchBox(holder);
+  const send = el('button', { type: 'button', class: 'text-button favorites-send', textContent: onPhone() ? 'Send to computer' : 'Send to phone', on: { click: sendFavorites } });
+  holder.replaceChildren(
+    el('div', { class: 'favorites-head' }, el('h3', { class: 'addp-label', textContent: 'Favorites' }), send),
+    wrap,
+    el('div', { class: 'addp-pills', hidden: true }),
+    el('div', { class: 'addp-grid-wrap' }));
+  fillAddFavorites(holder);
+}
+
+/** The card under the paste box saying what the link is, before it's added. */
+function showPreview(text, error, source = null) {
+  const box = $('source-message');
+  box.hidden = !text;
+  box.classList.toggle('is-error', Boolean(error));
+  if (!text) { box.replaceChildren(); return; }
+  if (error || !source?.ok) { box.replaceChildren(el('span', { class: 'addp-preview-text', textContent: text })); return; }
+  const name = KIND_NAMES[source.kind] || 'Stream';
+  const id = source.kind === 'youtube' ? source.youtube?.id : '';
+  box.replaceChildren(...[
+    id ? el('img', { class: 'addp-preview-img', src: `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`, alt: '', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
+    el('span', { class: 'addp-preview-text' }, el('b', { textContent: name }), el('span', { textContent: text.replace(new RegExp(`^${name}\\s·\\s`), '') })),
+  ].filter(Boolean));
+}
+
 /* ---------- TV guide ---------- */
 
 /** "On now" under a favorite's name, for favorites that are TV channels. */
@@ -466,7 +650,7 @@ function onNowLine(item) {
 /** Redraws favorites where they're showing, without touching the grid. */
 function refreshFavoriteLists() {
   if (!$('welcome').hidden) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
-  if ($('source-dialog').open) renderFavorites($('source-favorites'), () => sourceTarget);
+  if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
 
 /** Favorites with listings, in the same folders and order as everywhere else. */
@@ -1506,8 +1690,7 @@ function describe(source) {
 }
 
 function showSourceMessage(node, text, error) {
-  node.textContent = text;
-  node.classList.toggle('is-error', error);
+  showPreview(text, error);
 }
 
 function openSourceDialog(target) {
@@ -1518,9 +1701,9 @@ function openSourceDialog(target) {
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
   $('source-input').value = current.startsWith('local:') ? '' : current;
   showSourceMessage($('source-message'), '', false);
-  if ($('source-favorites').search) $('source-favorites').search.input.value = '';
-  renderFavorites($('source-favorites'), () => sourceTarget);
-  loadGuide().then((changed) => changed && $('source-dialog').open && renderFavorites($('source-favorites'), () => sourceTarget));
+  if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
+  renderAddFavorites($('source-favorites'), () => sourceTarget);
+  loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
   openDialog($('source-dialog'));
   $('source-input').select();
   if (replacing) updateSourceMessage();
@@ -1540,8 +1723,9 @@ function updateSourceMessage() {
     showSourceMessage($('source-message'), PASTED_NOTE, false);
     return;
   }
-  const { text, error } = describe(parseSource(value));
-  showSourceMessage($('source-message'), text, error);
+  const parsed = parseSource(value);
+  const { text, error } = describe(parsed);
+  showPreview(text, error, parsed);
 }
 
 function submitSource() {
@@ -1581,6 +1765,20 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-cancel').addEventListener('click', () => $('source-dialog').close());
+$('source-close').addEventListener('click', () => $('source-dialog').close());
+// Paste fills the box from the clipboard in one tap. Browsers ask first, and some can't at all.
+if (!navigator.clipboard?.readText) $('source-paste').hidden = true;
+$('source-paste').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) { toast('The clipboard is empty.'); return; }
+    $('source-input').value = text.trim();
+    updateSourceMessage();
+    $('source-input').focus();
+  } catch {
+    toast("Couldn't read the clipboard. Paste into the box instead.");
+  }
+});
 for (const dialog of [$('source-dialog'), $('help-dialog')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
