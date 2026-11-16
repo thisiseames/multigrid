@@ -76,18 +76,20 @@
   <div id="reader-menu" class="popover matches readerp" hidden></div>
   <div id="hidden-menu" class="popover hidden-menu" hidden></div>
 
-  <dialog id="source-dialog" class="dialog">
+  <dialog id="source-dialog" class="dialog addp">
     <form id="source-form" method="dialog">
-      <h2 id="source-title">Add stream</h2>
-      <div id="source-favorites" class="favorites" hidden></div>
-      <textarea id="source-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
-      <p id="source-message" class="source-message" role="status"></p>
-      <button id="file-zone" class="file-zone" type="button">
-        <span data-icon="upload"></span>
-        <span class="file-zone-title">Drop video files or click to choose</span>
-        <span class="file-zone-note">They play from this computer and are never uploaded.</span>
-      </button>
-      <div class="dialog-actions">
+      <div class="addp-head">
+        <h2 id="source-title">Add stream</h2>
+        <button id="source-close" class="icon-button" type="button" aria-label="Close"><span data-icon="close"></span></button>
+      </div>
+      <div class="addp-paste">
+        <textarea id="source-input" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
+        <button id="source-paste" class="addp-pastebtn" type="button">Paste</button>
+      </div>
+      <div id="source-message" class="addp-preview" role="status" hidden></div>
+      <div id="source-favorites" class="addp-favs" hidden></div>
+      <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this computer</span></button>
+      <div class="dialog-actions addp-actions">
         <button id="source-cancel" class="plain-button" type="button">Cancel</button>
         <button id="source-submit" class="add-button" type="submit">Add</button>
       </div>
