@@ -7,6 +7,7 @@
 import { canResize, findDividers, fitStage, isStream, moveLine, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { parseSource } from './sources.js';
+import { cropBox, getCrop, setCrop } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
@@ -86,8 +87,89 @@ class TileView {
     if (!this.player) return;
     // A feed adds its own Back and Next to the tile's top bar.
     if (this.player.stripButtons) this.strip.querySelector('.strip-actions')?.prepend(...this.player.stripButtons);
-    this.body.append(this.player.el);
+    // The player sits inside a frame that can be cropped. Changing the crop only resizes the frame,
+    // so the stream never reloads.
+    this.cropInner = el('div', { class: 'crop-inner' }, this.player.el);
+    this.cropFrame = el('div', { class: 'crop-frame' }, this.cropInner);
+    this.body.append(this.cropFrame);
+    this.applyCrop(getCrop(tile.input));
     this.player.start();
+  }
+
+  applyCrop(crop) {
+    if (!this.cropInner) return;
+    const box = cropBox(crop);
+    Object.assign(this.cropInner.style, { left: `${box.left}%`, top: `${box.top}%`, width: `${box.width}%`, height: `${box.height}%` });
+    this.root.classList.toggle('is-cropped', Boolean(crop));
+    this.cropButton?.classList.toggle('is-on', Boolean(crop));
+  }
+
+  /** Crop mode: the full picture shows, with a box whose four edges drag inward. */
+  editCrop() {
+    if (!this.cropInner || this.body.querySelector('.crop-editor')) return;
+    const saved = getCrop(this.tile.input);
+    let crop = { t: 0, r: 0, b: 0, l: 0, ...(saved || {}) };
+    this.applyCrop(null);
+    const shade = el('div', { class: 'crop-shade' });
+    const box = el('div', { class: 'crop-box' },
+      ...['t', 'r', 'b', 'l'].map((edge) => el('span', { class: `crop-handle is-${edge}` })));
+    const finish = (save) => {
+      editor.remove();
+      tools.remove();
+      this.root.classList.remove('is-cropping');
+      document.removeEventListener('keydown', onKey, true);
+      if (save) setCrop(this.tile.input, crop);
+      this.applyCrop(getCrop(this.tile.input));
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finish(false); }
+      if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+    };
+    const draw = () => {
+      const rect = { left: crop.l * 100, top: crop.t * 100, right: crop.r * 100, bottom: crop.b * 100 };
+      Object.assign(box.style, { left: `${rect.left}%`, top: `${rect.top}%`, right: `${rect.right}%`, bottom: `${rect.bottom}%` });
+      shade.style.clipPath = `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${rect.left}% ${rect.top}%, ${rect.left}% ${100 - rect.bottom}%, ${100 - rect.right}% ${100 - rect.bottom}%, ${100 - rect.right}% ${rect.top}%, ${rect.left}% ${rect.top}%)`;
+    };
+    const button = (label, cls, onClick) => el('button', { type: 'button', class: cls, textContent: label, on: { click: onClick } });
+    const tools = el('div', { class: 'crop-tools' },
+      el('span', { class: 'crop-hint', textContent: 'Drag the edges in' }),
+      button('Reset', 'crop-reset', () => { crop = { t: 0, r: 0, b: 0, l: 0 }; draw(); }),
+      button('Cancel', 'crop-cancel', () => finish(false)),
+      button('Done', 'crop-done', () => finish(true)));
+    const editor = el('div', { class: 'crop-editor' }, shade, box);
+    for (const handle of box.querySelectorAll('.crop-handle')) {
+      const edge = [...handle.classList].find((name) => name.startsWith('is-')).slice(3);
+      handle.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        handle.setPointerCapture(event.pointerId);
+        const rect = editor.getBoundingClientRect();
+        const move = (moveEvent) => {
+          const x = (moveEvent.clientX - rect.left) / rect.width;
+          const y = (moveEvent.clientY - rect.top) / rect.height;
+          const limit = (value, other) => Math.min(Math.max(0, value), 0.8 - other, 0.45);
+          if (edge === 't') crop.t = limit(y, crop.b);
+          if (edge === 'b') crop.b = limit(1 - y, crop.t);
+          if (edge === 'l') crop.l = limit(x, crop.r);
+          if (edge === 'r') crop.r = limit(1 - x, crop.l);
+          draw();
+        };
+        const up = () => {
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          handle.removeEventListener('pointercancel', up);
+        };
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        handle.addEventListener('pointercancel', up);
+      });
+    }
+    this.body.append(editor);
+    // The buttons cover the tile's top bar, so nothing sits over the picture's edges.
+    this.root.append(tools);
+    this.root.classList.add('is-cropping');
+    document.addEventListener('keydown', onKey, true);
+    draw();
   }
 
   buildStrip() {
@@ -97,8 +179,10 @@ class TileView {
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
     this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
+    this.cropButton = this.source.ok ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     const actions = el('div', { class: 'strip-actions' },
       this.starButton,
+      this.cropButton,
       this.muteButton,
       this.fullButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
@@ -169,6 +253,8 @@ class TileView {
   showError(message) {
     this.player?.destroy();
     this.player = null;
+    this.cropInner = null;
+    this.cropFrame = null;
     const { handlers } = this.grid;
     const actions = el('div', { class: 'tile-error-actions' },
       el('button', { type: 'button', textContent: 'Replace', on: { click: () => handlers.onReplace(this.id) } }),
@@ -194,6 +280,9 @@ class TileView {
     this.muteButton = null;
     this.fullButton = null;
     this.starButton = null;
+    this.cropButton = null;
+    this.cropInner = null;
+    this.cropFrame = null;
     this.body = null;
   }
 

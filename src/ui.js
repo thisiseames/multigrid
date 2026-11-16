@@ -32,6 +32,7 @@ const ICON_PATHS = {
   phone: '<rect x="4.5" y="2" width="7" height="12" rx="1.5"/><path d="M7.2 12h1.6"/>',
   live: '<circle cx="8" cy="8" r="1.6"/><path d="M5.2 5.2a4 4 0 0 0 0 5.6M10.8 5.2a4 4 0 0 1 0 5.6M3.4 3.4a6.5 6.5 0 0 0 0 9.2M12.6 3.4a6.5 6.5 0 0 1 0 9.2"/>',
   film: '<rect x="2.5" y="3" width="11" height="10" rx="1.3"/><path d="M5 3v10M11 3v10M2.5 6h2.5M2.5 10h2.5M11 6h2.5M11 10h2.5"/>',
+  crop: '<path d="M4.5 1.5v10h10M1.5 4.5h10v10"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
   play: '<path fill="currentColor" stroke="none" d="M5 3.3v9.4a.5.5 0 0 0 .76.43l7.4-4.7a.5.5 0 0 0 0-.86l-7.4-4.7A.5.5 0 0 0 5 3.3z"/>',
 };
