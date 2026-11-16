@@ -112,6 +112,12 @@ function tvpassportRows(html) {
   return rows;
 }
 
+/** The channel's logo, from the station picture on its TV Passport page. */
+function tvpassportLogo(html) {
+  const src = html.match(/<img[^>]+src="((?:https:)?\/\/cdn\.tvpassport\.com\/image\/station\/[^"]+)"/)?.[1];
+  return src ? (src.startsWith('//') ? `https:${src}` : src) : '';
+}
+
 async function tvpassport(channel) {
   // The day page that holds right now starts at 6:00 am Eastern, so before 6 it's yesterday's.
   const first = new Date((now - 6 * 3600) * 1000 - 5 * 3600 * 1000);
@@ -119,13 +125,16 @@ async function tvpassport(channel) {
   const rows = [];
   for (const day of days) {
     const html = await get(`https://www.tvpassport.com/tv-listings/stations/${channel.tvpassport}/${day}`, 'text');
-    if (html) rows.push(...tvpassportRows(html));
+    if (html) {
+      rows.push(...tvpassportRows(html));
+      channel.logo ||= tvpassportLogo(html);
+    }
     await pause(600);
   }
   return rows;
 }
 
-const result = { updated: now, channels: {} };
+const result = { updated: now, channels: {}, logos: {} };
 const skyRows = await sky(channels.filter((c) => c.sky));
 let empty = 0;
 for (const channel of channels) {
@@ -137,6 +146,10 @@ for (const channel of channels) {
     .filter(([start]) => !seen.has(start) && seen.add(start));
   if (!kept.length) empty++;
   for (const name of channel.names) result.channels[guideKey(name)] = kept;
+  // Sky's logos are white lettering made for dark screens; TV Passport's are made for light ones.
+  const logo = channel.sky ? { url: `https://d2n0069hmnqmmx.cloudfront.net/epgdata/1.0/newchanlogos/600/600/skychb${channel.sky}.png`, tone: 'dark' }
+    : channel.logo ? { url: channel.logo, tone: 'light' } : null;
+  if (logo) for (const name of channel.names) result.logos[guideKey(name)] = logo;
   console.log(`${String(kept.length).padStart(3)}  ${channel.names[0]}`);
 }
 
