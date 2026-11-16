@@ -39,7 +39,7 @@ async function sky(list) {
       for (const service of data?.schedule ?? []) {
         const rows = out.get(Number(service.sid)) ?? [];
         for (const event of service.events ?? []) {
-          if (Number.isFinite(event.st) && Number.isFinite(event.d) && event.t) rows.push([event.st, event.st + event.d, event.t]);
+          if (Number.isFinite(event.st) && Number.isFinite(event.d) && event.t) rows.push(listing(event.st, event.st + event.d, event.t, event.sy, /^live\b/i.test(event.t)));
         }
         out.set(Number(service.sid), rows);
       }
@@ -61,6 +61,23 @@ function localToEpoch(text, timeZone) {
   }).formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
   const seenAs = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
   return Math.round((guess + (guess - seenAs)) / 1000);
+}
+
+/** A description cut to 160 characters at a word, so the guide stays small. */
+export function shortText(text) {
+  const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (clean.length <= 160) return clean;
+  const cut = clean.slice(0, 159);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 120)).replace(/[\s,;:.\-–—]+$/, '')}…`;
+}
+
+/** A listing row: [start, end, title], plus a description and an "L" for live when there are any. */
+function listing(start, end, title, description, live) {
+  const row = [start, end, title];
+  const about = shortText(description);
+  if (about || live) row.push(about);
+  if (live) row.push('L');
+  return row;
 }
 
 const decode = (text) => text.replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -87,8 +104,10 @@ function tvpassportRows(html) {
     const show = field('showName');
     const episode = field('episodeTitle');
     // Movie channels list every film as "Movie" and put its name in the episode title.
-    const title = (show === 'Movie' || show === 'Movies') && episode ? episode : show;
-    if (title && Number.isFinite(start) && minutes > 0) rows.push([start, start + minutes * 60, title]);
+    const movie = (show === 'Movie' || show === 'Movies') && episode;
+    const title = movie ? episode : show;
+    const about = [!movie && episode ? `“${episode}”` : '', field('description')].filter(Boolean).join(' ');
+    if (title && Number.isFinite(start) && minutes > 0) rows.push(listing(start, start + minutes * 60, title, about, field('live') === '1'));
   }
   return rows;
 }
