@@ -46,6 +46,12 @@ export function listingsFor(name, source) {
   return shows.length ? shows : null;
 }
 
+/** A TV channel's logo and whether it's made for a dark or light background, or null. */
+export function logoFor(name) {
+  const logo = guide?.logos?.[guideKey(name)];
+  return logo && typeof logo.url === 'string' && /^https:\/\//.test(logo.url) ? { url: logo.url, tone: logo.tone === 'dark' ? 'dark' : 'light' } : null;
+}
+
 /** Shows from `from` to `to` for a favorite, for the timeline. */
 export function showsBetween(name, source, from, to) {
   return (listingsFor(name, source) ?? []).filter((show) => show.end > from && show.start < to);

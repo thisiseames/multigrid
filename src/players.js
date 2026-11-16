@@ -125,7 +125,7 @@ const YOUTUBE_ERRORS = {
    for the list names that video in its thumbnail, and it's allowed to be read from here. */
 const newestCache = new Map();
 
-function newestUpload(list) {
+export function newestUpload(list) {
   const cached = newestCache.get(list);
   if (cached && Date.now() - cached.at < 10 * 60 * 1000) return Promise.resolve(cached.id);
   const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/playlist?list=${list}`)}`;

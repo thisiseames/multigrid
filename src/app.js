@@ -8,7 +8,8 @@ import {
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
-import { clock, guideKey, guideUpdated, loadGuide, nowAndNext, showsBetween } from './guide.js';
+import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
+import { newestUpload } from './players.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
@@ -462,18 +463,49 @@ const KIND_NAMES = {
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-/** A YouTube video's picture, or the first letter on the name's own colour. */
-function favoriteArt(name, source) {
-  const id = source.kind === 'youtube' ? source.youtube?.id : '';
-  const letter = () => el('span', { class: 'fart-letter', style: `--hue:${sourceColor(name)}`, textContent: (name.match(/[\p{L}\p{N}]/u)?.[0] || '?').toLocaleUpperCase() });
-  if (!id) return el('span', { class: 'fart' }, letter());
-  const art = el('span', { class: 'fart is-picture' });
-  const img = el('img', { src: `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
-  const fallBack = () => { art.classList.remove('is-picture'); img.replaceWith(letter()); };
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'reader', 'audio']);
+
+/** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
+function artPicture(art, url, fallBack, checkStandIn = false) {
+  const img = el('img', { src: url, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
   img.addEventListener('error', fallBack, { once: true });
-  // A removed video gets YouTube's small grey stand-in instead of an error.
-  img.addEventListener('load', () => { if (img.naturalWidth <= 120) fallBack(); }, { once: true });
-  art.append(img);
+  if (checkStandIn) img.addEventListener('load', () => { if (img.naturalWidth <= 120) fallBack(); }, { once: true });
+  art.replaceChildren(img);
+}
+
+/** A TV channel's logo, a YouTube picture, or one quiet grey icon for what it is. */
+function favoriteArt(item, source) {
+  const art = el('span', { class: 'fart' });
+  const quiet = () => {
+    art.className = 'fart is-icon';
+    art.replaceChildren(icon(KIND_ICONS[source.kind] || 'play', 20));
+  };
+  const logo = !NOT_TV_KINDS.has(source.kind) ? logoFor(item.name) : null;
+  if (logo) {
+    art.className = `fart is-logo is-${logo.tone}`;
+    artPicture(art, logo.url, quiet);
+    return art;
+  }
+  if (source.kind === 'youtube') {
+    const { id, list, channel } = source.youtube ?? {};
+    const show = (videoId) => {
+      art.className = 'fart is-picture';
+      artPicture(art, `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`, quiet, true);
+    };
+    quiet();
+    if (id) show(id);
+    else {
+      // A channel: the picture from its newest video, found the same way the player finds it.
+      const uploads = list?.startsWith('UU') ? list : channel?.startsWith('UC') ? `UU${channel.slice(2)}` : '';
+      if (uploads) {
+        const videos = uploads.startsWith('UULF') ? uploads : `UULF${uploads.slice(2)}`;
+        newestUpload(videos).then((found) => found || newestUpload(uploads)).then((found) => { if (found) show(found); });
+      }
+    }
+    return art;
+  }
+  quiet();
   return art;
 }
 
@@ -517,7 +549,7 @@ function favoriteCard(item, holder) {
         },
       },
     },
-    favoriteArt(item.name, source),
+    favoriteArt(item, source),
     el('span', { class: 'fcard-text' },
       el('b', { textContent: item.name, title: item.name }),
       (() => {
