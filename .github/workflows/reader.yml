@@ -1,33 +1,51 @@
-# Refreshes the Reader every 30 minutes: headlines from Eames's feeds, and each new story's
+# Refreshes the Reader about every 30 minutes: headlines from Eames's feeds, and each new story's
 # text locked with READER_KEY (a repository secret), so the public project shows only noise.
-# GitHub drops many scheduled runs when it's busy, so it tries every 5 minutes and each try
-# stops straight away unless the Reader is more than 25 minutes old.
+#
+# GitHub barely runs scheduled jobs for this project, so the job keeps itself going instead:
+# when a refresh finishes it starts the next run, which waits 25 minutes in the "reader-wait"
+# environment (a wait timer, which uses no job time) before refreshing again.
+# The schedule is only a backup: it restarts the loop if the Reader is ever 45+ minutes old.
 name: reader
 
 on:
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      chained:
+        description: 'Started by the previous run (waits 25 minutes first)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
-
-concurrency:
-  group: reader
-  cancel-in-progress: false
+  actions: write
 
 jobs:
+  wait:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.chained == 'true'
+    runs-on: ubuntu-latest
+    environment: reader-wait
+    steps:
+      - run: echo "Waited 25 minutes."
+
   build:
+    needs: wait
+    if: always() && (needs.wait.result == 'success' || needs.wait.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    concurrency:
+      group: reader-build
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-      - name: Is the Reader fresh enough already?
+      - name: Does this run need to refresh?
         id: fresh
         run: |
           age=$(node -e "const d=require('./reader/index.json'); const t=d.updated>1e12?d.updated:d.updated*1000; console.log(Math.round((Date.now()-t)/60000))" 2>/dev/null || echo 9999)
           echo "Reader is $age minutes old."
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$age" -lt 25 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; fi
+          # A scheduled run only steps in when the loop has stopped.
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$age" -lt 45 ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
         if: steps.fresh.outputs.skip != 'true'
         with:
@@ -48,3 +66,10 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Update Reader"
           for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+      - name: Start the next refresh
+        # Even if this refresh failed, keep the loop alive. A skipped scheduled run doesn't start one,
+        # so there's only ever one loop.
+        if: always() && steps.fresh.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run reader.yml --repo "${{ github.repository }}" --ref main -f chained=true
