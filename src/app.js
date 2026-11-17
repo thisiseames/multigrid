@@ -1401,7 +1401,8 @@ window.addEventListener('hashchange', receiveReaderKey);
 
 /* ---------- Matches ---------- */
 
-let matchesTab = MATCH_TABS.find((tab) => tab.id === lastMatches()) ?? MATCH_TABS[0];
+const SHOWN_TABS = MATCH_TABS.filter((tab) => !tab.hidden);
+let matchesTab = SHOWN_TABS.find((tab) => tab.id === lastMatches()) ?? SHOWN_TABS[0];
 let matchesTimer = null;
 let matchesAsked = 0;
 let matchesFetched = 0;
@@ -1664,7 +1665,7 @@ async function fillMatches(force = true) {
 
 function buildMatches() {
   const menu = $('matches-menu');
-  const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...MATCH_TABS.map((tab) => el('button', {
+  const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...SHOWN_TABS.map((tab) => el('button', {
     type: 'button',
     role: 'tab',
     class: `matches-tab${tab === matchesTab ? ' is-on' : ''}`,

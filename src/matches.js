@@ -7,15 +7,16 @@ export const MY_TEAMS = ['Manchester United', '49ers', 'Raptors'];
 // Team schedules leave out colours, so mine are written down.
 const TEAM_COLORS = { 'Man United': '#da291c', '49ers': '#aa0000', Raptors: '#ce1141' };
 
+// Team tabs are hidden: My teams covers them, but it reads their schedules from here.
 export const TABS = [
   { id: 'mine', name: 'My teams', mine: true },
   { id: 'pl', name: 'Premier League', path: 'soccer/eng.1' },
   { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1' },
   { id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions' },
   { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations' },
-  { id: 'united', name: 'Man United', united: true },
-  { id: 'niners', name: '49ers', team: { path: 'football/nfl', id: 'sf', league: 'NFL' } },
-  { id: 'raptors', name: 'Raptors', team: { path: 'basketball/nba', id: 'tor', league: 'NBA' } },
+  { id: 'united', name: 'Man United', united: true, hidden: true },
+  { id: 'niners', name: '49ers', hidden: true, team: { path: 'football/nfl', id: 'sf', league: 'NFL' } },
+  { id: 'raptors', name: 'Raptors', hidden: true, team: { path: 'basketball/nba', id: 'tor', league: 'NBA' } },
   { id: 'nba', name: 'NBA', path: 'basketball/nba' },
 ];
 
