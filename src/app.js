@@ -2500,22 +2500,29 @@ function remoteCommand(cmd) {
       if (Boolean(cmd.value) !== isTickerOn()) toggleTicker();
       break;
     case 'favorites': {
-      // Favorites copied from the phone: checked like a "Send to phone" link, then only new ones added.
-      if (!Array.isArray(cmd.items) || cmd.items.length > 500) break;
-      const items = [];
-      for (const entry of cmd.items) {
-        if (!entry || typeof entry.input !== 'string' || typeof entry.name !== 'string') continue;
-        const group = typeof entry.group === 'string' ? entry.group.trim().slice(0, 40) : '';
-        if (!entry.input.trim() || entry.input.length > 4000 || !entry.name.trim() || entry.name.length > 200) continue;
-        if (entry.input.startsWith('local:')) continue;
-        items.push({ input: entry.input, name: entry.name.trim(), group });
+      // Favorites copied from the phone, in batches: checked like a "Send to phone" link, then only
+      // new ones added. Every batch is answered, so the phone knows it landed or what went wrong.
+      let added = 0;
+      let problem = '';
+      try {
+        if (!Array.isArray(cmd.items) || cmd.items.length > 500) throw new Error('the list was the wrong shape');
+        const items = [];
+        for (const entry of cmd.items) {
+          if (!entry || typeof entry.input !== 'string' || typeof entry.name !== 'string') continue;
+          const group = typeof entry.group === 'string' ? entry.group.trim().slice(0, 40) : '';
+          if (!entry.input.trim() || entry.input.length > 4000 || !entry.name.trim() || entry.name.length > 200) continue;
+          if (entry.input.startsWith('local:')) continue;
+          items.push({ input: entry.input, name: entry.name.trim(), group });
+        }
+        added = items.length ? importFavorites(items) : 0;
+        if (added < 0) problem = "this screen's browser wouldn't save them (its storage may be full or turned off)";
+      } catch (error) {
+        problem = String(error?.message || error).slice(0, 120);
       }
-      const added = items.length ? importFavorites(items) : 0;
-      if (added < 0) toast(STORAGE_FULL);
-      else if (added) toast(`${added} favorite${added === 1 ? '' : 's'} added from your phone.`);
-      refreshFavorites();
-      syncGuideButton();
-      remoteSync();
+      try { refreshFavorites(); syncGuideButton(); } catch (error) { if (!problem) problem = String(error?.message || error).slice(0, 120); }
+      if (problem) toast(`Couldn't add favorites: ${problem}.`);
+      else if (cmd.last && cmd.total) toast(`${cmd.total} favorite${cmd.total === 1 ? '' : 's'} added from your phone.`);
+      remoteHost?.sendState({ ...remoteState(), notice: { id: String(cmd.batch ?? ''), added: Math.max(0, added), problem } });
       break;
     }
     case 'hello':
@@ -2631,6 +2638,10 @@ async function openRemoteScreen() {
     remoteLink = await connect(pairing, {
       onState(state) {
         if (!state || state.v !== 1 || !Array.isArray(state.tiles)) return;
+        if (state.notice?.id && remoteNotices.has(state.notice.id)) {
+          remoteNotices.get(state.notice.id)(state.notice);
+          remoteNotices.delete(state.notice.id);
+        }
         remoteView.state = state;
         remoteView.connected = true;
         remoteView.everConnected = true;
@@ -2769,9 +2780,8 @@ function openRemoteSheet(target) {
     disabled: !missing.length,
     on: {
       click() {
-        remoteSend({ type: 'favorites', items: missing.map(({ input, name, group }) => ({ input, name, group })) });
-        toast(`Copying ${missing.length} favorite${missing.length === 1 ? '' : 's'} to the screen…`);
         close();
+        copyFavoritesToScreen(missing.map(({ input, name, group }) => ({ input, name, group })));
       },
     },
   }, icon(missing.length ? 'upload' : 'update'), missing.length
@@ -2792,6 +2802,28 @@ function openRemoteSheet(target) {
     pills,
     el('div', { class: 'rm-sheet-list' }, list));
   drawRemoteScreen();
+}
+
+/** Sends favorites 20 at a time and waits for the screen to confirm each batch. */
+const remoteNotices = new Map();
+async function copyFavoritesToScreen(items) {
+  const batches = [];
+  for (let i = 0; i < items.length; i += 20) batches.push(items.slice(i, i + 20));
+  let added = 0;
+  toast(`Copying ${items.length} favorite${items.length === 1 ? '' : 's'} to the screen…`);
+  for (const [index, batch] of batches.entries()) {
+    const id = `${Date.now()}-${index}`;
+    const answer = new Promise((resolve) => {
+      remoteNotices.set(id, resolve);
+      setTimeout(() => { if (remoteNotices.delete(id)) resolve({ timedOut: true }); }, 12000);
+    });
+    remoteSend({ type: 'favorites', items: batch, batch: id, last: index === batches.length - 1, total: items.length });
+    const result = await answer;
+    if (result.timedOut) { toast("The screen didn't answer, so nothing more was copied. Check it's still open and try again."); return; }
+    if (result.problem) { toast(`The screen couldn't add them: ${result.problem}.`); return; }
+    added += result.added;
+  }
+  toast(added ? `Copied ${added} favorite${added === 1 ? '' : 's'} to the screen.` : 'Those favorites were already on the screen.');
 }
 
 /** A pairing link opened on the phone, or pasted into Add stream. */
