@@ -2146,14 +2146,9 @@ function buildLayoutMenu() {
     title: preset.hint || preset.name,
     on: {
       click() {
-        const before = hiddenTiles(ws).length;
-        applyPreset(ws, preset.id);
         closePopovers();
-        commit();
-        const after = hiddenTiles(ws).length;
-        if (after > before || (after && !before)) {
-          toast(`${preset.name} shows ${preset.fixed}. The other ${after === 1 ? 'stream is' : `${after} are`} under Hidden.`);
-        }
+        const note = chooseLayout(preset.id);
+        if (note) toast(note);
       },
     },
   }, layoutDiagram(presetDiagram(preset)), el('span', { textContent: preset.name })));
@@ -2171,6 +2166,19 @@ function buildLayoutMenu() {
     },
   }, el('span', { textContent: 'Custom' }), el('small', { textContent: 'Keeps this arrangement and lets you reshape it' }));
   menu.replaceChildren(el('div', { class: 'layout-options' }, ...options), custom);
+}
+
+/** Switches the screen to a layout, from the menu or the phone remote. Returns the "some are hidden" note, if any. */
+function chooseLayout(presetId) {
+  const preset = presetById(presetId);
+  if (!preset) return '';
+  const before = hiddenTiles(ws).length;
+  applyPreset(ws, preset.id);
+  commit();
+  const after = hiddenTiles(ws).length;
+  return after > before || (after && !before)
+    ? `${preset.name} shows ${preset.fixed}. The other ${after === 1 ? 'stream is' : `${after} are`} under Hidden.`
+    : '';
 }
 
 $('layout-button').addEventListener('click', () => togglePopover($('layout-button'), $('layout-menu'), buildLayoutMenu));
@@ -2446,6 +2454,7 @@ function remoteState() {
     }),
     oneSound: isOneSound(),
     ticker: isTickerOn(),
+    layout: ws.presetId,
     full: streamCount(ws) >= MAX_STREAMS,
     favorites: listFavorites().map(({ input, name, group }) => ({ input, name, group })),
   };
@@ -2523,6 +2532,13 @@ function remoteCommand(cmd) {
       if (problem) toast(`Couldn't add favorites: ${problem}.`);
       else if (cmd.last && cmd.total) toast(`${cmd.total} favorite${cmd.total === 1 ? '' : 's'} added from your phone.`);
       remoteHost?.sendState({ ...remoteState(), notice: { id: String(cmd.batch ?? ''), added: Math.max(0, added), problem } });
+      break;
+    }
+    case 'layout': {
+      if (typeof cmd.id !== 'string' || !presetById(cmd.id)) break;
+      const note = chooseLayout(cmd.id);
+      if (note) toast(note);
+      remoteHost?.sendState({ ...remoteState(), notice: { id: String(cmd.batch ?? ''), text: note } });
       break;
     }
     case 'hello':
@@ -2708,6 +2724,33 @@ function remoteTileCard(tile) {
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
 }
 
+/** The screen's layouts as small pictures, swiped sideways; the current one is highlighted. */
+function remoteLayouts(state) {
+  const current = state.layout;
+  const pick = (preset) => {
+    if (preset.id === current) return;
+    const batch = `layout-${Date.now().toString(36)}`;
+    remoteNotices.set(batch, (notice) => { if (notice.text) toast(notice.text); });
+    setTimeout(() => remoteNotices.delete(batch), 15000);
+    remoteSend({ type: 'layout', id: preset.id, batch });
+    state.layout = preset.id; // Shown straight away; the screen's answer confirms it.
+    drawRemoteScreen();
+  };
+  const options = PRESETS.map((preset) => el('button', {
+    type: 'button',
+    class: `rm-layout${preset.id === current ? ' is-current' : ''}`,
+    aria: { pressed: String(preset.id === current) },
+    on: { click: () => pick(preset) },
+  }, layoutDiagram(presetDiagram(preset), 46, 28), el('span', { textContent: preset.name })));
+  if (current === 'custom') {
+    options.unshift(el('span', { class: 'rm-layout is-current is-custom', aria: { pressed: 'true' } },
+      el('span', { class: 'rm-layout-custom', textContent: 'Custom' }), el('span', { textContent: 'Set on screen' })));
+  }
+  const row = el('div', { class: 'rm-layouts' }, ...options);
+  requestAnimationFrame(() => row.querySelector('.is-current')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
+  return el('section', { class: 'rm-section' }, el('h3', { class: 'rm-label', textContent: 'Layout' }), row);
+}
+
 function drawRemoteScreen() {
   const screen = $('remote-screen');
   if (screen.hidden) return;
@@ -2724,6 +2767,7 @@ function drawRemoteScreen() {
     el('div', { class: 'rm-switches' },
       remoteSwitch('One sound', state.oneSound, () => remoteSend({ type: 'oneSound', value: !state.oneSound })),
       remoteSwitch('Ticker', state.ticker, () => remoteSend({ type: 'ticker', value: !state.ticker }))),
+    remoteLayouts(state),
     tiles.length ? el('ul', { class: 'rm-tiles' }, ...tiles.map(remoteTileCard)) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing on the screen.' }),
   ] : [el('div', { class: 'matches-loading' }, ...Array.from({ length: 3 }, () => el('span', { class: 'skeleton' })))];
   screen.replaceChildren(...[
