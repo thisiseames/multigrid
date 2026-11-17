@@ -15,6 +15,7 @@ import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
+import { forgetPlace, notePlace, resumePoint, showResumed } from './resume.js';
 
 const scripts = new Map();
 
@@ -167,6 +168,28 @@ function youtubePlayer(source, options) {
   };
   listButtons?.forEach((node) => { node.hidden = true; });
 
+  // Long videos remember where you stopped, and start there next time.
+  const checked = new Set();
+  let keeper = null;
+  const videoKey = () => {
+    const data = api?.getVideoData?.();
+    return data?.video_id && !data.isLive ? `yt:${data.video_id}` : '';
+  };
+  const keepPlace = () => {
+    const key = videoKey();
+    if (key) notePlace(key, api.getCurrentTime?.(), api.getDuration?.());
+  };
+  const maybeResume = () => {
+    const key = videoKey();
+    if (!key || checked.has(key)) return;
+    checked.add(key);
+    const point = resumePoint(key);
+    const length = api.getDuration?.() || 0;
+    if (!point || (length && point >= length * 0.95)) return;
+    api.seekTo(point, true);
+    showResumed(frame.parentElement, point, () => { api?.seekTo(0, true); forgetPlace(key); });
+  };
+
   const self = {
     el: frame,
     canMute: true,
@@ -207,9 +230,14 @@ function youtubePlayer(source, options) {
               api.setVolume(level);
               if (wanted) api.mute(); else api.unMute();
               showPlace();
+              maybeResume();
+              clearInterval(keeper);
+              keeper = setInterval(() => { if (api?.getPlayerState?.() === 1) keepPlace(); }, 10000);
             },
-            onStateChange() {
+            onStateChange(event) {
               showPlace();
+              if (event.data === 1) maybeResume();
+              if (event.data === 2 || event.data === 0) keepPlace();
             },
             onError(event) {
               // One video in a list that won't play here shouldn't stop the whole tile.
@@ -240,6 +268,8 @@ function youtubePlayer(source, options) {
     },
     destroy() {
       destroyed = true;
+      clearInterval(keeper);
+      try { keepPlace(); } catch { /* the player is already gone */ }
       frame.removeAttribute('src');
     },
   };
@@ -611,6 +641,23 @@ function audioPlayer(source, options) {
     el('p', { class: 'audio-label', textContent: 'Podcast' }),
     el('p', { class: 'audio-title', textContent: source.label }),
     audio);
+  // Long episodes remember where you stopped.
+  const key = `audio:${source.url}`;
+  let lastKept = 0;
+  const keepPlace = () => notePlace(key, audio.currentTime, audio.duration);
+  audio.addEventListener('loadedmetadata', () => {
+    const point = resumePoint(key);
+    if (!point || !Number.isFinite(audio.duration) || point >= audio.duration * 0.95) return;
+    audio.currentTime = point;
+    showResumed(box, point, () => { audio.currentTime = 0; forgetPlace(key); });
+  }, { once: true });
+  audio.addEventListener('timeupdate', () => {
+    if (Date.now() - lastKept < 10000) return;
+    lastKept = Date.now();
+    keepPlace();
+  });
+  audio.addEventListener('pause', keepPlace);
+  audio.addEventListener('ended', keepPlace);
   return {
     el: box,
     canMute: true,
@@ -622,6 +669,7 @@ function audioPlayer(source, options) {
     setMuted(next) { audio.muted = next; },
     setVolume(next) { audio.volume = next / 100; },
     destroy() {
+      keepPlace();
       audio.pause();
       audio.removeAttribute('src');
       audio.load();

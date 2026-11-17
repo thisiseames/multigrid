@@ -3,16 +3,22 @@
 
 import { el, icon } from './ui.js';
 
-export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne }) {
+export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne, onToggleTicker }) {
   const oneButton = el('button', {
     class: 'mixer-one',
     type: 'button',
     title: 'One sound: turning a stream on turns the others off',
     on: { click: onToggleOne },
   }, el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: 'One sound' }));
+  const tickerButton = el('button', {
+    class: 'mixer-one mixer-ticker',
+    type: 'button',
+    title: 'Ticker: live scores and headlines along the bottom',
+    on: { click: onToggleTicker },
+  }, el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: 'Ticker' }));
   const allButton = el('button', { class: 'mixer-all', type: 'button', on: { click: onMuteAll } });
   const channels = el('div', { class: 'mixer-channels' });
-  root.append(oneButton, allButton, channels);
+  root.append(oneButton, tickerButton, allButton, channels);
   let drawn = '';
   const rows = new Map();
 
@@ -56,8 +62,10 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
   }
 
   return {
-    render(tiles, allLabel, canMuteAny, oneSound) {
+    render(tiles, allLabel, canMuteAny, oneSound, tickerOn = false) {
       root.hidden = !tiles.length;
+      tickerButton.setAttribute('aria-pressed', String(tickerOn));
+      tickerButton.classList.toggle('is-on', tickerOn);
       oneButton.hidden = !canMuteAny;
       oneButton.setAttribute('aria-pressed', String(oneSound));
       oneButton.classList.toggle('is-on', oneSound);

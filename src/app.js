@@ -10,6 +10,8 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { newestUpload } from './players.js';
+import { episodeFor, isNewToday } from './episodes.js';
+import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
@@ -72,6 +74,7 @@ const mixer = createMixer($('mixer'), {
   onVolumeDone: commit,
   onMuteAll: muteAll,
   onToggleOne: toggleOneSound,
+  onToggleTicker: toggleTicker,
 });
 
 function labelOf(tile) {
@@ -135,7 +138,8 @@ function renderSound() {
   button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'));
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
-  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound());
+  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound(), isTickerOn());
+  syncTicker(playing.length > 0);
 }
 
 /* ---------- Sound ---------- */
@@ -150,6 +154,27 @@ function muteOthers(id) {
     view?.setMuted(true);
     view?.syncControls();
   }
+}
+
+/* The ticker: shown while it's switched on and something is in the grid. */
+let ticker = null;
+let tickerShown = null;
+function syncTicker(hasStreams) {
+  const want = isTickerOn() && hasStreams;
+  if (want === tickerShown) return;
+  tickerShown = want;
+  ticker ??= createTicker($('ticker'), {
+    clock,
+    shortDay: (time) => shortDay(time),
+    onOpenStory: (item) => openItem(item),
+    onOpenMatches: () => $('matches-button').click(),
+  });
+  ticker.show(want);
+}
+
+function toggleTicker() {
+  setTickerOn(!isTickerOn());
+  commit();
 }
 
 function toggleOneSound() {
@@ -622,6 +647,18 @@ function favoriteCard(item, holder) {
           nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null);
       })())),
     el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16)));
+  if (isSeriesFolder(item.group)) {
+    // When the next episode airs, and a badge on the day one comes out.
+    episodeFor(item.name).then((info) => {
+      if (!info || !card.isConnected && !card.parentNode) return;
+      const today = isNewToday(info);
+      const text = info.next ? `New episode ${shortDay(info.next.at)} ${clock(info.next.at)}` : '';
+      if (!text && !today) return;
+      card.querySelector('.fcard-text')?.append(el('small', { class: 'fcard-episode' },
+        today ? el('span', { class: 'fcard-new', textContent: 'NEW TODAY' }) : null,
+        text ? el('span', { textContent: text }) : null));
+    });
+  }
   return card;
 }
 
@@ -1659,6 +1696,114 @@ function buildMatches() {
 }
 
 $('matches-button').addEventListener('click', () => togglePopover($('matches-button'), $('matches-menu'), buildMatches));
+
+/* ---------- Today ---------- */
+
+let todayAsked = 0;
+
+/** Live events from 6 pm to midnight on my TV channels, soonest first. */
+function liveTonight(now = Date.now()) {
+  const from = new Date(now);
+  from.setHours(18, 0, 0, 0);
+  const to = new Date(now);
+  to.setHours(24, 0, 0, 0);
+  const start = Math.max(from.getTime(), now - 3 * 3600000);
+  const rows = [];
+  for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
+    for (const show of showsBetween(item.name, parseSource(item.input), start, to.getTime())) {
+      const onNow = show.start <= now && show.end > now;
+      if (show.live && (onNow || show.start >= from.getTime() - 30 * 60000)) rows.push({ item, show });
+    }
+  }
+  return rows.sort((a, b) => a.show.start - b.show.start).slice(0, 8);
+}
+
+/** New episodes of my series in the next seven days, soonest first. */
+async function episodesThisWeek(now = Date.now()) {
+  const series = listFavorites().filter((item) => isSeriesFolder(item.group));
+  const found = await Promise.all(series.map((item) => episodeFor(item.name).then((info) => ({ item, info })).catch(() => ({ item, info: null }))));
+  return found
+    .filter(({ info }) => info?.next && info.next.at > now - 3 * 3600000 && info.next.at < now + 7 * 86400000)
+    .sort((a, b) => a.info.next.at - b.info.next.at);
+}
+
+function todaySection(title, items) {
+  return items ? el('section', { class: 'today-section' }, el('h4', { class: 'match-day', textContent: title }), items) : null;
+}
+
+function todayRow({ art, top, title, sub, live = false, onClick }) {
+  return el('li', { class: 'trow' }, el('button', { type: 'button', class: 'trow-main', on: { click: onClick } },
+    art,
+    el('span', { class: 'trow-text' },
+      el('span', { class: 'trow-top' }, live ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE') : null, top),
+      el('span', { class: 'trow-title', textContent: title }),
+      sub ? el('span', { class: 'trow-sub', textContent: sub }) : null)));
+}
+
+async function fillToday() {
+  const menu = $('today-menu');
+  const asked = ++todayAsked;
+  const body = menu.querySelector('.matches-body');
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
+  const now = Date.now();
+  const [teams, , episodes, news] = await Promise.all([
+    loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
+    loadGuide().catch(() => false),
+    episodesThisWeek(now).catch(() => []),
+    loadIndex(true).catch(() => null),
+  ]);
+  if (asked !== todayAsked || menu.hidden) return;
+
+  // Your teams: the game on now, or the next one.
+  const games = (teams ?? []).map(({ card }) => card.live || card.next[0]).filter(Boolean).sort((a, b) => a.start - b.start);
+  const teamList = games.length ? el('ul', { class: 'mrow-list' }, ...games.map((match) => matchRow(match, { withDay: true }))) : null;
+
+  const tonight = liveTonight(now);
+  const tonightList = tonight.length ? el('ul', { class: 'rlist' }, ...tonight.map(({ item, show }) => todayRow({
+    art: favoriteArt(item, parseSource(item.input)),
+    top: el('span', { textContent: `${item.name} · ${show.start <= now ? `until ${clock(show.end)}` : clock(show.start)}` }),
+    title: show.title,
+    live: show.start <= now,
+    onClick() { closePopovers(); addStream(item.input); },
+  }))) : null;
+
+  const episodeList = episodes.length ? el('ul', { class: 'rlist' }, ...episodes.map(({ item, info }) => todayRow({
+    art: favoriteArt(item, parseSource(item.input)),
+    top: el('span', { textContent: `${shortDay(info.next.at)} ${clock(info.next.at)}` }),
+    title: item.name,
+    sub: [info.next.season && info.next.number ? `S${info.next.season} E${info.next.number}` : '', info.next.name].filter(Boolean).join(' · '),
+    onClick() { closePopovers(); addStream(item.input); },
+  }))) : null;
+
+  const read = readIds();
+  const stories = news ? [
+    ...news.items.filter((item) => item.group === 'News').sort((a, b) => b.time - a.time).slice(0, 5),
+    ...news.items.filter((item) => item.group === 'Man United').sort((a, b) => b.time - a.time).slice(0, 2),
+  ] : [];
+  const newsList = stories.length ? el('ul', { class: 'rlist' }, ...stories.map((item) => readerRow(item, read.has(item.id)))) : null;
+
+  const parts = [
+    todaySection('Your teams', teamList),
+    todaySection('Live tonight on your channels', tonightList),
+    todaySection('New episodes this week', episodeList),
+    todaySection('Top headlines', newsList),
+  ].filter(Boolean);
+  const scroll = body.scrollTop;
+  body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
+  body.scrollTop = scroll;
+  menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
+}
+
+function buildToday() {
+  const menu = $('today-menu');
+  menu.replaceChildren(
+    el('div', { class: 'today-head' }, el('h3', { textContent: 'Today' }), el('span', { textContent: dayFormat.format(new Date()) })),
+    el('div', { class: 'matches-body' }),
+    el('p', { class: 'matches-updated', textContent: '' }));
+  fillToday();
+}
+
+$('today-button').addEventListener('click', () => togglePopover($('today-button'), $('today-menu'), buildToday));
 
 /* ---------- Favorites on another device ---------- */
 
