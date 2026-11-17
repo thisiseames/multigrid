@@ -834,7 +834,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 
 .mrow-list { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--surface); overflow: hidden; }
 .mrow + .mrow { border-top: 1px solid var(--border); }
-.mrow-main { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
+.mrow-main { display: grid; grid-template-columns: 58px 1fr var(--mrow-end, 124px); align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
 .mrow-main:hover, .mrow-main:focus-visible { background: rgba(255, 255, 255, 0.04); }
 .mrow-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .mrow-time, .mrow-final { display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
@@ -848,7 +848,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .mrow-team.is-loser .mrow-name, .mrow-team.is-loser .mrow-score { color: var(--text-2); font-weight: 400; }
 .mrow-team.is-winner .mrow-name { font-weight: 600; }
 .mrow-team.is-mine .mrow-name { color: var(--accent); }
-.mrow-end { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+/* The end column has one width for every row, so the scores line up whatever the channel name. */
+.mrow-end { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; color: var(--text-2); }
 .mrow-chevron { display: inline-flex; opacity: .6; transition: transform .2s; }
 .mrow.is-open .mrow-chevron { transform: rotate(180deg); }
 .mrow-tv { max-width: 92px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -981,7 +982,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 @media (max-width: 480px) {
   .matches-body { padding: 0 8px 10px; }
   .match-day { margin: 0 -8px; padding: 12px 12px 6px; }
-  .mrow-main { grid-template-columns: 58px 1fr auto; gap: 8px; padding: 8px 8px 8px 10px; }
+  .mrow-main { --mrow-end: 92px; gap: 8px; padding: 8px 8px 8px 10px; }
   .mrow-tv { display: none; }
   .hero-mid { min-width: 84px; }
   .team-head { padding: 12px 12px 4px; }
