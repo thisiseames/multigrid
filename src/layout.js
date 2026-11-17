@@ -77,6 +77,11 @@ export const PRESETS = [
     rows: units(2),
     slots: [{ c: 0, r: 0, cs: 1, rs: 2 }, { c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
   }) },
+  { id: 'overtwo', name: 'One over two', fixed: 3, build: () => ({
+    cols: units(2),
+    rows: [2, 1],
+    slots: [{ c: 0, r: 0, cs: 2, rs: 1 }, { c: 0, r: 1, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
+  }) },
   { id: 'duo', name: 'Two and three', fixed: 5, build: () => ({
     cols: units(6),
     rows: [3, 2],
