@@ -2499,6 +2499,25 @@ function remoteCommand(cmd) {
     case 'ticker':
       if (Boolean(cmd.value) !== isTickerOn()) toggleTicker();
       break;
+    case 'favorites': {
+      // Favorites copied from the phone: checked like a "Send to phone" link, then only new ones added.
+      if (!Array.isArray(cmd.items) || cmd.items.length > 500) break;
+      const items = [];
+      for (const entry of cmd.items) {
+        if (!entry || typeof entry.input !== 'string' || typeof entry.name !== 'string') continue;
+        const group = typeof entry.group === 'string' ? entry.group.trim().slice(0, 40) : '';
+        if (!entry.input.trim() || entry.input.length > 4000 || !entry.name.trim() || entry.name.length > 200) continue;
+        if (entry.input.startsWith('local:')) continue;
+        items.push({ input: entry.input, name: entry.name.trim(), group });
+      }
+      const added = items.length ? importFavorites(items) : 0;
+      if (added < 0) toast(STORAGE_FULL);
+      else if (added) toast(`${added} favorite${added === 1 ? '' : 's'} added from your phone.`);
+      refreshFavorites();
+      syncGuideButton();
+      remoteSync();
+      break;
+    }
     case 'hello':
       remoteSync();
       break;
@@ -2740,6 +2759,24 @@ function openRemoteSheet(target) {
       el('span', { class: 'fcard-text' }, el('b', { textContent: item.name }))))));
   };
   fill();
+  // This phone's own favorites that the screen doesn't have yet.
+  const onScreen = new Set(state.favorites.map((item) => item.input));
+  const mine = transferableFavorites().items;
+  const missing = mine.filter((item) => !onScreen.has(item.input));
+  const copy = target.mode === 'add' && mine.length ? el('button', {
+    type: 'button',
+    class: `rm-copy${missing.length ? '' : ' is-done'}`,
+    disabled: !missing.length,
+    on: {
+      click() {
+        remoteSend({ type: 'favorites', items: missing.map(({ input, name, group }) => ({ input, name, group })) });
+        toast(`Copying ${missing.length} favorite${missing.length === 1 ? '' : 's'} to the screen…`);
+        close();
+      },
+    },
+  }, icon(missing.length ? 'upload' : 'update'), missing.length
+    ? `Copy my ${missing.length} favorite${missing.length === 1 ? '' : 's'} to this screen`
+    : 'All your favorites are on this screen') : null;
   remoteView.sheet = el('div', { class: 'rm-sheet' },
     el('div', { class: 'rm-sheet-head' },
       el('h3', { textContent: target.mode === 'replace' ? `Replace ${target.label}` : 'Add stream' }),
@@ -2750,6 +2787,7 @@ function openRemoteSheet(target) {
       on: { click() { const source = parseSource(paste.value.trim()); if (source.ok) choose(source.input); else { message.textContent = source.error || 'Paste a link first.'; message.classList.add('is-error'); } } },
     }, target.mode === 'replace' ? 'Replace' : 'Add')),
     message,
+    copy,
     state.favorites.length ? el('h4', { class: 'match-day', textContent: 'Favorites' }) : null,
     pills,
     el('div', { class: 'rm-sheet-list' }, list));
