@@ -12,6 +12,7 @@ import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBet
 import { newestUpload } from './players.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
+import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
@@ -140,6 +141,7 @@ function renderSound() {
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound(), isTickerOn());
   syncTicker(playing.length > 0);
+  remoteSync();
 }
 
 /* ---------- Sound ---------- */
@@ -1962,6 +1964,10 @@ function updateSourceMessage() {
     showSourceMessage($('source-message'), 'A Reader unlock link. Press Add to unlock this device.', false);
     return;
   }
+  if (pairingFromText(value)) {
+    showSourceMessage($('source-message'), 'A remote link. Press Add to make this phone a remote for your laptop.', false);
+    return;
+  }
   if (pastedFavorites(value)) {
     showSourceMessage($('source-message'), PASTED_NOTE, false);
     return;
@@ -1972,6 +1978,12 @@ function updateSourceMessage() {
 }
 
 function submitSource() {
+  if (pairingFromText($('source-input').value)) {
+    const text = $('source-input').value;
+    $('source-dialog').close();
+    receiveRemotePairing(text);
+    return;
+  }
   const readerKey = keyFromText($('source-input').value);
   if (readerKey) {
     $('source-dialog').close();
@@ -2405,3 +2417,343 @@ loadGuide().then(() => {
 });
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);
+
+/* ---------- Phone remote: the laptop being controlled ---------- */
+
+// var, not let: render() runs before this part of the file, and asks about the remote.
+var remoteHost = null; // eslint-disable-line no-var
+var remotePeers = 0; // eslint-disable-line no-var
+var remoteSyncTimer = null; // eslint-disable-line no-var
+var remoteVolumeTimer = null; // eslint-disable-line no-var
+var bigTileId = null; // eslint-disable-line no-var
+
+/** Everything the remote needs to draw: the streams, the switches and the favorites. */
+function remoteState() {
+  return {
+    v: 1,
+    tiles: ws.tiles.filter((tile) => isVisible(tile) && isStream(tile)).map((tile) => {
+      const player = grid.viewFor(tile.id)?.player;
+      return {
+        id: tile.id,
+        input: tile.input,
+        label: labelOf(tile),
+        muted: tile.muted,
+        volume: tile.volume,
+        canMute: Boolean(player?.canMute),
+        canVolume: Boolean(player?.canVolume),
+        big: bigTileId === tile.id,
+      };
+    }),
+    oneSound: isOneSound(),
+    ticker: isTickerOn(),
+    full: streamCount(ws) >= MAX_STREAMS,
+    favorites: listFavorites().map(({ input, name, group }) => ({ input, name, group })),
+  };
+}
+
+function remoteSync() {
+  if (!remoteHost || !remotePeers) return;
+  clearTimeout(remoteSyncTimer);
+  remoteSyncTimer = setTimeout(() => remoteHost?.sendState(remoteState()), 120);
+}
+
+function makeBig(id, on) {
+  for (const tile of ws.tiles) grid.viewFor(tile.id)?.root.classList.remove('maximized');
+  bigTileId = on && tileById(id) ? id : null;
+  if (bigTileId) grid.viewFor(bigTileId)?.root.classList.add('maximized');
+  for (const tile of ws.tiles) grid.viewFor(tile.id)?.syncFullscreen();
+}
+
+/** What the phone asked for. Anything malformed is ignored: the room is private, but be strict. */
+function remoteCommand(cmd) {
+  if (!cmd || typeof cmd !== 'object' || typeof cmd.type !== 'string') return;
+  const tile = typeof cmd.id === 'string' ? tileById(cmd.id) : null;
+  const validInput = (value) => typeof value === 'string' && value.length < 4000 && parseSource(value).ok;
+  switch (cmd.type) {
+    case 'mute':
+      if (tile && Boolean(cmd.value) !== tile.muted) toggleMute(tile.id);
+      break;
+    case 'volume':
+      if (tile && Number.isFinite(cmd.value)) {
+        changeVolume(tile.id, Math.min(100, Math.max(0, Math.round(cmd.value))));
+        clearTimeout(remoteVolumeTimer);
+        remoteVolumeTimer = setTimeout(commit, 500);
+        remoteSync();
+      }
+      break;
+    case 'big':
+      if (tile) { makeBig(tile.id, Boolean(cmd.value)); remoteSync(); }
+      break;
+    case 'remove':
+      if (tile) { if (bigTileId === tile.id) makeBig(null, false); removeStream(tile.id); }
+      break;
+    case 'add':
+      if (validInput(cmd.input)) addStream(cmd.input);
+      break;
+    case 'replace':
+      if (tile && validInput(cmd.input)) addStream(cmd.input, { mode: 'replace', id: tile.id });
+      break;
+    case 'oneSound':
+      if (Boolean(cmd.value) !== isOneSound()) toggleOneSound();
+      break;
+    case 'ticker':
+      if (Boolean(cmd.value) !== isTickerOn()) toggleTicker();
+      break;
+    case 'hello':
+      remoteSync();
+      break;
+    default:
+  }
+}
+
+async function startRemoteHost() {
+  const pairing = hostPairing(false);
+  if (!pairing || remoteHost) return;
+  try {
+    remoteHost = await connect(pairing, {
+      onCommand: remoteCommand,
+      onPeers(count, change) {
+        remotePeers = count;
+        if (change === 'join') {
+          toast('Your phone is connected as a remote.');
+          remoteSync();
+        }
+        drawRemoteDialog();
+      },
+    });
+  } catch {
+    remoteHost = null;
+  }
+}
+
+async function stopRemoteHost() {
+  await remoteHost?.leave();
+  remoteHost = null;
+  remotePeers = 0;
+  forgetHost();
+}
+
+async function drawRemoteDialog() {
+  const box = $('remote-dialog');
+  if (!box.open) return;
+  const pairing = hostPairing(false);
+  const status = remotePeers
+    ? el('p', { class: 'remote-status is-on' }, el('span', { class: 'remote-dot' }), 'Your phone is connected')
+    : el('p', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Waiting for your phone…');
+  const qr = el('div', { class: 'remote-qr', aria: { label: 'Pairing code' } });
+  box.replaceChildren(
+    el('div', { class: 'help-head' }, el('h2', { textContent: 'Phone remote' }), iconButton('close', 'Close', () => box.close())),
+    el('p', { class: 'remote-lead', textContent: 'Point your iPhone camera at this code and tap the link. Your phone becomes a remote for this screen, on the same Wi-Fi.' }),
+    qr,
+    status,
+    el('p', { class: 'remote-note', textContent: "On the Home Screen app, paste the link into Add stream instead. Next time, the phone reconnects by itself while this page is open." }),
+    el('div', { class: 'dialog-actions' },
+      el('button', { type: 'button', class: 'plain-button', textContent: 'Copy link', on: { click() { navigator.clipboard?.writeText(pairLink(pairing)).then(() => toast('Remote link copied.'), () => toast("Couldn't copy. Scan the code instead.")); } } }),
+      el('button', { type: 'button', class: 'plain-button is-danger', textContent: 'Turn off remote', on: { async click() { await stopRemoteHost(); box.close(); toast('Remote turned off. Your phone has been unpaired.'); } } })));
+  try {
+    qr.innerHTML = await qrSvg(pairLink(pairing));
+  } catch {
+    qr.replaceChildren(el('p', { class: 'remote-note', textContent: "The code couldn't load. Use Copy link instead." }));
+  }
+}
+
+async function openRemoteDialog() {
+  // A phone that's already a remote opens its controls instead.
+  if (controllerPairing()) {
+    openRemoteScreen();
+    return;
+  }
+  hostPairing(true);
+  openDialog($('remote-dialog'));
+  drawRemoteDialog();
+  startRemoteHost();
+}
+
+$('remote-button').addEventListener('click', openRemoteDialog);
+$('remote-dialog').addEventListener('click', (event) => { if (event.target === $('remote-dialog')) $('remote-dialog').close(); });
+if (hostPairing(false)) startRemoteHost();
+
+/* ---------- Phone remote: the phone doing the controlling ---------- */
+
+let remoteLink = null;
+let remoteView = { state: null, connected: false, sheet: null, everConnected: false };
+let remoteVolumeSend = 0;
+let remoteWait = null;
+
+function remoteSend(cmd) {
+  remoteLink?.sendCommand(cmd);
+}
+
+async function openRemoteScreen() {
+  const pairing = controllerPairing();
+  if (!pairing) return;
+  closePopovers();
+  $('remote-screen').hidden = false;
+  document.body.classList.add('remote-open');
+  drawRemoteScreen();
+  loadGuide().then(() => drawRemoteScreen());
+  if (remoteLink) return;
+  clearTimeout(remoteWait);
+  remoteWait = setTimeout(() => { remoteView.waited = true; drawRemoteScreen(); }, 15000);
+  try {
+    remoteLink = await connect(pairing, {
+      onState(state) {
+        if (!state || state.v !== 1 || !Array.isArray(state.tiles)) return;
+        remoteView.state = state;
+        remoteView.connected = true;
+        remoteView.everConnected = true;
+        drawRemoteScreen();
+      },
+      onPeers(count, change) {
+        remoteView.connected = count > 0;
+        if (change === 'join') remoteSend({ type: 'hello' });
+        drawRemoteScreen();
+      },
+    });
+  } catch {
+    remoteView.failed = true;
+    drawRemoteScreen();
+  }
+}
+
+function closeRemoteScreen() {
+  $('remote-screen').hidden = true;
+  document.body.classList.remove('remote-open');
+}
+
+function remoteSwitch(label, on, onClick) {
+  return el('button', { type: 'button', class: `mixer-one${on ? ' is-on' : ''}`, aria: { pressed: String(on) }, on: { click: onClick } },
+    el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: label }));
+}
+
+function remoteTileCard(tile) {
+  const source = parseSource(tile.input);
+  const volume = tile.canVolume ? el('input', {
+    class: 'rm-volume',
+    type: 'range',
+    min: '0',
+    max: '100',
+    step: '1',
+    value: String(tile.muted ? 0 : tile.volume),
+    aria: { label: `${tile.label} volume` },
+    on: {
+      input(event) {
+        const value = Number(event.currentTarget.value);
+        tile.volume = value;
+        if (Date.now() - remoteVolumeSend > 90) { remoteVolumeSend = Date.now(); remoteSend({ type: 'volume', id: tile.id, value }); }
+      },
+      change(event) { remoteSend({ type: 'volume', id: tile.id, value: Number(event.currentTarget.value) }); },
+    },
+  }) : null;
+  const action = (name, label, cls, onClick) => {
+    const button = iconButton(name, label, onClick);
+    button.classList.add('rm-action');
+    if (cls) button.classList.add(cls);
+    return button;
+  };
+  return el('li', { class: `rm-tile${tile.big ? ' is-big' : ''}` },
+    el('div', { class: 'rm-tile-top' },
+      favoriteArt({ name: tile.label, input: tile.input, group: '' }, source),
+      el('div', { class: 'rm-tile-text' },
+        el('b', { textContent: tile.label }),
+        el('small', { textContent: tile.canMute ? (tile.muted ? 'Muted' : `Sound on · ${tile.volume}%`) : 'Sound controlled on the TV' })),
+      tile.canMute ? action(tile.muted ? 'muted' : 'sound', tile.muted ? 'Unmute' : 'Mute', tile.muted ? '' : 'is-on', () => remoteSend({ type: 'mute', id: tile.id, value: !tile.muted })) : null),
+    volume,
+    el('div', { class: 'rm-tile-actions' },
+      el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
+      el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
+      el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
+}
+
+function drawRemoteScreen() {
+  const screen = $('remote-screen');
+  if (screen.hidden) return;
+  const { state, connected, everConnected } = remoteView;
+  const status = connected && state
+    ? el('span', { class: 'remote-status is-on' }, el('span', { class: 'remote-dot' }), 'Connected to your laptop')
+    : remoteView.failed
+      ? el('span', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), "Couldn't start the remote")
+      : everConnected || remoteView.waited
+        ? el('span', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), 'Laptop not open. Open MULTIGRID on it')
+        : el('span', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Looking for your laptop…');
+  const tiles = state?.tiles ?? [];
+  const body = connected && state ? [
+    el('div', { class: 'rm-switches' },
+      remoteSwitch('One sound', state.oneSound, () => remoteSend({ type: 'oneSound', value: !state.oneSound })),
+      remoteSwitch('Ticker', state.ticker, () => remoteSend({ type: 'ticker', value: !state.ticker }))),
+    tiles.length ? el('ul', { class: 'rm-tiles' }, ...tiles.map(remoteTileCard)) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing on the laptop.' }),
+  ] : [el('div', { class: 'matches-loading' }, ...Array.from({ length: 3 }, () => el('span', { class: 'skeleton' })))];
+  screen.replaceChildren(
+    el('header', { class: 'rm-head' },
+      el('div', {}, el('h2', { textContent: 'Remote' }), status),
+      el('button', { type: 'button', class: 'rm-close', on: { click: closeRemoteScreen } }, 'Done')),
+    el('div', { class: 'rm-body' }, ...body),
+    connected && state ? el('footer', { class: 'rm-foot' },
+      el('button', { type: 'button', class: 'add-button rm-add', disabled: state.full, on: { click: () => openRemoteSheet({ mode: 'add' }) } }, icon('plus'), state.full ? 'The grid is full' : 'Add stream'),
+      el('button', { type: 'button', class: 'rm-unpair', on: { click() { remoteLink?.leave(); remoteLink = null; forgetController(); remoteView = { state: null, connected: false, sheet: null, everConnected: false }; closeRemoteScreen(); toast('This phone is no longer a remote.'); } } }, 'Unpair')) : null);
+  if (remoteView.sheet) screen.append(remoteView.sheet);
+}
+
+/** Add or replace: a paste box and the laptop's favorites. */
+function openRemoteSheet(target) {
+  const state = remoteView.state;
+  if (!state) return;
+  const close = () => { remoteView.sheet?.remove(); remoteView.sheet = null; };
+  const choose = (input) => {
+    remoteSend(target.mode === 'replace' ? { type: 'replace', id: target.id, input } : { type: 'add', input });
+    close();
+    toast(target.mode === 'replace' ? 'Replaced on the laptop.' : 'Added on the laptop.');
+  };
+  const paste = el('textarea', { rows: 2, placeholder: 'Paste a link or iframe code', autocapitalize: 'off', spellcheck: false });
+  const message = el('p', { class: 'rm-message' });
+  paste.addEventListener('input', () => {
+    const value = paste.value.trim();
+    const source = value ? parseSource(value) : null;
+    message.textContent = !value ? '' : source.ok ? source.label : source.error;
+    message.classList.toggle('is-error', Boolean(source && !source.ok));
+  });
+  let folder = '';
+  const list = el('ul', { class: 'addp-grid' });
+  const folders = [...new Set(state.favorites.map((item) => item.group).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const pills = folders.length ? el('div', { class: 'matches-tabs addp-pills' }) : null;
+  const fill = () => {
+    pills?.replaceChildren(...['', ...folders].map((name) => el('button', {
+      type: 'button', class: `matches-tab${folder === name ? ' is-on' : ''}`, textContent: name || 'All', on: { click() { folder = name; fill(); } },
+    })));
+    const items = state.favorites.filter((item) => !folder || item.group === folder).sort(byName);
+    list.replaceChildren(...items.map((item) => el('li', { class: 'fcard' }, el('button', { type: 'button', class: 'fcard-main', on: { click: () => choose(item.input) } },
+      favoriteArt(item, parseSource(item.input)),
+      el('span', { class: 'fcard-text' }, el('b', { textContent: item.name }))))));
+  };
+  fill();
+  remoteView.sheet = el('div', { class: 'rm-sheet' },
+    el('div', { class: 'rm-sheet-head' },
+      el('h3', { textContent: target.mode === 'replace' ? `Replace ${target.label}` : 'Add stream' }),
+      el('button', { type: 'button', class: 'rm-close', on: { click: close } }, 'Cancel')),
+    el('div', { class: 'rm-paste' }, paste, el('button', {
+      type: 'button',
+      class: 'add-button',
+      on: { click() { const source = parseSource(paste.value.trim()); if (source.ok) choose(source.input); else { message.textContent = source.error || 'Paste a link first.'; message.classList.add('is-error'); } } },
+    }, target.mode === 'replace' ? 'Replace' : 'Add')),
+    message,
+    state.favorites.length ? el('h4', { class: 'match-day', textContent: 'Favorites' }) : null,
+    pills,
+    el('div', { class: 'rm-sheet-list' }, list));
+  drawRemoteScreen();
+}
+
+/** A pairing link opened on the phone, or pasted into Add stream. */
+function receiveRemotePairing(text = location.hash) {
+  const pairing = pairingFromText(text);
+  if (!pairing) return false;
+  if (text === location.hash) history.replaceState(null, '', location.pathname + location.search);
+  saveController(pairing);
+  remoteLink?.leave();
+  remoteLink = null;
+  remoteView = { state: null, connected: false, sheet: null, everConnected: false };
+  toast('This phone is now a remote for your laptop.');
+  openRemoteScreen();
+  return true;
+}
+window.addEventListener('hashchange', () => receiveRemotePairing());
+receiveRemotePairing();
