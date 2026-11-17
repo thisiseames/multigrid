@@ -538,8 +538,6 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .dialog textarea { display: block; resize: vertical; min-height: 72px; line-height: 1.4; font-size: max(13px, 16px); }
 .strip-actions button.is-favorite { color: var(--accent); }
 .strip-actions button.is-primary { color: #f5c451; }
-/* The primary stream: a gold line along its top bar, so it's easy to spot. */
-.tile.is-primary .strip { box-shadow: inset 0 2px 0 #f5c451; }
 .dialog .favorites { margin-bottom: 10px; }
 .favorites-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; }
 .favorites-send { font-size: 12px; }
