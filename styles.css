@@ -143,6 +143,13 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 }
 .channel-mute { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: var(--text-2); }
 .channel-mute:hover { background: var(--hover); }
+.channel-play { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: var(--text); }
+.channel-play svg { width: 13px; height: 13px; }
+.channel-play:hover { background: var(--hover); }
+.channel-play.is-paused { color: var(--accent); }
+.channel.is-paused .channel-name { color: var(--text-2); }
+.channel:has(.channel-play) { padding-left: 2px; gap: 3px; }
+.channel:has(.channel-play) .channel-name { margin-left: 3px; }
 .channel-mute.is-on { color: var(--accent); }
 .channel-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .channel.is-muted .channel-name { color: var(--text-2); }
