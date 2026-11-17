@@ -16,6 +16,7 @@ export const TABS = [
   { id: 'united', name: 'Man United', united: true },
   { id: 'niners', name: '49ers', team: { path: 'football/nfl', id: 'sf', league: 'NFL' } },
   { id: 'raptors', name: 'Raptors', team: { path: 'basketball/nba', id: 'tor', league: 'NBA' } },
+  { id: 'nba', name: 'NBA', path: 'basketball/nba' },
 ];
 
 const DAY = 86400000;

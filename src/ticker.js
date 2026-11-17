@@ -39,8 +39,10 @@ export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches
 
   const scoreLine = (match) => `${match.home.name} ${match.home.score}–${match.away.score} ${match.away.name}`;
 
+  // Only a game that's on stays pinned on the left; the next game scrolls by with the headlines.
   function drawBox() {
-    const { live, next } = scores;
+    const { live } = scores;
+    box.hidden = !live.length;
     if (live.length) {
       const match = live[shown % live.length];
       box.className = 'ticker-box is-live';
@@ -48,26 +50,32 @@ export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches
         el('span', { class: 'ticker-score', textContent: scoreLine(match) }),
         match.detail ? el('span', { class: 'ticker-minute', textContent: match.detail }) : null);
       box.title = 'Open Matches';
-    } else if (next) {
-      box.className = 'ticker-box';
-      box.replaceChildren(el('span', { class: 'ticker-tag', textContent: 'NEXT' }),
-        el('span', { class: 'ticker-score', textContent: `${shortDay(next.start)} ${clock(next.start)} · ${next.home.name} v ${next.away.name}` }));
-      box.title = 'Open Matches';
-    } else {
-      box.className = 'ticker-box is-empty';
-      box.replaceChildren(el('span', { class: 'ticker-tag', textContent: 'NEWS' }));
     }
   }
 
+  // The next game goes in after the second headline, so it comes round soon after the strip starts.
+  const nextLine = () => {
+    const { live, next } = scores;
+    return !live.length && next ? `${shortDay(next.start)} ${clock(next.start)} · ${next.home.name} v ${next.away.name}` : '';
+  };
+
   function drawHeadlines() {
-    const key = headlines.map((item) => item.id).join(',');
+    const game = nextLine();
+    const key = `${game}|${headlines.map((item) => item.id).join(',')}`;
     if (key === drawnHeadlines) return;
     drawnHeadlines = key;
-    const run = () => headlines.map((item) => el('button', {
-      type: 'button',
-      class: 'ticker-item',
-      on: { click: () => onOpenStory(item) },
-    }, el('b', { textContent: item.source }), item.title));
+    const run = () => {
+      const items = headlines.map((item) => el('button', {
+        type: 'button',
+        class: 'ticker-item',
+        on: { click: () => onOpenStory(item) },
+      }, el('b', { textContent: item.source }), item.title));
+      if (game) {
+        items.splice(Math.min(2, items.length), 0, el('button', { type: 'button', class: 'ticker-item ticker-next', on: { click: onOpenMatches } },
+          el('span', { class: 'ticker-tag', textContent: 'NEXT' }), game));
+      }
+      return items;
+    };
     // Two copies side by side, so the scroll loops without a gap.
     track.replaceChildren(el('div', { class: 'ticker-run' }, ...run()), el('div', { class: 'ticker-run', aria: { hidden: 'true' } }, ...run()));
     requestAnimationFrame(() => {
@@ -80,12 +88,13 @@ export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches
   async function refreshScores() {
     try { scores = await tickerScores(); } catch { /* keep the last scores */ }
     drawBox();
+    drawHeadlines();
     return scores.live.length > 0;
   }
 
   async function refreshHeadlines() {
     const data = await loadIndex(true);
-    if (!data) return;
+    if (!data) { drawHeadlines(); return; }
     headlines = data.items
       .filter((item) => item.group === 'News' || item.group === 'Man United')
       .sort((a, b) => b.time - a.time)
