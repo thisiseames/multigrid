@@ -3,7 +3,7 @@
 
 import { el, icon } from './ui.js';
 
-export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne, onToggleTicker }) {
+export function createMixer(root, { labelOf, player, isPaused, onTogglePause, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne, onToggleTicker }) {
   const oneButton = el('button', {
     class: 'mixer-one',
     type: 'button',
@@ -29,7 +29,8 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
     }, el('span', { class: 'channel-name', textContent: name }), el('span', { class: 'channel-note', textContent: 'No sound control' }));
   }
 
-  function openChannel(tile, name, canVolume) {
+  function openChannel(tile, name, canVolume, canPause) {
+    const play = canPause ? el('button', { class: 'channel-play', type: 'button', on: { click: () => onTogglePause(tile.id) } }) : null;
     const mute = el('button', { class: 'channel-mute', type: 'button', on: { click: () => onToggleMute(tile.id) } });
     const level = canVolume ? el('input', {
       class: 'channel-level',
@@ -43,8 +44,8 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
         change: () => onVolumeDone(),
       },
     }) : null;
-    const channel = el('div', { class: 'channel' }, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level);
-    rows.set(tile.id, { channel, mute, level, name });
+    const channel = el('div', { class: 'channel' }, play, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level);
+    rows.set(tile.id, { channel, mute, level, name, play });
     return channel;
   }
 
@@ -59,6 +60,15 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
     row.channel.classList.toggle('is-muted', tile.muted);
     if (row.level && Number(row.level.value) !== tile.volume) row.level.value = String(tile.volume);
     if (row.level) row.level.title = `${tile.volume}%`;
+    if (row.play) {
+      const paused = isPaused(tile);
+      const playLabel = `${paused ? 'Play' : 'Pause'} ${row.name}`;
+      row.play.title = playLabel;
+      row.play.setAttribute('aria-label', playLabel);
+      row.play.replaceChildren(icon(paused ? 'play' : 'pause'));
+      row.play.classList.toggle('is-paused', paused);
+      row.channel.classList.toggle('is-paused', paused);
+    }
   }
 
   return {
@@ -74,14 +84,14 @@ export function createMixer(root, { labelOf, player, onToggleMute, onVolume, onV
       // Only rebuilt when the list changes, so a slider isn't replaced while it's being dragged.
       const items = tiles.map((tile) => {
         const stream = player(tile);
-        return { tile, name: labelOf(tile), canMute: Boolean(stream?.canMute), canVolume: Boolean(stream?.canVolume) };
+        return { tile, name: labelOf(tile), canMute: Boolean(stream?.canMute), canVolume: Boolean(stream?.canVolume), canPause: Boolean(stream?.canPause) };
       });
-      const shape = JSON.stringify(items.map(({ tile, name, canMute, canVolume }) => [tile.id, name, canMute, canVolume]));
+      const shape = JSON.stringify(items.map(({ tile, name, canMute, canVolume, canPause }) => [tile.id, name, canMute, canVolume, canPause]));
       if (shape !== drawn) {
         drawn = shape;
         rows.clear();
-        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume }) => (
-          canMute ? openChannel(tile, name, canVolume) : closedChannel(name))));
+        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause }) => (
+          canMute ? openChannel(tile, name, canVolume, canPause) : closedChannel(name))));
       }
       tiles.forEach(sync);
     },

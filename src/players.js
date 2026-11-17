@@ -54,6 +54,8 @@ const levelWorks = (() => {
 
 /** The MULTIGRID Sound extension says it's here. It can reach a player inside any embed. */
 const hasSoundExtension = () => document.documentElement.dataset.multigridSound === '1';
+/** Version 1.2 of the extension can also pause and play players inside embeds. */
+const extensionCanPause = () => document.documentElement.dataset.multigridPause === '1';
 
 function extensionSound(frame, muted, volume) {
   const wanted = { muted, volume };
@@ -76,6 +78,9 @@ function extensionSound(frame, muted, volume) {
       wanted.volume = next;
       send();
     },
+    setPaused(next) {
+      frame.contentWindow?.postMessage({ multigridPlay: { paused: Boolean(next) } }, '*');
+    },
     stop() {
       window.removeEventListener('message', onMessage);
       window.removeEventListener('pointerdown', send);
@@ -92,6 +97,8 @@ function addressMutedPlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: Boolean(extension) && levelWorks,
+    canPause: Boolean(extension) && extensionCanPause(),
+    setPaused(next) { extension?.setPaused(next); },
     start() {
       extension?.start();
     },
@@ -141,7 +148,7 @@ export function newestUpload(list) {
 }
 
 function youtubePlayer(source, options) {
-  const { muted, volume, autoplay, env, onError, onCapability } = options;
+  const { muted, volume, autoplay, env, onError, onCapability, onPlayState } = options;
   const { id, list, channel } = source.youtube;
   const isUploads = Boolean(list?.startsWith('UU') && !id && !channel);
   const frame = makeFrame(isUploads ? 'about:blank' : buildEmbedUrl(source, { muted, autoplay }, env));
@@ -194,6 +201,11 @@ function youtubePlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: levelWorks,
+    canPause: true,
+    setPaused(next) {
+      if (!api) return;
+      if (next) api.pauseVideo(); else api.playVideo();
+    },
     stripButtons: listButtons,
     async start() {
       if (isUploads) {
@@ -236,6 +248,8 @@ function youtubePlayer(source, options) {
             },
             onStateChange(event) {
               showPlace();
+              if (event.data === 1) onPlayState?.(false);
+              if (event.data === 2) onPlayState?.(true);
               if (event.data === 1) maybeResume();
               if (event.data === 2 || event.data === 0) keepPlace();
             },
@@ -297,6 +311,11 @@ function twitchPlayer(source, options) {
     el: holder,
     canMute: true,
     canVolume: levelWorks,
+    canPause: true,
+    setPaused(next) {
+      if (!api) return;
+      if (next) api.pause(); else api.play();
+    },
     // Twitch stops when covered, and doesn't start again by itself.
     rememberPlayback() {
       wasPlaying = api ? !api.isPaused() : autoplay;
@@ -329,6 +348,8 @@ function twitchPlayer(source, options) {
         });
         // Twitch goes back to its own level after an ad, so ask again when the stream starts.
         player.addEventListener(window.Twitch.Player.PLAYING, () => api?.setVolume(level / 100));
+        player.addEventListener(window.Twitch.Player.PLAY, () => options.onPlayState?.(false));
+        player.addEventListener(window.Twitch.Player.PAUSE, () => options.onPlayState?.(true));
       }).catch(() => {
         if (destroyed) return;
         fallback = addressMutedPlayer(source, { ...options, muted: wanted, volume: level });
@@ -472,6 +493,7 @@ function tiktokFeedPlayer(source, options) {
   let advanced = false;
   let progressed = false;
   let destroyed = false;
+  let feedPaused = false;
   const send = (type) => frame.contentWindow?.postMessage({ type, 'x-tiktok-player': true }, '*');
   const show = (at) => {
     if (!videos.length || destroyed) return;
@@ -496,9 +518,11 @@ function tiktokFeedPlayer(source, options) {
       ready = true;
       advanced = false;
       send(wanted ? 'mute' : 'unMute');
-      send('play');
+      if (!feedPaused) send('play');
     } else if (type === 'onStateChange') {
       playing = value === 1 || value === 3;
+      if (value === 1) options.onPlayState?.(false);
+      if (value === 2) options.onPlayState?.(true);
       if (value === 0 && progressed) next();
     } else if (type === 'onCurrentTime') {
       // The ended signal doesn't always come, so the clock decides too, but only for a video
@@ -522,6 +546,11 @@ function tiktokFeedPlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: Boolean(extension) && levelWorks,
+    canPause: true,
+    setPaused(next) {
+      feedPaused = Boolean(next);
+      if (ready) send(next ? 'pause' : 'play');
+    },
     stripButtons,
     async start() {
       window.addEventListener('message', onMessage);
@@ -572,6 +601,8 @@ function tiktokPlayer(source, options) {
       if (autoplay) send('play');
     } else if (event.data.type === 'onStateChange') {
       playing = event.data.value === 1 || event.data.value === 3;
+      if (event.data.value === 1) options.onPlayState?.(false);
+      if (event.data.value === 2) options.onPlayState?.(true);
     } else if (event.data.type === 'onPlayerError') {
       const message = TIKTOK_ERRORS[event.data.value?.errorCode];
       if (message) onError(message);
@@ -581,6 +612,10 @@ function tiktokPlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: Boolean(extension) && levelWorks,
+    canPause: true,
+    setPaused(next) {
+      if (ready) send(next ? 'pause' : 'play');
+    },
     start() {
       window.addEventListener('message', onMessage);
       extension?.start();
@@ -612,6 +647,8 @@ function closedPlayer(frame, { muted, volume }) {
     el: frame,
     canMute: Boolean(extension),
     canVolume: Boolean(extension) && levelWorks,
+    canPause: Boolean(extension) && extensionCanPause(),
+    setPaused(next) { extension?.setPaused(next); },
     start() {
       extension?.start();
     },
@@ -742,7 +779,8 @@ function readerPlayer(source) {
 function xPlayer(source, options) {
   const frame = makeFrame(buildEmbedUrl(source, options, options.env));
   frame.className = 'frame-post';
-  return closedPlayer(frame, options);
+  // A post isn't something to pause; its sound still works through the extension.
+  return { ...closedPlayer(frame, options), canPause: false };
 }
 
 const FILE_ACCESS_EVENT = 'multigrid:file-access';
@@ -865,5 +903,14 @@ export function createPlayer(source, options) {
     options.onError('This link starts with http, and browsers block that on a secure page. Try an https version.');
     return null;
   }
-  return PLAYERS[source.kind](source, options);
+  const player = PLAYERS[source.kind](source, options);
+  // Players built on the browser's own video or audio element can pause directly.
+  const media = player && !player.canPause && (player.el instanceof HTMLMediaElement ? player.el : player.el?.querySelector?.('video, audio'));
+  if (media) {
+    player.canPause = true;
+    player.setPaused = (next) => { if (next) media.pause(); else media.play().catch(() => {}); };
+    media.addEventListener('play', () => options.onPlayState?.(false));
+    media.addEventListener('pause', () => options.onPlayState?.(true));
+  }
+  return player;
 }

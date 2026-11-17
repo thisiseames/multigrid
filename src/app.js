@@ -71,6 +71,8 @@ const tileById = (id) => ws.tiles.find((tile) => tile.id === id);
 const mixer = createMixer($('mixer'), {
   labelOf,
   player: (tile) => grid.viewFor(tile.id)?.player,
+  isPaused: (tile) => Boolean(grid.viewFor(tile.id)?.paused),
+  onTogglePause: togglePause,
   onToggleMute: toggleMute,
   onVolume: changeVolume,
   onVolumeDone: commit,
@@ -83,6 +85,15 @@ function labelOf(tile) {
   const source = parseSource(tile.input);
   if (!source.ok) return 'Not playable';
   return favoriteName(tile.input) ?? source.label;
+}
+
+/** Pauses or plays one stream. Not saved: a reload plays everything again. */
+function togglePause(id) {
+  const view = grid.viewFor(id);
+  if (!view?.player?.canPause) return;
+  view.paused = !view.paused;
+  view.player.setPaused(view.paused);
+  renderSound();
 }
 
 /** Makes a stream the primary one, or stops it being primary. */

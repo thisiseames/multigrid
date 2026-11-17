@@ -70,6 +70,7 @@ class TileView {
 
     // Every tile starts by itself, muted. Browsers allow that for any number of videos.
     const autoplay = true;
+    this.paused = false;
     this.player = createPlayer(this.source, {
       muted: tile.muted,
       volume: tile.volume,
@@ -81,6 +82,12 @@ class TileView {
       },
       onCapability: () => {
         this.syncControls();
+        this.grid.handlers.onPlayerChanged();
+      },
+      // The player's own controls can pause it too, so the sound row follows what it says.
+      onPlayState: (paused) => {
+        if (this.paused === paused) return;
+        this.paused = paused;
         this.grid.handlers.onPlayerChanged();
       },
     });
