@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X3JOqiHm2i23ux5a9Ne4NBi85lJw0lIwFX/oL0X0hvQ=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I0fAoJha4pPKI+jIZW11CYABs39DWGCgRFuDpGL+B1M=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -42,6 +42,10 @@
     <button id="guide-button" class="bar-button" type="button" title="TV guide" aria-label="TV guide" hidden>
       <span data-icon="guide" class="narrow-only"></span>
       <span class="bar-button-text wide-only">Guide</span>
+    </button>
+    <button id="remote-button" class="bar-button" type="button" title="Phone remote" aria-label="Phone remote">
+      <span data-icon="remote" class="narrow-only"></span>
+      <span class="bar-button-text wide-only">Remote</span>
     </button>
     <button id="saved-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
       <span data-icon="saved" class="narrow-only"></span>
@@ -105,6 +109,8 @@
   <dialog id="favorite-box" class="dialog favorite-box"></dialog>
   <dialog id="receive-dialog" class="dialog receive"></dialog>
   <dialog id="guide-dialog" class="dialog guide" aria-label="TV guide"></dialog>
+  <dialog id="remote-dialog" class="dialog remote" aria-label="Phone remote"></dialog>
+  <section id="remote-screen" class="remote-screen" aria-label="Remote" hidden></section>
 
   <dialog id="help-dialog" class="dialog help">
     <div class="help-head">
@@ -139,7 +145,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'styles.css', 'src/app.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/matches.js', 'src/mixer.js', 'src/players.js', 'src/reader.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ticker.js', 'src/ui.js'];
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/matches.js', 'src/mixer.js', 'src/players.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ticker.js', 'src/ui.js'];
     await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.arrayBuffer())
       .catch(() => {})));

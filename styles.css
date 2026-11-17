@@ -650,7 +650,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .narrow-only { display: inline-flex; }
   .add-button { padding: 0; width: 32px; margin-left: 2px; }
   form .add-button, .welcome .add-button { width: auto; padding: 0 14px; }
-  #saved-button, #today-button, #reader-button, #matches-button, #standings-button, #guide-button { width: 28px; padding: 0; justify-content: center; }
+  #saved-button, #remote-button, #today-button, #reader-button, #matches-button, #standings-button, #guide-button { width: 28px; padding: 0; justify-content: center; }
   #layout-name { display: none; }
   .bar-button { padding: 0 6px; }
   .layout-menu { width: calc(100vw - 16px); }
@@ -1206,3 +1206,60 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .trow-top { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .trow-title { font-size: 14px; font-weight: 700; line-height: 1.3; overflow-wrap: break-word; }
 .trow-sub { font-size: 12px; color: var(--text-2); }
+
+/* Phone remote: pairing on the laptop */
+.remote { width: min(420px, calc(100vw - 24px)); }
+.remote-lead { margin: 4px 0 14px; color: var(--text-2); line-height: 1.5; }
+.remote-qr { width: 240px; height: 240px; margin: 0 auto; padding: 10px; border-radius: 16px; background: #fff; }
+.remote-qr svg { width: 100%; height: 100%; }
+.remote-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 0 6px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.remote-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0a526; animation: pulse 1.4s ease-in-out infinite; }
+.remote-status.is-on { color: #34c26b; }
+.remote-status.is-on .remote-dot { background: #34c26b; animation: none; }
+.remote-status.is-off { color: #ff8a8d; }
+.remote-status.is-off .remote-dot { background: #e5484d; animation: none; }
+.remote-note { margin: 6px 0 4px; font-size: 12px; color: var(--text-2); line-height: 1.45; text-align: center; }
+.plain-button.is-danger { color: #ff8a8d; }
+
+/* Phone remote: the remote screen */
+.remote-screen { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: #0d0d10; color: var(--text); padding-top: env(safe-area-inset-top); }
+.remote-screen[hidden] { display: none; }
+body.remote-open { overflow: hidden; }
+.rm-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 16px 10px; border-bottom: 1px solid var(--border); }
+.rm-head h2 { margin: 0 0 4px; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.rm-head .remote-status { justify-content: flex-start; margin: 0; }
+.rm-close { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 14px; font-weight: 600; }
+.rm-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 16px; }
+.rm-switches { display: flex; gap: 10px; margin-bottom: 12px; }
+.rm-switches .mixer-one { height: 38px; padding: 0 14px 0 10px; border-radius: 12px; background: var(--surface); font-size: 14px; }
+.rm-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.rm-tile { padding: 12px; border-radius: 16px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); }
+.rm-tile.is-big { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.rm-tile-top { display: flex; align-items: center; gap: 12px; }
+.rm-tile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rm-tile-text b { font-size: 15px; font-weight: 700; line-height: 1.25; overflow-wrap: break-word; }
+.rm-tile-text small { font-size: 12.5px; color: var(--text-2); }
+.rm-action { flex: none; width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--text); }
+.rm-action.is-on { background: var(--accent); color: var(--accent-ink); }
+.rm-action svg { width: 20px; height: 20px; }
+.rm-volume { width: 100%; margin: 14px 0 4px; height: 28px; accent-color: var(--accent); }
+.rm-tile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.rm-pill { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 13px 0 11px; border-radius: 999px; background: rgba(255,255,255,.08); font-size: 13.5px; font-weight: 600; color: var(--text); }
+.rm-pill.is-on { background: var(--accent); color: var(--accent-ink); }
+.rm-pill.is-danger { color: #ff8a8d; }
+.rm-pill span { display: inline-flex; }
+.rm-foot { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #0d0d10; }
+.rm-add { flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; font-size: 16px; font-weight: 700; }
+.rm-unpair { flex: none; height: 48px; padding: 0 14px; color: var(--text-2); font-size: 14px; }
+.rm-sheet { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; background: #121215; padding-top: env(safe-area-inset-top); }
+.rm-sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 10px; }
+.rm-sheet-head h3 { margin: 0; font-size: 20px; font-weight: 800; min-width: 0; overflow-wrap: break-word; }
+.rm-paste { flex: none; display: flex; gap: 8px; padding: 0 14px; }
+.rm-paste textarea { flex: 1; min-width: 0; min-height: 48px; padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); font: inherit; font-size: 16px; resize: none; }
+.rm-paste .add-button { flex: none; height: 48px; padding: 0 18px; border-radius: 12px; }
+.rm-message { flex: none; min-height: 18px; margin: 6px 16px 0; font-size: 12.5px; color: var(--text-2); }
+.rm-message.is-error { color: #ff8a8d; }
+.rm-sheet .match-day { margin: 8px 0 0; padding: 8px 16px 2px; background: transparent; }
+.rm-sheet .addp-pills { padding: 6px 14px 4px; }
+.rm-sheet-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 14px calc(16px + env(safe-area-inset-bottom)); }
+.rm-sheet-list .addp-grid { grid-template-columns: minmax(0, 1fr); }
