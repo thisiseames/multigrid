@@ -1965,7 +1965,7 @@ function updateSourceMessage() {
     return;
   }
   if (pairingFromText(value)) {
-    showSourceMessage($('source-message'), 'A remote link. Press Add to make this phone a remote for your laptop.', false);
+    showSourceMessage($('source-message'), 'A remote link. Press Add to make this phone a remote for that screen.', false);
     return;
   }
   if (pastedFavorites(value)) {
@@ -2506,9 +2506,18 @@ function remoteCommand(cmd) {
   }
 }
 
+var remoteProblem = ''; // eslint-disable-line no-var
+
 async function startRemoteHost() {
   const pairing = hostPairing(false);
   if (!pairing || remoteHost) return;
+  // Some TV browsers can't make direct device-to-device connections at all; say so instead of waiting.
+  if (typeof window.RTCPeerConnection !== 'function') {
+    remoteProblem = "This browser can't make direct connections to your phone, so the remote can't work here.";
+    drawRemoteDialog();
+    return;
+  }
+  remoteProblem = '';
   try {
     remoteHost = await connect(pairing, {
       onCommand: remoteCommand,
@@ -2521,8 +2530,10 @@ async function startRemoteHost() {
         drawRemoteDialog();
       },
     });
-  } catch {
+  } catch (error) {
     remoteHost = null;
+    remoteProblem = `The remote couldn't start in this browser (${String(error?.message || error).slice(0, 80)}).`;
+    drawRemoteDialog();
   }
 }
 
@@ -2537,7 +2548,9 @@ async function drawRemoteDialog() {
   const box = $('remote-dialog');
   if (!box.open) return;
   const pairing = hostPairing(false);
-  const status = remotePeers
+  const status = remoteProblem
+    ? el('p', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), remoteProblem)
+    : remotePeers
     ? el('p', { class: 'remote-status is-on' }, el('span', { class: 'remote-dot' }), 'Your phone is connected')
     : el('p', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Waiting for your phone…');
   const qr = el('div', { class: 'remote-qr', aria: { label: 'Pairing code' } });
@@ -2670,27 +2683,28 @@ function drawRemoteScreen() {
   if (screen.hidden) return;
   const { state, connected, everConnected } = remoteView;
   const status = connected && state
-    ? el('span', { class: 'remote-status is-on' }, el('span', { class: 'remote-dot' }), 'Connected to your laptop')
+    ? el('span', { class: 'remote-status is-on' }, el('span', { class: 'remote-dot' }), 'Connected to your screen')
     : remoteView.failed
       ? el('span', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), "Couldn't start the remote")
       : everConnected || remoteView.waited
-        ? el('span', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), 'Laptop not open. Open MULTIGRID on it')
-        : el('span', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Looking for your laptop…');
+        ? el('span', { class: 'remote-status is-off' }, el('span', { class: 'remote-dot' }), 'Screen not found. Open MULTIGRID on it')
+        : el('span', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Looking for your screen…');
   const tiles = state?.tiles ?? [];
   const body = connected && state ? [
     el('div', { class: 'rm-switches' },
       remoteSwitch('One sound', state.oneSound, () => remoteSend({ type: 'oneSound', value: !state.oneSound })),
       remoteSwitch('Ticker', state.ticker, () => remoteSend({ type: 'ticker', value: !state.ticker }))),
-    tiles.length ? el('ul', { class: 'rm-tiles' }, ...tiles.map(remoteTileCard)) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing on the laptop.' }),
+    tiles.length ? el('ul', { class: 'rm-tiles' }, ...tiles.map(remoteTileCard)) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing on the screen.' }),
   ] : [el('div', { class: 'matches-loading' }, ...Array.from({ length: 3 }, () => el('span', { class: 'skeleton' })))];
-  screen.replaceChildren(
+  screen.replaceChildren(...[
     el('header', { class: 'rm-head' },
       el('div', {}, el('h2', { textContent: 'Remote' }), status),
       el('button', { type: 'button', class: 'rm-close', on: { click: closeRemoteScreen } }, 'Done')),
     el('div', { class: 'rm-body' }, ...body),
     connected && state ? el('footer', { class: 'rm-foot' },
       el('button', { type: 'button', class: 'add-button rm-add', disabled: state.full, on: { click: () => openRemoteSheet({ mode: 'add' }) } }, icon('plus'), state.full ? 'The grid is full' : 'Add stream'),
-      el('button', { type: 'button', class: 'rm-unpair', on: { click() { remoteLink?.leave(); remoteLink = null; forgetController(); remoteView = { state: null, connected: false, sheet: null, everConnected: false }; closeRemoteScreen(); toast('This phone is no longer a remote.'); } } }, 'Unpair')) : null);
+      el('button', { type: 'button', class: 'rm-unpair', on: { click() { remoteLink?.leave(); remoteLink = null; forgetController(); remoteView = { state: null, connected: false, sheet: null, everConnected: false }; closeRemoteScreen(); toast('This phone is no longer a remote.'); } } }, 'Unpair')) : null,
+  ].filter(Boolean));
   if (remoteView.sheet) screen.append(remoteView.sheet);
 }
 
@@ -2702,7 +2716,7 @@ function openRemoteSheet(target) {
   const choose = (input) => {
     remoteSend(target.mode === 'replace' ? { type: 'replace', id: target.id, input } : { type: 'add', input });
     close();
-    toast(target.mode === 'replace' ? 'Replaced on the laptop.' : 'Added on the laptop.');
+    toast(target.mode === 'replace' ? 'Replaced on the screen.' : 'Added on the screen.');
   };
   const paste = el('textarea', { rows: 2, placeholder: 'Paste a link or iframe code', autocapitalize: 'off', spellcheck: false });
   const message = el('p', { class: 'rm-message' });
@@ -2751,7 +2765,7 @@ function receiveRemotePairing(text = location.hash) {
   remoteLink?.leave();
   remoteLink = null;
   remoteView = { state: null, connected: false, sheet: null, everConnected: false };
-  toast('This phone is now a remote for your laptop.');
+  toast('This phone is now a remote for that screen.');
   openRemoteScreen();
   return true;
 }
