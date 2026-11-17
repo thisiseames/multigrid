@@ -47,6 +47,20 @@
     { "names": ["FS2", "Fox Sports 2"], "tvpassport": "fox-sports-2-hd/10263" },
     { "names": ["NBC Sports Bay Area"], "tvpassport": "nbc-sports-bay-area-hd/6305" },
     { "names": ["TSN 4", "TSN4"], "tvpassport": "tsn4-hd/13769" },
-    { "names": ["beIN Sports 1"], "tvpassport": "bein-sport-canada/13246" }
+    { "names": ["beIN Sports 1"], "tvpassport": "bein-sport-canada/13246" },
+    { "names": ["BBC One London", "BBC One"], "sky": 3000 },
+    { "names": ["BBC Two"], "sky": 2075 },
+    { "names": ["ITV 1 FHD UK", "ITV 1", "ITV1"], "sky": 6504 },
+    { "names": ["ITV 3 FHD UK", "ITV 3", "ITV3"], "sky": 6533 },
+    { "names": ["Sky One"], "sky": 4061 },
+    { "names": ["Sky Documentaries"], "sky": 1136 },
+    { "names": ["A&E", "AE"], "tvpassport": "ae-us-hd-eastern-feed/17034" },
+    { "names": ["MTV"], "tvpassport": "mtv-usa-hd-eastern/4525" },
+    { "names": ["VH1 USA", "VH1"], "tvpassport": "vh1-hd-eastern/6204" },
+    { "names": ["ESPN News", "ESPNews"], "tvpassport": "espn-news/1527" },
+    { "names": ["CNBC"], "tvpassport": "cnbc-usa/201" },
+    { "names": ["NBC Sports Philadelphia"], "tvpassport": "nbc-sports-philadelphia-hd/6413" },
+    { "names": ["Telemundo"], "tvpassport": "telemundo-wnju-teterboro-nj-hd/7307" },
+    { "names": ["beIN Sports 3"], "tvpassport": "bein-sports-3/37182" }
   ]
 }
