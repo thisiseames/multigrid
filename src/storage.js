@@ -64,12 +64,23 @@ function sanitize(raw) {
     cols: [...raw.cols],
     rows: [...raw.rows],
     tiles,
+    previous: cleanPrevious(raw.previous),
   };
+}
+
+/** The layout to go back to, if it still makes sense. */
+function cleanPrevious(raw) {
+  if (!raw || typeof raw.presetId !== 'string' || !Array.isArray(raw.places)) return null;
+  const places = raw.places.filter((item) => item && typeof item.input === 'string'
+    && item.place && [item.place.c, item.place.r, item.place.cs, item.place.rs].every(Number.isInteger))
+    .map(({ input, place: { c, r, cs, rs } }) => ({ input, place: { c, r, cs, rs } }));
+  return { presetId: raw.presetId, minSlots: Number.isInteger(raw.minSlots) ? raw.minSlots : 0, places };
 }
 
 function snapshot(ws) {
   return {
     v: 1,
+    ...(ws.previous ? { previous: ws.previous } : {}),
     presetId: ws.presetId,
     minSlots: ws.minSlots,
     started: ws.started,

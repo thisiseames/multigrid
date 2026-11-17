@@ -3,7 +3,7 @@
 // saving in storage.js and drawing in grid-view.js.
 
 import {
-  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, hiddenTiles, isStream, isVisible, makeRoom,
+  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isStream, isVisible, makeRoom,
   presetById, presetDiagram, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
@@ -2101,6 +2101,7 @@ function buildStarters() {
     class: 'starter',
     on: {
       click() {
+        forgetPrevious(ws);
         applyPreset(ws, starter.preset, starter.slots);
         commit();
       },
@@ -2196,6 +2197,7 @@ function chooseLayout(presetId) {
   const preset = presetById(presetId);
   if (!preset) return '';
   const before = hiddenTiles(ws).length;
+  forgetPrevious(ws);
   applyPreset(ws, preset.id);
   commit();
   const after = hiddenTiles(ws).length;

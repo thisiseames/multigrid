@@ -215,6 +215,7 @@ export function swapTiles(ws, idA, idB) {
 
 /** Switches to custom mode, adding finer tracks so spans have somewhere to go. */
 export function enterCustom(ws) {
+  ws.previous = null;
   ws.presetId = 'custom';
   ws.fit = false;
   ws.started = true;
@@ -420,6 +421,14 @@ export function makeRoom(ws) {
   if (ws.presetId === 'custom') return splitLargest(ws);
   const n = streamCount(ws) + 1;
   const preset = presetById(ws.presetId);
+  // A full fixed layout has to grow into Equal. Remember it, so closing a stream can go back.
+  if (preset.fixed && !ws.previous) {
+    ws.previous = {
+      presetId: ws.presetId,
+      minSlots: ws.minSlots,
+      places: ws.tiles.filter((tile) => isStream(tile) && tile.place).map((tile) => ({ input: tile.input, place: { ...tile.place } })),
+    };
+  }
   applyPreset(ws, preset.fixed ? 'equal' : ws.presetId, n);
   ws.minSlots = 0;
   return free();
@@ -448,8 +457,38 @@ export function removeTile(ws, id) {
   } else if (preset && !preset.fixed) {
     applyPreset(ws, ws.presetId, ws.minSlots);
   }
+  restorePrevious(ws);
   return ws;
 }
+
+const samePlace = (a, b) => a && b && a.c === b.c && a.r === b.r && a.cs === b.cs && a.rs === b.rs;
+
+/**
+ * Goes back to the layout that had to grow when a stream was added, once the streams fit it
+ * again. Each stream returns to its old spot; any newcomer takes whatever spot is free.
+ */
+export function restorePrevious(ws) {
+  const previous = ws.previous;
+  const preset = previous && presetById(previous.presetId);
+  if (!preset) { ws.previous = null; return false; }
+  if (streamCount(ws) > (preset.fixed ?? Infinity)) return false;
+  ws.previous = null;
+  applyPreset(ws, preset.id, previous.minSlots || 0);
+  const placed = new Set();
+  for (const { input, place } of previous.places ?? []) {
+    const tile = ws.tiles.find((candidate) => candidate.input === input && candidate.place && !placed.has(candidate));
+    const holder = ws.tiles.find((candidate) => samePlace(candidate.place, place));
+    if (!tile || !holder) continue;
+    [tile.place, holder.place] = [holder.place, tile.place];
+    placed.add(tile);
+  }
+  const primary = primaryTile(ws);
+  if (primary) setPrimary(ws, primary.id, true);
+  return true;
+}
+
+/** Choosing a layout yourself means there's nothing to go back to. */
+export const forgetPrevious = (ws) => { ws.previous = null; };
 
 /** Brings a hidden stream onto the grid: into a free slot, or swapped with the last tile. */
 export function showHidden(ws, id) {
