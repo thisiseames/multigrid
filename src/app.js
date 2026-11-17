@@ -4,7 +4,7 @@
 
 import {
   MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, hiddenTiles, isStream, isVisible, makeRoom,
-  presetById, presetDiagram, removeTile, resizeTile, showHidden, streamCount, swapTiles,
+  presetById, presetDiagram, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
@@ -53,6 +53,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     commit();
   },
   onLayoutAdjusted: commit,
+  onTogglePrimary: (id) => togglePrimary(id),
   favoriteName,
   onEditFavorite(id, anchor) {
     const tile = tileById(id);
@@ -82,6 +83,16 @@ function labelOf(tile) {
   const source = parseSource(tile.input);
   if (!source.ok) return 'Not playable';
   return favoriteName(tile.input) ?? source.label;
+}
+
+/** Makes a stream the primary one, or stops it being primary. */
+function togglePrimary(id, on) {
+  const tile = tileById(id);
+  if (!tile || !tile.input) return;
+  const making = on ?? !tile.primary;
+  setPrimary(ws, id, making);
+  commit();
+  toast(making ? `${labelOf(tile)} is primary. It stays in the biggest spot in every layout.` : `${labelOf(tile)} is no longer primary.`);
 }
 
 function commit() {
@@ -2451,6 +2462,7 @@ function remoteState() {
         canMute: Boolean(player?.canMute),
         canVolume: Boolean(player?.canVolume),
         big: bigTileId === tile.id,
+        primary: Boolean(tile.primary),
       };
     }),
     oneSound: isOneSound(),
@@ -2502,6 +2514,9 @@ function remoteCommand(cmd) {
       break;
     case 'replace':
       if (tile && validInput(cmd.input)) addStream(cmd.input, { mode: 'replace', id: tile.id });
+      break;
+    case 'primary':
+      if (tile) togglePrimary(tile.id, Boolean(cmd.value));
       break;
     case 'oneSound':
       if (Boolean(cmd.value) !== isOneSound()) toggleOneSound();
@@ -2720,6 +2735,7 @@ function remoteTileCard(tile) {
       tile.canMute ? action(tile.muted ? 'muted' : 'sound', tile.muted ? 'Unmute' : 'Mute', tile.muted ? '' : 'is-on', () => remoteSend({ type: 'mute', id: tile.id, value: !tile.muted })) : null),
     volume,
     el('div', { class: 'rm-tile-actions' },
+      el('button', { type: 'button', class: `rm-pill${tile.primary ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.primary)) }, on: { click: () => remoteSend({ type: 'primary', id: tile.id, value: !tile.primary }) } }, icon('crown'), tile.primary ? 'Primary' : 'Make primary'),
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
       el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));

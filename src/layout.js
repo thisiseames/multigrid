@@ -114,6 +114,27 @@ export const isStream = (tile) => Boolean(tile.input);
 export const isVisible = (tile) => Boolean(tile.place);
 export const streamCount = (ws) => ws.tiles.filter(isStream).length;
 export const hiddenTiles = (ws) => ws.tiles.filter((tile) => isStream(tile) && !isVisible(tile));
+export const primaryTile = (ws) => ws.tiles.find((tile) => tile.primary && isStream(tile)) ?? null;
+
+/** How much of the stage a place covers, as a share of each axis multiplied together. */
+function placeArea(place, cols, rows) {
+  const part = (tracks, start, span) => sum(tracks.slice(start, start + span)) / sum(tracks);
+  return part(cols, place.c, place.cs) * part(rows, place.r, place.rs);
+}
+
+/** The index of the biggest place; ties go to the one nearest the top-left. */
+function biggestIndex(places, cols, rows) {
+  let best = -1;
+  places.forEach((place, index) => {
+    if (!place) return;
+    if (best < 0) { best = index; return; }
+    const a = placeArea(place, cols, rows);
+    const b = placeArea(places[best], cols, rows);
+    const earlier = place.r < places[best].r || (place.r === places[best].r && place.c < places[best].c);
+    if (a > b + 1e-9 || (Math.abs(a - b) <= 1e-9 && earlier)) best = index;
+  });
+  return best;
+}
 
 const byPosition = (a, b) => a.place.r - b.place.r || a.place.c - b.place.c;
 
@@ -139,12 +160,41 @@ export function applyPreset(ws, presetId, minSlots = 0) {
   ws.fit = true;
   ws.cols = [...cols];
   ws.rows = [...rows];
+  // The primary stream always takes the biggest spot; the rest keep their order around it.
+  const primary = streams.find((tile) => tile.primary);
+  if (primary && slots.length) {
+    streams.splice(streams.indexOf(primary), 1);
+    streams.splice(Math.min(biggestIndex(slots, cols, rows), streams.length), 0, primary);
+  }
   ws.tiles = slots.map((place, index) => (
     index < streams.length ? Object.assign(streams[index], { place: { ...place } }) : emptyTile({ ...place })
   ));
   for (const extra of streams.slice(slots.length)) {
     extra.place = null;
     ws.tiles.push(extra);
+  }
+  return ws;
+}
+
+/**
+ * Makes a stream the primary one (or stops it being primary). A new primary moves straight
+ * into the biggest spot on screen, swapping with whatever was there.
+ */
+export function setPrimary(ws, id, on = true) {
+  const tile = ws.tiles.find((candidate) => candidate.id === id);
+  if (!tile || !isStream(tile)) return ws;
+  for (const other of ws.tiles) other.primary = false;
+  if (!on) return ws;
+  tile.primary = true;
+  const shown = ws.tiles.filter(isVisible);
+  const big = shown[biggestIndex(shown.map((t) => t.place), ws.cols, ws.rows)];
+  if (!big || big === tile) return ws;
+  if (tile.place) {
+    [tile.place, big.place] = [big.place, tile.place];
+  } else {
+    tile.place = big.place;
+    if (isStream(big)) big.place = null;
+    else ws.tiles = ws.tiles.filter((candidate) => candidate !== big);
   }
   return ws;
 }
@@ -380,6 +430,7 @@ export function removeTile(ws, id) {
   }
   const preset = presetById(ws.presetId);
   tile.input = null;
+  tile.primary = false;
   tile.label = undefined;
   tile.muted = true;
   tile.volume = 100;
@@ -406,7 +457,8 @@ export function showHidden(ws, id) {
     ws.tiles = ws.tiles.filter((tile) => tile !== empty);
     return null;
   }
-  const last = order[order.length - 1];
+  // The primary stream keeps its spot.
+  const last = [...order].reverse().find((tile) => !tile.primary) ?? order[order.length - 1];
   hidden.place = last.place;
   last.place = null;
   return last;

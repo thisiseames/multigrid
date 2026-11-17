@@ -180,7 +180,10 @@ class TileView {
     this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
     this.cropButton = this.source.ok ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
+    this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
+    this.primaryButton.classList.add('strip-primary');
     const actions = el('div', { class: 'strip-actions' },
+      this.primaryButton,
       this.starButton,
       this.cropButton,
       this.muteButton,
@@ -204,7 +207,15 @@ class TileView {
   }
 
   syncControls() {
+    this.root.classList.toggle('is-primary', Boolean(this.tile.primary && isStream(this.tile)));
     if (!this.muteButton) return;
+    if (this.primaryButton) {
+      const primaryLabel = this.tile.primary ? 'Primary stream: always in the biggest spot. Click to stop' : 'Make primary: always in the biggest spot';
+      this.primaryButton.title = primaryLabel;
+      this.primaryButton.setAttribute('aria-label', this.tile.primary ? 'Stop being primary' : 'Make primary');
+      this.primaryButton.setAttribute('aria-pressed', String(Boolean(this.tile.primary)));
+      this.primaryButton.classList.toggle('is-primary', Boolean(this.tile.primary));
+    }
     const canMute = Boolean(this.player?.canMute);
     this.muteButton.hidden = !canMute;
     const label = this.tile.muted ? 'Unmute' : 'Mute';
