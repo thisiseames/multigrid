@@ -475,29 +475,39 @@ function artPicture(art, url, fallBack, checkStandIn = false) {
 }
 
 /* Series posters from TVmaze's free TV database. A device remembers each answer for a week. */
-const POSTER_STORE = 'multigrid.posters.v1';
+const POSTER_STORE = 'multigrid.posters.v2';
 const POSTER_DAYS = 7;
 const posterAsks = new Map();
+try { localStorage.removeItem('multigrid.posters.v1'); } catch { /* nothing to tidy */ }
 const readPosters = () => { try { return JSON.parse(localStorage.getItem(POSTER_STORE) || '{}') || {}; } catch { return {}; } };
 const isSeriesFolder = (folder) => /series|shows?\b/i.test(folder || '');
 
+/** A wide picture shrunk by wsrv.nl, a free image service, to just the size the card shows. */
+const shrunk = (url) => `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=144&h=88&fit=cover&output=webp&q=78`;
+const httpsOnly = (raw) => {
+  const url = typeof raw === 'string' && raw.startsWith('http://') ? `https://${raw.slice(7)}` : raw || '';
+  return /^https:\/\//.test(url) ? url : '';
+};
+
+/** A series' pictures from TVmaze: its main wide picture and its poster, either may be ''. */
 function posterFor(name) {
   const key = name.trim().toLocaleLowerCase();
   const known = readPosters()[key];
-  if (known && Date.now() - known.at < POSTER_DAYS * 86400000) return Promise.resolve(known.url || null);
+  if (known && Date.now() - known.at < POSTER_DAYS * 86400000) return Promise.resolve(known);
   if (posterAsks.has(key)) return posterAsks.get(key);
-  const ask = fetch(`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(name.trim())}`, { signal: AbortSignal.timeout?.(6000) })
+  const ask = fetch(`https://api.tvmaze.com/singlesearch/shows?q=${encodeURIComponent(name.trim())}&embed=images`, { signal: AbortSignal.timeout?.(6000) })
     .then((response) => (response.status === 404 ? {} : response.ok ? response.json() : null))
     .then((show) => {
       if (!show) return null; // A busy moment: try again next time instead of remembering nothing.
-      const raw = show.image?.medium || '';
-      const url = raw.startsWith('http://') ? `https://${raw.slice(7)}` : raw;
+      const wides = (show._embedded?.images ?? []).filter((image) => image.type === 'background');
+      const wide = wides.find((image) => image.main) || wides[0];
+      const found = { wide: httpsOnly(wide?.resolutions?.original?.url), poster: httpsOnly(show.image?.medium), at: Date.now() };
       try {
         const all = readPosters();
-        all[key] = { url: /^https:\/\//.test(url) ? url : '', at: Date.now() };
+        all[key] = found;
         localStorage.setItem(POSTER_STORE, JSON.stringify(all));
       } catch { /* not remembered, asked again next time */ }
-      return /^https:\/\//.test(url) ? url : null;
+      return found;
     })
     .catch(() => null)
     .finally(() => posterAsks.delete(key));
@@ -538,13 +548,22 @@ function favoriteArt(item, source) {
   }
   quiet();
   if (isSeriesFolder(item.group)) {
-    posterFor(item.name).then((url) => {
-      if (!url) return;
+    const showPoster = (url) => {
       const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
       const poster = el('img', { class: 'fart-poster', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
       poster.addEventListener('error', quiet, { once: true });
       art.className = 'fart is-poster';
       art.replaceChildren(backdrop, poster);
+    };
+    posterFor(item.name).then((found) => {
+      if (!found) return;
+      if (found.wide) {
+        // The wide picture, shrunk. If the shrinking service can't help, the poster stands in.
+        art.className = 'fart is-picture';
+        artPicture(art, shrunk(found.wide), () => (found.poster ? showPoster(found.poster) : quiet()));
+      } else if (found.poster) {
+        showPoster(found.poster);
+      }
     });
   }
   return art;
