@@ -71,12 +71,17 @@ export function shortText(text) {
   return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 120)).replace(/[\s,;:.\-–—]+$/, '')}…`;
 }
 
-/** A listing row: [start, end, title], plus a description and an "L" for live when there are any. */
-function listing(start, end, title, description, live) {
+/**
+ * A listing row: [start, end, title], plus a description and flags when there are any.
+ * Flags: L live, S a special that's live or new (awards, concerts), P a series or season
+ * premiere, F a series or season finale. Today's "Events today" is built from S, P and F.
+ */
+function listing(start, end, title, description, live, marks = '') {
   const row = [start, end, title];
   const about = shortText(description);
-  if (about || live) row.push(about);
-  if (live) row.push('L');
+  const flags = `${live ? 'L' : ''}${marks}`;
+  if (about || flags) row.push(about);
+  if (flags) row.push(flags);
   return row;
 }
 
@@ -107,7 +112,11 @@ function tvpassportRows(html) {
     const movie = (show === 'Movie' || show === 'Movies') && episode;
     const title = movie ? episode : show;
     const about = [!movie && episode ? `“${episode}”` : '', field('description')].filter(Boolean).join(' ');
-    if (title && Number.isFinite(start) && minutes > 0) rows.push(listing(start, start + minutes * 60, title, about, field('live') === '1'));
+    const live = field('live') === '1';
+    // One-offs worth knowing about: a special that's live or new, and premieres and finales.
+    const special = (field('showTypeID') === 'S' || /\bSpecials?\b|\bAwards\b/.test(field('showType'))) && (live || field('new_show') === '1');
+    const marks = `${special ? 'S' : ''}${field('seriesPremiere') || field('seasonPremiere') ? 'P' : ''}${field('seriesFinale') || field('seasonFinale') ? 'F' : ''}`;
+    if (title && Number.isFinite(start) && minutes > 0) rows.push(listing(start, start + minutes * 60, title, about, live, marks));
   }
   return rows;
 }
