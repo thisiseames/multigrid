@@ -3,6 +3,7 @@
 // everything here only happens while the phone query matches.
 
 import { closePopovers, el, icon, onPopoverChange, togglePopover } from './ui.js';
+import { loadIndex, readIds } from './reader.js';
 
 export const PHONE_QUERY = '(max-width: 640px), (hover: none) and (max-height: 500px)';
 const phone = window.matchMedia(PHONE_QUERY);
@@ -18,13 +19,14 @@ const TITLES = {
   'layout-menu': 'Layout',
   'more-menu': 'More',
   'hidden-menu': 'Hidden streams',
+  'stream-menu': 'Stream',
+  'sound-menu': 'Sound',
 };
 // Which tab lights up while a panel is open.
 const TAB_OF = {
-  'today-menu': 'today',
   'matches-menu': 'sports',
   'standings-menu': 'sports',
-  'reader-menu': 'more',
+  'reader-menu': 'reader',
   'saved-menu': 'more',
   'more-menu': 'more',
 };
@@ -53,7 +55,8 @@ function showSheet(menu) {
   menu.classList.add('is-sheet');
   frame.style.transform = '';
   menu.style.transform = '';
-  $('sheet-title').textContent = TITLES[menu.id];
+  // A stream's sheet is titled with the stream's name.
+  $('sheet-title').textContent = menu.dataset.title || TITLES[menu.id];
   const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu';
   $('sheet-title').hidden = sports;
   $('sheet-switch').hidden = !sports;
@@ -73,7 +76,6 @@ onPopoverChange((menu) => {
 
 function buildMore() {
   const rows = [
-    ['reader-button', 'reader', 'Reader'],
     ['saved-button', 'saved', 'Saved layouts'],
     ['remote-button', 'remote', 'Phone remote'],
     ['help-button', 'help', 'How it works'],
@@ -101,7 +103,7 @@ tabbar.addEventListener('pointerdown', () => { openAtPress = openMenu ? (TAB_OF[
 
 const OPEN = {
   watch: () => closePopovers(),
-  today: () => $('today-button').click(),
+  reader: () => $('reader-button').click(),
   sports: () => $('matches-button').click(),
   guide: () => { closePopovers(); $('guide-button').click(); },
   more: () => togglePopover($('tab-more'), $('more-menu'), buildMore),
@@ -156,6 +158,22 @@ frame.addEventListener('pointerdown', (event) => {
   frame.addEventListener('pointerup', up);
   frame.addEventListener('pointercancel', up);
 });
+
+/* ---------- Reader tab: unread count ---------- */
+
+async function syncReaderCount() {
+  const data = await loadIndex().catch(() => null);
+  if (!data) return;
+  const read = readIds();
+  const unread = data.items.filter((item) => !read.has(item.id)).length;
+  const badge = $('tab-reader-count');
+  badge.hidden = !unread;
+  badge.textContent = unread > 99 ? '99+' : String(unread);
+}
+// Stories get marked read in the Reader, so the count is checked again when a panel closes.
+onPopoverChange((menu) => { if (!menu) syncReaderCount(); });
+setInterval(syncReaderCount, 5 * 60 * 1000);
+syncReaderCount();
 
 function syncPhone() {
   document.body.classList.toggle('is-phone', phone.matches);

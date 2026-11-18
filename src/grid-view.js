@@ -247,6 +247,9 @@ class TileView {
     this.cropButton = this.source.ok ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     this.cinemaButton = this.source.ok ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
+    // On a phone, this one button opens a sheet with every action in big buttons.
+    this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
+    this.moreButton.classList.add('strip-more');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     const actions = el('div', { class: 'strip-actions' },
@@ -265,7 +268,8 @@ class TileView {
         title: 'Open on its own site',
         aria: { label: 'Open on its own site' },
       }, icon('open')) : null,
-      iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)));
+      iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)),
+      this.moreButton);
     this.labelEl = el('span', { class: 'strip-label', textContent: label, title: label });
     const strip = el('header', { class: 'strip' },
       el('span', { class: 'strip-grip', aria: { hidden: 'true' } }, icon('grip')),

@@ -19,6 +19,7 @@ import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead,
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
+import { getCinema } from './crop.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -55,6 +56,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
+  onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   favoriteName,
   onEditFavorite(id, anchor) {
     const tile = tileById(id);
@@ -96,6 +98,98 @@ function togglePause(id) {
   view.paused = !view.paused;
   view.player.setPaused(view.paused);
   renderSound();
+}
+
+/* ---------- Phone: a stream's actions, and sound ---------- */
+
+var soundSliding = false; // eslint-disable-line no-var
+
+const bigButton = (iconName, label, onClick, { on = false, danger = false } = {}) => el('button', {
+  type: 'button',
+  class: `sa-btn${on ? ' is-on' : ''}${danger ? ' is-danger' : ''}`,
+  aria: on ? { pressed: 'true' } : {},
+  on: { click: onClick },
+}, icon(iconName, 22), el('span', { textContent: label }));
+
+/** Back 10, pause, forward 10 and sound for one stream, as big round buttons. */
+function transportRow(tile, view, redraw) {
+  const player = view?.player;
+  if (!player) return null;
+  const round = (iconName, label, onClick, on = false) => el('button', {
+    type: 'button', class: `sa-round${on ? ' is-on' : ''}`, title: label, aria: { label }, on: { click: onClick },
+  }, icon(iconName, 24));
+  const parts = [
+    player.canSeek ? round('back10', 'Back 10 seconds', () => player.seekBy(-10)) : null,
+    player.canPause ? round(view.paused ? 'play' : 'pause', view.paused ? 'Play' : 'Pause', () => { togglePause(tile.id); redraw(); }) : null,
+    player.canSeek ? round('fwd10', 'Forward 10 seconds', () => player.seekBy(10)) : null,
+    player.canMute ? round(tile.muted ? 'muted' : 'sound', tile.muted ? 'Turn sound on' : 'Turn sound off', () => { toggleMute(tile.id); redraw(); }, !tile.muted) : null,
+  ].filter(Boolean);
+  return parts.length ? el('div', { class: 'sa-transport' }, ...parts) : null;
+}
+
+function volumeSlider(tile, view) {
+  if (!view?.player?.canVolume) return null;
+  return el('input', {
+    class: 'sa-volume',
+    type: 'range', min: '0', max: '100', step: '1',
+    value: String(tile.muted ? 0 : tile.volume),
+    aria: { label: `${labelOf(tile)} volume` },
+    on: {
+      pointerdown() { soundSliding = true; },
+      input(event) { changeVolume(tile.id, Number(event.currentTarget.value)); },
+      change() { soundSliding = false; commit(); },
+    },
+  });
+}
+
+/** Everything you can do to one stream, as a sheet of big buttons. */
+function buildStreamMenu(id) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  const menu = $('stream-menu');
+  if (!tile || !view) return;
+  menu.dataset.title = labelOf(tile);
+  const redraw = () => buildStreamMenu(id);
+  const then = (action) => () => { closePopovers(); action(); };
+  const favorite = favoriteName(tile.input) !== null;
+  const feed = view.player?.stripButtons;
+  const actions = [
+    bigButton('crown', tile.primary ? 'Primary' : 'Make primary', then(() => togglePrimary(id)), { on: Boolean(tile.primary) }),
+    view.cinemaButton ? bigButton('film', 'Cinema', then(() => view.toggleCinema()), { on: Boolean(getCinema(tile.input)) }) : null,
+    view.cropButton ? bigButton('crop', 'Crop', then(() => view.editCrop())) : null,
+    view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
+    feed && !feed[0].hidden ? bigButton('back', 'Previous video', () => feed[0].click()) : null,
+    feed && !feed[2].hidden ? bigButton('next', 'Next video', () => feed[2].click()) : null,
+    bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
+    bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
+    view.fullButton && !view.fullButton.hidden ? bigButton('expand', 'Fullscreen', then(() => view.toggleFullscreen())) : null,
+    view.source?.openUrl ? bigButton('open', 'Open its site', then(() => window.open(view.source.openUrl, '_blank', 'noopener'))) : null,
+    bigButton('trash', 'Remove', then(() => removeStream(id)), { danger: true }),
+  ].filter(Boolean);
+  menu.replaceChildren(...[transportRow(tile, view, redraw), volumeSlider(tile, view), el('div', { class: 'sa-grid' }, ...actions)].filter(Boolean));
+}
+
+/** Every stream's sound in one sheet, with One sound and Ticker at the top. */
+function buildSoundMenu() {
+  const menu = $('sound-menu');
+  const tiles = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
+  const anyAudible = muteableTiles().some((tile) => !tile.muted);
+  const toggle = (label, on, onClick) => el('button', { type: 'button', class: `sa-switch${on ? ' is-on' : ''}`, aria: { pressed: String(on) }, on: { click() { onClick(); buildSoundMenu(); } } },
+    el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: label }));
+  const head = el('div', { class: 'sa-switches' },
+    toggle('One sound', isOneSound(), toggleOneSound),
+    toggle('Ticker', isTickerOn(), toggleTicker),
+    muteableTiles().length ? el('button', { type: 'button', class: 'sa-muteall', on: { click() { muteAll(); buildSoundMenu(); } } }, anyAudible ? 'Mute all' : 'Unmute all') : null);
+  const cards = tiles.map((tile) => {
+    const view = grid.viewFor(tile.id);
+    const reachable = view.player.canMute;
+    return el('li', { class: `sa-card${tile.muted ? ' is-muted' : ''}` },
+      el('div', { class: 'sa-card-name' }, el('b', { textContent: labelOf(tile) }),
+        el('small', { textContent: !reachable ? 'No sound control here' : tile.muted ? 'Muted' : `Sound on · ${tile.volume}%` })),
+      reachable ? transportRow(tile, view, buildSoundMenu) : null,
+      volumeSlider(tile, view));
+  });
+  menu.replaceChildren(head, cards.length ? el('ul', { class: 'sa-cards' }, ...cards) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing.' }));
 }
 
 /** Makes a stream the primary one, or stops it being primary. */
@@ -156,7 +250,7 @@ function renderSound() {
   button.hidden = !streams.length;
   const anyAudible = muteableTiles().some((tile) => !tile.muted);
   const open = isMixerOpen();
-  const label = open ? 'Close sound mixer' : 'Open sound mixer';
+  const label = document.body.classList.contains('is-phone') ? 'Sound' : open ? 'Close sound mixer' : 'Open sound mixer';
   button.title = label;
   button.setAttribute('aria-label', label);
   button.setAttribute('aria-expanded', String(open));
@@ -164,6 +258,7 @@ function renderSound() {
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound(), isTickerOn());
+  if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();
 }
@@ -2433,6 +2528,11 @@ $('topbar').addEventListener('focusout', () => setTimeout(syncBarCover));
 fullscreen.onChange(syncBarCover);
 
 $('mixer-button').addEventListener('click', () => {
+  // On a phone, sound gets a sheet of big controls instead of the row.
+  if (document.body.classList.contains('is-phone')) {
+    togglePopover($('mixer-button'), $('sound-menu'), buildSoundMenu);
+    return;
+  }
   setMixerOpen(!isMixerOpen());
   renderSound();
   syncBarCover();
