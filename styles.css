@@ -1477,3 +1477,35 @@ body.remote-open { overflow: hidden; }
   }
   .help { margin-top: max(16px, env(safe-area-inset-top)); max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px); }
 }
+
+/* Add stream: Continue watching */
+.addp-continue { flex: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.addp-continue[hidden] { display: none; }
+.addp-continue .addp-label { padding: 0 18px 8px; }
+.cw-row { list-style: none; margin: 0; padding: 0 16px 4px; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 16px; scrollbar-width: none; }
+.cw-row::-webkit-scrollbar { display: none; }
+.cwcard { position: relative; flex: none; width: 168px; scroll-snap-align: start; }
+.cw-main { display: flex; flex-direction: column; gap: 7px; width: 100%; padding: 0; text-align: left; color: var(--text); background: none; }
+.cw-art { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #1f1f23; }
+.cw-art .fart { width: 100%; height: 100%; border-radius: 0; }
+.cw-art .fart.is-icon svg { width: 26px; height: 26px; }
+.cw-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,.22); }
+.cw-bar span { display: block; height: 100%; background: var(--accent); }
+.cw-main:hover .cw-art { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cw-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0 2px; }
+.cw-name { font-size: 13px; font-weight: 650; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cw-sub, .cw-left { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-left { color: var(--text); opacity: .75; }
+.cw-remove { position: absolute; top: 0; right: 0; width: 40px; height: 40px; padding: 0; display: flex; align-items: flex-start; justify-content: flex-end; background: none; }
+.cw-x { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin: 6px 6px 0 0; border-radius: 999px; background: rgba(15,15,18,.82); color: var(--text); border: 1px solid var(--border-strong); }
+.cw-remove:hover .cw-x { background: rgba(40,40,46,.95); }
+body.is-phone .cwcard { width: 150px; }
+body.is-phone .cw-remove { width: 44px; height: 44px; }
+
+/* A stream playing in the pop-out window */
+.tile-popped { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; color: var(--text-2); background: #0d0d0f; }
+.tile-popped p { margin: 0; font-size: 14px; color: var(--text); }
+.tile-popped button { height: 36px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,.12); color: var(--text); font-size: 13px; font-weight: 600; }
+.tile-popped button:hover { background: rgba(255,255,255,.18); }
+body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14px; }
+.strip-pop.is-on { color: var(--accent); }
