@@ -1428,6 +1428,22 @@ body.remote-open { overflow: hidden; }
   .sa-card .sa-transport { justify-content: flex-start; padding-bottom: 10px; }
   .sa-card .sa-round { width: 50px; height: 50px; }
 
+  /* Everything else you tap, inside sheets and dialogs, gets the full-size target too. */
+  body.is-phone .matches-tab { height: 44px; padding: 0 18px; font-size: 15px; }
+  body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file, body.is-phone .match-watch { min-height: 44px; }
+  body.is-phone .match-watch { padding: 0 16px; font-size: 14.5px; }
+  body.is-phone .gview { height: 40px; padding: 0 18px; font-size: 14.5px; }
+  body.is-phone .gviews { padding: 2px; }
+  body.is-phone .dialog .icon-button, body.is-phone .ghead button[aria-label="Close"], body.is-phone .gdetail-top button, body.is-phone #source-close, body.is-phone #help-close {
+    width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  }
+  body.is-phone .addp-pastebtn { min-height: 44px; padding: 0 18px; }
+  body.is-phone .favorites-send { min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; }
+  body.is-phone .fcard-more { width: 44px; }
+  body.is-phone .saved-form .add-button { height: 44px; padding: 0 18px; }
+  /* Typing at 16px or more stops the iPhone zooming in on a box. */
+  body.is-phone input[type="text"], body.is-phone input[type="search"], body.is-phone input:not([type]), body.is-phone textarea { min-height: 44px; font-size: 16px; }
+
   /* Notes and messages sit just above the tab bar. */
   .toast { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 10px); }
 }
@@ -1440,3 +1456,8 @@ body.remote-open { overflow: hidden; }
 }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Opened from the home screen: no browser, so Fullscreen has nothing to do. */
+@media (display-mode: standalone) {
+  #fullscreen-button { display: none !important; }
+}
