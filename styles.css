@@ -1081,7 +1081,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 /* Add stream */
 .addp { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 0; background: #141416; overflow: hidden; }
 .addp[open] { display: flex; }
-.addp form { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.addp form { display: flex; flex-direction: column; width: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .addp-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 6px 18px; }
 .addp-head h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
 .addp-paste { flex: none; position: relative; margin: 6px 16px 0; }
@@ -1096,7 +1096,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .addp-preview-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.35; }
 .addp-preview-text b { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
 .addp-preview-text span { overflow-wrap: anywhere; }
-.addp-favs { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--border); }
+/* Everything in Add stream scrolls together; Favorites keeps its own scrolling list. */
+.addp-favs { flex: none; display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--border); }
 .addp-favs[hidden] { display: none; }
 .addp-favs .favorites-head { flex: none; padding: 12px 18px 6px; margin: 0; }
 .addp-label { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
@@ -1137,15 +1138,17 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .fcard-ask { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .addp-file { flex: none; display: flex; align-items: center; gap: 8px; margin: 10px 16px 0; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--border-strong); color: var(--text-2); font-size: 13px; }
 .addp-file:hover, .addp-file.is-drop { border-color: var(--accent); color: var(--text); background: rgba(142, 166, 232, .06); }
-.addp-actions { flex: none; margin: 0; padding: 12px 16px 14px; }
+.addp-actions { flex: none; position: sticky; bottom: 0; z-index: 2; margin: 0; padding: 12px 16px 14px; background: #141416; }
 @media (pointer: coarse) { .addp-file { display: none; } }
 @media (max-width: 640px) {
   .addp { width: 100vw; height: 100dvh; max-width: 100vw; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
-  .addp form { height: 100%; }
-  .addp-grid-wrap { max-height: none; }
+  /* On a phone the whole sheet scrolls (Continue watching, Podcasts, Favorites), with Add pinned at the bottom. */
+  .addp form { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+  .addp-favs { flex: none; }
+  .addp-grid-wrap { max-height: none; overflow: visible; }
   .addp-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .fart { width: 64px; height: 40px; }
-  .addp-actions { margin-top: auto; padding-bottom: calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #141416; }
+  .addp-actions { position: sticky; bottom: 0; z-index: 2; margin-top: auto; padding-bottom: calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #141416; }
   .addp-actions button { flex: 1; height: 44px; }
   .addp .addp-paste textarea { font-size: 16px; }
 }
@@ -1511,3 +1514,40 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 .stand-conf { flex: none; display: flex; justify-content: center; padding: 10px 16px 2px; }
 .stand-conf[hidden] { display: none; }
 .stand-conf .gview { min-width: 92px; }
+
+/* Add stream: Podcasts shelf */
+.addp-pods { flex: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.addp-pods[hidden] { display: none; }
+.addp-pods .addp-label { padding: 0 18px 2px; }
+.pod-shows { padding-top: 8px; }
+.pod-list { list-style: none; margin: 6px 0 0; padding: 0 16px; max-height: 248px; overflow-y: auto; }
+.pod-list li + li { border-top: 1px solid var(--border); }
+.pod-ep { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 2px; text-align: left; color: var(--text); background: none; }
+.pod-ep:hover .pod-title { color: var(--accent); }
+.pod-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pod-title { font-size: 13.5px; font-weight: 650; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pod-meta { font-size: 12px; color: var(--text-2); }
+.pod-state { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.pod-ep.is-new .pod-state { background: rgba(142, 166, 232, .16); color: var(--accent); }
+.pod-ep.is-partway .pod-state { background: rgba(255,255,255,.08); color: var(--text); }
+.pod-ep.is-played .pod-state { color: var(--text-2); }
+.pod-ep.is-played .pod-title { color: var(--text-2); }
+.pod-bar { position: absolute; left: 2px; right: 2px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.pod-bar span { display: block; height: 100%; background: var(--accent); }
+body.is-phone .pod-ep { min-height: 56px; }
+body.is-phone .pod-list { max-height: none; }
+
+/* TV guide: search */
+.gsearch { flex: none; margin: 8px 16px 2px; }
+.gsearch input { height: 36px; border-radius: 10px; background: var(--surface); font-size: 14px; }
+.gfound-list { list-style: none; margin: 0; padding: 4px 12px 12px; }
+.gfound { display: flex; align-items: center; gap: 10px; }
+.gfound + .gfound { border-top: 1px solid var(--border); }
+.gfound-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 10px 4px; text-align: left; color: var(--text); background: none; }
+.gfound-when { font-size: 12px; font-weight: 700; color: var(--text-2); }
+.gfound-when.is-live { color: var(--accent); }
+.gfound-title { font-size: 14px; font-weight: 650; line-height: 1.3; }
+.gfound-channel { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-2); }
+.gfound-main:hover .gfound-title { color: var(--accent); }
+body.is-phone .gsearch input { height: 44px; font-size: 16px; }
+body.is-phone .gfound-main { min-height: 56px; }
