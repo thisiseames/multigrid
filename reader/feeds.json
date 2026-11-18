@@ -1,5 +1,5 @@
 {
-  "note": "MULTIGRID Reader's feeds, from Eames's Inoreader export (Nov 16). Groups are the Reader's tabs.",
+  "note": "MULTIGRID Reader's feeds, from Eames's Inoreader export (Nov 18). Groups are the Reader's tabs.",
   "groups": [
     "News",
     "Sport",
@@ -10,12 +10,6 @@
     "Podcasts & Video"
   ],
   "feeds": [
-    {
-      "name": "The Atlantic",
-      "group": "News",
-      "url": "https://feeds.feedburner.com/TheAtlantic",
-      "site": "https://www.theatlantic.com/"
-    },
     {
       "name": "The Athletic",
       "group": "Sport",
@@ -39,18 +33,6 @@
       "group": "Podcasts & Video",
       "url": "https://www.youtube.com/feeds/videos.xml?playlist_id=PLk1Sqn_f33KuS7ZSVMJqzFaqOyyl-esmG",
       "site": "https://www.youtube.com/feeds/videos.xml?playlist_id=PLk1Sqn_f33KuS7ZSVMJqzFaqOyyl-esmG"
-    },
-    {
-      "name": "Lifehack",
-      "group": "Tech",
-      "url": "https://www.lifehack.org/feed.xml",
-      "site": "https://www.lifehack.org/"
-    },
-    {
-      "name": "Lifehacker",
-      "group": "Tech",
-      "url": "https://lifehacker.com/feed/rss",
-      "site": "http://lifehacker.com/"
     },
     {
       "name": "The Hollywood Reporter",
@@ -81,18 +63,6 @@
       "group": "Entertainment",
       "url": "https://feeds.feedburner.com/variety/headlines",
       "site": "https://variety.com/"
-    },
-    {
-      "name": "Travel Weekly",
-      "group": "Travel",
-      "url": "https://feeds.feedburner.com/TravelWeeklysTopStories",
-      "site": "https://www.travelweekly.com/"
-    },
-    {
-      "name": "Skift",
-      "group": "Travel",
-      "url": "https://skift.com/feed/",
-      "site": "https://skift.com/"
     },
     {
       "name": "View from the Wing",
@@ -131,18 +101,6 @@
       "site": "http://www.engadget.com/"
     },
     {
-      "name": "The New York Times",
-      "group": "News",
-      "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-      "site": "https://www.nytimes.com/pages/index.html?partner=rss&emc=rss"
-    },
-    {
-      "name": "WSJ",
-      "group": "News",
-      "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
-      "site": "http://online.wsj.com/page/2_0006.html"
-    },
-    {
       "name": "Mashable",
       "group": "Entertainment",
       "url": "https://mashable.com/feeds/rss/entertainment",
@@ -161,18 +119,6 @@
       "site": "http://www.ted.com/talks/list"
     },
     {
-      "name": "Stretford Paddock",
-      "group": "Podcasts & Video",
-      "url": "https://feeds.megaphone.fm/COMG2101809856",
-      "site": "http://bit.ly/DEVILSsub"
-    },
-    {
-      "name": "Beyond The Pitch",
-      "group": "Podcasts & Video",
-      "url": "https://anchor.fm/s/21d82450/podcast/rss",
-      "site": "https://anchor.fm/s/21d82450/podcast/www.btpmedia.net"
-    },
-    {
       "name": "No Question About That",
       "group": "Podcasts & Video",
       "url": "https://feeds.megaphone.fm/COMG4321063114",
@@ -189,12 +135,6 @@
       "group": "Podcasts & Video",
       "url": "https://audioboom.com/channels/5093219.rss",
       "site": "https://audioboom.com/channels/5093219"
-    },
-    {
-      "name": "The Athletic",
-      "group": "Sport",
-      "url": "https://www.nytimes.com/athletic/rss/world-cup/",
-      "site": "https://theathletic.com/world-cup/"
     },
     {
       "name": "CNN (YouTube)",
@@ -249,6 +189,114 @@
       "group": "Man United",
       "url": "https://www.skysports.com/rss/11667",
       "site": "http://www.skysports.com/"
+    },
+    {
+      "name": "Football365",
+      "group": "Sport",
+      "url": "https://www.football365.com/rss",
+      "site": "https://www.football365.com/"
+    },
+    {
+      "name": "The Guardian",
+      "group": "Sport",
+      "url": "https://feeds.theguardian.com/theguardian/football/rss",
+      "site": "https://www.theguardian.com/football"
+    },
+    {
+      "name": "BBC Sport",
+      "group": "Sport",
+      "url": "https://feeds.bbci.co.uk/sport/football/rss.xml",
+      "site": "https://www.bbc.co.uk/sport/football"
+    },
+    {
+      "name": "The Athletic",
+      "group": "Sport",
+      "url": "https://www.nytimes.com/athletic/rss/nba/",
+      "site": "https://theathletic.com/nba/"
+    },
+    {
+      "name": "ESPN",
+      "group": "Sport",
+      "url": "https://www.espn.com/espn/rss/nba/news",
+      "site": "https://www.espn.com/nba/"
+    },
+    {
+      "name": "The Guardian",
+      "group": "Sport",
+      "url": "http://feeds.guardian.co.uk/theguardian/sport/rss",
+      "site": "https://www.theguardian.com/uk/sport"
+    },
+    {
+      "name": "BBC Sport",
+      "group": "Sport",
+      "url": "https://feeds.bbci.co.uk/sport/rss.xml",
+      "site": "https://www.bbc.co.uk/sport"
+    },
+    {
+      "name": "TVLine",
+      "group": "Entertainment",
+      "url": "https://www.tvline.com/feed/",
+      "site": "https://tvline.com/"
+    },
+    {
+      "name": "The Guardian",
+      "group": "Entertainment",
+      "url": "https://www.theguardian.com/uk/film/rss",
+      "site": "https://www.theguardian.com/film"
+    },
+    {
+      "name": "Business Insider",
+      "group": "News",
+      "url": "https://feeds.businessinsider.com/custom/all",
+      "site": "https://www.businessinsider.com/"
+    },
+    {
+      "name": "Fortune",
+      "group": "News",
+      "url": "https://fortune.com/feed/fortune-feeds/?id=3230629",
+      "site": "https://fortune.com/"
+    },
+    {
+      "name": "The Guardian",
+      "group": "Tech",
+      "url": "https://www.theguardian.com/technology/artificialintelligenceai/rss",
+      "site": "https://www.theguardian.com/technology/artificialintelligenceai"
+    },
+    {
+      "name": "Global News",
+      "group": "News",
+      "url": "https://globalnews.ca/canada/feed/",
+      "site": "https://globalnews.ca/"
+    },
+    {
+      "name": "Sky News",
+      "group": "News",
+      "url": "https://feeds.skynews.com/feeds/rss/world.xml",
+      "site": "https://news.sky.com/world"
+    },
+    {
+      "name": "NPR",
+      "group": "News",
+      "url": "https://feeds.npr.org/1002/rss.xml",
+      "site": "https://www.npr.org/"
+    },
+    {
+      "name": "NBC News",
+      "group": "News",
+      "url": "https://feeds.nbcnews.com/nbcnews/public/news",
+      "site": "https://www.nbcnews.com/"
+    },
+    {
+      "name": "ABC News",
+      "group": "News",
+      "url": "https://abcnews.com/abcnews/topstories",
+      "site": "https://abcnews.go.com/"
+    },
+    {
+      "name": "The Guardian",
+      "group": "News",
+      "url": "https://feeds.theguardian.com/theguardian/world/rss",
+      "site": "https://www.theguardian.com/world"
     }
   ]
 }
