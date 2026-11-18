@@ -13,7 +13,7 @@ import { newestUpload } from './players.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
-import { LEAGUES, loadLeague } from './standings.js';
+import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
@@ -26,7 +26,7 @@ import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './s
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
-  saveNamed, setFolderClosed, setMixerOpen, lastStandings, setLastStandings, lastMatches, setLastMatches, transferableFavorites, unpackFavorites,
+  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites,
 } from './storage.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -1002,11 +1002,13 @@ function syncGuideButton() {
 }
 
 const GUIDE_VIEW_KEY = 'multigrid.guideview.v1';
-const GUIDE_FOLDER_KEY = 'multigrid.guidefolder.v1';
 const remember = (key, fallback) => { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } };
 const keep = (key, value) => { try { localStorage.setItem(key, value); } catch { /* the choice just isn't remembered */ } };
 let guideView = remember(GUIDE_VIEW_KEY, 'now') === 'timeline' ? 'timeline' : 'now';
-let guideFolder = remember(GUIDE_FOLDER_KEY, '');
+// The Guide always opens on All. Folders picked while it's open are forgotten when it closes.
+let guideFolder = '';
+// Earlier versions remembered the last folder, Games tab and Standings league. Tidy those away.
+try { ['multigrid.guidefolder.v1', 'multigrid.matches.v1', 'multigrid.standings.v1'].forEach((key) => localStorage.removeItem(key)); } catch { /* nothing to tidy */ }
 let guideTimer = null;
 
 // Shows about my teams get the team's colour.
@@ -1158,7 +1160,7 @@ function renderGuide() {
     type: 'button',
     class: `matches-tab${guideFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
     textContent: folder || 'All',
-    on: { click() { guideFolder = folder; keep(GUIDE_FOLDER_KEY, folder); box.querySelector('.gbody')?.remove(); renderGuide(); } },
+    on: { click() { guideFolder = folder; box.querySelector('.gbody')?.remove(); renderGuide(); } },
   }))) : null;
 
   let body;
@@ -1191,6 +1193,8 @@ function renderGuide() {
 }
 
 async function openGuide() {
+  guideFolder = '';
+  $('guide-dialog').querySelector('.gbody')?.remove();
   renderGuide();
   openDialog($('guide-dialog'));
   clearInterval(guideTimer);
@@ -1220,7 +1224,9 @@ $('guide-dialog').addEventListener('keydown', (event) => {
 
 /* ---------- Standings ---------- */
 
-let standingsLeague = LEAGUES.find((league) => league.id === lastStandings()) ?? LEAGUES[0];
+// Standings always opens on Premier League (and a conference switch on its first side).
+let standingsLeague = LEAGUES[0];
+let standingsConference = 0;
 let standingsAllGroups = false;
 let standingsTimer = null;
 let standingsAsked = 0;
@@ -1324,7 +1330,7 @@ function standingsKey(league, groups) {
 
 async function fillStandings() {
   const menu = $('standings-menu');
-  const league = standingsLeague;
+  const league = withConference(standingsLeague, standingsConference);
   const asked = ++standingsAsked;
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 6 }, () => el('span', { class: 'skeleton is-thin' }))));
@@ -1362,8 +1368,37 @@ async function fillStandings() {
   }
 }
 
+/** Eastern / Western, or NFC / AFC, under a league's tab. Hidden for leagues without. */
+function conferenceSwitch(holder) {
+  const league = standingsLeague;
+  holder.hidden = !league.conferences;
+  if (!league.conferences) { holder.replaceChildren(); return; }
+  holder.replaceChildren(el('div', { class: 'gviews', role: 'tablist', aria: { label: `${league.name} conference` } }, ...league.conferences.map((conference, index) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `gview${index === standingsConference ? ' is-on' : ''}`,
+    aria: { selected: String(index === standingsConference) },
+    textContent: conference.name,
+    on: {
+      click() {
+        if (index === standingsConference) return;
+        standingsConference = index;
+        conferenceSwitch(holder);
+        const body = $('standings-menu').querySelector('.matches-body');
+        body.replaceChildren();
+        body.scrollTop = 0;
+        fillStandings();
+      },
+    },
+  }))));
+}
+
 function buildStandings() {
   const menu = $('standings-menu');
+  standingsLeague = LEAGUES[0];
+  standingsConference = 0;
+  standingsAllGroups = false;
+  const conferences = el('div', { class: 'stand-conf', hidden: true });
   const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...LEAGUES.map((league) => el('button', {
     type: 'button',
     role: 'tab',
@@ -1373,8 +1408,9 @@ function buildStandings() {
     on: {
       click(event) {
         standingsLeague = league;
+        standingsConference = 0;
         standingsAllGroups = false;
-        setLastStandings(league.id);
+        conferenceSwitch(conferences);
         for (const tab of tabs.children) {
           const on = tab === event.currentTarget;
           tab.classList.toggle('is-on', on);
@@ -1388,7 +1424,8 @@ function buildStandings() {
       },
     },
   })));
-  menu.replaceChildren(tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  menu.replaceChildren(tabs, conferences, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  conferenceSwitch(conferences);
   requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillStandings();
   clearInterval(standingsTimer);
@@ -1593,7 +1630,8 @@ window.addEventListener('hashchange', receiveReaderKey);
 /* ---------- Matches ---------- */
 
 const SHOWN_TABS = MATCH_TABS.filter((tab) => !tab.hidden);
-let matchesTab = SHOWN_TABS.find((tab) => tab.id === lastMatches()) ?? SHOWN_TABS[0];
+// Games always opens on My teams.
+let matchesTab = SHOWN_TABS[0];
 let matchesTimer = null;
 let matchesAsked = 0;
 let matchesFetched = 0;
@@ -1850,12 +1888,13 @@ async function fillMatches(force = true) {
     menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())} · ESPN · Times in your time zone`;
   } catch {
     if (asked !== matchesAsked || menu.hidden) return;
-    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "Matches couldn't load. ESPN didn't answer, so try again in a minute." }));
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "Games couldn't load. ESPN didn't answer, so try again in a minute." }));
   }
 }
 
 function buildMatches() {
   const menu = $('matches-menu');
+  matchesTab = SHOWN_TABS[0];
   const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...SHOWN_TABS.map((tab) => el('button', {
     type: 'button',
     role: 'tab',
@@ -1865,7 +1904,6 @@ function buildMatches() {
     on: {
       click(event) {
         matchesTab = tab;
-        setLastMatches(tab.id);
         for (const other of tabs.children) {
           const on = other === event.currentTarget;
           other.classList.toggle('is-on', on);

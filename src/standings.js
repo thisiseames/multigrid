@@ -10,15 +10,27 @@ export const LEAGUES = [
     id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c',
   },
   { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations', kind: 'soccer', groups: true },
+  // Each conference is a switch inside its tab. The first is shown first; only it has my team.
   {
-    id: 'nfc', name: 'NFC', path: 'football/nfl', kind: 'nfl', pick: 'National Football Conference', highlight: '49ers', highlightLabel: '49ers', division: true, color: '#aa0000',
+    id: 'nfl', name: 'NFL', path: 'football/nfl', kind: 'nfl', division: true,
     lines: [{ after: 7, label: 'Playoff line' }],
+    conferences: [
+      { id: 'nfc', name: 'NFC', pick: 'National Football Conference', highlight: '49ers', highlightLabel: '49ers', color: '#aa0000' },
+      { id: 'afc', name: 'AFC', pick: 'American Football Conference' },
+    ],
   },
   {
-    id: 'east', name: 'Eastern Conference', path: 'basketball/nba', kind: 'nba', pick: 'Eastern Conference', highlight: 'Raptors', highlightLabel: 'Raptors', color: '#ce1141',
+    id: 'nba', name: 'NBA', path: 'basketball/nba', kind: 'nba',
     lines: [{ after: 6, label: 'Playoff line' }, { after: 10, label: 'Play-in line' }],
+    conferences: [
+      { id: 'east', name: 'Eastern', pick: 'Eastern Conference', highlight: 'Raptors', highlightLabel: 'Raptors', color: '#ce1141' },
+      { id: 'west', name: 'Western', pick: 'Western Conference' },
+    ],
   },
 ];
+
+/** A league with one of its conferences chosen, ready to load and draw. */
+export const withConference = (league, index = 0) => (league.conferences ? { ...league, ...league.conferences[index] ?? league.conferences[0], id: league.id, name: league.name } : league);
 
 const getJSON = (url) => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout?.(10000) })
   .then((response) => {
@@ -119,7 +131,7 @@ export async function loadLeague(league) {
       });
     }
   }
-  if (league.division) {
+  if (league.division && league.highlight) {
     // Marks the teams that share the 49ers' division, from ESPN's division-level tables.
     try {
       const divisions = tables(await getJSON(`${FEED}/${league.path}/standings?level=3`));
