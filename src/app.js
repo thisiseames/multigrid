@@ -23,6 +23,7 @@ import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
+import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -2289,6 +2290,8 @@ function buildToday() {
       },
     },
   });
+  // The markets ticker runs along the bottom, above "Updated", like a TV ticker.
+  const markets = el('div', { class: 'mk-bar', hidden: true });
   menu.replaceChildren(
     el('div', { class: 'today-head' },
       el('h3', { textContent: 'Today' }),
@@ -2296,10 +2299,19 @@ function buildToday() {
       line),
     hoursBox,
     el('div', { class: 'matches-body' }),
+    markets,
     el('p', { class: 'matches-updated', textContent: '' }));
   weatherLine(line, hoursBox, loadWeather((fresh) => { if (line.isConnected) weatherLine(line, hoursBox, fresh); }));
+  const refreshMarkets = () => loadMarkets().then((data) => { if (markets.isConnected && !menu.hidden) showMarkets(markets, data, clock); });
+  refreshMarkets();
+  clearInterval(marketsTimer);
+  marketsTimer = setInterval(() => {
+    if (menu.hidden || !markets.isConnected) { clearInterval(marketsTimer); return; }
+    refreshMarkets();
+  }, 60 * 1000);
   fillToday();
 }
+let marketsTimer = null;
 
 $('today-button').addEventListener('click', () => togglePopover($('today-button'), $('today-menu'), buildToday));
 
