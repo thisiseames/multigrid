@@ -14,7 +14,7 @@ globalThis.fetch = async (url) => {
   const key = url.replace('https://site.api.espn.com/apis/v2/sports/', '');
   return answers[key] ? { ok: true, json: async () => answers[key] } : { ok: false, status: 404 };
 };
-const { LEAGUES, loadLeague } = await import('../src/standings.js');
+const { LEAGUES, loadLeague, withConference } = await import('../src/standings.js');
 const league = (id) => LEAGUES.find((item) => item.id === id);
 
 test('soccer tables come back in league order', async () => {
@@ -22,11 +22,27 @@ test('soccer tables come back in league order', async () => {
   assert.deepEqual(group.rows.map((row) => row.name), ['City', 'Town']);
 });
 
-test('the NFC tab keeps only the NFC, sorted by seed, with the 49ers division marked', async () => {
-  const groups = await loadLeague(league('nfc'));
+test('the NFL tab opens on the NFC, sorted by seed, with the 49ers division marked', async () => {
+  const groups = await loadLeague(withConference(league('nfl')));
   assert.equal(groups.length, 1);
   assert.deepEqual(groups[0].rows.map((row) => [row.name, row.division]), [['49ers', true], ['Lions', false]]);
   assert.equal(groups.divisionName, 'NFC West');
+});
+
+test('switching the NFL tab to the AFC shows only the AFC, with no 49ers card', async () => {
+  const afc = withConference(league('nfl'), 1);
+  assert.equal(afc.highlight, undefined);
+  const groups = await loadLeague(afc);
+  assert.equal(groups.length, 1);
+  assert.deepEqual(groups[0].rows.map((row) => row.name), ['Bills']);
+});
+
+test('the NBA tab is one tab with Eastern first and Western second', () => {
+  const nba = league('nba');
+  assert.deepEqual(nba.conferences.map((item) => item.name), ['Eastern', 'Western']);
+  assert.equal(withConference(nba).pick, 'Eastern Conference');
+  assert.equal(withConference(nba, 1).pick, 'Western Conference');
+  assert.equal(LEAGUES.some((item) => item.id === 'east' || item.id === 'nfc'), false);
 });
 
 test('a league ESPN does not answer for fails instead of showing an empty table', async () => {
