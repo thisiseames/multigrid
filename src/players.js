@@ -107,6 +107,18 @@ function tileFrameOf(source) {
   }
   return null;
 }
+// Embeds that report progress (extension 1.5), with what each tile is, for Continue watching.
+const embedTiles = new Map(); // frame -> describe()
+window.addEventListener('message', (event) => {
+  const progress = event.data?.multigridProgress;
+  if (!progress || !Number.isFinite(progress.at) || !Number.isFinite(progress.length)) return;
+  const frame = tileFrameOf(event.source);
+  const describe = frame && embedTiles.get(frame);
+  const tile = describe?.();
+  if (!tile?.input) return;
+  // The extension itself jumps back to the place; this only lists it.
+  notePlace(`embed:${tile.input}`, progress.at, progress.length, { input: tile.input, name: tile.name, from: '' });
+});
 window.addEventListener('message', (event) => {
   const resumed = event.data?.multigridResumed;
   if (!resumed || !Number.isFinite(resumed.at)) return;
@@ -140,6 +152,7 @@ function addressMutedPlayer(source, options) {
     },
     destroy() {
       extension?.stop();
+      embedTiles.delete(frame);
       frame.removeAttribute('src');
     },
   };
@@ -213,7 +226,15 @@ function youtubePlayer(source, options) {
   };
   const keepPlace = () => {
     const key = videoKey();
-    if (key) notePlace(key, api.getCurrentTime?.(), api.getDuration?.());
+    if (!key) return;
+    // Continue watching opens the video itself, even when the tile is a channel.
+    const data = api.getVideoData?.();
+    const tile = options.describe?.() || {};
+    notePlace(key, api.getCurrentTime?.(), api.getDuration?.(), {
+      input: `https://www.youtube.com/watch?v=${data.video_id}`,
+      name: data.title || tile.name || 'YouTube video',
+      from: data.author || tile.name || '',
+    });
   };
   const maybeResume = () => {
     const key = videoKey();
@@ -431,7 +452,7 @@ function hlsPlayer(source, options) {
   let destroyed = false;
   let recovered = false;
   // A recording with an end remembers where you stopped; a live channel never does.
-  const keepPlace = rememberMedia(video, () => `link:${source.url}`, () => video.parentElement);
+  const keepPlace = rememberMedia(video, () => `link:${source.url}`, () => video.parentElement, () => options.describe?.());
 
   const networkMessage = (code) => {
     if (code === 404 || code === 410) return 'This stream was not found. It may have ended or moved.';
@@ -697,8 +718,9 @@ function tiktokPlayer(source, options) {
 }
 
 /** A player MULTIGRID can't talk to. Its sound is only reachable through the extension. */
-function closedPlayer(frame, { muted, volume }) {
+function closedPlayer(frame, { muted, volume, describe }) {
   const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
+  if (describe) embedTiles.set(frame, describe);
   return {
     el: frame,
     canMute: Boolean(extension),
@@ -718,6 +740,7 @@ function closedPlayer(frame, { muted, volume }) {
     },
     destroy() {
       extension?.stop();
+      embedTiles.delete(frame);
       frame.removeAttribute('src');
     },
   };
@@ -737,7 +760,7 @@ function audioPlayer(source, options) {
     el('p', { class: 'audio-title', textContent: source.label }),
     audio);
   // Long episodes remember where you stopped.
-  const keepPlace = rememberMedia(audio, () => `audio:${source.url}`, () => box);
+  const keepPlace = rememberMedia(audio, () => `audio:${source.url}`, () => box, () => options.describe?.());
   return {
     el: box,
     canMute: true,
@@ -842,7 +865,7 @@ function filePlayer(source, options) {
   let destroyed = false;
   // A file has no lasting address, so it's known by its name and size.
   let fileKey = '';
-  const keepPlace = rememberMedia(video, () => fileKey, () => holder);
+  const keepPlace = rememberMedia(video, () => fileKey, () => holder, () => options.describe?.());
 
   const badFormat = "This browser can't play this file's format. MP4 with H.264 is the safest choice.";
   video.addEventListener('error', () => {

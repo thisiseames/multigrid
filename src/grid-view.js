@@ -6,6 +6,7 @@
 
 import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
+import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
 import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop, wholePicture } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
@@ -32,6 +33,8 @@ class TileView {
     this.tile = tile;
     this.root.style.gridArea = gridArea(tile.place);
     if (tile.input !== this.input) {
+      // A replaced stream doesn't stay in the pop-out window.
+      if (this.input !== undefined && isPoppedOut(this)) bringBack();
       this.input = tile.input;
       this.mount();
     }
@@ -67,6 +70,15 @@ class TileView {
       this.showError(this.source.error);
       return;
     }
+    // While it plays in the pop-out window, the tile says so instead of playing twice.
+    if (isPoppedOut(this)) {
+      this.body.replaceChildren(el('div', { class: 'tile-popped' },
+        icon('popout', 26),
+        el('p', { textContent: 'Playing in pop-out' }),
+        el('button', { type: 'button', textContent: 'Bring back', on: { click: () => bringBack() } })));
+      this.syncControls();
+      return;
+    }
 
     // Every tile starts by itself, muted. Browsers allow that for any number of videos.
     const autoplay = true;
@@ -76,6 +88,8 @@ class TileView {
       volume: tile.volume,
       autoplay,
       env,
+      // What this tile is, for Continue watching: its link and the name it shows.
+      describe: () => ({ input: this.tile.input, name: this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label }),
       onError: (message) => {
         this.showError(message);
         this.grid.handlers.onPlayerChanged();
@@ -106,9 +120,44 @@ class TileView {
     this.player.start();
   }
 
+  /** Builds the tile again, for when it pops out or comes back. */
+  remount() {
+    if (!isStream(this.tile) || !this.root.isConnected) return;
+    this.mount();
+    this.syncControls();
+    this.grid.handlers.onPlayerChanged();
+  }
+
+  get canPopOut() {
+    return Boolean(this.source?.ok) && (isPoppedOut(this) || canPopOut(this));
+  }
+
+  /** Floats this stream in its own small window, or brings it back. */
+  popOut() {
+    if (isPoppedOut(this)) {
+      bringBack();
+      return;
+    }
+    const name = this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label;
+    popOut(this, {
+      name,
+      makePlayer: (source) => createPlayer(source, {
+        muted: this.tile.muted,
+        volume: this.tile.volume,
+        autoplay: true,
+        env: this.grid.env,
+        describe: () => ({ input: this.tile.input, name }),
+        onError() {},
+        onCapability() {},
+        onPlayState() {},
+      }),
+    }).catch(() => this.grid.handlers.onPopOutFailed?.());
+  }
+
   /** Restarts just this stream's player. Sound, Cinema, crop and its place all stay. */
   reload() {
     if (!isStream(this.tile)) return;
+    if (isPoppedOut(this)) return;
     this.mount();
     this.syncControls();
     this.grid.handlers.onPlayerChanged();
@@ -250,6 +299,8 @@ class TileView {
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
     this.moreButton.classList.add('strip-more');
+    this.popButton = this.source.ok ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
+    this.popButton?.classList.add('strip-pop');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     const actions = el('div', { class: 'strip-actions' },
@@ -260,6 +311,7 @@ class TileView {
       this.muteButton,
       this.fullButton,
       iconButton('reload', 'Reload this stream', () => this.reload()),
+      this.popButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
       this.source.ok && this.source.openUrl ? el('a', {
         href: this.source.openUrl,
@@ -307,6 +359,15 @@ class TileView {
       this.starButton.setAttribute('aria-label', starLabel);
       this.starButton.replaceChildren(icon(favorite ? 'starFilled' : 'star'));
       this.starButton.classList.toggle('is-favorite', favorite);
+    }
+    if (this.popButton) {
+      // Safari can only float a plain video, which only exists once the player has started.
+      this.popButton.hidden = !this.canPopOut;
+      const popped = isPoppedOut(this);
+      const popLabel = popped ? 'Bring back into its tile' : 'Pop out: float this stream over other apps';
+      this.popButton.title = popLabel;
+      this.popButton.setAttribute('aria-label', popLabel);
+      this.popButton.classList.toggle('is-on', popped);
     }
     this.syncFullscreen();
   }
@@ -366,6 +427,7 @@ class TileView {
     this.starButton = null;
     this.cropButton = null;
     this.cinemaButton = null;
+    this.popButton = null;
     this.resizeWatch?.disconnect();
     this.resizeWatch = null;
     this.cropInner = null;
@@ -374,6 +436,7 @@ class TileView {
   }
 
   destroy() {
+    if (isPoppedOut(this)) bringBack();
     this.teardown();
     this.root.remove();
   }

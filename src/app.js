@@ -20,6 +20,8 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
+import { forgetPlace, listPlaces, onPlacesChange } from './resume.js';
+import { isPoppedOut } from './popout.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -50,6 +52,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onRemove: removeStream,
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
+  onPopOutFailed: () => toast("Couldn't pop this stream out. Try clicking Pop out again."),
   onSwap(a, b) {
     swapTiles(ws, a, b);
     commit();
@@ -160,6 +163,7 @@ function buildStreamMenu(id) {
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
     feed && !feed[0].hidden ? bigButton('back', 'Previous video', () => feed[0].click()) : null,
     feed && !feed[2].hidden ? bigButton('next', 'Next video', () => feed[2].click()) : null,
+    view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
     view.fullButton && !view.fullButton.hidden ? bigButton('expand', 'Fullscreen', then(() => view.toggleFullscreen())) : null,
@@ -714,6 +718,74 @@ function favoriteArt(item, source) {
   }
   return art;
 }
+
+/* ---------- Add stream: Continue watching ---------- */
+
+/** "23 min left", or "1 hr 5 min left". */
+function timeLeft(seconds) {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  if (minutes < 60) return `${minutes} min left`;
+  const rest = minutes % 60;
+  return rest ? `${Math.floor(minutes / 60)} hr ${rest} min left` : `${minutes / 60} hr left`;
+}
+
+function continueCard(item) {
+  const source = parseSource(item.input);
+  // A series keeps its favorite's folder, so it gets the series picture.
+  const favorite = listFavorites().find((fav) => fav.input === item.input);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '' }, source);
+  // A video link here is a recording with an end, not a live channel.
+  if (source.kind === 'hls' && art.classList.contains('is-icon')) art.replaceChildren(icon('film', 20));
+  // Under the name: the channel it came from, the series folder, or what kind of thing it is.
+  const folder = favorite?.group ? favorite.group.charAt(0).toLocaleUpperCase() + favorite.group.slice(1).toLocaleLowerCase() : '';
+  const kind = source.kind === 'hls' ? 'Video link' : source.kind === 'iframe' ? 'Embed' : (KIND_NAMES[source.kind] || 'Stream');
+  const sub = item.from && item.from !== item.name ? item.from : folder || kind;
+  const percent = Math.min(100, Math.max(2, (item.at / item.length) * 100));
+  return el('li', { class: 'cwcard' },
+    el('button', {
+      type: 'button',
+      class: 'cw-main',
+      title: item.name,
+      on: {
+        click() {
+          const target = sourceTarget;
+          if ($('source-dialog').open) $('source-dialog').close();
+          addStream(item.input, target);
+        },
+      },
+    },
+    el('span', { class: 'cw-art' }, art, el('span', { class: 'cw-bar' }, el('span', { style: `width:${percent.toFixed(1)}%` }))),
+    el('span', { class: 'cw-text' },
+      el('b', { class: 'cw-name', textContent: item.name }),
+      el('small', { class: 'cw-sub', textContent: sub }),
+      el('small', { class: 'cw-left', textContent: timeLeft(item.length - item.at) }))),
+    el('button', {
+      type: 'button',
+      class: 'cw-remove',
+      title: `Remove ${item.name} from Continue watching`,
+      aria: { label: `Remove ${item.name} from Continue watching` },
+      on: { click() { forgetPlace(item.key); } },
+    }, el('span', { class: 'cw-x' }, icon('close', 14))));
+}
+
+/** The row at the top of Add stream with everything part-watched, newest first. */
+function renderContinue(force = true) {
+  const holder = $('source-continue');
+  const items = listPlaces(10);
+  // A playing video saves its place every 10 seconds, so redraw only when what's shown changes.
+  const shown = items.map((item) => `${item.key}:${timeLeft(item.length - item.at)}`).join('|');
+  if (!force && holder.dataset.shown === shown) return;
+  holder.dataset.shown = shown;
+  holder.hidden = items.length === 0;
+  if (!items.length) {
+    holder.replaceChildren();
+    return;
+  }
+  holder.replaceChildren(
+    el('h3', { class: 'addp-label', textContent: 'Continue watching' }),
+    el('ul', { class: 'cw-row' }, ...items.map(continueCard)));
+}
+onPlacesChange(() => { if ($('source-dialog').open) renderContinue(false); });
 
 function favoriteCard(item, holder) {
   const source = parseSource(item.input);
@@ -2067,6 +2139,7 @@ function openSourceDialog(target) {
   $('source-input').value = current.startsWith('local:') ? '' : current;
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
+  renderContinue();
   renderAddFavorites($('source-favorites'), () => sourceTarget);
   loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
   openDialog($('source-dialog'));

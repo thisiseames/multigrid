@@ -26,13 +26,24 @@ export function resumePoint(key) {
   return point && Number.isFinite(point.at) ? point.at : 0;
 }
 
-/** Remembers the place, or forgets it once something is short, barely started or finished. */
-export function notePlace(key, seconds, length) {
+/**
+ * Remembers the place, or forgets it once something is short, barely started or finished.
+ * meta says what it is, for Continue watching: { input, name, from }. input is the link that
+ * opens it again; from is where it came from (a channel or favorite), shown under the name.
+ */
+export function notePlace(key, seconds, length, meta) {
   if (!key || !Number.isFinite(seconds) || !Number.isFinite(length) || length <= 0) return;
   const all = readAll();
   const worth = length >= MIN_LENGTH && seconds >= MIN_PLAYED && seconds < length * 0.95;
   if (worth) {
-    all[key] = { at: Math.floor(seconds), saved: Date.now() };
+    const known = all[key] || {};
+    const what = meta && meta.input ? meta : known;
+    all[key] = {
+      at: Math.floor(seconds),
+      length: Math.round(length),
+      saved: Date.now(),
+      ...(what.input ? { input: what.input, name: what.name || '', from: what.from || '' } : {}),
+    };
     const keys = Object.keys(all);
     if (keys.length > KEEP) {
       keys.sort((a, b) => (all[a].saved || 0) - (all[b].saved || 0)).slice(0, keys.length - KEEP).forEach((old) => delete all[old]);
@@ -43,13 +54,30 @@ export function notePlace(key, seconds, length) {
     return;
   }
   writeAll(all);
+  changed();
 }
+
+/** Continue watching: things part-watched that can be opened again, newest first. */
+export function listPlaces(limit = 10) {
+  const all = readAll();
+  return Object.entries(all)
+    .filter(([, point]) => point.input && point.name && point.length)
+    .sort(([, a], [, b]) => (b.saved || 0) - (a.saved || 0))
+    .slice(0, limit)
+    .map(([key, point]) => ({ key, ...point }));
+}
+
+// Continue watching redraws when a place is saved or forgotten.
+const watchers = new Set();
+const changed = () => watchers.forEach((watch) => watch());
+export function onPlacesChange(watch) { watchers.add(watch); }
 
 export function forgetPlace(key) {
   const all = readAll();
   if (!all[key]) return;
   delete all[key];
   writeAll(all);
+  changed();
 }
 
 /** 23:14, or 1:02:05 for an hour or more. */
@@ -75,16 +103,17 @@ export function showResumed(holder, seconds, onStartOver) {
 /**
  * Remembers the place in a browser video or audio element. keyOf() names what's playing
  * (or '' to skip it); holderOf() is where the note goes. Live streams never have an end,
- * so they're never remembered. Returns a function that saves the place right now.
+ * so they're never remembered. metaOf() says what it is, for Continue watching. Returns a
+ * function that saves the place right now.
  */
-export function rememberMedia(media, keyOf, holderOf) {
+export function rememberMedia(media, keyOf, holderOf, metaOf = () => null) {
   const checked = new Set();
   let lastKept = 0;
   let settling = null;
   const keep = () => {
     if (settling !== null) return;
     const key = keyOf();
-    if (key && Number.isFinite(media.duration)) notePlace(key, media.currentTime, media.duration);
+    if (key && Number.isFinite(media.duration)) notePlace(key, media.currentTime, media.duration, metaOf());
   };
   media.addEventListener('loadedmetadata', () => {
     const key = keyOf();
