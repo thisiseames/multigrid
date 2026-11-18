@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I0fAoJha4pPKI+jIZW11CYABs39DWGCgRFuDpGL+B1M=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NepFJQ0e45NKVs7Ckfbx+pGcnj0kXnlg/NNDyQqFACs=' https://www.youtube.com https://player.twitch.tv; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -54,7 +54,7 @@
     <button id="help-button" class="icon-button" type="button" aria-label="How it works" title="How it works"><span data-icon="help"></span></button>
     <button id="fullscreen-button" class="icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><span data-icon="expand"></span></button>
     <button id="add-button" class="add-button" type="button">
-      <span data-icon="plus"></span><span class="wide-only">Add stream</span>
+      <span data-icon="plus"></span><span class="wide-only">Add stream</span><span class="phone-only">Add</span>
     </button>
   </header>
   <div id="top-hotzone" class="top-hotzone" aria-hidden="true"></div>
@@ -77,6 +77,26 @@
     </section>
   </main>
   <footer id="ticker" class="ticker" aria-label="Scores and headlines" hidden></footer>
+  <nav id="tabbar" class="tabbar" aria-label="Sections">
+    <button class="tab is-on" type="button" data-tab="watch" aria-current="page"><span data-icon="tiles"></span><span>Watch</span></button>
+    <button class="tab" type="button" data-tab="today"><span data-icon="today"></span><span>Today</span></button>
+    <button class="tab" type="button" data-tab="sports"><span data-icon="calendar"></span><span>Sports</span></button>
+    <button id="tab-guide" class="tab" type="button" data-tab="guide" hidden><span data-icon="guide"></span><span>Guide</span></button>
+    <button id="tab-more" class="tab" type="button" data-tab="more"><span data-icon="more"></span><span>More</span></button>
+  </nav>
+  <div id="sheet-scrim" class="sheet-scrim" hidden></div>
+  <div id="sheet-frame" class="sheet-frame" data-sheet-chrome hidden>
+    <span class="sheet-grab" aria-hidden="true"></span>
+    <div class="sheet-head">
+      <h2 id="sheet-title" class="sheet-title"></h2>
+      <div id="sheet-switch" class="sheet-switch" role="group" aria-label="Sports" hidden>
+        <button type="button" data-panel="matches-menu">Matches</button>
+        <button type="button" data-panel="standings-menu">Standings</button>
+      </div>
+      <button id="sheet-close" class="sheet-close" type="button" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+  </div>
+  <div id="more-menu" class="popover more-menu" hidden></div>
 
   <div id="layout-menu" class="popover layout-menu" hidden></div>
   <div id="saved-menu" class="popover saved-menu" hidden></div>
@@ -145,7 +165,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'styles.css', 'src/app.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/matches.js', 'src/mixer.js', 'src/players.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ticker.js', 'src/ui.js'];
+    const files = ['index.html', 'styles.css', 'src/app.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/matches.js', 'src/mixer.js', 'src/phone.js', 'src/players.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/ticker.js', 'src/ui.js'];
     await Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.arrayBuffer())
       .catch(() => {})));
