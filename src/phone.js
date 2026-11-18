@@ -3,7 +3,6 @@
 // everything here only happens while the phone query matches.
 
 import { closePopovers, el, icon, onPopoverChange, togglePopover } from './ui.js';
-import { loadIndex, readIds } from './reader.js';
 
 export const PHONE_QUERY = '(max-width: 640px), (hover: none) and (max-height: 500px)';
 const phone = window.matchMedia(PHONE_QUERY);
@@ -160,22 +159,6 @@ frame.addEventListener('pointerdown', (event) => {
   frame.addEventListener('pointerup', up);
   frame.addEventListener('pointercancel', up);
 });
-
-/* ---------- Reader tab: unread count ---------- */
-
-async function syncReaderCount() {
-  const data = await loadIndex().catch(() => null);
-  if (!data) return;
-  const read = readIds();
-  const unread = data.items.filter((item) => !read.has(item.id)).length;
-  const badge = $('tab-reader-count');
-  badge.hidden = !unread;
-  badge.textContent = unread > 99 ? '99+' : String(unread);
-}
-// Stories get marked read in the Reader, so the count is checked again when a panel closes.
-onPopoverChange((menu) => { if (!menu) syncReaderCount(); });
-setInterval(syncReaderCount, 5 * 60 * 1000);
-syncReaderCount();
 
 function syncPhone() {
   document.body.classList.toggle('is-phone', phone.matches);
