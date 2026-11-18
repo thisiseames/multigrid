@@ -2157,6 +2157,120 @@ function movieDay(date) {
   return dayLabel(new Date(y, m - 1, d, 12).getTime());
 }
 
+/** One of the files the guide job writes (charts.json, shows.json), or null. */
+async function loadJob(file) {
+  try {
+    const response = await fetch(file, { cache: 'no-cache' });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/* Premieres this week: new series and new seasons, from TVmaze via the guide job. Out already
+   first (newest first), then coming up, like the movies. */
+function premieresOf(data) {
+  const today = new Date().toISOString().slice(0, 10);
+  const items = (Array.isArray(data?.items) ? data.items : []).filter((item) => typeof item.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date));
+  return [
+    ...items.filter((item) => item.date <= today).sort((a, b) => b.date.localeCompare(a.date)),
+    ...items.filter((item) => item.date > today).sort((a, b) => a.date.localeCompare(b.date)),
+  ];
+}
+
+const premiereKind = (show) => (show.season === 0 ? 'New series' : show.season > 0 ? `Season ${show.season}` : 'New season');
+
+function premiereRow(show) {
+  return todayRow({
+    art: /^https:\/\/static\.tvmaze\.com\//.test(show.image || '')
+      ? el('span', { class: 'fart is-picture movie-poster' }, el('img', { src: show.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+      : el('span', { class: 'fart is-icon movie-poster' }, icon('guide', 20)),
+    top: el('span', { textContent: [movieDay(show.date), show.service].filter(Boolean).join(' · ') }),
+    title: show.name,
+    sub: [premiereKind(show), show.trailer ? 'Play the trailer' : ''].filter(Boolean).join(' · '),
+    onClick() {
+      closePopovers();
+      // The trailer plays in a tile; without one, the show's TVmaze page opens.
+      if (/^[\w-]{11}$/.test(show.trailer || '')) addStream(`https://www.youtube.com/watch?v=${show.trailer}`);
+      else if (/^https:\/\/www\.tvmaze\.com\//.test(show.url || '')) window.open(show.url, '_blank', 'noopener');
+    },
+  });
+}
+
+/* Charts: the top 5 of Billboard's charts, one tab each. It opens on the Hot 100 every time. */
+let chartTab = 0;
+
+const openLink = (url) => window.open(url, '_blank', 'noopener');
+
+function chartRow(entry, chart, list) {
+  const query = `${entry.artist} ${entry.title}`.trim();
+  const video = chart.kind === 'song' && /^[\w-]{11}$/.test(entry.video || '') ? entry.video : '';
+  const act = (name, label, onClick) => el('button', { type: 'button', class: 'chart-act', on: { click: onClick } }, icon(name, 14), label);
+  const actions = el('div', { class: 'chart-actions', hidden: true },
+    video ? act('play', 'Watch here', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${video}`); }) : null,
+    act('open', 'Spotify', () => openLink(`https://open.spotify.com/search/${encodeURIComponent(query)}`)),
+    act('open', 'Amazon Music', () => openLink(`https://music.amazon.com/search/${encodeURIComponent(query)}`)),
+    video ? null : act('open', 'YouTube', () => openLink(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`)));
+  const main = el('button', {
+    type: 'button',
+    class: 'trow-main',
+    aria: { expanded: 'false' },
+    on: {
+      click() {
+        const opening = actions.hidden;
+        // One open at a time.
+        for (const other of list.querySelectorAll('.chart-actions')) other.hidden = true;
+        for (const other of list.querySelectorAll('.trow-main')) other.setAttribute('aria-expanded', 'false');
+        actions.hidden = !opening;
+        main.setAttribute('aria-expanded', String(opening));
+      },
+    },
+  },
+  el('span', { class: 'chart-rank', textContent: String(entry.rank) }),
+  /^https:\/\/charts-static\.billboard\.com\//.test(entry.image || '')
+    ? el('span', { class: 'fart is-picture chart-cover' }, el('img', { src: entry.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+    : el('span', { class: 'fart is-icon chart-cover' }, icon('music', 18)),
+  el('span', { class: 'trow-text' },
+    el('span', { class: 'trow-title', textContent: entry.title }),
+    entry.artist ? el('span', { class: 'trow-sub', textContent: entry.artist }) : null));
+  return el('li', { class: 'trow' }, main, actions);
+}
+
+function chartsView(data) {
+  const charts = (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
+  if (!charts.length) return null;
+  if (chartTab >= charts.length) chartTab = 0;
+  const list = el('ul', { class: 'rlist chart-list' });
+  const note = el('p', { class: 'chart-week' });
+  const draw = () => {
+    const chart = charts[chartTab];
+    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list)));
+    const [y, m, d] = String(chart.week || '').split('-').map(Number);
+    note.textContent = y ? `Billboard · week of ${new Date(y, m - 1, d, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Billboard';
+  };
+  const tabs = el('div', { class: 'chart-tabs', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `matches-tab${index === chartTab ? ' is-on' : ''}`,
+    aria: { selected: String(index === chartTab) },
+    textContent: chart.name,
+    on: {
+      click(event) {
+        chartTab = index;
+        for (const other of tabs.children) {
+          const on = other === event.currentTarget;
+          other.classList.toggle('is-on', on);
+          other.setAttribute('aria-selected', String(on));
+        }
+        event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        draw();
+      },
+    },
+  })));
+  draw();
+  return el('div', { class: 'chart-box' }, tabs, list, note);
+}
+
 /** "Live", "Premiere", "Finale" or "Special", for an event's line. */
 const eventKind = (show) => (show.live ? 'Live' : show.premiere ? 'Premiere' : show.finale ? 'Finale' : 'Special');
 
@@ -2188,12 +2302,14 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesThisWeek(now).catch(() => []),
     loadIndex(true).catch(() => null),
     loadMovies(),
+    loadJob('charts.json'),
+    loadJob('shows.json'),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -2234,6 +2350,9 @@ async function fillToday() {
     },
   }))) : null;
 
+  const premieres = premieresOf(shows);
+  const premiereList = premieres.length ? el('ul', { class: 'rlist' }, ...premieres.map(premiereRow)) : null;
+
   const read = readIds();
   const stories = news ? [
     ...news.items.filter((item) => item.group === 'News').sort((a, b) => b.time - a.time).slice(0, 5),
@@ -2246,7 +2365,9 @@ async function fillToday() {
     todaySection('Events today', eventList),
     todaySection('Movies this week', movieList),
     todaySection('New episodes this week', episodeList),
+    todaySection('Premieres this week', premiereList),
     todaySection('Top headlines', newsList),
+    todaySection('Charts', chartsView(charts)),
   ].filter(Boolean);
   const scroll = body.scrollTop;
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
@@ -2276,6 +2397,7 @@ function weatherLine(holder, hoursBox, weather) {
 
 function buildToday() {
   const menu = $('today-menu');
+  chartTab = 0;
   const hoursBox = el('ul', { class: 'wx-hours', hidden: true, aria: { label: 'The next 12 hours' } });
   const line = el('button', {
     type: 'button',
