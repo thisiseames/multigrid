@@ -2112,22 +2112,27 @@ $('matches-button').addEventListener('click', () => togglePopover($('matches-but
 
 let todayAsked = 0;
 
-/** Live events from 6 pm to midnight on my TV channels, soonest first. */
-function liveTonight(now = Date.now()) {
-  const from = new Date(now);
-  from.setHours(18, 0, 0, 0);
-  const to = new Date(now);
-  to.setHours(24, 0, 0, 0);
-  const start = Math.max(from.getTime(), now - 3 * 3600000);
+/** One-offs on my TV channels from now to the end of tonight: specials that are live or new
+    (awards shows, concerts), and premieres and finales. Routine shows and reruns are left out. */
+function eventsToday(now = Date.now()) {
+  const end = new Date(now);
+  end.setHours(28, 0, 0, 0); // 4:00 am, so a late show still counts as tonight
   const rows = [];
+  const seen = new Set();
   for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
-    for (const show of showsBetween(item.name, parseSource(item.input), start, to.getTime())) {
-      const onNow = show.start <= now && show.end > now;
-      if (show.live && (onNow || show.start >= from.getTime() - 30 * 60000)) rows.push({ item, show });
+    for (const show of showsBetween(item.name, parseSource(item.input), now, end.getTime())) {
+      if (!(show.special || show.premiere || show.finale)) continue;
+      const key = `${guideKey(item.name)}|${show.start}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push({ item, show });
     }
   }
   return rows.sort((a, b) => a.show.start - b.show.start).slice(0, 8);
 }
+
+/** "Live", "Premiere", "Finale" or "Special", for an event's line. */
+const eventKind = (show) => (show.live ? 'Live' : show.premiere ? 'Premiere' : show.finale ? 'Finale' : 'Special');
 
 /** New episodes of my series in the next seven days, soonest first. */
 async function episodesThisWeek(now = Date.now()) {
@@ -2169,12 +2174,13 @@ async function fillToday() {
   const games = (teams ?? []).map(({ card }) => card.live || card.next[0]).filter(Boolean).sort((a, b) => a.start - b.start);
   const teamList = games.length ? el('ul', { class: 'mrow-list' }, ...games.map((match) => matchRow(match, { withDay: true }))) : null;
 
-  const tonight = liveTonight(now);
-  const tonightList = tonight.length ? el('ul', { class: 'rlist' }, ...tonight.map(({ item, show }) => todayRow({
+  const events = eventsToday(now);
+  const eventList = events.length ? el('ul', { class: 'rlist' }, ...events.map(({ item, show }) => todayRow({
     art: favoriteArt(item, parseSource(item.input)),
-    top: el('span', { textContent: `${item.name} · ${show.start <= now ? `until ${clock(show.end)}` : clock(show.start)}` }),
+    top: el('span', { textContent: `${item.name} · ${show.start <= now ? `on now, until ${clock(show.end)}` : clock(show.start)}` }),
     title: show.title,
-    live: show.start <= now,
+    sub: show.start <= now && show.live ? '' : eventKind(show),
+    live: show.start <= now && show.live,
     onClick() { closePopovers(); addStream(item.input); },
   }))) : null;
 
@@ -2195,7 +2201,7 @@ async function fillToday() {
 
   const parts = [
     todaySection('Your teams', teamList),
-    todaySection('Live tonight on your channels', tonightList),
+    todaySection('Events today', eventList),
     todaySection('New episodes this week', episodeList),
     todaySection('Top headlines', newsList),
   ].filter(Boolean);

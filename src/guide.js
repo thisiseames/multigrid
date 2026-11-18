@@ -39,7 +39,15 @@ export function listingsFor(name, source) {
   const shows = rows
     .filter((row) => Array.isArray(row) && row.length >= 3 && row.length <= 5)
     .map(([start, end, title, about = '', flags = '']) => ({
-      start: start * 1000, end: end * 1000, title: String(title), about: String(about), live: String(flags).includes('L'),
+      start: start * 1000,
+      end: end * 1000,
+      title: String(title),
+      about: String(about),
+      live: String(flags).includes('L'),
+      // A one-off for Today: S special, P premiere, F finale.
+      special: String(flags).includes('S'),
+      premiere: String(flags).includes('P'),
+      finale: String(flags).includes('F'),
     }))
     .filter((show) => show.end > now)
     .sort((a, b) => a.start - b.start);
