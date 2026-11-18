@@ -2531,6 +2531,9 @@ function remoteCommand(cmd) {
     case 'primary':
       if (tile) togglePrimary(tile.id, Boolean(cmd.value));
       break;
+    case 'reload':
+      if (tile) { grid.viewFor(tile.id)?.reload(); toast(`Reloaded ${labelOf(tile)}.`); }
+      break;
     case 'oneSound':
       if (Boolean(cmd.value) !== isOneSound()) toggleOneSound();
       break;
@@ -2750,6 +2753,7 @@ function remoteTileCard(tile) {
     el('div', { class: 'rm-tile-actions' },
       el('button', { type: 'button', class: `rm-pill${tile.primary ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.primary)) }, on: { click: () => remoteSend({ type: 'primary', id: tile.id, value: !tile.primary }) } }, icon('crown'), tile.primary ? 'Primary' : 'Make primary'),
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
+      el('button', { type: 'button', class: 'rm-pill', on: { click() { remoteSend({ type: 'reload', id: tile.id }); toast(`Reloading ${tile.label}.`); } } }, icon('reload'), 'Reload'),
       el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
 }

@@ -106,6 +106,14 @@ class TileView {
     this.player.start();
   }
 
+  /** Restarts just this stream's player. Sound, Cinema, crop and its place all stay. */
+  reload() {
+    if (!isStream(this.tile)) return;
+    this.mount();
+    this.syncControls();
+    this.grid.handlers.onPlayerChanged();
+  }
+
   /** Cinema if it's on for this stream, otherwise any crop. */
   applyFraming() {
     if (!this.cropInner) return;
@@ -248,6 +256,7 @@ class TileView {
       this.cropButton,
       this.muteButton,
       this.fullButton,
+      iconButton('reload', 'Reload this stream', () => this.reload()),
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
       this.source.ok && this.source.openUrl ? el('a', {
         href: this.source.openUrl,
