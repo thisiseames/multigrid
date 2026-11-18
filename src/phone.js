@@ -80,7 +80,9 @@ function buildMore() {
     ['remote-button', 'remote', 'Phone remote'],
     ['help-button', 'help', 'How it works'],
     ['fullscreen-button', 'expand', 'Fullscreen'],
-  ].filter(([id]) => $(id) && !$(id).hidden);
+  ].filter(([id]) => $(id) && !$(id).hidden
+    // From the home screen there's no browser to leave, so Fullscreen isn't offered.
+    && !(id === 'fullscreen-button' && (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)));
   $('more-menu').replaceChildren(el('ul', { class: 'more-list' }, ...rows.map(([id, iconName, label]) => el('li', {},
     el('button', {
       type: 'button',
@@ -177,6 +179,8 @@ syncReaderCount();
 
 function syncPhone() {
   document.body.classList.toggle('is-phone', phone.matches);
+  // "Play a video file from this computer" reads "this phone" on a phone.
+  document.querySelectorAll('.device-word').forEach((word) => { word.textContent = phone.matches ? 'phone' : 'computer'; });
   if (!phone.matches) showSheet(null);
   else if (openMenu) showSheet(openMenu);
 }
