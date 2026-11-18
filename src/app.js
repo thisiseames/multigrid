@@ -260,7 +260,8 @@ function renderSound() {
   button.title = label;
   button.setAttribute('aria-label', label);
   button.setAttribute('aria-expanded', String(open));
-  button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'));
+  // On a phone a small "Sound" sits under the speaker, like the tab labels at the bottom.
+  button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'), el('span', { class: 'bar-sub', aria: { hidden: 'true' }, textContent: 'Sound' }));
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound(), isTickerOn());
@@ -2921,6 +2922,19 @@ $('help-close').addEventListener('click', () => $('help-dialog').close());
 $('parent-host').textContent = env.hostname;
 
 hydrateIcons();
+
+/* Today's icon: a calendar page showing today's date, redrawn when the day changes. */
+function drawTodayIcon() {
+  const holder = document.querySelector('#today-button [data-icon="today"]');
+  if (!holder) return;
+  const day = new Date().getDate();
+  if (holder.dataset.day === String(day)) return;
+  holder.dataset.day = String(day);
+  // Built from fixed shapes and the day's number, nothing from outside.
+  holder.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.3" y="3" width="11.4" height="11" rx="2"/><path d="M2.3 6.2h11.4M5.4 1.8v2.4M10.6 1.8v2.4"/><text x="8" y="12.4" text-anchor="middle" font-size="5.6" font-weight="700" fill="currentColor" stroke="none" font-family="-apple-system, system-ui, sans-serif">${day}</text></svg>`;
+}
+drawTodayIcon();
+setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
 render();
 receiveReaderKey();
