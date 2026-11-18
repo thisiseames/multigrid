@@ -168,5 +168,10 @@ export function rememberMedia(media, keyOf, holderOf, metaOf = () => null) {
   });
   media.addEventListener('pause', keep);
   media.addEventListener('ended', keep);
+  // Where it is right now, for "Send to phone".
+  keep.place = () => {
+    const key = keyOf();
+    return key && Number.isFinite(media.duration) ? { key, at: Math.floor(media.currentTime), length: Math.round(media.duration) } : null;
+  };
   return keep;
 }

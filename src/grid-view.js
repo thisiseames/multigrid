@@ -301,6 +301,10 @@ class TileView {
     this.moreButton.classList.add('strip-more');
     this.popButton = this.source.ok ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
     this.popButton?.classList.add('strip-pop');
+    // A file lives on this computer, so it can't be sent.
+    this.sendButton = this.source.ok && this.source.kind !== 'file' && handlers.onSendToPhone
+      ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
+    this.sendButton?.classList.add('strip-send');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     const actions = el('div', { class: 'strip-actions' },
@@ -312,6 +316,7 @@ class TileView {
       this.fullButton,
       iconButton('reload', 'Reload this stream', () => this.reload()),
       this.popButton,
+      this.sendButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
       this.source.ok && this.source.openUrl ? el('a', {
         href: this.source.openUrl,
@@ -428,6 +433,7 @@ class TileView {
     this.cropButton = null;
     this.cinemaButton = null;
     this.popButton = null;
+    this.sendButton = null;
     this.resizeWatch?.disconnect();
     this.resizeWatch = null;
     this.cropInner = null;

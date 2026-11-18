@@ -20,7 +20,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
-import { forgetPlace, isPlayed, listPlaces, onPlacesChange, placeOf as listenedTo } from './resume.js';
+import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
@@ -53,6 +53,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
   onPopOutFailed: () => toast("Couldn't pop this stream out. Try clicking Pop out again."),
+  onSendToPhone: (id) => sendToPhone(id),
   onSwap(a, b) {
     swapTiles(ws, a, b);
     commit();
@@ -2970,6 +2971,13 @@ function remoteCommand(cmd) {
     case 'hello':
       remoteSync();
       break;
+    case 'watchingOnPhone':
+      // The phone took over a sent stream, so it goes quiet here.
+      if (tile) {
+        if (!tile.muted) toggleMute(tile.id);
+        toast(`${labelOf(tile)} is playing on your phone. Muted here.`);
+      }
+      break;
     default:
   }
 }
@@ -2992,7 +3000,8 @@ async function startRemoteHost() {
       onPeers(count, change) {
         remotePeers = count;
         if (change === 'join') {
-          toast('Your phone is connected as a remote.');
+          if (pendingSend) deliverPending();
+          else toast('Your phone is connected as a remote.');
           remoteSync();
         }
         drawRemoteDialog();
@@ -3003,6 +3012,44 @@ async function startRemoteHost() {
     remoteProblem = `The remote couldn't start in this browser (${String(error?.message || error).slice(0, 80)}).`;
     drawRemoteDialog();
   }
+}
+
+/* ---------- Send to phone: the laptop hands one stream to the phone ---------- */
+
+let pendingSend = null; // { payload, until }
+const SEND_WAIT = 10 * 60 * 1000;
+
+function deliverPending() {
+  if (!pendingSend || !remoteHost || !remotePeers) return;
+  if (Date.now() > pendingSend.until) { pendingSend = null; return; }
+  const { payload } = pendingSend;
+  pendingSend = null;
+  remoteHost.sendStream(payload).then((ok) => toast(ok ? `Sent ${payload.name} to your phone.` : `Couldn't reach your phone. Try sending ${payload.name} again.`));
+}
+
+function sendToPhone(id) {
+  const tile = tileById(id);
+  if (!tile || !isStream(tile)) return;
+  if (!hostPairing(false)) {
+    toast('Pair your phone as a remote first.', { label: 'Set up', run: openRemoteDialog });
+    return;
+  }
+  // YouTube sends the exact video playing; everything that knows its place sends that too.
+  let place = null;
+  try { place = grid.viewFor(id)?.player?.place?.() ?? null; } catch { place = null; }
+  const name = labelOf(tile);
+  const payload = {
+    v: 1,
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    tileId: tile.id,
+    input: place?.input || tile.input,
+    name: place?.name || name,
+    place: place && Number.isFinite(place.at) && place.key ? { key: place.key, at: place.at, length: place.length } : null,
+  };
+  pendingSend = { payload, until: Date.now() + SEND_WAIT };
+  if (!remoteHost) startRemoteHost();
+  if (remotePeers) deliverPending();
+  else toast(`Waiting for your phone. Open MULTIGRID on it to get ${name}.`);
 }
 
 async function stopRemoteHost() {
@@ -3076,8 +3123,23 @@ async function openRemoteScreen() {
   if (remoteLink) return;
   clearTimeout(remoteWait);
   remoteWait = setTimeout(() => { remoteView.waited = true; drawRemoteScreen(); }, 15000);
+  await ensureRemoteLink();
+}
+
+/** The phone's link to the laptop. It's kept up whenever MULTIGRID is open on a paired phone,
+    so a stream sent from the laptop arrives even when the remote screen isn't showing. */
+let remoteLinking = null;
+function ensureRemoteLink() {
+  const pairing = controllerPairing();
+  if (!pairing || remoteLink) return Promise.resolve();
+  remoteLinking ??= linkRemote(pairing).finally(() => { remoteLinking = null; });
+  return remoteLinking;
+}
+
+async function linkRemote(pairing) {
   try {
     remoteLink = await connect(pairing, {
+      onSent: receiveSentStream,
       onState(state) {
         if (!state || state.v !== 1 || !Array.isArray(state.tiles)) return;
         if (state.notice?.id && remoteNotices.has(state.notice.id)) {
@@ -3099,6 +3161,35 @@ async function openRemoteScreen() {
     remoteView.failed = true;
     drawRemoteScreen();
   }
+}
+
+/* A stream sent from the laptop: a card, and nothing plays until it's tapped. */
+function receiveSentStream(payload) {
+  if (!payload || payload.v !== 1 || typeof payload.input !== 'string' || payload.input.length > 4000 || !parseSource(payload.input).ok) return;
+  const name = typeof payload.name === 'string' && payload.name.trim() ? payload.name.trim().slice(0, 200) : 'A stream';
+  document.querySelector('.sent-card')?.remove();
+  const card = el('div', { class: 'sent-card', role: 'dialog', aria: { label: `${name} from your computer` } },
+    el('span', { class: 'sent-icon' }, icon('phone', 18)),
+    el('span', { class: 'sent-text' }, el('small', { textContent: 'From your computer' }), el('b', { textContent: name, title: name })),
+    el('button', {
+      type: 'button',
+      class: 'sent-watch',
+      on: {
+        click() {
+          card.remove();
+          // Pick up at the same minute: the place goes in first, so the player starts there.
+          const place = payload.place;
+          if (place && typeof place.key === 'string' && place.key.length < 4100 && Number.isFinite(place.at) && Number.isFinite(place.length)) {
+            notePlace(place.key, place.at, place.length, { input: payload.input, name, from: '' });
+          }
+          if (!$('remote-screen').hidden) closeRemoteScreen();
+          addStream(payload.input);
+          if (typeof payload.tileId === 'string') remoteSend({ type: 'watchingOnPhone', id: payload.tileId });
+        },
+      },
+    }, icon('play', 14), el('span', { textContent: 'Watch here' })),
+    iconButton('close', 'Dismiss', () => card.remove()));
+  document.body.append(card);
 }
 
 function closeRemoteScreen() {
@@ -3313,3 +3404,5 @@ function receiveRemotePairing(text = location.hash) {
 }
 window.addEventListener('hashchange', () => receiveRemotePairing());
 receiveRemotePairing();
+// A paired phone stays linked while MULTIGRID is open, so streams sent from the laptop arrive.
+if (controllerPairing()) ensureRemoteLink();

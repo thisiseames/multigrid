@@ -251,6 +251,13 @@ function youtubePlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: levelWorks,
+    // Where the video is, and a link to that exact video, for "Send to phone".
+    place() {
+      const key = videoKey();
+      if (!key) return null;
+      const data = api.getVideoData?.();
+      return { key, at: Math.floor(api.getCurrentTime?.() || 0), length: Math.round(api.getDuration?.() || 0), input: `https://www.youtube.com/watch?v=${data.video_id}`, name: data.title || '' };
+    },
     canPause: true,
     setPaused(next) {
       if (!api) return;
@@ -487,6 +494,7 @@ function hlsPlayer(source, options) {
     el: video,
     canMute: true,
     canVolume: levelWorks,
+    place: () => keepPlace.place(),
     start() {
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         // Native playback gives no reason when it fails, so hls.js is asked as a second
@@ -765,6 +773,7 @@ function audioPlayer(source, options) {
     el: box,
     canMute: true,
     canVolume: levelWorks,
+    place: () => keepPlace.place(),
     start() {
       audio.src = source.url;
       if (autoplay) audio.play().catch(() => {});

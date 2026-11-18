@@ -117,22 +117,26 @@ export function pairingFromText(text) {
 }
 
 /**
- * Joins the pairing's room. Each side sends one kind of message: the laptop sends 'state',
+ * Joins the pairing's room. The laptop sends 'state' (and 'sent', a stream for the phone),
  * the phone sends 'cmd'. onPeers is told how many of the other side are there.
  */
-export async function connect(pairing, { onState, onCommand, onPeers }) {
+export async function connect(pairing, { onState, onCommand, onPeers, onSent }) {
   const { joinRoom } = await loadRemoteLib();
   const room = joinRoom({ appId: APP_ID, password: pairing.password }, pairing.room);
   const state = room.makeAction('state');
   const command = room.makeAction('cmd');
+  // A stream the laptop hands to the phone ("Send to phone").
+  const sent = room.makeAction('sent');
   if (onState) state.onMessage((data) => onState(data));
   if (onCommand) command.onMessage((data) => onCommand(data));
+  if (onSent) sent.onMessage((data) => onSent(data));
   let peers = 0;
   room.onPeerJoin(() => { peers += 1; onPeers?.(peers, 'join'); });
   room.onPeerLeave(() => { peers = Math.max(0, peers - 1); onPeers?.(peers, 'leave'); });
   return {
     sendState: (data) => (peers ? state.send(data).catch(() => {}) : Promise.resolve()),
     sendCommand: (data) => (peers ? command.send(data).catch(() => {}) : Promise.resolve()),
+    sendStream: (data) => (peers ? sent.send(data).then(() => true, () => false) : Promise.resolve(false)),
     peers: () => peers,
     leave: () => room.leave().catch(() => {}),
   };
