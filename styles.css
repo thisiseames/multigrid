@@ -845,7 +845,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 
 .mrow-list { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--surface); overflow: hidden; }
 .mrow + .mrow { border-top: 1px solid var(--border); }
-.mrow-main { display: grid; grid-template-columns: 58px 1fr var(--mrow-end, 124px); align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
+.mrow-main { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
 .mrow-main:hover, .mrow-main:focus-visible { background: rgba(255, 255, 255, 0.04); }
 .mrow-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .mrow-time, .mrow-final { display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
@@ -854,8 +854,9 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .mrow-teams { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mrow-team { display: flex; align-items: center; gap: 9px; min-width: 0; font-size: 14px; }
 .mrow-team .crest { --size: 20px; width: 20px; height: 20px; }
-.mrow-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.mrow-score { flex: none; min-width: 18px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* The score sits right after the name. Names share one width, so scores still line up row to row. */
+.mrow-name { flex: 0 1 auto; width: 8.8em; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mrow-score { flex: none; min-width: 2.2em; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .mrow-team.is-loser .mrow-name, .mrow-team.is-loser .mrow-score { color: var(--text-2); font-weight: 400; }
 .mrow-team.is-winner .mrow-name { font-weight: 600; }
 .mrow-team.is-mine .mrow-name { color: var(--accent); }
@@ -993,7 +994,9 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 @media (max-width: 480px) {
   .matches-body { padding: 0 8px 10px; }
   .match-day { margin: 0 -8px; padding: 12px 12px 6px; }
-  .mrow-main { --mrow-end: 92px; gap: 8px; padding: 8px 8px 8px 10px; }
+  .mrow-main { gap: 8px; padding: 8px 8px 8px 10px; }
+  /* Narrow enough that a row with Watch keeps the same name width, so scores stay in one line. */
+  .mrow-name { width: 7.3em; flex-shrink: 0; }
   .mrow-tv { display: none; }
   .hero-mid { min-width: 84px; }
   .team-head { padding: 12px 12px 4px; }
