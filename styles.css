@@ -1461,3 +1461,16 @@ body.remote-open { overflow: hidden; }
 @media (display-mode: standalone) {
   #fullscreen-button { display: none !important; }
 }
+
+/* Full-screen panels on a phone leave room for the clock and battery at the top and the
+   home bar at the bottom. Opened from the home screen, nothing else keeps them clear. */
+@media (max-width: 640px) {
+  .guide, .addp {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .help { margin-top: max(16px, env(safe-area-inset-top)); max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px); }
+}
