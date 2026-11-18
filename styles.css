@@ -1571,9 +1571,10 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 /* Today: the word under the sun on the phone, like the tab labels at the bottom. One "Today" heading. */
 .bar-sub { display: none; }
 @media (max-width: 640px) {
-  #today-button { flex-direction: column; gap: 1px; width: 52px; height: 48px; }
-  #today-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1; color: var(--text-2); }
-  #today-button svg { width: 20px; height: 20px; }
+  /* Same look as the bottom tabs: a 24 pt icon, 3 pt gap, then the label at its natural line height. */
+  #today-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; }
+  #today-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
+  #today-button svg { width: 24px; height: 24px; }
   .today-head h3 { display: none; }
 }
 
