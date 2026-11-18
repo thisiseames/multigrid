@@ -3,7 +3,7 @@
 
 import { el, icon } from './ui.js';
 
-export function createMixer(root, { labelOf, player, isPaused, onTogglePause, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne, onToggleTicker }) {
+export function createMixer(root, { labelOf, player, isPaused, onTogglePause, onSeek, onToggleMute, onVolume, onVolumeDone, onMuteAll, onToggleOne, onToggleTicker }) {
   const oneButton = el('button', {
     class: 'mixer-one',
     type: 'button',
@@ -29,8 +29,14 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
     }, el('span', { class: 'channel-name', textContent: name }), el('span', { class: 'channel-note', textContent: 'No sound control' }));
   }
 
-  function openChannel(tile, name, canVolume, canPause) {
+  function openChannel(tile, name, canVolume, canPause, canSeek) {
     const play = canPause ? el('button', { class: 'channel-play', type: 'button', on: { click: () => onTogglePause(tile.id) } }) : null;
+    const jump = (seconds, iconName, label) => (canSeek ? el('button', {
+      class: 'channel-play channel-jump', type: 'button', title: `${label} ${name}`, aria: { label: `${label} ${name}` },
+      on: { click: () => onSeek(tile.id, seconds) },
+    }, icon(iconName)) : null);
+    const back = jump(-10, 'back10', 'Back 10 seconds:');
+    const forward = jump(10, 'fwd10', 'Forward 10 seconds:');
     const mute = el('button', { class: 'channel-mute', type: 'button', on: { click: () => onToggleMute(tile.id) } });
     const level = canVolume ? el('input', {
       class: 'channel-level',
@@ -44,7 +50,7 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
         change: () => onVolumeDone(),
       },
     }) : null;
-    const channel = el('div', { class: 'channel' }, play, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level);
+    const channel = el('div', { class: 'channel' }, back, play, forward, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level);
     rows.set(tile.id, { channel, mute, level, name, play });
     return channel;
   }
@@ -84,14 +90,14 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
       // Only rebuilt when the list changes, so a slider isn't replaced while it's being dragged.
       const items = tiles.map((tile) => {
         const stream = player(tile);
-        return { tile, name: labelOf(tile), canMute: Boolean(stream?.canMute), canVolume: Boolean(stream?.canVolume), canPause: Boolean(stream?.canPause) };
+        return { tile, name: labelOf(tile), canMute: Boolean(stream?.canMute), canVolume: Boolean(stream?.canVolume), canPause: Boolean(stream?.canPause), canSeek: Boolean(stream?.canSeek) };
       });
-      const shape = JSON.stringify(items.map(({ tile, name, canMute, canVolume, canPause }) => [tile.id, name, canMute, canVolume, canPause]));
+      const shape = JSON.stringify(items.map(({ tile, name, canMute, canVolume, canPause, canSeek }) => [tile.id, name, canMute, canVolume, canPause, canSeek]));
       if (shape !== drawn) {
         drawn = shape;
         rows.clear();
-        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause }) => (
-          canMute ? openChannel(tile, name, canVolume, canPause) : closedChannel(name))));
+        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause, canSeek }) => (
+          canMute ? openChannel(tile, name, canVolume, canPause, canSeek) : closedChannel(name))));
       }
       tiles.forEach(sync);
     },

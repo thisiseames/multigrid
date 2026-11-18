@@ -56,6 +56,8 @@ const levelWorks = (() => {
 const hasSoundExtension = () => document.documentElement.dataset.multigridSound === '1';
 /** Version 1.2 of the extension can also pause and play players inside embeds. */
 const extensionCanPause = () => document.documentElement.dataset.multigridPause === '1';
+/** Version 1.3 can also jump back and forward inside embeds. */
+const extensionCanSeek = () => document.documentElement.dataset.multigridSeek === '1';
 
 function extensionSound(frame, muted, volume) {
   const wanted = { muted, volume };
@@ -81,6 +83,9 @@ function extensionSound(frame, muted, volume) {
     setPaused(next) {
       frame.contentWindow?.postMessage({ multigridPlay: { paused: Boolean(next) } }, '*');
     },
+    seekBy(seconds) {
+      frame.contentWindow?.postMessage({ multigridSeek: { by: seconds } }, '*');
+    },
     stop() {
       window.removeEventListener('message', onMessage);
       window.removeEventListener('pointerdown', send);
@@ -99,6 +104,8 @@ function addressMutedPlayer(source, options) {
     canVolume: Boolean(extension) && levelWorks,
     canPause: Boolean(extension) && extensionCanPause(),
     setPaused(next) { extension?.setPaused(next); },
+    canSeek: Boolean(extension) && extensionCanSeek(),
+    seekBy(seconds) { extension?.seekBy(seconds); },
     start() {
       extension?.start();
     },
@@ -205,6 +212,11 @@ function youtubePlayer(source, options) {
     setPaused(next) {
       if (!api) return;
       if (next) api.pauseVideo(); else api.playVideo();
+    },
+    canSeek: true,
+    seekBy(seconds) {
+      if (!api?.getCurrentTime) return;
+      api.seekTo(Math.max(0, api.getCurrentTime() + seconds), true);
     },
     stripButtons: listButtons,
     async start() {
@@ -315,6 +327,12 @@ function twitchPlayer(source, options) {
     setPaused(next) {
       if (!api) return;
       if (next) api.pause(); else api.play();
+    },
+    // A live channel only plays at the live edge; past broadcasts can be moved through.
+    canSeek: type === 'video',
+    seekBy(seconds) {
+      if (!api?.getCurrentTime) return;
+      api.seek(Math.max(0, api.getCurrentTime() + seconds));
     },
     // Twitch stops when covered, and doesn't start again by itself.
     rememberPlayback() {
@@ -494,6 +512,7 @@ function tiktokFeedPlayer(source, options) {
   let progressed = false;
   let destroyed = false;
   let feedPaused = false;
+  let feedTime = 0;
   const send = (type) => frame.contentWindow?.postMessage({ type, 'x-tiktok-player': true }, '*');
   const show = (at) => {
     if (!videos.length || destroyed) return;
@@ -525,6 +544,7 @@ function tiktokFeedPlayer(source, options) {
       if (value === 2) options.onPlayState?.(true);
       if (value === 0 && progressed) next();
     } else if (type === 'onCurrentTime') {
+      feedTime = Number(value?.currentTime) || 0;
       // The ended signal doesn't always come, so the clock decides too, but only for a video
       // that really played. A phone that blocks autoplay mustn't race through the feed.
       const current = Number(value?.currentTime);
@@ -550,6 +570,10 @@ function tiktokFeedPlayer(source, options) {
     setPaused(next) {
       feedPaused = Boolean(next);
       if (ready) send(next ? 'pause' : 'play');
+    },
+    canSeek: true,
+    seekBy(seconds) {
+      if (ready) frame.contentWindow?.postMessage({ type: 'seekTo', value: Math.max(0, feedTime + seconds), 'x-tiktok-player': true }, '*');
     },
     stripButtons,
     async start() {
@@ -592,10 +616,13 @@ function tiktokPlayer(source, options) {
   let wanted = muted;
   let ready = false;
   let playing = false;
+  let clipTime = 0;
   const send = (type) => frame.contentWindow?.postMessage({ type, 'x-tiktok-player': true }, '*');
   const onMessage = (event) => {
     if (event.source !== frame.contentWindow || !event.data?.['x-tiktok-player']) return;
-    if (event.data.type === 'onPlayerReady') {
+    if (event.data.type === 'onCurrentTime') {
+      clipTime = Number(event.data.value?.currentTime) || 0;
+    } else if (event.data.type === 'onPlayerReady') {
       ready = true;
       if (wanted) send('mute'); else send('unMute');
       if (autoplay) send('play');
@@ -615,6 +642,10 @@ function tiktokPlayer(source, options) {
     canPause: true,
     setPaused(next) {
       if (ready) send(next ? 'pause' : 'play');
+    },
+    canSeek: true,
+    seekBy(seconds) {
+      if (ready) frame.contentWindow?.postMessage({ type: 'seekTo', value: Math.max(0, clipTime + seconds), 'x-tiktok-player': true }, '*');
     },
     start() {
       window.addEventListener('message', onMessage);
@@ -649,6 +680,8 @@ function closedPlayer(frame, { muted, volume }) {
     canVolume: Boolean(extension) && levelWorks,
     canPause: Boolean(extension) && extensionCanPause(),
     setPaused(next) { extension?.setPaused(next); },
+    canSeek: Boolean(extension) && extensionCanSeek(),
+    seekBy(seconds) { extension?.seekBy(seconds); },
     start() {
       extension?.start();
     },
@@ -780,7 +813,7 @@ function xPlayer(source, options) {
   const frame = makeFrame(buildEmbedUrl(source, options, options.env));
   frame.className = 'frame-post';
   // A post isn't something to pause; its sound still works through the extension.
-  return { ...closedPlayer(frame, options), canPause: false };
+  return { ...closedPlayer(frame, options), canPause: false, canSeek: false };
 }
 
 const FILE_ACCESS_EVENT = 'multigrid:file-access';
@@ -911,6 +944,15 @@ export function createPlayer(source, options) {
   if (media) {
     player.canPause = true;
     player.setPaused = (next) => { if (next) media.pause(); else media.play().catch(() => {}); };
+    player.canSeek = true;
+    // Only as far as the browser can reach: a live stream keeps a short stretch to go back over.
+    player.seekBy = (seconds) => {
+      const range = media.seekable;
+      if (!range?.length) return;
+      const start = range.start(0);
+      const end = range.end(range.length - 1);
+      media.currentTime = Math.min(end, Math.max(start, media.currentTime + seconds));
+    };
     media.addEventListener('play', () => options.onPlayState?.(false));
     media.addEventListener('pause', () => options.onPlayState?.(true));
   }

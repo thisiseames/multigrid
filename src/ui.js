@@ -38,6 +38,8 @@ const ICON_PATHS = {
   today: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>',
   remote: '<rect x="5" y="1.8" width="6" height="12.4" rx="1.6"/><circle cx="8" cy="5.2" r="1.2"/><path d="M7 8.6h2M7 10.6h2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
+  back10: '<path d="M4.2 4.6A5.2 5.2 0 1 1 2.9 9"/><path d="M4.4 1.9v2.9H1.5"/><text x="8.4" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
+  fwd10: '<path d="M11.8 4.6A5.2 5.2 0 1 0 13.1 9"/><path d="M11.6 1.9v2.9h2.9"/><text x="7.6" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
   pause: '<path fill="currentColor" stroke="none" d="M4.5 3h2.4v10H4.5zM9.1 3h2.4v10H9.1z"/>',
   play: '<path fill="currentColor" stroke="none" d="M5 3.3v9.4a.5.5 0 0 0 .76.43l7.4-4.7a.5.5 0 0 0 0-.86l-7.4-4.7A.5.5 0 0 0 5 3.3z"/>',
 };

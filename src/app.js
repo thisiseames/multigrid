@@ -73,6 +73,7 @@ const mixer = createMixer($('mixer'), {
   player: (tile) => grid.viewFor(tile.id)?.player,
   isPaused: (tile) => Boolean(grid.viewFor(tile.id)?.paused),
   onTogglePause: togglePause,
+  onSeek: (id, seconds) => grid.viewFor(id)?.player?.seekBy?.(seconds),
   onToggleMute: toggleMute,
   onVolume: changeVolume,
   onVolumeDone: commit,
