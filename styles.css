@@ -1609,3 +1609,19 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 /* Today: Movies this week */
 .movie-poster { width: 40px !important; height: 60px !important; border-radius: 6px; }
 .movie-poster img { object-fit: cover; }
+
+/* Today: the markets ticker along the bottom */
+.mk-bar { flex: none; height: 34px; display: flex; align-items: stretch; border-top: 1px solid var(--border-strong); background: #0d0d10; overflow: hidden; }
+.mk-bar[hidden] { display: none; }
+.mk-lane { flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center; touch-action: pan-y; mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.mk-track { display: flex; width: max-content; animation: mk-scroll 60s linear infinite; }
+.mk-lane:hover .mk-track, .mk-lane.is-held .mk-track { animation-play-state: paused; }
+@keyframes mk-scroll { to { transform: translateX(calc(-1 * var(--mk-distance, 50%))); } }
+.mk-run { display: flex; flex: none; }
+.mk-item { flex: none; display: inline-flex; align-items: baseline; gap: 6px; padding: 0 20px 0 0; font-size: 13px; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mk-item b { font-size: 11.5px; font-weight: 700; color: var(--text-2); }
+.mk-change { font-weight: 650; }
+.mk-item.is-up .mk-change { color: #3ecf8e; }
+.mk-item.is-down .mk-change { color: #ff6b6b; }
+.mk-when { color: var(--text-2); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .mk-track { animation-duration: 300s; } }
