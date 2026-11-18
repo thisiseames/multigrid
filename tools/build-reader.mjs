@@ -41,6 +41,13 @@ const stripTags = (html) => text(parseHTML(`<div>${html}</div>`).document.queryS
 const absolute = (link, base) => {
   try { return new URL(link, base).href; } catch { return ''; }
 };
+/** A podcast's length in seconds, from "3641", "53:15" or "1:02:05". */
+const seconds = (raw) => {
+  const parts = String(raw || '').trim().split(':').map(Number);
+  if (!parts.length || parts.some((part) => !Number.isFinite(part))) return undefined;
+  const total = parts.reduce((sum, part) => sum * 60 + part, 0);
+  return total > 0 ? Math.round(total) : undefined;
+};
 const idOf = (link) => createHash('sha1').update(link).digest('hex').slice(0, 16);
 
 /** One feed's newest entries, RSS or Atom. */
@@ -73,6 +80,8 @@ function entries(xml, feed) {
       kind,
       video: youtube ? text(youtube) : undefined,
       audio: kind === 'podcast' ? enclosure.getAttribute('url') : undefined,
+      // The Podcasts shelf in Add stream shows each episode's length.
+      length: kind === 'podcast' ? seconds(text(first(node, ['itunes:duration']))) : undefined,
     };
   }).filter((item) => item.link);
 }
