@@ -1596,3 +1596,7 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 @media (max-width: 640px) {
   .wx-line { min-height: 44px; font-size: 14px; }
 }
+
+/* Today: Movies this week */
+.movie-poster { width: 40px !important; height: 60px !important; border-radius: 6px; }
+.movie-poster img { object-fit: cover; }
