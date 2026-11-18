@@ -1625,3 +1625,15 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .mk-item.is-down .mk-change { color: #ff6b6b; }
 .mk-when { color: var(--text-2); font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .mk-track { animation-duration: 300s; } }
+
+/* Today: Charts */
+.chart-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 0 8px; }
+.chart-tabs::-webkit-scrollbar { display: none; }
+.chart-rank { flex: none; width: 1.3em; text-align: center; font-size: 15px; font-weight: 800; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.trow-main .chart-cover { flex: none; width: 44px; height: 44px; border-radius: 6px; }
+.chart-cover img { object-fit: cover; }
+.chart-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px calc(12px + 1.3em + 12px); }
+.chart-actions[hidden] { display: none; }
+.chart-act { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chart-act:hover { background: rgba(255, 255, 255, 0.14); }
+.chart-week { margin: 7px 4px 0; font-size: 11.5px; color: var(--text-2); }
