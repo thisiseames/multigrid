@@ -1,7 +1,7 @@
 // Makes the Reader: reader/index.json (headlines, each site's own summary and picture) and,
 // for each new story, its cleaned-up text in reader/a/<id>.json, locked with READER_KEY.
 // The project is public, so story text is only ever saved locked: anyone else sees noise.
-// Run by .github/workflows/reader.yml every 30 minutes.   node tools/build-reader.mjs
+// Run by .github/workflows/reader.yml about every 20 minutes.   node tools/build-reader.mjs
 
 import { createHash, webcrypto } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -11,7 +11,7 @@ import { Readability } from '@mozilla/readability';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
 const ROOT = new URL('../reader/', import.meta.url);
-const KEEP = 300;
+const KEEP = 400;
 const PER_FEED = 8;
 const NEW_TEXTS_PER_RUN = 80;
 const { feeds } = JSON.parse(readFileSync(new URL('feeds.json', ROOT)));
@@ -20,8 +20,11 @@ const known = new Map(previous.items.map((item) => [item.id, item]));
 mkdirSync(new URL('a/', ROOT), { recursive: true });
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
-async function get(url, timeout = 20000) {
-  const response = await fetch(url, { headers: { 'User-Agent': UA, Accept: '*/*' }, redirect: 'follow', signal: AbortSignal.timeout(timeout) });
+// Some sites (ESPN) send an empty page to anything that looks like a browser robot, but answer
+// a plain feed reader, so a feed that comes back empty is asked once more under this name.
+const PLAIN_UA = 'MULTIGRID-reader/1.0';
+async function get(url, timeout = 20000, agent = UA) {
+  const response = await fetch(url, { headers: { 'User-Agent': agent, Accept: '*/*' }, redirect: 'follow', signal: AbortSignal.timeout(timeout) });
   if (!response.ok) throw new Error(`${response.status}`);
   return response.text();
 }
@@ -128,20 +131,27 @@ async function lock(value) {
 
 /* Run */
 const all = [];
+const feedOf = new Map(); // story id -> the feed it came from
 let failed = 0;
 for (const feed of feeds) {
   try {
-    all.push(...entries(await get(feed.url), feed));
+    let got = entries(await get(feed.url), feed);
+    if (!got.length) got = entries(await get(feed.url, 20000, PLAIN_UA), feed);
+    got.forEach((item) => { if (!feedOf.has(item.id)) feedOf.set(item.id, feed.url); });
+    all.push(...got);
   } catch (error) {
     failed++;
     console.warn(`feed failed: ${feed.name} (${error.message})`);
-    all.push(...previous.items.filter((item) => item.source === feed.name && item.group === feed.group));
+    const kept = previous.items.filter((item) => item.source === feed.name && item.group === feed.group);
+    kept.forEach((item) => { if (!feedOf.has(item.id)) feedOf.set(item.id, feed.url); });
+    all.push(...kept);
   }
 }
 // Each feed keeps its newest few, so busy news sites can't crowd out a podcast that posts weekly.
+// Counted per feed, not per name: The Athletic's four Sport feeds each get their own.
 const perFeed = new Map();
 for (const item of [...new Map(all.map((entry) => [entry.id, entry])).values()].sort((a, b) => b.time - a.time)) {
-  const key = `${item.source}|${item.group}`;
+  const key = feedOf.get(item.id) || `${item.source}|${item.group}`;
   const list = perFeed.get(key) ?? [];
   if (list.length < PER_FEED) list.push(item);
   perFeed.set(key, list);
