@@ -2766,13 +2766,33 @@ $('welcome-help').addEventListener('click', () => openDialog($('help-dialog')));
 
 /* ---------- Layout menu ---------- */
 
+/** On a phone, the layout button also holds Saved layouts, How it works and Fullscreen. */
+function phoneLayoutExtras() {
+  if (!document.body.classList.contains('is-phone')) return null;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const rows = [
+    ['saved-button', 'saved', 'Saved layouts'],
+    ['help-button', 'help', 'How it works'],
+    ['fullscreen-button', 'expand', 'Fullscreen'],
+  ].filter(([id]) => $(id) && !(id === 'fullscreen-button' && ($(id).hidden || standalone)));
+  return el('ul', { class: 'more-list layout-extras' }, ...rows.map(([id, iconName, label]) => el('li', {},
+    el('button', {
+      type: 'button',
+      class: 'more-row',
+      on: {
+        click() {
+          closePopovers();
+          setTimeout(() => $(id).click(), 0);
+        },
+      },
+    }, el('span', { class: 'more-icon' }, icon(iconName, 20)), el('span', { class: 'more-label', textContent: label }), el('span', { class: 'more-chevron' }, icon('chevron', 16))))));
+}
+
 function buildLayoutMenu() {
   const menu = $('layout-menu');
+  // Held upright, streams stack, so there are no layouts to pick: just the other things.
   if (grid.isStacked) {
-    menu.replaceChildren(el('p', {
-      class: 'menu-note',
-      textContent: 'On a phone held upright, streams stack so each stays a usable size. Turn your phone sideways to use layouts.',
-    }));
+    menu.replaceChildren(...[phoneLayoutExtras()].filter(Boolean));
     return;
   }
   const options = PRESETS.map((preset) => el('button', {
@@ -2800,7 +2820,7 @@ function buildLayoutMenu() {
       },
     },
   }, el('span', { textContent: 'Custom' }), el('small', { textContent: 'Keeps this arrangement and lets you reshape it' }));
-  menu.replaceChildren(el('div', { class: 'layout-options' }, ...options), custom);
+  menu.replaceChildren(...[el('div', { class: 'layout-options' }, ...options), custom, phoneLayoutExtras()].filter(Boolean));
 }
 
 /** Switches the screen to a layout, from the menu or the phone remote. Returns the "some are hidden" note, if any. */
@@ -3094,9 +3114,12 @@ function remoteState() {
   return {
     v: 1,
     tiles: ws.tiles.filter((tile) => isVisible(tile) && isStream(tile)).map((tile) => {
-      const player = grid.viewFor(tile.id)?.player;
+      const view = grid.viewFor(tile.id);
+      const player = view?.player;
       return {
         id: tile.id,
+        canPause: Boolean(player?.canPause),
+        paused: Boolean(view?.paused),
         input: tile.input,
         label: labelOf(tile),
         muted: tile.muted,
@@ -3136,6 +3159,9 @@ function remoteCommand(cmd) {
   switch (cmd.type) {
     case 'mute':
       if (tile && Boolean(cmd.value) !== tile.muted) toggleMute(tile.id);
+      break;
+    case 'pause':
+      if (tile && Boolean(cmd.value) !== Boolean(grid.viewFor(tile.id)?.paused)) togglePause(tile.id);
       break;
     case 'volume':
       if (tile && Number.isFinite(cmd.value)) {
@@ -3467,6 +3493,7 @@ function remoteTileCard(tile) {
       el('div', { class: 'rm-tile-text' },
         el('b', { textContent: tile.label }),
         el('small', { textContent: tile.canMute ? (tile.muted ? 'Muted' : `Sound on · ${tile.volume}%`) : 'Sound controlled on the TV' })),
+      tile.canPause ? action(tile.paused ? 'play' : 'pause', tile.paused ? 'Play' : 'Pause', '', () => remoteSend({ type: 'pause', id: tile.id, value: !tile.paused })) : null,
       tile.canMute ? action(tile.muted ? 'muted' : 'sound', tile.muted ? 'Unmute' : 'Mute', tile.muted ? '' : 'is-on', () => remoteSend({ type: 'mute', id: tile.id, value: !tile.muted })) : null),
     volume,
     el('div', { class: 'rm-tile-actions' },

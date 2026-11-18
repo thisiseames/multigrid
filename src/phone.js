@@ -2,7 +2,7 @@
 // panels that slide up as sheets you can swipe down to close. The laptop never sees any of it:
 // everything here only happens while the phone query matches.
 
-import { closePopovers, el, icon, onPopoverChange, togglePopover } from './ui.js';
+import { closePopovers, onPopoverChange } from './ui.js';
 
 export const PHONE_QUERY = '(max-width: 640px), (hover: none) and (max-height: 500px)';
 const phone = window.matchMedia(PHONE_QUERY);
@@ -16,7 +16,6 @@ const TITLES = {
   'reader-menu': 'Reader',
   'saved-menu': 'Saved layouts',
   'layout-menu': 'Layout',
-  'more-menu': 'More',
   'hidden-menu': 'Hidden streams',
   'stream-menu': 'Stream',
   'sound-menu': 'Sound',
@@ -26,8 +25,6 @@ const TAB_OF = {
   'matches-menu': 'sports',
   'standings-menu': 'sports',
   'reader-menu': 'reader',
-  'saved-menu': 'more',
-  'more-menu': 'more',
 };
 
 const tabbar = $('tabbar');
@@ -71,30 +68,6 @@ onPopoverChange((menu) => {
   showSheet(menu);
 });
 
-/* ---------- More ---------- */
-
-function buildMore() {
-  const rows = [
-    ['saved-button', 'saved', 'Saved layouts'],
-    ['remote-button', 'remote', 'Phone remote'],
-    ['help-button', 'help', 'How it works'],
-    ['fullscreen-button', 'expand', 'Fullscreen'],
-  ].filter(([id]) => $(id) && !$(id).hidden
-    // From the home screen there's no browser to leave, so Fullscreen isn't offered.
-    && !(id === 'fullscreen-button' && (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone)));
-  $('more-menu').replaceChildren(el('ul', { class: 'more-list' }, ...rows.map(([id, iconName, label]) => el('li', {},
-    el('button', {
-      type: 'button',
-      class: 'more-row',
-      on: {
-        click() {
-          closePopovers();
-          setTimeout(() => $(id).click(), 0);
-        },
-      },
-    }, el('span', { class: 'more-icon' }, icon(iconName, 20)), el('span', { class: 'more-label', textContent: label }), el('span', { class: 'more-chevron' }, icon('chevron', 16)))))));
-}
-
 /* ---------- Tabs ---------- */
 
 // A tap outside a panel closes it before the tab's own tap arrives, so remember what was open:
@@ -107,14 +80,14 @@ const OPEN = {
   reader: () => $('reader-button').click(),
   sports: () => $('matches-button').click(),
   guide: () => { closePopovers(); $('guide-button').click(); },
-  more: () => togglePopover($('tab-more'), $('more-menu'), buildMore),
+  remote: () => { closePopovers(); $('remote-button').click(); },
 };
 
 tabbar.addEventListener('click', (event) => {
   const button = event.target.closest('.tab');
   if (!button) return;
   const tab = button.dataset.tab;
-  if (tab !== 'watch' && tab !== 'more' && openAtPress === tab) {
+  if (tab !== 'watch' && tab !== 'remote' && openAtPress === tab) {
     closePopovers();
     return;
   }
