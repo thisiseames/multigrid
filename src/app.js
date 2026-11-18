@@ -651,31 +651,53 @@ function episodeRow(item) {
   state.percent ? el('span', { class: 'pod-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, state.percent)).toFixed(1)}%` })) : null));
 }
 
-/** Podcasts from the Reader's feeds, one tab per show, newest episodes first. */
-async function renderPodcasts() {
-  const holder = $('source-podcasts');
-  const data = await loadIndex().catch(() => null);
-  const episodes = (data?.items ?? []).filter((item) => item.kind === 'podcast' && item.audio).sort((a, b) => b.time - a.time);
-  holder.hidden = episodes.length === 0;
-  if (!episodes.length) { holder.replaceChildren(); return; }
-  const shows = [...new Set(episodes.map((item) => item.source))];
-  if (!shows.includes(podShow)) podShow = shows[0];
-  const tabs = el('div', { class: 'matches-tabs addp-pills pod-shows', role: 'tablist' }, ...shows.map((show) => el('button', {
-    type: 'button',
-    role: 'tab',
-    class: `matches-tab${show === podShow ? ' is-on' : ''}`,
-    aria: { selected: String(show === podShow) },
-    textContent: show,
-    on: { click() { podShow = show; renderPodcasts(); } },
-  })));
-  const scroll = holder.querySelector('.pod-shows')?.scrollLeft ?? 0;
-  holder.replaceChildren(
-    el('h3', { class: 'addp-label', textContent: 'Podcasts' }),
-    tabs,
-    el('ul', { class: 'pod-list' }, ...episodes.filter((item) => item.source === podShow).map(episodeRow)));
-  tabs.scrollLeft = scroll;
+/* Podcasts live in Favorites as their own tab: the shows as cards, then a show's episodes. */
+const PODCASTS = '\u0001podcasts';
+let podEpisodes = [];
+
+/** Podcast episodes from the Reader's feeds, newest first. Favorites redraw once they arrive. */
+function loadPodcasts(holder) {
+  loadIndex().then((data) => {
+    const episodes = (data?.items ?? []).filter((item) => item.kind === 'podcast' && item.audio).sort((a, b) => b.time - a.time);
+    const before = podEpisodes.map((item) => item.id).join();
+    podEpisodes = episodes;
+    if (before !== episodes.map((item) => item.id).join() && holder.isConnected && $('source-dialog').open) fillAddFavorites(holder);
+  }).catch(() => {});
 }
-onPlacesChange(() => { if ($('source-dialog').open && !$('source-podcasts').hidden) renderPodcasts(); });
+const podShows = () => [...new Set(podEpisodes.map((item) => item.source))];
+
+function showCard(show, holder) {
+  const newest = podEpisodes.find((item) => item.source === show);
+  const art = el('span', { class: 'fart is-icon' }, icon('sound', 20));
+  if (newest?.image) {
+    art.className = 'fart is-picture';
+    artPicture(art, newest.image, () => { art.className = 'fart is-icon'; art.replaceChildren(icon('sound', 20)); });
+  }
+  return el('li', { class: 'fcard' }, el('button', {
+    type: 'button',
+    class: 'fcard-main',
+    title: `Episodes of ${show}`,
+    on: { click() { addFolder = PODCASTS; podShow = show; holder.addSearch.input.value = ''; fillAddFavorites(holder); } },
+  },
+  art,
+  el('span', { class: 'fcard-text' },
+    el('b', { textContent: show, title: show }),
+    newest ? el('small', {}, el('span', { class: 'fcard-kind', textContent: dayLabel(newest.time) }), el('span', { class: 'fcard-now', textContent: newest.title, title: newest.title })) : null)));
+}
+
+/** The Podcasts tab: every show, or one show's episodes with a way back. */
+function podcastsView(holder) {
+  if (podShow && podShows().includes(podShow)) {
+    return el('div', { class: 'pod-view' },
+      el('button', { type: 'button', class: 'pod-back', on: { click() { podShow = ''; fillAddFavorites(holder); } } }, icon('back', 14), el('span', { textContent: 'Podcasts' }), el('b', { textContent: podShow })),
+      el('ul', { class: 'pod-list' }, ...podEpisodes.filter((item) => item.source === podShow).map(episodeRow)));
+  }
+  podShow = '';
+  const shows = podShows();
+  return shows.length ? el('ul', { class: 'addp-grid' }, ...shows.map((show) => showCard(show, holder)))
+    : el('p', { class: 'favorites-empty', textContent: 'No podcast episodes yet' });
+}
+onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fillAddFavorites($('source-favorites')); });
 
 /* ---------- Add stream: favorites as cards ---------- */
 
@@ -952,12 +974,21 @@ function addSearchBox(holder) {
 function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
-    row.replaceChildren(...['', ...folders].map((folder) => el('button', {
+    const tabs = ['', ...folders, ...(podEpisodes.length ? [PODCASTS] : [])];
+    row.replaceChildren(...tabs.map((folder) => el('button', {
       type: 'button',
       class: `matches-tab${addFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
-      textContent: folder || 'All',
-      on: { click() { addFolder = folder; fillAddFavorites(holder); } },
-    })), ...(addFolder ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+      textContent: folder === PODCASTS ? 'PODCASTS' : folder || 'All',
+      on: { click() { addFolder = folder; podShow = ''; fillAddFavorites(holder); } },
+    })), ...(addFolder && addFolder !== PODCASTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+    // The chosen tab is always in view, even when it's past the edge on a phone.
+    requestAnimationFrame(() => {
+      const on = row.querySelector('.is-on');
+      if (!on) return;
+      const box = row.getBoundingClientRect();
+      const tab = on.getBoundingClientRect();
+      if (tab.left < box.left || tab.right > box.right) row.scrollLeft += tab.left - box.left - 16;
+    });
   };
   const rename = () => {
     const input = el('input', { type: 'text', value: addFolder, maxLength: 40, class: 'addp-rename', aria: { label: 'Folder name' } });
@@ -992,17 +1023,21 @@ function fillAddFavorites(holder) {
   clear.hidden = !query;
   const all = listFavorites().sort(byName);
   const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
-  if (addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
+  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
   const matches = (text) => text.toLocaleLowerCase().includes(query);
+  const podcasts = addFolder === PODCASTS && !query;
   const shown = query
     ? all.filter((item) => matches(item.name) || (item.group && matches(item.group)))
-    : all.filter((item) => !addFolder || item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase());
+    : podcasts ? [] : all.filter((item) => !addFolder || item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase());
+  // A search also finds podcast shows by name.
+  const shows = query ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
   const grid = el('div', { class: 'addp-grid-wrap' },
-    shown.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)))
-      : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
-  const pills = folders.length && !query ? addFolderPills(holder, folders) : null;
+    podcasts ? podcastsView(holder)
+      : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
+        : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
+  const pills = (folders.length || podEpisodes.length) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
   if (old) old.replaceWith(grid);
@@ -1013,6 +1048,7 @@ function fillAddFavorites(holder) {
 function renderAddFavorites(holder, getTarget) {
   holder.hidden = listFavorites().length === 0;
   holder.getTarget = getTarget;
+  loadPodcasts(holder);
   const { wrap } = addSearchBox(holder);
   const send = el('button', { type: 'button', class: 'text-button favorites-send', textContent: onPhone() ? 'Send to computer' : 'Send to phone', on: { click: sendFavorites } });
   holder.replaceChildren(
@@ -2320,8 +2356,9 @@ function openSourceDialog(target) {
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
   renderContinue();
+  // Favorites always opens on All.
+  addFolder = '';
   podShow = '';
-  renderPodcasts();
   renderAddFavorites($('source-favorites'), () => sourceTarget);
   loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
   openDialog($('source-dialog'));
