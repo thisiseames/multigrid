@@ -1,5 +1,5 @@
-# Refreshes guide.json (the TV guide), feeds.json (TikTok feeds) and movies.json (Today's Movies
-# this week, from Wikipedia) every 3 hours. Free on a public repository.
+# Refreshes guide.json (the TV guide), feeds.json (TikTok feeds), and Today's movies.json (from
+# Wikipedia), charts.json (Billboard) and shows.json (TVmaze premieres) every 3 hours. Free on a public repository.
 # GitHub drops many scheduled runs when it's busy, so it tries every 30 minutes and each try
 # stops straight away unless the guide is nearly 3 hours old.
 name: guide
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Is the guide fresh enough already?
@@ -44,14 +44,20 @@ jobs:
       - run: node tools/build-movies.mjs
         if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
+      - run: node tools/build-charts.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
+      - run: node tools/build-shows.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
       - name: Save the new guide
         if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "multigrid-guide"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add guide.json feeds.json
-          if [ -f movies.json ]; then git add movies.json; fi
+          for file in movies.json charts.json shows.json; do if [ -f "$file" ]; then git add "$file"; fi; done
           git diff --cached --quiet && exit 0
-          git commit -m "Update TV guide, feeds and movies"
+          git commit -m "Update TV guide, feeds, movies, charts and premieres"
           git pull --rebase
           git push
