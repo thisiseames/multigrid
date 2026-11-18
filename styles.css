@@ -147,6 +147,9 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 .channel-play svg { width: 13px; height: 13px; }
 .channel-play:hover { background: var(--hover); }
 .channel-play.is-paused { color: var(--accent); }
+.channel-jump { width: 24px; color: var(--text-2); }
+.channel-jump svg { width: 15px; height: 15px; }
+.channel-jump:hover { color: var(--text); }
 .channel.is-paused .channel-name { color: var(--text-2); }
 .channel:has(.channel-play) { padding-left: 2px; gap: 3px; }
 .channel:has(.channel-play) .channel-name { margin-left: 3px; }
