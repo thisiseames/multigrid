@@ -1296,6 +1296,7 @@ body.remote-open { overflow: hidden; }
 
 /* ---------- Phone: tab bar, top bar and sheets ---------- */
 .phone-only, .tabbar, .sheet-frame, .sheet-scrim { display: none; }
+.strip-actions .strip-more { display: none; }
 .more-menu { width: 300px; padding: 6px; }
 
 @media (max-width: 640px), (hover: none) and (max-height: 500px) {
@@ -1304,14 +1305,19 @@ body.remote-open { overflow: hidden; }
   .add-button .wide-only { display: none; }
 
   /* The top bar keeps Layout, Sound and Add, each a full-size tap. */
-  #today-button, #reader-button, #matches-button, #standings-button, #guide-button,
+  #reader-button, #matches-button, #standings-button, #guide-button,
   #remote-button, #saved-button, #help-button, #fullscreen-button { display: none !important; }
+  #today-button { display: inline-flex !important; width: 44px; height: 44px; padding: 0; border-radius: 12px; }
+  #today-button { order: 1; } #mixer-button { order: 2; } .topbar .add-button { order: 3; }
+  #today-button svg { width: 21px; height: 21px; }
+  #today-button .wide-only { display: none; }
+  #today-button .narrow-only { display: inline-flex; }
   .topbar { --bar: 52px; gap: 4px; }
   .wordmark { font-size: 11.5px; }
   #layout-button { height: 44px; min-width: 56px; padding: 0 10px; border-radius: 12px; background: rgba(255,255,255,.06); }
   #mixer-button, #hidden-button { height: 44px; min-width: 44px; border-radius: 12px; }
   #mixer-button svg { width: 20px; height: 20px; }
-  .topbar .add-button { width: auto; height: 40px; padding: 0 16px 0 12px; border-radius: 12px; font-size: 15px; font-weight: 650; gap: 6px; }
+  .topbar .add-button { width: auto; height: 44px; padding: 0 16px 0 12px; border-radius: 12px; font-size: 15px; font-weight: 650; gap: 6px; }
 
   /* The tab bar sits under everything, so nothing ever covers a stream. */
   .tabbar {
@@ -1381,6 +1387,46 @@ body.remote-open { overflow: hidden; }
   .more-icon { width: 34px; height: 34px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(255, 255, 255, .08); color: var(--accent); }
   .more-label { flex: 1; }
   .more-chevron { color: var(--text-2); transform: rotate(-90deg); }
+
+  /* Reader's unread count sits on its tab. */
+  .tab-icon { position: relative; display: inline-flex; }
+  .tab-badge { position: absolute; top: -5px; left: 15px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e5484d; color: #fff; font-size: 10.5px; font-weight: 750; line-height: 18px; text-align: center; }
+  .tab-badge[hidden] { display: none; }
+
+  /* Each stream's bar: just its name and one big ••• button. */
+  :root { --strip: 44px; }
+  body.is-phone .strip-actions > :not(.strip-more) { display: none !important; }
+  body.is-phone .strip-actions { opacity: 1; }
+  body.is-phone .strip-actions .strip-more { display: inline-flex; width: 44px; height: 44px; border-radius: 12px; color: var(--text); }
+  body.is-phone .strip-more svg { width: 22px; height: 22px; }
+  body.is-phone .strip-label { font-size: 14.5px; font-weight: 600; color: var(--text); }
+
+  /* The sound row gives way to the Sound sheet. */
+  body.is-phone .mixer { display: none !important; }
+
+  /* A stream's sheet and the Sound sheet. */
+  .stream-menu.is-sheet, .sound-menu.is-sheet { padding: 4px 16px 20px; }
+  .sa-transport { display: flex; justify-content: center; gap: 14px; padding: 6px 0 14px; }
+  .sa-round { width: 56px; height: 56px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255, 255, 255, .09); color: var(--text); }
+  .sa-round.is-on { background: var(--accent); color: var(--accent-ink); }
+  .sa-volume { display: block; width: 100%; height: 36px; margin: 0 0 16px; accent-color: var(--accent); }
+  .sa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .sa-btn { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px 6px; border-radius: 16px; background: rgba(255, 255, 255, .06); font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--text); }
+  .sa-btn.is-on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+  .sa-btn.is-danger { color: #ff8a8d; }
+  .sa-switches { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 2px 0 14px; }
+  .sa-switch { height: 44px; display: inline-flex; align-items: center; gap: 9px; padding: 0 16px 0 12px; border-radius: 12px; background: rgba(255, 255, 255, .07); font-size: 15px; font-weight: 600; color: var(--text-2); }
+  .sa-switch.is-on { color: var(--text); }
+  .sa-switch.is-on .mixer-one-track { background: var(--accent); }
+  .sa-switch.is-on .mixer-one-track::after { transform: translateX(11px); }
+  .sa-muteall { height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(255, 255, 255, .07); font-size: 15px; font-weight: 600; color: var(--accent); }
+  .sa-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .sa-card { padding: 14px 14px 4px; border-radius: 16px; background: rgba(255, 255, 255, .05); }
+  .sa-card-name { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+  .sa-card-name b { font-size: 16px; font-weight: 700; }
+  .sa-card-name small { font-size: 13px; color: var(--text-2); }
+  .sa-card .sa-transport { justify-content: flex-start; padding-bottom: 10px; }
+  .sa-card .sa-round { width: 50px; height: 50px; }
 
   /* Notes and messages sit just above the tab bar. */
   .toast { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 10px); }
