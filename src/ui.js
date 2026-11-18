@@ -14,6 +14,7 @@ const ICON_PATHS = {
   collapse: '<path d="M6 3v3H3M13 6h-3V3M10 13v-3h3M3 10h3v3"/>',
   search: '<circle cx="7" cy="7" r="4.25"/><path d="m10.25 10.25 3.25 3.25"/>',
   close: '<path d="m4.5 4.5 7 7M11.5 4.5l-7 7"/>',
+  check: '<path d="m3.5 8.4 2.9 2.9 6.1-6.6"/>',
   reload: '<path d="M2.8 6.5a5.3 5.3 0 0 1 9.4-1.6l1 1.3M13.2 3.2v3h-3M13.2 9.5a5.3 5.3 0 0 1-9.4 1.6l-1-1.3M2.8 12.8v-3h3"/>',
   replace: '<path d="M2.5 5.2h10M10.2 2.7l2.5 2.5-2.5 2.5M13.5 10.8h-10M5.8 8.3l-2.5 2.5 2.5 2.5"/>',
   open: '<path d="M6.5 3H3v10h10V9.5M9 3h4v4M13 3 7.5 8.5"/>',

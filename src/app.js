@@ -20,7 +20,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
-import { forgetPlace, listPlaces, onPlacesChange } from './resume.js';
+import { forgetPlace, isPlayed, listPlaces, onPlacesChange, placeOf as listenedTo } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
@@ -604,6 +604,79 @@ function renderFavorites(holder, getTarget) {
   }
 }
 
+/* ---------- Add stream: Podcasts shelf ---------- */
+
+// The shelf opens on the show with the newest episode each time Add stream opens.
+let podShow = '';
+
+/** "53 min", or "1 hr 16 min". */
+function lengthText(total) {
+  const minutes = Math.max(1, Math.round(total / 60));
+  if (minutes < 60) return `${minutes} min`;
+  const rest = minutes % 60;
+  return rest ? `${Math.floor(minutes / 60)} hr ${rest} min` : `${minutes / 60} hr`;
+}
+
+/** New, 23 min left, or Played, from what this device remembers. */
+function episodeState(item) {
+  const key = `audio:${item.audio}`;
+  if (isPlayed(key)) return { text: 'Played', cls: 'is-played' };
+  const place = listenedTo(key);
+  const length = place?.length || item.length;
+  if (place && length) return { text: timeLeft(length - place.at), cls: 'is-partway', percent: (place.at / length) * 100 };
+  return { text: 'New', cls: 'is-new' };
+}
+
+function episodeRow(item) {
+  const state = episodeState(item);
+  const meta = [dayLabel(item.time), item.length ? lengthText(item.length) : ''].filter(Boolean).join(' · ');
+  return el('li', {}, el('button', {
+    type: 'button',
+    class: `pod-ep ${state.cls}`,
+    title: item.title,
+    on: {
+      click() {
+        const target = sourceTarget;
+        if ($('source-dialog').open) $('source-dialog').close();
+        addStream(audioInput(`${item.source}: ${item.title}`, item.audio), target);
+      },
+    },
+  },
+  el('span', { class: 'pod-text' },
+    el('b', { class: 'pod-title', textContent: item.title }),
+    el('small', { class: 'pod-meta', textContent: meta })),
+  el('span', { class: 'pod-state' },
+    state.cls === 'is-played' ? icon('check', 14) : null,
+    el('span', { textContent: state.text })),
+  state.percent ? el('span', { class: 'pod-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, state.percent)).toFixed(1)}%` })) : null));
+}
+
+/** Podcasts from the Reader's feeds, one tab per show, newest episodes first. */
+async function renderPodcasts() {
+  const holder = $('source-podcasts');
+  const data = await loadIndex().catch(() => null);
+  const episodes = (data?.items ?? []).filter((item) => item.kind === 'podcast' && item.audio).sort((a, b) => b.time - a.time);
+  holder.hidden = episodes.length === 0;
+  if (!episodes.length) { holder.replaceChildren(); return; }
+  const shows = [...new Set(episodes.map((item) => item.source))];
+  if (!shows.includes(podShow)) podShow = shows[0];
+  const tabs = el('div', { class: 'matches-tabs addp-pills pod-shows', role: 'tablist' }, ...shows.map((show) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `matches-tab${show === podShow ? ' is-on' : ''}`,
+    aria: { selected: String(show === podShow) },
+    textContent: show,
+    on: { click() { podShow = show; renderPodcasts(); } },
+  })));
+  const scroll = holder.querySelector('.pod-shows')?.scrollLeft ?? 0;
+  holder.replaceChildren(
+    el('h3', { class: 'addp-label', textContent: 'Podcasts' }),
+    tabs,
+    el('ul', { class: 'pod-list' }, ...episodes.filter((item) => item.source === podShow).map(episodeRow)));
+  tabs.scrollLeft = scroll;
+}
+onPlacesChange(() => { if ($('source-dialog').open && !$('source-podcasts').hidden) renderPodcasts(); });
+
 /* ---------- Add stream: favorites as cards ---------- */
 
 let addFolder = '';
@@ -1138,6 +1211,59 @@ function timelineView(rows) {
     el('div', { class: 'gtl-body' }, el('div', { class: 'gtl-lines' }, ...lines)));
 }
 
+/* Search: every show on your TV favorites from now to the end of the guide, by title or description. */
+let guideQuery = '';
+const guideSearchInput = el('input', {
+  type: 'search',
+  placeholder: 'Search shows, teams, films',
+  autocomplete: 'off',
+  spellcheck: 'false',
+  aria: { label: 'Search the TV guide' },
+  on: {
+    input() {
+      guideQuery = guideSearchInput.value.trim();
+      guideSearchClear.hidden = !guideQuery;
+      $('guide-dialog').querySelector('.gbody')?.remove();
+      renderGuide();
+    },
+  },
+});
+const guideSearchClear = el('button', {
+  type: 'button',
+  hidden: true,
+  aria: { label: 'Clear search' },
+  on: { click() { guideSearchInput.value = ''; guideSearchInput.dispatchEvent(new Event('input')); guideSearchInput.focus(); } },
+}, icon('close', 14));
+const guideSearchBox = el('div', { class: 'favorites-search gsearch' }, icon('search', 14), guideSearchInput, guideSearchClear);
+
+function guideResults(query) {
+  const want = query.toLocaleLowerCase();
+  const now = Date.now();
+  const found = [];
+  for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
+    for (const show of showsBetween(item.name, parseSource(item.input), now, Infinity)) {
+      const inTitle = show.title.toLocaleLowerCase().includes(want);
+      if (inTitle || show.about.toLocaleLowerCase().includes(want)) found.push({ item, show, inTitle });
+    }
+  }
+  // On now first, then by start time; title matches before ones only in the description.
+  const onNow = (show) => show.start <= now && now < show.end;
+  return found.sort((a, b) => (onNow(b.show) - onNow(a.show)) || (a.show.start - b.show.start) || (b.inTitle - a.inTitle)).slice(0, 80);
+}
+
+function guideResultRow({ item, show }) {
+  const now = Date.now();
+  const live = show.start <= now && now < show.end;
+  const day = dayLabel(show.start);
+  const when = live ? `On now · until ${clock(show.end)}` : `${day === 'Today' ? '' : `${day} `}${clock(show.start)}`;
+  return el('li', { class: 'gfound' },
+    el('button', { type: 'button', class: 'gfound-main', on: { click: () => showDetails(item, show) } },
+      el('span', { class: `gfound-when${live ? ' is-live' : ''}`, textContent: when }),
+      el('span', { class: 'gfound-title', textContent: show.title }),
+      el('span', { class: 'gfound-channel' }, el('span', { textContent: item.name }), show.live ? liveTag() : null)),
+    guideWatchButton(item));
+}
+
 function renderGuide() {
   const box = $('guide-dialog');
   const { total } = guideSections();
@@ -1166,6 +1292,11 @@ function renderGuide() {
   let body;
   if (!rows.length) {
     body = el('div', { class: 'gbody' }, el('p', { class: 'match-quiet is-empty', textContent: updated ? 'None of your favorites have a TV schedule.' : "The guide couldn't load. Try again in a minute." }));
+  } else if (guideQuery) {
+    const found = guideResults(guideQuery);
+    body = el('div', { class: 'gbody' }, found.length
+      ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
+      : el('p', { class: 'match-quiet is-empty', textContent: `No shows on your channels match “${guideQuery}” in the guide, which runs about a day ahead.` }));
   } else if (guideView === 'timeline') {
     body = el('div', { class: 'gbody is-timeline' }, timelineView(rows));
   } else {
@@ -1177,13 +1308,21 @@ function renderGuide() {
         : null);
   }
 
-  box.replaceChildren(
+  // The search box is the same element every time, so typing keeps its place while the guide redraws.
+  const typing = document.activeElement === guideSearchInput;
+  const caret = typing ? guideSearchInput.selectionStart : null;
+  box.replaceChildren(...[
     el('div', { class: 'ghead' },
       el('div', { class: 'ghead-title' }, el('h2', { textContent: 'TV guide' }), updated ? el('small', { textContent: `Updated ${clock(updated)}` }) : null),
-      views,
+      guideQuery ? null : views,
       iconButton('close', 'Close', () => box.close())),
-    pills,
-    body);
+    rows.length ? guideSearchBox : null,
+    guideQuery ? null : pills,
+    body].filter(Boolean));
+  if (typing) {
+    guideSearchInput.focus();
+    try { guideSearchInput.setSelectionRange(caret, caret); } catch { /* not a text box */ }
+  }
   if (detail) box.append(detail);
   body.scrollTop = keepTop;
   if (guideView === 'timeline' && rows.length) {
@@ -1194,6 +1333,9 @@ function renderGuide() {
 
 async function openGuide() {
   guideFolder = '';
+  guideQuery = '';
+  guideSearchInput.value = '';
+  guideSearchClear.hidden = true;
   $('guide-dialog').querySelector('.gbody')?.remove();
   renderGuide();
   openDialog($('guide-dialog'));
@@ -2178,6 +2320,8 @@ function openSourceDialog(target) {
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
   renderContinue();
+  podShow = '';
+  renderPodcasts();
   renderAddFavorites($('source-favorites'), () => sourceTarget);
   loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
   openDialog($('source-dialog'));
