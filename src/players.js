@@ -857,6 +857,8 @@ function filePlayer(source, options) {
 
   return {
     el: holder,
+    // The video only goes into the tile once the file is opened, so it's named here for pausing.
+    media: video,
     canMute: true,
     canVolume: levelWorks,
     start() {
@@ -905,7 +907,7 @@ export function createPlayer(source, options) {
   }
   const player = PLAYERS[source.kind](source, options);
   // Players built on the browser's own video or audio element can pause directly.
-  const media = player && !player.canPause && (player.el instanceof HTMLMediaElement ? player.el : player.el?.querySelector?.('video, audio'));
+  const media = player && !player.canPause && (player.media || (player.el instanceof HTMLMediaElement ? player.el : player.el?.querySelector?.('video, audio')));
   if (media) {
     player.canPause = true;
     player.setPaused = (next) => { if (next) media.pause(); else media.play().catch(() => {}); };
