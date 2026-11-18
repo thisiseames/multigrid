@@ -4,10 +4,10 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, findDividers, fitStage, isStream, moveLine, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { parseSource } from './sources.js';
-import { cropBox, getCrop, setCrop } from './crop.js';
+import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop, wholePicture } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
@@ -99,8 +99,37 @@ class TileView {
     this.cropInner = el('div', { class: 'crop-inner' }, this.player.el);
     this.cropFrame = el('div', { class: 'crop-frame' }, this.cropInner);
     this.body.append(this.cropFrame);
-    this.applyCrop(getCrop(tile.input));
+    // Cinema framing depends on the tile's size, so it's redone whenever the tile resizes.
+    this.resizeWatch = new ResizeObserver(() => { if (getCinema(this.tile.input)) this.applyFraming(); });
+    this.resizeWatch.observe(this.cropFrame);
+    this.applyFraming();
     this.player.start();
+  }
+
+  /** Cinema if it's on for this stream, otherwise any crop. */
+  applyFraming() {
+    if (!this.cropInner) return;
+    const shape = getCinema(this.tile.input);
+    this.root.classList.toggle('is-cinema', Boolean(shape));
+    this.cinemaButton?.classList.toggle('is-on', Boolean(shape));
+    if (!shape) {
+      this.applyCrop(getCrop(this.tile.input));
+      return;
+    }
+    const { width, height } = this.cropFrame.getBoundingClientRect();
+    if (!width || !height) return;
+    const box = cinemaBox(width, height, shape);
+    Object.assign(this.cropInner.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px` });
+    this.root.classList.remove('is-cropped');
+    this.cropButton?.classList.remove('is-on');
+  }
+
+  toggleCinema() {
+    const on = !getCinema(this.tile.input);
+    setCinema(this.tile.input, on ? FILM_SHAPE : null);
+    this.applyFraming();
+    // The big spot may change shape, so the whole grid is redrawn.
+    this.grid.render(this.grid.ws);
   }
 
   applyCrop(crop) {
@@ -114,9 +143,20 @@ class TileView {
   /** Crop mode: the full picture shows, with a box whose four edges drag inward. */
   editCrop() {
     if (!this.cropInner || this.body.querySelector('.crop-editor')) return;
+    // With Cinema on, Crop fine-tunes where the film's bars end: only the top and bottom edges.
+    const cinemaShape = getCinema(this.tile.input);
     const saved = getCrop(this.tile.input);
-    let crop = { t: 0, r: 0, b: 0, l: 0, ...(saved || {}) };
-    this.applyCrop(null);
+    let crop = cinemaShape
+      ? { t: (1 - (16 / 9) / cinemaShape) / 2, r: 0, b: (1 - (16 / 9) / cinemaShape) / 2, l: 0 }
+      : { t: 0, r: 0, b: 0, l: 0, ...(saved || {}) };
+    let whole = null;
+    if (cinemaShape) {
+      const { width, height } = this.cropFrame.getBoundingClientRect();
+      whole = wholePicture(width, height);
+      Object.assign(this.cropInner.style, { left: `${whole.left}px`, top: `${whole.top}px`, width: `${whole.width}px`, height: `${whole.height}px` });
+    } else {
+      this.applyCrop(null);
+    }
     const shade = el('div', { class: 'crop-shade' });
     const box = el('div', { class: 'crop-box' },
       ...['t', 'r', 'b', 'l'].map((edge) => el('span', { class: `crop-handle is-${edge}` })));
@@ -125,8 +165,10 @@ class TileView {
       tools.remove();
       this.root.classList.remove('is-cropping');
       document.removeEventListener('keydown', onKey, true);
-      if (save) setCrop(this.tile.input, crop);
-      this.applyCrop(getCrop(this.tile.input));
+      if (save && cinemaShape) setCinema(this.tile.input, (16 / 9) / Math.max(0.2, 1 - crop.t - crop.b));
+      else if (save) setCrop(this.tile.input, crop);
+      this.applyFraming();
+      if (save && cinemaShape) this.grid.render(this.grid.ws);
     };
     const onKey = (event) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finish(false); }
@@ -139,11 +181,16 @@ class TileView {
     };
     const button = (label, cls, onClick) => el('button', { type: 'button', class: cls, textContent: label, on: { click: onClick } });
     const tools = el('div', { class: 'crop-tools' },
-      el('span', { class: 'crop-hint', textContent: 'Drag the edges in' }),
-      button('Reset', 'crop-reset', () => { crop = { t: 0, r: 0, b: 0, l: 0 }; draw(); }),
+      el('span', { class: 'crop-hint', textContent: cinemaShape ? "Drag to the film's top and bottom edges" : 'Drag the edges in' }),
+      button('Reset', 'crop-reset', () => {
+        const bar = cinemaShape ? (1 - (16 / 9) / FILM_SHAPE) / 2 : 0;
+        crop = { t: bar, r: 0, b: bar, l: 0 };
+        draw();
+      }),
       button('Cancel', 'crop-cancel', () => finish(false)),
       button('Done', 'crop-done', () => finish(true)));
-    const editor = el('div', { class: 'crop-editor' }, shade, box);
+    const editor = el('div', { class: `crop-editor${cinemaShape ? ' is-cinema' : ''}` }, shade, box);
+    if (whole) Object.assign(editor.style, { left: `${whole.left}px`, top: `${whole.top}px`, width: `${whole.width}px`, height: `${whole.height}px`, right: 'auto', bottom: 'auto' });
     for (const handle of box.querySelectorAll('.crop-handle')) {
       const edge = [...handle.classList].find((name) => name.startsWith('is-')).slice(3);
       handle.addEventListener('pointerdown', (event) => {
@@ -159,6 +206,9 @@ class TileView {
           if (edge === 'b') crop.b = limit(1 - y, crop.t);
           if (edge === 'l') crop.l = limit(x, crop.r);
           if (edge === 'r') crop.r = limit(1 - x, crop.l);
+          // The film sits in the middle, so its two bars are always the same height.
+          if (cinemaShape && edge === 't') crop.b = crop.t;
+          if (cinemaShape && edge === 'b') crop.t = crop.b;
           draw();
         };
         const up = () => {
@@ -187,11 +237,14 @@ class TileView {
     this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
     this.cropButton = this.source.ok ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
+    this.cinemaButton = this.source.ok ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
+    this.cinemaButton?.classList.add('strip-cinema');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     const actions = el('div', { class: 'strip-actions' },
       this.primaryButton,
       this.starButton,
+      this.cinemaButton,
       this.cropButton,
       this.muteButton,
       this.fullButton,
@@ -299,6 +352,9 @@ class TileView {
     this.fullButton = null;
     this.starButton = null;
     this.cropButton = null;
+    this.cinemaButton = null;
+    this.resizeWatch?.disconnect();
+    this.resizeWatch = null;
     this.cropInner = null;
     this.cropFrame = null;
     this.body = null;
@@ -390,9 +446,11 @@ export class GridView {
       return;
     }
     const box = this.stageEl.getBoundingClientRect();
-    const size = fitStage(this.ws, box.width, box.height, stripHeight());
+    const cinema = this.isCustom ? null : cinemaSpot(this.ws, (tile) => getCinema(tile.input));
+    const size = fitStage(this.ws, box.width, box.height, stripHeight(), cinema);
     this.gridEl.style.width = `${size.width}px`;
     this.gridEl.style.height = `${size.height}px`;
+    this.gridEl.style.gridTemplateRows = size.rows ? template(size.rows) : template(this.ws.rows);
   }
 
   /** Dividers are percentages of the grid, so they follow any window size. */

@@ -512,8 +512,9 @@ export function showHidden(ws, id) {
  * The size the grid wants so preset tiles come out close to 16:9 with their control strip,
  * in the space available. Near-enough sizes just fill, so space isn't wasted on thin bars.
  */
-export function fitStage(ws, width, height, stripHeight) {
+export function fitStage(ws, width, height, stripHeight, cinema = null) {
   if (!ws.fit) return { width, height };
+  if (cinema) return fitCinema(ws, width, height, stripHeight, cinema);
   const colUnits = sum(ws.cols);
   const rowUnits = sum(ws.rows);
   const strips = ws.rows.length * stripHeight;
@@ -527,4 +528,44 @@ export function fitStage(ws, width, height, stripHeight) {
     width: fittedWidth / width > 0.88 ? width : Math.round(fittedWidth),
     height: fittedHeight / height > 0.88 ? height : Math.round(fittedHeight),
   };
+}
+
+/**
+ * The big spot shaped like a film. Only when it spans the full width: then its rows are made as
+ * tall as the film needs, and every other row keeps the normal TV shape. Returns the stage size
+ * and the row sizes to draw with.
+ */
+function fitCinema(ws, width, height, stripHeight, { tile, shape }) {
+  const colUnits = sum(ws.cols);
+  const { r, rs } = tile.place;
+  const bigUnits = sum(ws.rows.slice(r, r + rs));
+  // Each row's picture height for a stage 1px wide.
+  const perWidth = ws.rows.map((units, index) => (index >= r && index < r + rs
+    ? (1 / shape) * (units / bigUnits)
+    : (1 / colUnits) * (9 / 16) * units));
+  const strips = ws.rows.length * stripHeight;
+  const k = sum(perWidth);
+  let w = width;
+  if (w * k + strips > height) w = (height - strips) / k;
+  const rows = perWidth.map((part) => part * w + stripHeight);
+  const fittedHeight = sum(rows);
+  return {
+    width: w / width > 0.97 ? width : Math.round(w),
+    height: fittedHeight / height > 0.97 ? height : Math.round(fittedHeight),
+    rows,
+  };
+}
+
+/** The tile that gets the film shape: the biggest one, if it spans the full width. */
+export function cinemaSpot(ws, hasCinema) {
+  if (!ws.fit || ws.presetId === 'custom') return null;
+  const shown = ws.tiles.filter((tile) => isStream(tile) && tile.place);
+  if (!shown.length) return null;
+  const big = shown[biggestIndex(shown.map((tile) => tile.place), ws.cols, ws.rows)];
+  if (!big || big.place.cs !== ws.cols.length) return null;
+  // Only when it really is the big spot, not one row of equal tiles.
+  const others = shown.filter((tile) => tile !== big);
+  if (others.some((tile) => placeArea(tile.place, ws.cols, ws.rows) >= placeArea(big.place, ws.cols, ws.rows) - 1e-9)) return null;
+  const shape = hasCinema(big);
+  return shape ? { tile: big, shape } : null;
 }
