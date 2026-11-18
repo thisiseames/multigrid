@@ -232,7 +232,17 @@ document.addEventListener('keydown', (event) => {
 });
 // A click inside a video's own frame never reaches this page, but it does take focus away.
 // A player can also take focus by itself, so the menu stays if the mouse is still on it.
+// While the browser asks something itself (like "Allow location?"), the page loses focus too,
+// and the panel that asked has to stay open.
+let blurHolds = 0;
+export function holdOpenWhile(promise) {
+  blurHolds += 1;
+  const release = () => { setTimeout(() => { blurHolds = Math.max(0, blurHolds - 1); }, 300); };
+  promise.then(release, release);
+  return promise;
+}
 window.addEventListener('blur', () => {
+  if (blurHolds) return;
   for (const [popover, button] of openPopovers) {
     if (!popover.matches(':hover') && !button.matches(':hover')) closePopovers();
   }

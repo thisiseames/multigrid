@@ -22,6 +22,7 @@ import './phone.js';
 import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo } from './resume.js';
 import { isPoppedOut } from './popout.js';
+import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -2211,12 +2212,51 @@ async function fillToday() {
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
 }
 
+/* Weather on Today's date line; tapping it shows the next 12 hours. */
+function weatherLine(holder, hoursBox, weather) {
+  if (!weather) { holder.hidden = true; return; }
+  holder.hidden = false;
+  const words = weatherWords(weather.code);
+  const bits = [`${weather.temp}°`, `High ${weather.high}°`, `Low ${weather.low}°`];
+  if (weather.rain >= 30) bits.push(`${weather.rain}% rain`);
+  holder.replaceChildren(...[
+    weather.fallback ? el('span', { class: 'wx-place', textContent: 'Toronto' }) : null,
+    weatherIcon(weather.code, weather.day, 15),
+    el('span', { textContent: bits.join(' · ') })].filter(Boolean));
+  holder.title = `${words}${weather.fallback ? ' in Toronto' : ''}. Tap for the next 12 hours.`;
+  holder.setAttribute('aria-label', `${words}, ${bits.join(', ')}${weather.fallback ? ', Toronto' : ''}. Show the next 12 hours.`);
+  hoursBox.replaceChildren(...weather.hours.map((hour, index) => el('li', { class: 'wx-hour' },
+    el('span', { class: 'wx-time', textContent: index === 0 ? 'Now' : hourText(hour.hour) }),
+    weatherIcon(hour.code, hour.day, 18),
+    el('b', { textContent: `${hour.temp}°` }),
+    hour.rain >= 30 ? el('small', { textContent: `${hour.rain}%` }) : null)));
+}
+
 function buildToday() {
   const menu = $('today-menu');
+  const hoursBox = el('ul', { class: 'wx-hours', hidden: true, aria: { label: 'The next 12 hours' } });
+  const line = el('button', {
+    type: 'button',
+    class: 'wx-line',
+    hidden: true,
+    aria: { expanded: 'false' },
+    on: {
+      click() {
+        hoursBox.hidden = !hoursBox.hidden;
+        line.setAttribute('aria-expanded', String(!hoursBox.hidden));
+        line.classList.toggle('is-open', !hoursBox.hidden);
+      },
+    },
+  });
   menu.replaceChildren(
-    el('div', { class: 'today-head' }, el('h3', { textContent: 'Today' }), el('span', { textContent: dayFormat.format(new Date()) })),
+    el('div', { class: 'today-head' },
+      el('h3', { textContent: 'Today' }),
+      el('span', { class: 'today-date', textContent: dayFormat.format(new Date()) }),
+      line),
+    hoursBox,
     el('div', { class: 'matches-body' }),
     el('p', { class: 'matches-updated', textContent: '' }));
+  weatherLine(line, hoursBox, loadWeather((fresh) => { if (line.isConnected) weatherLine(line, hoursBox, fresh); }));
   fillToday();
 }
 
