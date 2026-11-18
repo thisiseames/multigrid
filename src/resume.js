@@ -71,3 +71,46 @@ export function showResumed(holder, seconds, onStartOver) {
   holder.append(note);
   setTimeout(() => note.remove(), 7000);
 }
+
+/**
+ * Remembers the place in a browser video or audio element. keyOf() names what's playing
+ * (or '' to skip it); holderOf() is where the note goes. Live streams never have an end,
+ * so they're never remembered. Returns a function that saves the place right now.
+ */
+export function rememberMedia(media, keyOf, holderOf) {
+  const checked = new Set();
+  let lastKept = 0;
+  let settling = null;
+  const keep = () => {
+    if (settling !== null) return;
+    const key = keyOf();
+    if (key && Number.isFinite(media.duration)) notePlace(key, media.currentTime, media.duration);
+  };
+  media.addEventListener('loadedmetadata', () => {
+    const key = keyOf();
+    if (!key || checked.has(key) || !Number.isFinite(media.duration)) return;
+    checked.add(key);
+    const point = resumePoint(key);
+    if (!point || point >= media.duration * 0.95) return;
+    // Some stream players move to the start once they begin, so the place is held until
+    // playback is under way, and nothing is saved over it in the meantime.
+    settling = point;
+    media.currentTime = point;
+    const hold = () => {
+      if (settling === null) return;
+      if (media.currentTime < settling - 5) media.currentTime = settling;
+      else if (!media.paused && media.currentTime >= settling + 2) settling = null;
+    };
+    media.addEventListener('timeupdate', hold);
+    setTimeout(() => { settling = null; media.removeEventListener('timeupdate', hold); }, 15000);
+    showResumed(holderOf(), point, () => { settling = null; media.currentTime = 0; forgetPlace(key); });
+  });
+  media.addEventListener('timeupdate', () => {
+    if (Date.now() - lastKept < 10000) return;
+    lastKept = Date.now();
+    keep();
+  });
+  media.addEventListener('pause', keep);
+  media.addEventListener('ended', keep);
+  return keep;
+}

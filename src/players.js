@@ -15,7 +15,7 @@ import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
-import { forgetPlace, notePlace, resumePoint, showResumed } from './resume.js';
+import { forgetPlace, notePlace, rememberMedia, resumePoint, showResumed } from './resume.js';
 
 const scripts = new Map();
 
@@ -92,6 +92,28 @@ function extensionSound(frame, muted, volume) {
     },
   };
 }
+
+/* Version 1.4 of the extension remembers where you stopped inside an embed (a series
+   episode) and jumps back there itself. It tells MULTIGRID, which shows the usual note. The
+   message comes from the player's frame, often nested deeper, so the tile is found by
+   walking up from it to one of MULTIGRID's own frames. */
+function tileFrameOf(source) {
+  let node = source;
+  for (let depth = 0; node && depth < 8; depth += 1) {
+    const match = [...document.querySelectorAll('iframe')].find((frame) => frame.contentWindow === node);
+    if (match) return match;
+    if (node.parent === node) return null;
+    node = node.parent;
+  }
+  return null;
+}
+window.addEventListener('message', (event) => {
+  const resumed = event.data?.multigridResumed;
+  if (!resumed || !Number.isFinite(resumed.at)) return;
+  const frame = tileFrameOf(event.source);
+  if (!frame) return;
+  showResumed(frame.parentElement, resumed.at, () => frame.contentWindow?.postMessage({ multigridStartOver: true }, '*'));
+});
 
 /** Players whose only sound control is their address: changing it reloads the player. */
 function addressMutedPlayer(source, options) {
@@ -408,6 +430,8 @@ function hlsPlayer(source, options) {
   let hls = null;
   let destroyed = false;
   let recovered = false;
+  // A recording with an end remembers where you stopped; a live channel never does.
+  const keepPlace = rememberMedia(video, () => `link:${source.url}`, () => video.parentElement);
 
   const networkMessage = (code) => {
     if (code === 404 || code === 410) return 'This stream was not found. It may have ended or moved.';
@@ -463,6 +487,7 @@ function hlsPlayer(source, options) {
       video.volume = next / 100;
     },
     destroy() {
+      keepPlace();
       destroyed = true;
       hls?.destroy();
       video.removeAttribute('src');
@@ -712,22 +737,7 @@ function audioPlayer(source, options) {
     el('p', { class: 'audio-title', textContent: source.label }),
     audio);
   // Long episodes remember where you stopped.
-  const key = `audio:${source.url}`;
-  let lastKept = 0;
-  const keepPlace = () => notePlace(key, audio.currentTime, audio.duration);
-  audio.addEventListener('loadedmetadata', () => {
-    const point = resumePoint(key);
-    if (!point || !Number.isFinite(audio.duration) || point >= audio.duration * 0.95) return;
-    audio.currentTime = point;
-    showResumed(box, point, () => { audio.currentTime = 0; forgetPlace(key); });
-  }, { once: true });
-  audio.addEventListener('timeupdate', () => {
-    if (Date.now() - lastKept < 10000) return;
-    lastKept = Date.now();
-    keepPlace();
-  });
-  audio.addEventListener('pause', keepPlace);
-  audio.addEventListener('ended', keepPlace);
+  const keepPlace = rememberMedia(audio, () => `audio:${source.url}`, () => box);
   return {
     el: box,
     canMute: true,
@@ -830,6 +840,9 @@ function filePlayer(source, options) {
   video.muted = muted;
   let objectUrl = null;
   let destroyed = false;
+  // A file has no lasting address, so it's known by its name and size.
+  let fileKey = '';
+  const keepPlace = rememberMedia(video, () => fileKey, () => holder);
 
   const badFormat = "This browser can't play this file's format. MP4 with H.264 is the safest choice.";
   video.addEventListener('error', () => {
@@ -845,7 +858,9 @@ function filePlayer(source, options) {
   });
 
   const play = (file) => {
+    keepPlace();
     if (objectUrl) URL.revokeObjectURL(objectUrl);
+    fileKey = `file:${file.name}:${file.size}`;
     objectUrl = URL.createObjectURL(file);
     video.src = objectUrl;
     holder.replaceChildren(video);
@@ -904,6 +919,7 @@ function filePlayer(source, options) {
       video.volume = next / 100;
     },
     destroy() {
+      keepPlace();
       destroyed = true;
       window.removeEventListener(FILE_ACCESS_EVENT, recheck);
       video.removeAttribute('src');
