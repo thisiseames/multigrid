@@ -37,6 +37,7 @@ const ICON_PATHS = {
   crop: '<path d="M4.5 1.5v10h10M1.5 4.5h10v10"/>',
   today: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>',
   remote: '<rect x="5" y="1.8" width="6" height="12.4" rx="1.6"/><circle cx="8" cy="5.2" r="1.2"/><path d="M7 8.6h2M7 10.6h2"/>',
+  tiles: '<rect x="2.3" y="2.3" width="5" height="5" rx="1.2"/><rect x="8.7" y="2.3" width="5" height="5" rx="1.2"/><rect x="2.3" y="8.7" width="5" height="5" rx="1.2"/><rect x="8.7" y="8.7" width="5" height="5" rx="1.2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
   back10: '<path d="M4.2 4.6A5.2 5.2 0 1 1 2.9 9"/><path d="M4.4 1.9v2.9H1.5"/><text x="8.4" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
   fwd10: '<path d="M11.8 4.6A5.2 5.2 0 1 0 13.1 9"/><path d="M11.6 1.9v2.9h2.9"/><text x="7.6" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
@@ -182,6 +183,12 @@ export function toast(message, action) {
 const openPopovers = new Map();
 
 /** Opens a menu under its button. Clicking away, pressing Esc or clicking a video closes it. */
+// Told whenever a panel opens (with it) or every panel closes (with null). The phone layout
+// uses this to turn panels into sheets.
+const popoverWatchers = new Set();
+export const onPopoverChange = (watcher) => popoverWatchers.add(watcher);
+const tellWatchers = (popover) => popoverWatchers.forEach((watcher) => watcher(popover));
+
 export function togglePopover(button, popover, build) {
   if (!popover.hidden) {
     closePopovers();
@@ -197,6 +204,7 @@ export function togglePopover(button, popover, build) {
   popover.style.left = `${left}px`;
   popover.style.top = `${box.bottom + 6}px`;
   openPopovers.set(popover, button);
+  tellWatchers(popover);
 }
 
 export function closePopovers() {
@@ -205,10 +213,14 @@ export function closePopovers() {
     button.setAttribute('aria-expanded', 'false');
     coverage.remove();
   }
+  const hadAny = openPopovers.size > 0;
   openPopovers.clear();
+  if (hadAny) tellWatchers(null);
 }
 
 document.addEventListener('pointerdown', (event) => {
+  // A sheet's own head (its handle, title and close button) belongs to the panel.
+  if (event.target.closest?.('[data-sheet-chrome]')) return;
   for (const [popover, button] of openPopovers) {
     if (!popover.contains(event.target) && !button.contains(event.target)) closePopovers();
   }
