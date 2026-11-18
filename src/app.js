@@ -2132,6 +2132,29 @@ function eventsToday(now = Date.now()) {
   return rows.sort((a, b) => a.show.start - b.show.start).slice(0, 8);
 }
 
+/* Movies this week: cinema openings and streaming premieres, refreshed by the guide job from Wikipedia. */
+async function loadMovies() {
+  try {
+    const response = await fetch('movies.json', { cache: 'no-cache' });
+    if (!response.ok) return [];
+    const data = await response.json();
+    const items = Array.isArray(data?.items) ? data.items : [];
+    // Soonest first is less useful than "what's out now": out already first (newest first), then coming up.
+    const today = new Date().toISOString().slice(0, 10);
+    const out = items.filter((item) => item.date <= today).sort((a, b) => b.date.localeCompare(a.date));
+    const soon = items.filter((item) => item.date > today).sort((a, b) => a.date.localeCompare(b.date));
+    return [...out, ...soon].filter((item) => typeof item.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date));
+  } catch {
+    return [];
+  }
+}
+
+/** "Today", "Fri", or "Fri, Nov 14" for a movie's date. */
+function movieDay(date) {
+  const [y, m, d] = date.split('-').map(Number);
+  return dayLabel(new Date(y, m - 1, d, 12).getTime());
+}
+
 /** "Live", "Premiere", "Finale" or "Special", for an event's line. */
 const eventKind = (show) => (show.live ? 'Live' : show.premiere ? 'Premiere' : show.finale ? 'Finale' : 'Special');
 
@@ -2163,11 +2186,12 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news] = await Promise.all([
+  const [teams, , episodes, news, movies] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesThisWeek(now).catch(() => []),
     loadIndex(true).catch(() => null),
+    loadMovies(),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -2193,6 +2217,21 @@ async function fillToday() {
     onClick() { closePopovers(); addStream(item.input); },
   }))) : null;
 
+  const movieList = movies.length ? el('ul', { class: 'rlist' }, ...movies.map((movie) => todayRow({
+    art: movie.poster && /^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(movie.poster)
+      ? el('span', { class: 'fart is-picture movie-poster' }, el('img', { src: movie.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+      : el('span', { class: 'fart is-icon movie-poster' }, icon('film', 20)),
+    top: el('span', { textContent: `${movieDay(movie.date)} · ${movie.kind === 'cinema' ? 'In cinemas' : `On ${movie.service}`}` }),
+    title: movie.title,
+    sub: movie.trailer ? 'Play the trailer' : '',
+    onClick() {
+      closePopovers();
+      // The trailer plays in a tile; without one, the film's Wikipedia page opens.
+      if (/^[\w-]{11}$/.test(movie.trailer || '')) addStream(`https://www.youtube.com/watch?v=${movie.trailer}`);
+      else window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(String(movie.page || movie.title).replace(/ /g, '_'))}`, '_blank', 'noopener');
+    },
+  }))) : null;
+
   const read = readIds();
   const stories = news ? [
     ...news.items.filter((item) => item.group === 'News').sort((a, b) => b.time - a.time).slice(0, 5),
@@ -2203,6 +2242,7 @@ async function fillToday() {
   const parts = [
     todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
+    todaySection('Movies this week', movieList),
     todaySection('New episodes this week', episodeList),
     todaySection('Top headlines', newsList),
   ].filter(Boolean);
