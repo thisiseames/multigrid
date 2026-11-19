@@ -723,6 +723,24 @@ function artPicture(art, url, fallBack, checkStandIn = false) {
   art.replaceChildren(img);
 }
 
+/* A live Twitch channel's picture, from Twitch's public image server (no key). Twitch makes a new
+   one about every 5 minutes; an offline channel's address leads to a grey "offline" box instead,
+   which is skipped. One ask per channel per 5 minutes, shared by every card showing it. */
+const twitchAsks = new Map();
+function twitchPreview(channel) {
+  const name = String(channel || '').toLowerCase();
+  if (!/^\w{2,30}$/.test(name)) return Promise.resolve('');
+  const slot = Math.floor(Date.now() / 300000);
+  const key = `${name}|${slot}`;
+  if (!twitchAsks.has(key)) {
+    const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${name}-640x360.jpg?t=${slot}`;
+    twitchAsks.set(key, fetch(url, { method: 'HEAD', signal: AbortSignal.timeout?.(8000) })
+      .then((response) => (!response.ok || response.redirected || /404_preview/.test(response.url) ? '' : url))
+      .catch(() => ''));
+  }
+  return twitchAsks.get(key);
+}
+
 /* Series posters from TVmaze's free TV database. A device remembers each answer for a week. */
 const POSTER_STORE = 'multigrid.posters.v2';
 const POSTER_DAYS = 7;
@@ -796,6 +814,15 @@ function favoriteArt(item, source) {
     return art;
   }
   quiet();
+  if (source.kind === 'twitch' && source.twitch?.type === 'channel') {
+    // Live: Twitch's widescreen picture of the stream. Offline: the icon stays.
+    twitchPreview(source.twitch.id).then((url) => {
+      if (!url) return;
+      art.className = 'fart is-picture';
+      artPicture(art, url, quiet);
+    });
+    return art;
+  }
   if (isSeriesFolder(item.group)) {
     const showPoster = (url) => {
       const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
