@@ -273,7 +273,16 @@ async function loadChannelCategory(id) {
   return entry.list;
 }
 
-function channelResultRow(item, target) {
+/** Directory names carry quality and notes; the favorite name stays clean. */
+function tidyChannelName(name) {
+  return String(name || '')
+    .replace(/\s*\(\d{3,4}p\)\s*/i, ' ')
+    .replace(/\s*\[[^\]]*\]\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function channelResultRow(item, target, folder) {
   const art = el('span', { class: 'ch-logo' });
   if (item.logo) art.append(el('img', { src: item.logo, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
   else art.append(icon('live', 16));
@@ -285,8 +294,10 @@ function channelResultRow(item, target) {
       click() {
         $('channel-box').close();
         $('source-dialog').close();
+        const name = tidyChannelName(item.name);
+        saveFavorite(item.url, name, folder, item.logo);
         addStream(item.url, target);
-        toast(`Adding ${item.name}…`);
+        toast(`Adding ${name}…`);
       },
     },
   },
@@ -313,17 +324,23 @@ function openChannelFinder() {
     const shown = matches.slice(0, 80);
     count.textContent = loading ? 'Loading…' : matches.length ? `${matches.length} channel${matches.length === 1 ? '' : 's'}` : '';
     results.replaceChildren(...(shown.length
-      ? shown.map((item) => channelResultRow(item, target))
+      ? shown.map((item) => channelResultRow(item, target, CHANNEL_CATEGORIES.find((category) => category.id === tab)?.name || ''))
       : [el('p', { class: 'ch-empty', textContent: loading ? 'Loading channels…' : 'No channels match.' })]));
   };
   const load = async () => {
+    const wanted = tab;
     loading = true;
+    list = [];
     paint();
+    let found = [];
     try {
-      list = await loadChannelCategory(tab);
+      found = await loadChannelCategory(wanted);
     } catch {
-      list = [];
+      found = [];
     }
+    // A slower earlier kind must not overwrite the one now showing.
+    if (wanted !== tab) return;
+    list = found;
     loading = false;
     if (box.open) paint();
   };
@@ -836,7 +853,7 @@ function surfChannels(step, id = null) {
   let pool = all;
   if (phone && tile.id === phone.id) {
     // The TikTok column keeps its shape only for another TikTok account.
-    pool = all.filter((item) => {
+    pool = listFavorites().filter((item) => {
       const source = parseSource(item.input);
       return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
     });
@@ -872,6 +889,9 @@ window.addEventListener('keydown', (event) => {
 
 /* ---------- Favorites ---------- */
 
+/** Account feeds (TikTok, X) have their own menus, so the favorites lists leave them out. */
+const isAccountSource = (source) => (source.kind === 'tiktok' && Boolean(source.tiktok?.profile))
+  || (source.kind === 'x' && Boolean(source.x?.profile));
 const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turned off.";
 
 /** Tile labels and both favorites lists read from saved favorites, so all of them redraw. */
@@ -1299,6 +1319,12 @@ function favoriteArt(item, source) {
     art.className = 'fart is-icon';
     art.replaceChildren(icon(KIND_ICONS[source.kind] || 'play', 20));
   };
+  if (item.logo) {
+    // A channel from the directory keeps the logo it came with.
+    art.className = 'fart is-logo is-dark';
+    artPicture(art, item.logo, quiet);
+    return art;
+  }
   const logo = !NOT_TV_KINDS.has(source.kind) ? logoFor(item.name) : null;
   if (logo) {
     art.className = `fart is-logo is-${logo.tone}`;
@@ -1382,7 +1408,7 @@ function continueCard(item) {
   const source = parseSource(item.input);
   // A series keeps its favorite's folder, so it gets the series picture.
   const favorite = listFavorites().find((fav) => fav.input === item.input);
-  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '' }, source);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '' }, source);
   // A video link here is a recording with an end, not a live channel.
   if (source.kind === 'hls' && art.classList.contains('is-icon')) art.replaceChildren(icon('film', 20));
   // Under the name: the channel it came from, the series folder, or what kind of thing it is.
@@ -1580,9 +1606,11 @@ function fillAddFavorites(holder) {
   if (addFolder === PODCASTS ? !podEpisodes.length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
   const matches = (text) => text.toLocaleLowerCase().includes(query);
   const podcasts = addFolder === PODCASTS && !query;
+  // Account feeds stay out of All; a folder such as Twitter can still show them.
+  const inAll = (item) => !isAccountSource(parseSource(item.input));
   const shown = query
-    ? all.filter((item) => matches(item.name) || (item.group && matches(item.group)))
-    : podcasts ? [] : all.filter((item) => !addFolder || item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase());
+    ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
+    : podcasts ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
   // A search also finds podcast shows by name.
   const shows = query ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
@@ -3017,7 +3045,7 @@ function podcastTodayRow(item) {
 function continueTodayRow(item) {
   const source = parseSource(item.input);
   const favorite = listFavorites().find((fav) => fav.input === item.input);
-  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '' }, source);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '' }, source);
   return todayRow({
     art,
     top: el('span', { textContent: `${timeLeft(item.length - item.at)}${item.from && item.from !== item.name ? ` · ${item.from}` : ''}` }),

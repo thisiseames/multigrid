@@ -159,3 +159,12 @@ test('importing adds only what is new, keeps names here, and joins folders whate
   assert.equal(importFavorites(incoming), 0);
   assert.equal(listFavorites().length, 3);
 });
+
+test('a favourite keeps a channel logo, including when it is renamed', () => {
+  saveFavorite('logo', 'Channel', 'Sports', 'https://example.com/logo.png');
+  assert.equal(listFavorites().find((item) => item.input === 'logo').logo, 'https://example.com/logo.png');
+  saveFavorite('logo', 'Renamed', 'Sports');
+  assert.equal(listFavorites().find((item) => item.input === 'logo').logo, 'https://example.com/logo.png');
+  saveFavorite('plain', 'No logo');
+  assert.equal('logo' in listFavorites().find((item) => item.input === 'plain'), false);
+});
