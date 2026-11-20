@@ -10,7 +10,7 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
-import { CHANNEL_CATEGORIES, channelTitle, parseChannelList } from './channels.js';
+import { CHANNEL_CATEGORIES, channelMatches, channelTitle, extraFeedFor, parseChannelList, withChannelExtras } from './channels.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeFor, isNewToday } from './episodes.js';
@@ -187,6 +187,7 @@ function buildStreamMenu(id) {
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
+    view.source?.kind === 'iframe' ? bigButton('live', 'Find a direct feed', then(() => switchToDirectFeed(id))) : null,
     view.fullButton && !view.fullButton.hidden ? bigButton('expand', 'Fullscreen', then(() => view.toggleFullscreen())) : null,
     view.source?.openUrl ? bigButton('open', 'Open its site', then(() => window.open(view.source.openUrl, '_blank', 'noopener'))) : null,
     bigButton('trash', 'Remove', then(() => removeStream(id)), { danger: true }),
@@ -265,8 +266,9 @@ async function loadChannelCategory(id) {
   try {
     const saved = JSON.parse(localStorage.getItem(`${CHANNEL_STORE}.${id}`) || 'null');
     if (saved && Array.isArray(saved.list) && Date.now() - saved.at < CHANNEL_TTL) {
-      channelLoaded.set(id, saved);
-      return saved.list;
+      const entry = { at: saved.at, list: withChannelExtras(id, saved.list) };
+      channelLoaded.set(id, entry);
+      return entry.list;
     }
   } catch {
     // A damaged cache just means fetch it again.
@@ -274,10 +276,48 @@ async function loadChannelCategory(id) {
   const category = CHANNEL_CATEGORIES.find((item) => item.id === id) ?? CHANNEL_CATEGORIES[0];
   const response = await fetch(category.url, { cache: 'no-cache', signal: AbortSignal.timeout?.(12000) });
   if (!response.ok) throw new Error(String(response.status));
-  const entry = { at: Date.now(), list: parseChannelList(await response.text()) };
+  const base = parseChannelList(await response.text());
+  const entry = { at: Date.now(), list: withChannelExtras(id, base) };
   channelLoaded.set(id, entry);
-  try { localStorage.setItem(`${CHANNEL_STORE}.${id}`, JSON.stringify(entry)); } catch { /* not remembered */ }
+  try { localStorage.setItem(`${CHANNEL_STORE}.${id}`, JSON.stringify({ at: entry.at, list: base })); } catch { /* not remembered */ }
   return entry.list;
+}
+
+/** The first direct channel feed whose name means the same channel as this one. */
+async function findDirectFeed(name) {
+  const extra = extraFeedFor(name);
+  if (extra) return extra;
+  const found = await Promise.allSettled(CHANNEL_CATEGORIES.map(async (category) => ({
+    category,
+    list: await loadChannelCategory(category.id),
+  })));
+  for (const result of found) {
+    if (result.status !== 'fulfilled') continue;
+    const { category, list } = result.value;
+    const match = list.find((item) => channelMatches(item.name, name));
+    if (match) return { ...match, category: category.id };
+  }
+  return null;
+}
+
+/** Swaps a website embed for a direct stream of the same channel, when one is listed. */
+async function switchToDirectFeed(id) {
+  const tile = tileById(id);
+  if (!tile) return;
+  const name = labelOf(tile);
+  toast(`Looking for a direct feed for ${name}…`);
+  const feed = await findDirectFeed(name);
+  if (!tileById(id)) return;
+  if (!feed) {
+    toast(`No direct feed found for ${name}.`);
+    return;
+  }
+  const title = channelTitle(feed.name);
+  const favorite = listFavorites().find((item) => item.input === tile.input);
+  const folder = favorite?.group || CHANNEL_CATEGORIES.find((category) => category.id === feed.category)?.name || '';
+  saveFavorite(feed.url, title, folder, feed.logo);
+  addStream(feed.url, { mode: 'replace', id }, title);
+  toast(`${title} now plays with MULTIGRID's own sound controls.`);
 }
 
 function channelResultRow(item, target, folder) {

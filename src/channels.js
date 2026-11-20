@@ -53,3 +53,45 @@ export function channelTitle(name) {
     .trim()
     .toLocaleUpperCase();
 }
+
+// A few public channels are listed by iptv-org only over plain http, which a secure page
+// can't play. These are the same feeds over https, kept here so the finder can offer them.
+export const CHANNEL_EXTRAS = [
+  {
+    category: 'sports',
+    name: 'USA Network (720p)',
+    url: 'https://tvsen6.aynaott.com/usa/index.m3u8',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/USA_Network_logo_%282016%29.svg/960px-USA_Network_logo_%282016%29.svg.png',
+    group: 'Entertainment;Sports',
+  },
+];
+
+const byChannelName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+
+/** Adds the hand-kept https feeds to one directory kind. */
+export function withChannelExtras(categoryId, list) {
+  const seen = new Set(list.map((item) => item.url));
+  const extras = CHANNEL_EXTRAS
+    .filter((item) => item.category === categoryId && !seen.has(item.url))
+    .map(({ category, ...item }) => item);
+  return extras.length ? [...list, ...extras].sort(byChannelName) : list;
+}
+
+const cleanChannel = (name) => channelTitle(name)
+  .replace(/\b(CHANNEL|NETWORK|EAST|WEST|HD|SD|LIVE)\b/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+/** Whether a favourite's name means the same channel as a directory entry. */
+export function channelMatches(a, b) {
+  const left = cleanChannel(a);
+  const right = cleanChannel(b);
+  if (!left || !right) return false;
+  if (left === right) return true;
+  return Math.min(left.length, right.length) >= 4 && (left.startsWith(right) || right.startsWith(left));
+}
+
+/** A hand-kept direct feed for a channel name, if there is one. */
+export function extraFeedFor(name) {
+  return CHANNEL_EXTRAS.find((item) => channelMatches(item.name, name)) || null;
+}

@@ -53,6 +53,9 @@ const levelWorks = (() => {
   return probe.volume === 0.5;
 })();
 
+/** A finger-driven screen, where Safari draws its own big "unmute" button over a muted video. */
+const touchScreen = () => Boolean(window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
+
 /** The MULTIGRID Sound extension says it's here. It can reach a player inside any embed. */
 const hasSoundExtension = () => document.documentElement.dataset.multigridSound === '1';
 /** Version 1.2 of the extension can also pause and play players inside embeds. */
@@ -445,7 +448,10 @@ function twitchPlayer(source, options) {
 function hlsPlayer(source, options) {
   const { muted, volume, autoplay, onError } = options;
   const video = document.createElement('video');
-  video.controls = true;
+  // On a phone the browser's controls put a huge "unmute" button over a muted,
+  // playing stream. MULTIGRID already has pause, mute and fullscreen for the
+  // tuned stream, so leave the picture clean there.
+  video.controls = !touchScreen();
   video.setAttribute('playsinline', '');
   video.volume = volume / 100;
   // Safari decides on autoplay from the attribute, not just the property.
@@ -1102,7 +1108,9 @@ function xFeedPlayer(source, options) {
   const holder = document.createElement('div');
   holder.className = 'player-fill';
   const video = document.createElement('video');
-  video.controls = true;
+  // Same as a channel: on a phone the browser's own controls cover a muted feed
+  // with a giant unmute button, and MULTIGRID's bar already has play and sound.
+  video.controls = !touchScreen();
   video.setAttribute('playsinline', '');
   video.preload = 'metadata';
   video.volume = Math.max(0, Math.min(1, Number(volume) / 100));

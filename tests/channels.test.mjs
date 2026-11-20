@@ -43,3 +43,30 @@ test('channels: a favourite title drops quality and notes, and is uppercase', ()
   assert.equal(channelTitle('CNN International North America (1080p) [Geo-blocked]'), 'CNN INTERNATIONAL NORTH AMERICA');
   assert.equal(channelTitle('Sky Sports  Action (720p)'), 'SKY SPORTS ACTION');
 });
+
+import { CHANNEL_EXTRAS, channelMatches, extraFeedFor, withChannelExtras } from '../src/channels.js';
+
+test('channels: hand-kept https feeds join their directory kind once', () => {
+  const extra = CHANNEL_EXTRAS[0];
+  const list = withChannelExtras(extra.category, []);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].url, extra.url);
+  assert.ok(!('category' in list[0]));
+  assert.deepEqual(withChannelExtras(extra.category, list), list);
+  assert.deepEqual(withChannelExtras('news', list), list);
+});
+
+test('channels: a channel name matches the same channel with quality or feed words', () => {
+  assert.ok(channelMatches('USA Network (720p)', 'USA NETWORK'));
+  assert.ok(channelMatches('Fox News Channel (1080p)', 'FOX NEWS'));
+  assert.ok(channelMatches('NBC News Now', 'NBC NEWS NOW'));
+  assert.ok(!channelMatches('USA Network', 'USA Today'));
+  assert.ok(!channelMatches('Fox News', 'Sky News'));
+});
+
+test('channels: a favourite can find its hand-kept direct feed', () => {
+  assert.equal(extraFeedFor('USA NETWORK')?.url, CHANNEL_EXTRAS[0].url);
+  assert.equal(extraFeedFor('USA')?.url, CHANNEL_EXTRAS[0].url);
+  assert.equal(extraFeedFor('USA Today'), null);
+  assert.equal(extraFeedFor('Sky News'), null);
+});

@@ -115,8 +115,9 @@ class TileView {
       },
       // The player's own controls can pause it too, so the sound row follows what it says.
       onPlayState: (paused) => {
-        if (this.paused === paused) return;
         this.paused = paused;
+        // Always redraw: the first play event often lands after the bar was drawn, and
+        // without this the bar can sit on "Paused" while the picture is already moving.
         this.grid.handlers.onPlayerChanged();
       },
       // A note saves its text through the tile it belongs to.
