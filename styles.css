@@ -220,13 +220,15 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
 .pod-controls button svg { width: 16px; height: 16px; }
 .pod-play { color: var(--text); }
 .pod-speed { width: 44px; font-size: 11.5px; font-weight: 700; color: var(--text-2); }
-.pod-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 9px; display: block; }
+.pod-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; display: block; cursor: pointer; touch-action: none; }
 .pod-progress::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.08); }
 .pod-progress-fill { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); pointer-events: none; }
-.pod-progress:hover::before, .pod-progress:hover .pod-progress-fill { height: 4px; }
+.pod-progress-thumb { position: absolute; left: 0; bottom: -3px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 2px #131315; opacity: 0; transform: scale(.7); transition: opacity .12s, transform .12s; pointer-events: none; }
+.pod-progress:hover::before, .pod-progress:hover .pod-progress-fill, .pod-progress.is-scrubbing::before, .pod-progress.is-scrubbing .pod-progress-fill { height: 4px; }
+.pod-progress:hover .pod-progress-thumb, .pod-progress:focus-visible .pod-progress-thumb, .pod-progress.is-scrubbing .pod-progress-thumb { opacity: 1; transform: scale(1); }
 @media (max-width: 640px) {
   /* Two short rows: the episode stays readable and the transport stays thumb-sized. */
-  .podcast-dock { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; height: auto; padding-top: 8px; padding-bottom: 7px; column-gap: 9px; row-gap: 7px; }
+  .podcast-dock { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; height: auto; padding-top: 8px; padding-bottom: 12px; column-gap: 9px; row-gap: 7px; }
   .pod-art { grid-column: 1; grid-row: 1; }
   .pod-text { grid-column: 2; grid-row: 1; }
   .pod-controls { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 6px; }
@@ -234,6 +236,7 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
   .pod-speed { width: 46px; }
   .pod-name { font-size: 13.5px; }
   .pod-sub { font-size: 11.5px; }
+  .pod-progress-thumb { opacity: .85; transform: scale(1); }
 }
 
 /* Stage and grid */
@@ -818,6 +821,23 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .gbody { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 12px; }
 .gnote { margin: 14px 4px 4px; font-size: 12.5px; color: var(--text-2); }
 .live-badge.is-small { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .04em; }
+/* Twitch strip above the TV listings: channels have live status, not schedules. */
+.gtwitch { flex: none; padding: 10px 12px 11px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
+.gtwitch-head { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 7px; }
+.gtwitch-head b { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.gtwitch-head small { font-size: 11px; color: var(--text-2); }
+.gtwitch-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.gtwitch-row::-webkit-scrollbar { display: none; }
+.gtwitch-card { flex: none; width: 250px; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 11px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); text-align: left; }
+.gtwitch-card:hover { background: var(--raised); }
+.gtwitch-logo { flex: none; width: 30px; height: 30px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--raised); color: var(--text-2); }
+.gtwitch-logo img { width: 100%; height: 100%; object-fit: cover; }
+.gtwitch-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gtwitch-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.gtwitch-name b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gtwitch-state { display: inline-flex; flex: none; }
+.gtwitch-state .live-badge.is-small { height: 16px; }
+.gtwitch-meta { min-width: 0; font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-mark { display: inline-block; flex: none; width: 4px; height: 1em; margin-right: 8px; border-radius: 2px; background: var(--team); vertical-align: -2px; }
 .gbar { position: relative; display: block; flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
 .gbar > span { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--accent); }
@@ -884,6 +904,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .ghead-title h2 { font-size: 17px; }
   .gview { padding: 0 11px; }
   .gbody { padding: 10px 8px; }
+  .gtwitch { padding: 8px 8px 9px; }
+  .gtwitch-card { width: 220px; }
   .gnow-list { grid-template-columns: minmax(0, 1fr); }
   .gtl { --chan: 104px; }
   .gtl-channel { padding: 0 8px 0 12px; font-size: 12px; }
@@ -1219,8 +1241,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .addp form { display: flex; flex-direction: column; width: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .addp-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 6px 18px; }
 .addp-head h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
-.addp-paste { flex: none; position: relative; margin: 6px 16px 0; }
-.addp .addp-paste textarea { display: block; width: 100%; min-height: 58px; max-height: 140px; padding: 12px 84px 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border-strong); font-size: 15px; line-height: 1.4; resize: none; }
+.addp-paste { flex: none; position: relative; margin: 8px 16px 0; }
+.addp .addp-paste textarea { display: block; width: 100%; height: 36px; min-height: 36px; max-height: 36px; padding: 8px 84px 8px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong); font-size: 15px; line-height: 18px; resize: none; white-space: pre; overflow-x: auto; overflow-y: hidden; }
 .addp .addp-paste textarea:focus { outline: none; border-color: var(--accent); }
 .addp-pastebtn { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); height: 32px; padding: 0 14px; border-radius: 999px; background: var(--text); color: #111; font-size: 13px; font-weight: 700; }
 .addp-pastebtn[hidden] { display: none; }
@@ -1324,7 +1346,7 @@ body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
   .fart { width: 64px; height: 40px; }
   .addp-actions { position: sticky; bottom: 0; z-index: 2; margin-top: auto; padding-bottom: calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: #141416; }
   .addp-actions button { flex: 1; height: 44px; }
-  .addp .addp-paste textarea { font-size: 16px; }
+  .addp .addp-paste textarea { height: 46px; min-height: 46px; max-height: 46px; padding-top: 13px; padding-bottom: 13px; font-size: 16px; }
 }
 
 /* Crop */
@@ -1353,6 +1375,9 @@ body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
 
 .fcard-text small.fcard-episode { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 500; -webkit-line-clamp: unset; }
 .fcard-new { flex: none; height: 16px; padding: 0 6px; display: inline-flex; align-items: center; border-radius: 4px; background: #e5484d; color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; }
+.fcard-text small.fcard-twitch { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fcard-twitch-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-badge.is-offline { background: rgba(255,255,255,.08); color: var(--text-2); }
 
 /* Ticker */
 .ticker { flex: none; height: 34px; display: flex; align-items: stretch; background: #0d0d10; border-top: 1px solid var(--border-strong); overflow: hidden; padding-bottom: env(safe-area-inset-bottom); box-sizing: content-box; }

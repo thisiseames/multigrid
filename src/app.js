@@ -25,6 +25,7 @@ import './phone.js';
 import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
+import { twitchStatus, viewerCount } from './twitch.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
@@ -51,6 +52,7 @@ const STARTERS = [
 let ws = loadCurrent();
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
+const pendingSound = new Set(); // tiles saved with sound, held until the first real click
 
 const grid = new GridView($('grid'), $('stage'), env, {
   onFill: (id) => openSourceDialog({ mode: 'fill', id }),
@@ -669,6 +671,57 @@ function renderSound() {
 
 /* ---------- Sound ---------- */
 
+/**
+ * Chrome only lets a page auto-play unmuted after the user has interacted. Tiles that were
+ * saved with sound start muted so they can play, and get their sound back on the first click.
+ */
+function prepareAutoplaySound() {
+  let active = true;
+  try { active = navigator.userActivation?.hasBeenActive === true; } catch { active = true; }
+  if (active) return;
+  for (const tile of ws.tiles) {
+    if (!isStream(tile) || tile.muted) continue;
+    pendingSound.add(tile.id);
+    tile.muted = true;
+  }
+  if (!pendingSound.size) return;
+  const onKey = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') restore(event);
+  };
+  const restore = (event) => {
+    document.removeEventListener('click', restore);
+    document.removeEventListener('keydown', onKey);
+    if (!pendingSound.size) return;
+    const control = event.target instanceof Element ? event.target.closest('button, input, [role="slider"]') : null;
+    const label = `${control?.getAttribute('aria-label') || ''} ${control?.getAttribute('title') || ''}`;
+    // A sound control is a deliberate choice; don't undo it.
+    if (control && (control.type === 'range' || /^(unmute|mute|turn sound|volume)/i.test(label.trim()))) {
+      pendingSound.clear();
+      return;
+    }
+    // If another stream already has sound, don't fight it under One sound.
+    if (isOneSound() && muteableTiles().some((tile) => !tile.muted)) {
+      pendingSound.clear();
+      return;
+    }
+    let restored = false;
+    for (const id of pendingSound) {
+      const tile = tileById(id);
+      if (!tile || !tile.muted || !isVisible(tile)) continue;
+      tile.muted = false;
+      const view = grid.viewFor(id);
+      view?.setMuted(false);
+      view?.syncControls();
+      restored = true;
+      if (isOneSound()) break;
+    }
+    pendingSound.clear();
+    if (restored) commit();
+  };
+  document.addEventListener('click', restore);
+  document.addEventListener('keydown', onKey);
+}
+
 /** With One sound on, the stream just given sound is the only one with it. */
 function muteOthers(id) {
   if (!isOneSound()) return;
@@ -1211,6 +1264,8 @@ let podcastState = null;
 let podcastAudio = null;
 let podcastUI = null;
 let podcastSwitching = false;
+let podcastScrubbing = false;
+let podcastScrubWasPlaying = false;
 
 const readPodcastStore = () => {
   try { return JSON.parse(localStorage.getItem(PODCAST_STORE) || 'null'); } catch { return null; }
@@ -1242,10 +1297,13 @@ const savePodcastPlace = () => {
 
 function updatePodcastProgress() {
   if (!podcastUI || !podcastAudio) return;
-  const { fill } = podcastUI;
+  const { fill, thumb } = podcastUI;
   const length = podcastAudio.duration;
   const share = Number.isFinite(length) && length > 0 ? Math.min(1, Math.max(0, podcastAudio.currentTime / length)) : 0;
   fill.style.width = `${share * 100}%`;
+  // Keep the whole thumb inside the bar, even at the very start or end.
+  const width = podcastUI.progress?.getBoundingClientRect().width || 0;
+  thumb.style.left = width ? `${Math.min(Math.max(share * width, 6), width - 6)}px` : `${share * 100}%`;
   if ('mediaSession' in navigator && Number.isFinite(length) && length > 0) {
     try {
       navigator.mediaSession.setPositionState({
@@ -1375,21 +1433,65 @@ function drawPodcastDock() {
     const mute = iconButton('sound', 'Mute podcast', togglePodcastMute);
     const close = iconButton('close', 'Close podcast', closePodcast);
     const fill = el('span', { class: 'pod-progress-fill' });
+    const thumb = el('span', { class: 'pod-progress-thumb' });
+    const shareAt = (event) => {
+      const bounds = progress.getBoundingClientRect();
+      return Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    };
+    const scrubTo = (event) => {
+      if (!podcastAudio || !Number.isFinite(podcastAudio.duration)) return;
+      podcastAudio.currentTime = shareAt(event) * podcastAudio.duration;
+      updatePodcastProgress();
+    };
+    const endScrub = (event) => {
+      if (!podcastScrubbing) return;
+      podcastScrubbing = false;
+      progress.classList.remove('is-scrubbing');
+      try { progress.releasePointerCapture?.(event.pointerId); } catch { /* already released */ }
+      savePodcastPlace();
+      if (podcastScrubWasPlaying) podcastAudio.play().catch(() => {});
+      updatePodcastDock();
+    };
     const progress = el('button', {
       type: 'button',
       class: 'pod-progress',
-      title: 'Seek in this episode',
+      title: 'Seek in this episode — drag to scrub',
       aria: { label: 'Seek in this episode' },
       on: {
-        click(event) {
+        pointerdown(event) {
           if (!podcastAudio || !Number.isFinite(podcastAudio.duration)) return;
-          const bounds = progress.getBoundingClientRect();
-          const share = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
-          podcastAudio.currentTime = share * podcastAudio.duration;
-          updatePodcastProgress();
+          event.preventDefault();
+          podcastScrubbing = true;
+          podcastScrubWasPlaying = !podcastAudio.paused;
+          if (podcastScrubWasPlaying) podcastAudio.pause();
+          progress.classList.add('is-scrubbing');
+          try { progress.setPointerCapture?.(event.pointerId); } catch { /* not captured */ }
+          scrubTo(event);
+        },
+        pointermove(event) {
+          if (!podcastScrubbing) return;
+          event.preventDefault();
+          scrubTo(event);
+        },
+        pointerup: endScrub,
+        pointercancel: endScrub,
+        keydown(event) {
+          if (!podcastAudio || !Number.isFinite(podcastAudio.duration)) return;
+          const step = event.shiftKey ? 30 : 5;
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            seekPodcast(event.key === 'ArrowLeft' ? -step : step);
+            savePodcastPlace();
+            updatePodcastProgress();
+          } else if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault();
+            podcastAudio.currentTime = event.key === 'Home' ? 0 : Math.max(0, podcastAudio.duration - 5);
+            savePodcastPlace();
+            updatePodcastProgress();
+          }
         },
       },
-    }, fill);
+    }, fill, thumb);
     dock.replaceChildren(
       art,
       el('span', { class: 'pod-text' }, name, sub),
@@ -1398,7 +1500,7 @@ function drawPodcastDock() {
     // Kept in the page so its media controls and lock-screen details work everywhere.
     podcastAudio.hidden = true;
     dock.append(podcastAudio);
-    podcastUI = { art, name, sub, play, speed, mute, progress, fill };
+    podcastUI = { art, name, sub, play, speed, mute, progress, fill, thumb };
     if ('mediaSession' in navigator) {
       const handle = (action, handler) => { try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* not supported */ } };
       handle('play', () => podcastAudio.play().catch(() => {}));
@@ -1780,6 +1882,24 @@ function favoriteCard(item, holder) {
           nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null);
       })())),
     el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16)));
+  if (source.kind === 'twitch' && source.twitch?.type === 'channel') {
+    const line = el('small', { class: 'fcard-twitch' });
+    card.querySelector('.fcard-text')?.append(line);
+    twitchStatus(source.twitch.id).then((status) => {
+      if (!status || (!card.isConnected && !card.parentNode)) return;
+      if (status.live) {
+        line.replaceChildren(
+          liveTag(),
+          el('span', {
+            class: 'fcard-twitch-text',
+            textContent: [status.game, status.viewers ? `${viewerCount(status.viewers)} watching` : ''].filter(Boolean).join(' · ') || 'Live now',
+          }));
+        line.title = status.title || '';
+      } else {
+        line.replaceChildren(el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' }));
+      }
+    });
+  }
   if (isSeriesFolder(item.group)) {
     // When the next episode airs, and a badge on the day one comes out.
     episodeFor(item.name).then((info) => {
@@ -1953,8 +2073,14 @@ function guideSections() {
   return { sections, total: favorites.length };
 }
 
+/** Twitch channels kept as favorites; Twitch has no TV listings, so they get their own strip. */
+const twitchFavorites = () => listFavorites().filter((item) => {
+  const source = parseSource(item.input);
+  return source.kind === 'twitch' && source.twitch?.type === 'channel';
+});
+
 function syncGuideButton() {
-  $('guide-button').hidden = !guideSections().sections.length;
+  $('guide-button').hidden = !guideSections().sections.length && twitchFavorites().length === 0;
 }
 
 const GUIDE_VIEW_KEY = 'multigrid.guideview.v1';
@@ -2033,6 +2159,46 @@ function showDetails(item, show) {
       el('div', { class: 'gdetail-actions' }, guideWatchButton(item, `Watch ${item.name}`))));
   box.append(sheet);
   sheet.querySelector('.gdetail-card')?.focus({ preventScroll: true });
+}
+
+/** A compact strip of Twitch favorites above the TV listings, with live/offline status. */
+function twitchGuide() {
+  const items = twitchFavorites();
+  if (!items.length) return null;
+  const row = el('div', { class: 'gtwitch-row' });
+  const section = el('section', { class: 'gtwitch', aria: { label: 'Twitch channels' } },
+    el('div', { class: 'gtwitch-head' }, el('b', { textContent: 'Twitch' }), el('small', { textContent: 'Live status' })),
+    row);
+  for (const item of items) {
+    const source = parseSource(item.input);
+    const logo = el('span', { class: 'gtwitch-logo' }, icon('chat', 16));
+    const state = el('span', { class: 'gtwitch-state', textContent: '…' });
+    const meta = el('small', { class: 'gtwitch-meta', textContent: 'Checking status' });
+    const card = el('button', {
+      type: 'button',
+      class: 'gtwitch-card',
+      title: `Open ${item.name}`,
+      on: { click() { watchChannel(item); } },
+    },
+    logo,
+    el('span', { class: 'gtwitch-text' },
+      el('span', { class: 'gtwitch-name' }, el('b', { textContent: item.name }), state),
+      meta));
+    row.append(card);
+    twitchStatus(source.twitch.id).then((status) => {
+      if (!status || !card.isConnected) {
+        if (!status) { state.replaceChildren(); meta.textContent = 'Status unavailable'; }
+        return;
+      }
+      if (status.logo) logo.replaceChildren(el('img', { src: status.logo, alt: '', referrerPolicy: 'no-referrer' }));
+      state.replaceChildren(status.live ? liveTag() : el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' }));
+      meta.textContent = status.live
+        ? [status.game, status.viewers ? `${viewerCount(status.viewers)} watching` : '', status.title].filter(Boolean).join(' · ') || 'Live now'
+        : 'Not streaming';
+      card.title = status.live ? `Watch ${item.name}: ${status.title}` : `Open ${item.name}`;
+    });
+  }
+  return section;
 }
 
 /* Now: one card per channel. */
@@ -2152,6 +2318,8 @@ function renderGuide() {
   const { total } = guideSections();
   const { rows, folders } = guideChannels();
   const updated = guideUpdated();
+  const twitchRows = twitchFavorites();
+  const twitchBox = twitchRows.length ? twitchGuide() : null;
   const oldScroll = box.querySelector('.gbody');
   const keepTop = oldScroll?.scrollTop ?? 0;
   const keepLeft = oldScroll?.scrollLeft ?? null;
@@ -2174,7 +2342,7 @@ function renderGuide() {
 
   let body;
   if (!rows.length) {
-    body = el('div', { class: 'gbody' }, el('p', { class: 'match-quiet is-empty', textContent: updated ? 'None of your favorites have a TV schedule.' : "The guide couldn't load. Try again in a minute." }));
+    body = el('div', { class: 'gbody' }, el('p', { class: 'match-quiet is-empty', textContent: updated ? 'No TV schedules for your channels yet.' : "The guide couldn't load. Try again in a minute." }));
   } else if (guideQuery) {
     const found = guideResults(guideQuery);
     body = el('div', { class: 'gbody' }, found.length
@@ -2184,10 +2352,11 @@ function renderGuide() {
     body = el('div', { class: 'gbody is-timeline' }, timelineView(rows));
   } else {
     const shown = guideSections().sections.reduce((sum, section) => sum + section.rows.length, 0);
+    const withoutSchedule = Math.max(0, total - shown - twitchRows.length);
     body = el('div', { class: 'gbody' },
       el('ul', { class: 'gnow-list' }, ...rows.map(nowCard)),
-      shown < total && !guideFolder
-        ? el('p', { class: 'gnote', textContent: `${plural(total - shown, 'other favorite')} ${total - shown === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
+      withoutSchedule && !guideFolder
+        ? el('p', { class: 'gnote', textContent: `${plural(withoutSchedule, 'other favorite')} ${withoutSchedule === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
         : null);
   }
 
@@ -2201,6 +2370,7 @@ function renderGuide() {
       iconButton('close', 'Close', () => box.close())),
     rows.length ? guideSearchBox : null,
     guideQuery ? null : pills,
+    twitchBox,
     body].filter(Boolean));
   if (typing) {
     guideSearchInput.focus();
@@ -3232,6 +3402,14 @@ const readYtSeen = () => {
 const writeYtSeen = (value) => {
   try { localStorage.setItem(YT_SEEN, JSON.stringify(value)); } catch { /* not remembered */ }
 };
+function markYoutubeOpened(list, id) {
+  if (!list || !id) return;
+  const seen = readYtSeen();
+  const entry = seen[list];
+  if (!entry || entry.id !== id || entry.opened) return;
+  seen[list] = { ...entry, opened: true };
+  writeYtSeen(seen);
+}
 
 function youtubeTitle(id) {
   return fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`, { signal: AbortSignal.timeout?.(4000) })
@@ -3252,9 +3430,10 @@ async function newYouTubeUploads() {
     if (!id) return null;
     const before = seen[source.youtube.list];
     const changed = Boolean(before && before.id !== id);
+    const opened = !changed && Boolean(before?.opened);
     const title = !changed && before?.title ? before.title : await youtubeTitle(id);
-    seen[source.youtube.list] = { id, title, at: Date.now() };
-    return { favorite, id, title, first: !changed };
+    seen[source.youtube.list] = { id, title, at: Date.now(), ...(opened ? { opened: true } : {}) };
+    return { favorite, id, title, first: !changed, list: source.youtube.list, opened };
   }));
   writeYtSeen(seen);
   return found.filter(Boolean);
@@ -3271,6 +3450,7 @@ function youtubeTodayRow(item) {
     top: el('span', { textContent: `${item.first ? 'Newest' : 'New'} from ${item.favorite.name}` }),
     title: item.title || 'New video',
     onClick() {
+      markYoutubeOpened(item.list, item.id);
       closePopovers();
       addStream(`https://www.youtube.com/watch?v=${item.id}`, { mode: 'add' }, item.title);
     },
@@ -3392,19 +3572,20 @@ async function fillToday() {
 
   const read = readIds();
   const stories = news ? [
-    ...news.items.filter((item) => item.group === 'News').sort((a, b) => b.time - a.time).slice(0, 5),
-    ...news.items.filter((item) => item.group === 'Man United').sort((a, b) => b.time - a.time).slice(0, 2),
+    ...news.items.filter((item) => item.group === 'News' && !read.has(item.id)).sort((a, b) => b.time - a.time).slice(0, 5),
+    ...news.items.filter((item) => item.group === 'Man United' && !read.has(item.id)).sort((a, b) => b.time - a.time).slice(0, 2),
   ] : [];
   const newsList = stories.length ? el('ul', { class: 'rlist' }, ...stories.map((item) => readerRow(item, read.has(item.id)))) : null;
 
   const continueList = listPlaces(5);
   const podcastList = todayPodcasts(news);
+  const tubeList = tube.filter((item) => !item.opened);
   const parts = [
     todaySection('Top headlines', newsList),
     todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
     todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null),
     todaySection('New podcasts', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
-    todaySection('New on YouTube', tube.length ? el('ul', { class: 'rlist' }, ...tube.map(youtubeTodayRow)) : null),
+    todaySection('New on YouTube', tubeList.length ? el('ul', { class: 'rlist' }, ...tubeList.map(youtubeTodayRow)) : null),
     todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
     todaySection('Movies this week', movieList),
@@ -4210,6 +4391,7 @@ function drawTodayIcon() {
 drawTodayIcon();
 setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
+prepareAutoplaySound();
 render();
 receiveReaderKey();
 receiveFavorites();
