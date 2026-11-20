@@ -13,7 +13,7 @@ import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts,
 import { CHANNEL_CATEGORIES, channelMatches, channelTitle, extraFeedFor, parseChannelList, withChannelExtras } from './channels.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
-import { episodeFor, isNewToday } from './episodes.js';
+import { episodeCode, episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague, withConference } from './standings.js';
@@ -26,7 +26,7 @@ import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
-import { categoryOf, isVague, parseTrends, trendKey } from './trends.js';
+import { TREND_REGIONS, categoryOf, isVague, parseTrends, trendKey } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
@@ -3032,6 +3032,20 @@ function daysAway(time) {
   today.setHours(0, 0, 0, 0);
   return Math.round((day - today) / 86400000);
 }
+/** A local calendar day as YYYY-MM-DD. ISO strings would turn into tomorrow after 8pm in Toronto. */
+function dayKey(time = Date.now()) {
+  const date = new Date(time);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+/** Today and the current Monday-Sunday week, as YYYY-MM-DD keys. */
+function weekKeys(now = Date.now()) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { today: dayKey(now), start: dayKey(start.getTime()), end: dayKey(end.getTime()) };
+}
 function dayLabel(time) {
   const diff = daysAway(time);
   if (diff === 0) return 'Today';
@@ -3486,14 +3500,18 @@ async function loadMovies() {
     if (!response.ok) return [];
     const data = await response.json();
     const items = Array.isArray(data?.items) ? data.items : [];
-    // Soonest first is less useful than "what's out now": out already first (newest first), then coming up.
-    const today = new Date().toISOString().slice(0, 10);
-    const out = items.filter((item) => item.date <= today).sort((a, b) => b.date.localeCompare(a.date));
-    const soon = items.filter((item) => item.date > today).sort((a, b) => a.date.localeCompare(b.date));
-    return [...out, ...soon].filter((item) => typeof item.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date));
+    return items.filter((item) => typeof item.title === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date));
   } catch {
     return [];
   }
+}
+
+/** One day or the current Monday-Sunday week, in date order. */
+function moviesForView(movies, view, now = Date.now()) {
+  const { today, start, end } = weekKeys(now);
+  return movies
+    .filter((movie) => (view === 'today' ? movie.date === today : movie.date >= start && movie.date < end))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 
 /** "Today", "Fri", or "Fri, Nov 14" for a movie's date. */
@@ -3512,15 +3530,18 @@ async function loadJob(file) {
   }
 }
 
-/* Premieres this week: new series and new seasons, from TVmaze via the guide job. Out already
-   first (newest first), then coming up, like the movies. */
+/* Premieres: new series and new seasons, from TVmaze via the guide job. */
 function premieresOf(data) {
-  const today = new Date().toISOString().slice(0, 10);
   const items = (Array.isArray(data?.items) ? data.items : []).filter((item) => typeof item.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date));
-  return [
-    ...items.filter((item) => item.date <= today).sort((a, b) => b.date.localeCompare(a.date)),
-    ...items.filter((item) => item.date > today).sort((a, b) => a.date.localeCompare(b.date)),
-  ];
+  return items;
+}
+
+/** One day or the current Monday-Sunday week, in date order. */
+function premieresForView(items, view, now = Date.now()) {
+  const { today, start, end } = weekKeys(now);
+  return items
+    .filter((show) => (view === 'today' ? show.date === today : show.date >= start && show.date < end))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }
 
 const premiereKind = (show) => (show.season === 0 ? 'New series' : show.season > 0 ? `Season ${show.season}` : 'New season');
@@ -3538,6 +3559,23 @@ function premiereRow(show) {
       // The trailer plays in a tile; without one, the show's TVmaze page opens.
       if (/^[\w-]{11}$/.test(show.trailer || '')) addStream(`https://www.youtube.com/watch?v=${show.trailer}`);
       else if (/^https:\/\/www\.tvmaze\.com\//.test(show.url || '')) window.open(show.url, '_blank', 'noopener');
+    },
+  });
+}
+
+function movieRow(movie) {
+  return todayRow({
+    art: movie.poster && /^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(movie.poster)
+      ? el('span', { class: 'fart is-picture movie-poster' }, el('img', { src: movie.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+      : el('span', { class: 'fart is-icon movie-poster' }, icon('film', 20)),
+    top: el('span', { textContent: `${movieDay(movie.date)} · ${movie.kind === 'cinema' ? 'In cinemas' : `On ${movie.service}`}` }),
+    title: movie.title,
+    sub: movie.trailer ? 'Play the trailer' : '',
+    onClick() {
+      closePopovers();
+      // The trailer plays in a tile; without one, the film's Wikipedia page opens.
+      if (/^[\w-]{11}$/.test(movie.trailer || '')) addStream(`https://www.youtube.com/watch?v=${movie.trailer}`);
+      else window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(String(movie.page || movie.title).replace(/ /g, '_'))}`, '_blank', 'noopener');
     },
   });
 }
@@ -3616,20 +3654,140 @@ function chartsView(data) {
   return el('div', { class: 'chart-box' }, tabs, list, note);
 }
 
+/* Flight deals from Toronto: seven routes, the cheapest nonstop one-way fare found on the
+   next eight Saturdays. The data is built once a day by tools/build-flights.mjs. */
+const freshWindow = 48 * 3600000;
+
+function flightRouteLink(origin, route) {
+  const code = String(route.to || '').toLowerCase();
+  const day = String(route.date || '').replace(/-/g, '');
+  const skyscanner = `https://www.skyscanner.ca/transport/flights/${origin.toLowerCase()}/${code}/${day ? `${day.slice(2)}/` : ''}?adults=1&cabinclass=economy`;
+  const hopper = `https://www.hopper.com/flights/${origin}/${route.to}${day ? `?departure=${route.date}&adults=1&cabin=economy&tripType=one-way` : ''}`;
+  return { hopper, skyscanner };
+}
+
+function flightsView(data) {
+  const routes = (Array.isArray(data?.routes) ? data.routes : [])
+    .filter((route) => route && typeof route.city === 'string' && /^[A-Z]{3}$/.test(String(route.to || '')));
+  if (!routes.length) return null;
+  const origin = data.origin || 'YYZ';
+  const updated = Number(data.updated) || 0;
+  const overallFresh = !updated || Date.now() - updated * 1000 < freshWindow;
+  const ranked = routes.slice().sort((a, b) => ((a.price || Infinity) - (b.price || Infinity)) || a.city.localeCompare(b.city));
+  const showPrice = (route) => {
+    if (!route.price || !route.date) return false;
+    if (overallFresh) return true;
+    const checked = Date.parse(route.checked || '');
+    return Number.isFinite(checked) && Date.now() - checked < freshWindow;
+  };
+  const rows = ranked.map((route) => {
+    const { hopper, skyscanner } = flightRouteLink(origin, route);
+    const price = showPrice(route) ? Math.round(route.price) : null;
+    const date = route.date ? movieDay(route.date) : '';
+    const detail = [date, route.airline, route.stops ? `${route.stops} stop${route.stops === 1 ? '' : 's'}` : 'nonstop']
+      .filter(Boolean).join(' · ');
+    return el('li', { class: 'flight-row' },
+      el('span', { class: 'flight-icon' }, icon('plane', 15)),
+      el('span', { class: 'flight-main' },
+        el('span', { class: 'flight-route' }, el('b', { textContent: route.city }), el('small', { textContent: route.to })),
+        el('span', { class: 'flight-detail', textContent: detail || 'Search this route' }),
+        el('span', { class: 'flight-links' },
+          el('a', { class: 'flight-link', href: hopper, target: '_blank', rel: 'noopener noreferrer', textContent: 'Hopper' }),
+          el('a', { class: 'flight-link', href: skyscanner, target: '_blank', rel: 'noopener noreferrer', textContent: 'Skyscanner' }))),
+      el('span', { class: 'flight-side' },
+        price ? el('b', { class: 'flight-price', textContent: `CA$${price.toLocaleString('en-CA')}` }) : el('small', { class: 'flight-price is-missing', textContent: 'Price unavailable' })));
+  });
+  const checked = updated ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(updated * 1000)) : '';
+  const note = el('p', { class: 'flight-note' },
+    checked ? `Fares checked ${checked}. ` : '',
+    'One-way, nonstop, economy, one adult. Prices from Google Flights, in CAD. Check before booking.',
+    !overallFresh ? ' Some fares are older than 48 hours; search for the latest.' : '');
+  return el('div', { class: 'flight-box' }, el('ul', { class: 'flight-list' }, ...rows), note);
+}
+
 /** "Live", "Premiere", "Finale" or "Special", for an event's line. */
 const eventKind = (show) => (show.live ? 'Live' : show.premiere ? 'Premiere' : show.finale ? 'Finale' : 'Special');
 
-/** New episodes of my series in the next seven days, soonest first. */
-async function episodesThisWeek(now = Date.now()) {
+/** Every favourite series with a known next or last episode. */
+async function episodesForFavorites() {
   const series = listFavorites().filter((item) => isSeriesFolder(item.group));
   const found = await Promise.all(series.map((item) => episodeFor(item.name).then((info) => ({ item, info })).catch(() => ({ item, info: null }))));
-  return found
-    .filter(({ info }) => info?.next && info.next.at > now - 3 * 3600000 && info.next.at < now + 7 * 86400000)
-    .sort((a, b) => a.info.next.at - b.info.next.at);
+  return found.filter(({ info }) => info?.next || info?.last);
+}
+
+/** An episode already in this Monday-Sunday week. */
+function episodeInWeek(info, now = Date.now()) {
+  const { start, end } = weekKeys(now);
+  return [info?.next?.at, info?.last?.at].filter(Boolean)
+    .some((at) => dayKey(at) >= start && dayKey(at) < end);
+}
+
+function episodeTodayRow({ item, info }, now) {
+  const nextToday = info.next && dayKey(info.next.at) === dayKey(now);
+  const episode = nextToday ? info.next : info.last;
+  if (!episode) return null;
+  return todayRow({
+    art: favoriteArt(item, parseSource(item.input)),
+    top: el('span', { textContent: nextToday ? `New today · ${clock(info.next.at)}` : 'Aired today' }),
+    title: item.name,
+    sub: [episodeCode(episode), episode.name].filter(Boolean).join(' · '),
+    onClick() { closePopovers(); addStream(item.input); },
+  });
+}
+
+function episodeWeekRow({ item, info }, now) {
+  const { start, end } = weekKeys(now);
+  const inWeek = (at) => at && dayKey(at) >= start && dayKey(at) < end;
+  const next = inWeek(info.next?.at) ? info.next : null;
+  const last = next ? null : inWeek(info.last?.at) ? info.last : null;
+  const episode = next || last;
+  if (!episode) return null;
+  return todayRow({
+    art: favoriteArt(item, parseSource(item.input)),
+    top: el('span', { textContent: `${shortDay(episode.at)} ${clock(episode.at)}${next ? '' : ' · Aired'}` }),
+    title: item.name,
+    sub: [episodeCode(episode), episode.name].filter(Boolean).join(' · '),
+    onClick() { closePopovers(); addStream(item.input); },
+  });
 }
 
 function todaySection(title, items) {
   return items ? el('section', { class: 'today-section' }, el('h4', { class: 'match-day', textContent: title }), items) : null;
+}
+
+/** A date-based section whose title and rows change with Today / This week. */
+function dateSection() {
+  const heading = el('h4', { class: 'match-day' });
+  const list = el('ul', { class: 'rlist' });
+  const empty = el('p', { class: 'match-quiet is-empty', hidden: true });
+  return { section: el('section', { class: 'today-section' }, heading, list, empty), heading, list, empty };
+}
+
+let todayView = 'today';
+let redrawTodayDates = null;
+
+/** The Today / This week switch under the date line. */
+function todayViewBar() {
+  const buttons = [['today', 'Today'], ['week', 'This week']].map(([view, label]) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `today-view-tab${view === todayView ? ' is-on' : ''}`,
+    aria: { selected: String(view === todayView) },
+    textContent: label,
+    on: {
+      click(event) {
+        if (view === todayView) return;
+        todayView = view;
+        for (const button of event.currentTarget.parentElement.children) {
+          const on = button === event.currentTarget;
+          button.classList.toggle('is-on', on);
+          button.setAttribute('aria-selected', String(on));
+        }
+        redrawTodayDates?.();
+      },
+    },
+  }));
+  return el('div', { class: 'today-view', role: 'tablist', aria: { label: 'Today or this week' } }, ...buttons);
 }
 
 /* Prediction markets: important, near-term questions from Polymarket's featured events. */
@@ -3678,16 +3836,25 @@ function polymarketRows(list) {
   return el('div', { class: 'pm-wrap' }, head, el('div', { class: 'pm-list' }, ...rows));
 }
 
-/* Trending on X in Canada, with a little context from Wikipedia. */
-const TREND_STORE = 'multigrid.trends.v1';
+/* Trending on X in Canada or the US, with a little context from Wikipedia. */
+const TREND_STORE = 'multigrid.trends.v2';
 const TREND_TTL = 10 * 60 * 1000;
-let trendAsk = null;
+const trendAsks = new Map();
 
 const readTrendCache = () => {
-  try { return JSON.parse(localStorage.getItem(TREND_STORE) || 'null'); } catch { return null; }
+  try {
+    const cache = JSON.parse(localStorage.getItem(TREND_STORE) || 'null');
+    return cache && typeof cache === 'object' && !Array.isArray(cache) ? cache : null;
+  } catch {
+    return null;
+  }
 };
-const writeTrendCache = (list) => {
-  try { localStorage.setItem(TREND_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
+const writeTrendCache = (country, list) => {
+  try {
+    const cache = readTrendCache() || {};
+    cache[country] = { at: Date.now(), list };
+    localStorage.setItem(TREND_STORE, JSON.stringify(cache));
+  } catch { /* not remembered */ }
 };
 
 async function wikiSummary(name) {
@@ -3713,13 +3880,14 @@ async function wikiSummary(name) {
   }
 }
 
-async function loadTrends() {
-  const saved = readTrendCache();
+async function loadTrends(country = 'ca') {
+  const region = TREND_REGIONS[country] || TREND_REGIONS.ca;
+  const saved = readTrendCache()?.[country];
   if (saved && Array.isArray(saved.list) && Date.now() - saved.at < TREND_TTL) return saved.list;
-  if (trendAsk) return trendAsk;
-  trendAsk = (async () => {
+  if (trendAsks.has(country)) return trendAsks.get(country);
+  const ask = (async () => {
     try {
-      const response = await fetch('https://r.jina.ai/https://trends24.in/canada/', {
+      const response = await fetch(`https://r.jina.ai/${region.url}`, {
         cache: 'no-cache',
         signal: AbortSignal.timeout?.(15000),
       });
@@ -3747,15 +3915,16 @@ async function loadTrends() {
         if (list.length >= 8) break;
       }
       if (list.length) {
-        writeTrendCache(list);
+        writeTrendCache(country, list);
         return list;
       }
     } catch {
       // Use the last good list below.
     }
     return Array.isArray(saved?.list) ? saved.list : [];
-  })().finally(() => { trendAsk = null; });
-  return trendAsk;
+  })().finally(() => { trendAsks.delete(country); });
+  trendAsks.set(country, ask);
+  return ask;
 }
 
 function trendRow(item) {
@@ -3774,41 +3943,91 @@ function trendRow(item) {
     item.volume ? el('span', { class: 'trend-vol', textContent: item.volume }) : null));
 }
 
-function trendingSection(list) {
-  const categories = ['News', 'Sport', 'Culture', 'Tech'].filter((category) => list.some((item) => item.category === category));
+function trendingSection(initial = {}) {
+  let country = initial.us && !initial.ca ? 'us' : 'ca';
   let tab = 'All';
-  const tabs = el('div', { class: 'matches-tabs trend-tabs', role: 'tablist' }, ...['All', ...categories].map((category) => el('button', {
+  const lists = { ca: initial.ca || [], us: initial.us || [] };
+  const regionButtons = Object.entries(TREND_REGIONS).map(([id, region]) => el('button', {
     type: 'button',
     role: 'tab',
-    class: `matches-tab${category === tab ? ' is-on' : ''}`,
-    aria: { selected: String(category === tab) },
-    textContent: category,
-    on: {
-      click(event) {
-        tab = category;
-        for (const button of event.currentTarget.parentElement.children) {
-          const on = button === event.currentTarget;
-          button.classList.toggle('is-on', on);
-          button.setAttribute('aria-selected', String(on));
-        }
-        draw();
-      },
-    },
-  })));
+    class: `trend-region${id === country ? ' is-on' : ''}`,
+    aria: { selected: String(id === country) },
+    textContent: region.label,
+    on: { click() { loadCountry(id); } },
+  }));
+  const regions = el('span', { class: 'trend-regions', role: 'tablist', aria: { label: 'Country' } }, ...regionButtons);
+  const tabs = el('div', { class: 'matches-tabs trend-tabs', role: 'tablist' });
   const rows = el('ul', { class: 'trend-list' });
-  const draw = () => rows.replaceChildren(...list.filter((item) => tab === 'All' || item.category === tab).map(trendRow));
+  const empty = el('p', { class: 'match-quiet is-empty', hidden: true });
+
+  const syncRegions = () => {
+    for (const button of regionButtons) {
+      const on = button.textContent === TREND_REGIONS[country].label;
+      button.classList.toggle('is-on', on);
+      button.setAttribute('aria-selected', String(on));
+    }
+  };
+
+  const draw = () => {
+    const list = lists[country] || [];
+    const categories = ['News', 'Sport', 'Culture', 'Tech'].filter((category) => list.some((item) => item.category === category));
+    if (tab !== 'All' && !categories.includes(tab)) tab = 'All';
+    tabs.hidden = !list.length;
+    tabs.replaceChildren(...['All', ...categories].map((category) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `matches-tab${category === tab ? ' is-on' : ''}`,
+      aria: { selected: String(category === tab) },
+      textContent: category,
+      on: {
+        click() {
+          tab = category;
+          draw();
+        },
+      },
+    })));
+    rows.replaceChildren(...list.filter((item) => tab === 'All' || item.category === tab).map(trendRow));
+    empty.hidden = Boolean(list.length);
+    empty.textContent = `No trends for ${TREND_REGIONS[country].label} right now.`;
+    syncRegions();
+  };
+
+  async function loadCountry(next) {
+    if (next === country) return;
+    country = next;
+    tab = 'All';
+    syncRegions();
+    if (!lists[country]?.length) {
+      rows.replaceChildren(el('li', { class: 'trend-loading', textContent: `Loading ${TREND_REGIONS[country].label} trends…` }));
+      empty.hidden = true;
+      tabs.hidden = true;
+      try {
+        lists[country] = await loadTrends(country);
+      } catch {
+        lists[country] = [];
+      }
+    }
+    draw();
+  }
+
   draw();
-  return el('section', { class: 'today-section' },
-    el('h4', { class: 'match-day trend-head' }, el('span', { textContent: 'Trending on X' }), el('small', { textContent: 'Canada' })),
-    tabs,
-    rows);
+  const other = country === 'ca' ? 'us' : 'ca';
+  loadTrends(other).then((list) => {
+    lists[other] = list;
+    if (country === other) draw();
+  }).catch(() => {});
+  return el('section', { class: 'today-section' }, el('h4', { class: 'match-day trend-head' }, el('span', { textContent: 'Trending on X' }), regions), tabs, rows, empty);
 }
 
 function fillTodayTrends(holder, asked) {
-  loadTrends().then((list) => {
-    if (!list.length || asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
-    holder.replaceChildren(...trendingSection(list).childNodes);
+  const show = (initial) => {
+    if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
+    holder.replaceChildren(...trendingSection(initial).childNodes);
     holder.hidden = false;
+  };
+  loadTrends('ca').then((list) => {
+    if (list.length) show({ ca: list });
+    else loadTrends('us').then((us) => { if (us.length) show({ us }); }).catch(() => {});
   }).catch(() => {});
 }
 
@@ -3962,16 +4181,17 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows, poly, tube] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
-    episodesThisWeek(now).catch(() => []),
+    episodesForFavorites().catch(() => []),
     loadIndex(true).catch(() => null),
     loadMovies(),
     loadJob('charts.json'),
     loadJob('shows.json'),
     loadPolymarkets().catch(() => []),
     newYouTubeUploads().catch(() => []),
+    loadJob('flights.json'),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -3989,31 +4209,42 @@ async function fillToday() {
     onClick() { closePopovers(); addStream(item.input); },
   }))) : null;
 
-  const episodeList = episodes.length ? el('ul', { class: 'rlist' }, ...episodes.map(({ item, info }) => todayRow({
-    art: favoriteArt(item, parseSource(item.input)),
-    top: el('span', { textContent: `${shortDay(info.next.at)} ${clock(info.next.at)}` }),
-    title: item.name,
-    sub: [info.next.season && info.next.number ? `S${info.next.season} E${info.next.number}` : '', info.next.name].filter(Boolean).join(' · '),
-    onClick() { closePopovers(); addStream(item.input); },
-  }))) : null;
+  const moviesSection = dateSection();
+  const episodesSection = dateSection();
+  const premieresSection = dateSection();
+  const premiereAll = premieresOf(shows);
 
-  const movieList = movies.length ? el('ul', { class: 'rlist' }, ...movies.map((movie) => todayRow({
-    art: movie.poster && /^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(movie.poster)
-      ? el('span', { class: 'fart is-picture movie-poster' }, el('img', { src: movie.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
-      : el('span', { class: 'fart is-icon movie-poster' }, icon('film', 20)),
-    top: el('span', { textContent: `${movieDay(movie.date)} · ${movie.kind === 'cinema' ? 'In cinemas' : `On ${movie.service}`}` }),
-    title: movie.title,
-    sub: movie.trailer ? 'Play the trailer' : '',
-    onClick() {
-      closePopovers();
-      // The trailer plays in a tile; without one, the film's Wikipedia page opens.
-      if (/^[\w-]{11}$/.test(movie.trailer || '')) addStream(`https://www.youtube.com/watch?v=${movie.trailer}`);
-      else window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(String(movie.page || movie.title).replace(/ /g, '_'))}`, '_blank', 'noopener');
-    },
-  }))) : null;
+  redrawTodayDates = () => {
+    const week = todayView === 'week';
 
-  const premieres = premieresOf(shows);
-  const premiereList = premieres.length ? el('ul', { class: 'rlist' }, ...premieres.map(premiereRow)) : null;
+    const movieItems = moviesForView(movies, todayView, now);
+    moviesSection.heading.textContent = week ? 'Movies this week' : 'Movies today';
+    moviesSection.list.hidden = !movieItems.length;
+    moviesSection.list.replaceChildren(...movieItems.map(movieRow));
+    moviesSection.empty.hidden = Boolean(movieItems.length);
+    moviesSection.empty.textContent = week ? 'No movies out this week.' : 'No movies out today.';
+
+    const episodeItems = week
+      ? episodes.filter(({ info }) => episodeInWeek(info, now))
+        .sort((a, b) => (a.info.next?.at || a.info.last?.at || 0) - (b.info.next?.at || b.info.last?.at || 0))
+        .map((entry) => episodeWeekRow(entry, now)).filter(Boolean)
+      : episodes.filter(({ info }) => isNewToday(info, now))
+        .sort((a, b) => (a.info.next?.at || a.info.last?.at || 0) - (b.info.next?.at || b.info.last?.at || 0))
+        .map((entry) => episodeTodayRow(entry, now)).filter(Boolean);
+    episodesSection.heading.textContent = week ? 'New episodes this week' : 'New episodes today';
+    episodesSection.list.hidden = !episodeItems.length;
+    episodesSection.list.replaceChildren(...episodeItems);
+    episodesSection.empty.hidden = Boolean(episodeItems.length);
+    episodesSection.empty.textContent = week ? 'No new episodes this week.' : 'No new episodes today.';
+
+    const premiereItems = premieresForView(premiereAll, todayView, now);
+    premieresSection.heading.textContent = week ? 'Premieres this week' : 'Premieres today';
+    premieresSection.list.hidden = !premiereItems.length;
+    premieresSection.list.replaceChildren(...premiereItems.map(premiereRow));
+    premieresSection.empty.hidden = Boolean(premiereItems.length);
+    premieresSection.empty.textContent = week ? 'No premieres this week.' : 'No premieres today.';
+  };
+  redrawTodayDates();
 
   const read = readIds();
   const stories = news ? [
@@ -4035,9 +4266,10 @@ async function fillToday() {
     todaySection('New on YouTube', tubeList.length ? el('ul', { class: 'rlist' }, ...tubeList.map(youtubeTodayRow)) : null),
     todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
-    todaySection('Movies this week', movieList),
-    todaySection('New episodes this week', episodeList),
-    todaySection('Premieres this week', premiereList),
+    todaySection('Flight deals from Toronto', flightsView(flights)),
+    moviesSection.section,
+    episodesSection.section,
+    premieresSection.section,
     todaySection('Charts', chartsView(charts)),
   ].filter(Boolean);
   const scroll = body.scrollTop;
@@ -4070,6 +4302,8 @@ function weatherLine(holder, hoursBox, weather) {
 function buildToday() {
   const menu = $('today-menu');
   chartTab = 0;
+  todayView = 'today';
+  redrawTodayDates = null;
   const hoursBox = el('ul', { class: 'wx-hours', hidden: true, aria: { label: 'The next 12 hours' } });
   const line = el('button', {
     type: 'button',
@@ -4091,6 +4325,7 @@ function buildToday() {
       el('h3', { textContent: 'Today' }),
       el('span', { class: 'today-date', textContent: dayFormat.format(new Date()) }),
       line),
+    todayViewBar(),
     hoursBox,
     el('div', { class: 'matches-body' }),
     markets,

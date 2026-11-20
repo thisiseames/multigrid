@@ -19,7 +19,7 @@ const stamp = (episode) => {
   return Number.isFinite(time) ? time : null;
 };
 
-/** { show, next: { at, season, number, name }, last: { at } }, either part may be null. */
+/** { show, next: { at, season, number, name }, last: { at, season, number, name } }, either part may be null. */
 export function episodeFor(name) {
   const key = String(name || '').trim().toLocaleLowerCase();
   if (!key) return Promise.resolve(null);
@@ -36,7 +36,7 @@ export function episodeFor(name) {
       const found = {
         show: show.name || name,
         next: stamp(next) ? { at: stamp(next), season: next.season ?? null, number: next.number ?? null, name: next.name || '' } : null,
-        last: stamp(last) ? { at: stamp(last) } : null,
+        last: stamp(last) ? { at: stamp(last), season: last.season ?? null, number: last.number ?? null, name: last.name || '' } : null,
         checked: Date.now(),
       };
       try {

@@ -36,6 +36,7 @@ const ICON_PATHS = {
   phone: '<rect x="4.5" y="2" width="7" height="12" rx="1.5"/><path d="M7.2 12h1.6"/>',
   live: '<circle cx="8" cy="8" r="1.6"/><path d="M5.2 5.2a4 4 0 0 0 0 5.6M10.8 5.2a4 4 0 0 1 0 5.6M3.4 3.4a6.5 6.5 0 0 0 0 9.2M12.6 3.4a6.5 6.5 0 0 1 0 9.2"/>',
   pitch: '<rect x="1.8" y="3" width="12.4" height="10" rx="1.2"/><path d="M8 3v10M1.8 6h2v4h-2M14.2 6h-2v4h2"/><circle cx="8" cy="8" r="1.4"/>',
+  plane: '<path d="M2.2 8.2 13.6 2.3 9.5 14l-1.8-4.4-4.3-1.4z"/><path d="M7.7 9.6 11.7 3.4"/>',
   music: '<path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.3" cy="12" r="1.7"/><circle cx="11.3" cy="10.5" r="1.7"/>',
   film: '<rect x="2.5" y="3" width="11" height="10" rx="1.3"/><path d="M5 3v10M11 3v10M2.5 6h2.5M2.5 10h2.5M11 6h2.5M11 10h2.5"/>',
   crop: '<path d="M4.5 1.5v10h10M1.5 4.5h10v10"/>',

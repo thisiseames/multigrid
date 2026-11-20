@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { parseTrends, categoryOf, trendKey, isVague } = await import('../src/trends.js');
+const { TREND_REGIONS } = await import('../src/trends.js');
 
 const markdown = `
 ## Canada X (Twitter) Trends for last 24 hours
@@ -52,4 +53,12 @@ test('trends: GTA variants collapse to one key; vague pages are marked', () => {
   assert.equal(trendKey('Vladimir Putin', 'Leader of Russia'), 'vladimir-putin');
   assert.equal(isVague('Topics referred to by the same term'), true);
   assert.equal(isVague('American ice hockey player'), false);
+});
+
+test('trends: Canada and the US use their own trends24 pages', () => {
+  assert.deepEqual(Object.keys(TREND_REGIONS), ['ca', 'us']);
+  assert.equal(TREND_REGIONS.ca.label, 'Canada');
+  assert.equal(TREND_REGIONS.ca.url, 'https://trends24.in/canada/');
+  assert.equal(TREND_REGIONS.us.label, 'US');
+  assert.equal(TREND_REGIONS.us.url, 'https://trends24.in/united-states/');
 });

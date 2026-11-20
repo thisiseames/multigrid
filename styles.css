@@ -1476,10 +1476,18 @@ body.is-phone .resume-note button { height: 44px; padding: 0 16px; font-size: 14
 .today-head h3 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
 .today-head span { font-size: 13px; color: var(--text-2); }
 .today-section + .today-section { margin-top: 2px; }
+.today-view { display: flex; gap: 2px; margin: 8px 16px 2px; padding: 3px; border-radius: 10px; background: var(--surface); }
+.today-view-tab { flex: 1; height: 32px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.today-view-tab:hover { color: var(--text); }
+.today-view-tab.is-on { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
 
 /* Trending on X in Today */
 .trend-head { justify-content: space-between; }
-.trend-head small { margin-left: auto; font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-2); }
+.trend-regions { margin-left: auto; display: flex; gap: 2px; padding: 2px; border-radius: 8px; background: rgba(255,255,255,.06); }
+.trend-region { height: 24px; padding: 0 8px; border-radius: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-2); }
+.trend-region:hover { color: var(--text); }
+.trend-region.is-on { background: var(--raised); color: var(--text); }
+.trend-loading { list-style: none; padding: 12px 16px; font-size: 12px; color: var(--text-2); }
 .trend-tabs { gap: 3px; padding: 6px 10px 8px; border-bottom: 0; flex-wrap: wrap; overflow: visible; }
 .trend-tabs .matches-tab { padding: 0 8px; font-size: 12px; }
 .trend-list { list-style: none; margin: 0; padding: 0; }
@@ -1746,6 +1754,9 @@ body.remote-open { overflow: hidden; }
   body.is-phone .matches-tab { height: 44px; padding: 0 18px; font-size: 15px; }
   /* The trend filters are secondary; keep all five visible on one line. */
   body.is-phone .trend-tabs .matches-tab { height: 40px; padding: 0 10px; font-size: 13px; }
+  body.is-phone .trend-region { height: 32px; padding: 0 10px; font-size: 12px; }
+  body.is-phone .flight-detail { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  body.is-phone .flight-link { height: 26px; padding: 0 9px; font-size: 11px; }
   body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file { min-height: 44px; }
   /* The Watch shortcut is secondary; the fixture names should lead the row. */
   body.is-phone .match-watch { height: 34px; min-height: 34px; padding: 0 11px 0 9px; gap: 5px; font-size: 12.5px; position: relative; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
@@ -1922,6 +1933,8 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
   .today-head { align-items: center; padding: 0 16px 10px; column-gap: 6px; }
   .today-head .today-date { font-size: 14px; }
   .wx-line { min-height: 44px; margin: -8px 0; font-size: 14px; }
+  body.is-phone .today-view { margin: 6px 12px 2px; }
+  body.is-phone .today-view-tab { height: 42px; font-size: 14px; }
 }
 
 /* Today: Movies this week */
@@ -1955,3 +1968,21 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .chart-act { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .chart-act:hover { background: rgba(255, 255, 255, 0.14); }
 .chart-week { margin: 7px 4px 0; font-size: 11.5px; color: var(--text-2); }
+
+/* Today: flight deals */
+.flight-list { list-style: none; margin: 0; padding: 0; }
+.flight-row { display: flex; align-items: flex-start; gap: 9px; padding: 9px 12px; }
+.flight-row + .flight-row { border-top: 1px solid var(--border); }
+.flight-icon { flex: none; width: 28px; height: 28px; margin-top: 1px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,.06); color: var(--accent); }
+.flight-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.flight-route { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.flight-route b { font-size: 13.5px; font-weight: 700; }
+.flight-route small { font-size: 10.5px; letter-spacing: .04em; color: var(--text-2); }
+.flight-detail { font-size: 11.5px; line-height: 1.3; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flight-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+.flight-price { font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.flight-price.is-missing { font-size: 10.5px; font-weight: 500; color: var(--text-2); }
+.flight-links { display: flex; gap: 4px; margin-top: 3px; }
+.flight-link { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 999px; background: rgba(255,255,255,.06); color: var(--text-2); font-size: 10.5px; font-weight: 600; text-decoration: none; }
+.flight-link:hover { background: rgba(255,255,255,.12); color: var(--text); }
+.flight-note { margin: 7px 12px 0; font-size: 10.5px; line-height: 1.4; color: var(--text-2); }

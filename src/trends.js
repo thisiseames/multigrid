@@ -1,5 +1,10 @@
-// What is trending on X in Canada, and enough context to know whether it is interesting.
-// The trend names come from trends24; the context comes from Wikipedia.
+// What is trending on X in Canada and the US, and enough context to know whether it is
+// interesting. The trend names come from trends24; the context comes from Wikipedia.
+
+export const TREND_REGIONS = {
+  ca: { label: 'Canada', url: 'https://trends24.in/canada/' },
+  us: { label: 'US', url: 'https://trends24.in/united-states/' },
+};
 
 const TREND_LINK = /\[([^\]]+)\]\((https:\/\/twitter\.com\/search\?q=[^)]+)\)\s*([0-9][0-9.,]*[KMB]?)?/g;
 
