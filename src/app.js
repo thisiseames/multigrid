@@ -25,6 +25,7 @@ import './phone.js';
 import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
+import { pickPredictions } from './predictions.js';
 import { twitchStatus, viewerCount } from './twitch.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
@@ -3418,75 +3419,49 @@ function todaySection(title, items) {
   return items ? el('section', { class: 'today-section' }, el('h4', { class: 'match-day', textContent: title }), items) : null;
 }
 
-/* Prediction markets: Polymarket's public data, ranked by the last 24 hours of volume. */
-const POLY_STORE = 'multigrid.polymarket.v1';
-const POLY_TTL = 3 * 60 * 1000;
-const parseJsonList = (value) => {
-  if (Array.isArray(value)) return value;
-  try { return JSON.parse(value); } catch { return []; }
-};
-const compactMoney = (value) => {
-  const number = Number(value) || 0;
-  if (number >= 1000000) return `$${(number / 1000000).toFixed(number >= 10000000 ? 0 : 1)}M`;
-  if (number >= 1000) return `$${Math.round(number / 1000)}k`;
-  return `$${Math.round(number)}`;
-};
+/* Prediction markets: important, near-term questions from Polymarket's featured events. */
+const POLY_STORE = 'multigrid.polymarket.v3';
+const POLY_TTL = 10 * 60 * 1000;
 
 async function loadPolymarkets() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(POLY_STORE) || 'null'); } catch { /* ask again */ }
+  if (saved && Array.isArray(saved.list) && Date.now() - saved.at < POLY_TTL) return saved.list;
   try {
-    const saved = JSON.parse(localStorage.getItem(POLY_STORE) || 'null');
-    if (saved && Array.isArray(saved.list) && Date.now() - saved.at < POLY_TTL) return saved.list;
+    const response = await fetch('https://gamma-api.polymarket.com/events?closed=false&active=true&archived=false&featured=true&order=volume24hr&ascending=false&limit=30', {
+      cache: 'no-cache',
+      signal: AbortSignal.timeout?.(9000),
+    });
+    if (!response.ok) throw new Error(`Polymarket answered ${response.status}`);
+    const data = await response.json();
+    const list = pickPredictions(Array.isArray(data) ? data : []);
+    if (list.length) {
+      try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
+      return list;
+    }
   } catch {
-    // A damaged cache just means ask again.
+    // Keep the last good questions if the feed is busy.
   }
-  const response = await fetch('https://gamma-api.polymarket.com/markets?closed=false&active=true&archived=false&order=volume24hr&ascending=false&limit=30', {
-    cache: 'no-cache',
-    signal: AbortSignal.timeout?.(9000),
-  });
-  if (!response.ok) return [];
-  const data = await response.json();
-  const seen = new Set();
-  const list = (Array.isArray(data) ? data : [])
-    .map((market) => {
-      const prices = parseJsonList(market.outcomePrices);
-      const event = (market.events || [])[0] || {};
-      return {
-        question: market.question || event.title || 'Market',
-        chance: Number(prices[0]) || 0,
-        change: Number(market.oneDayPriceChange) || 0,
-        volume: Number(market.volume24hr) || 0,
-        slug: event.slug || '',
-      };
-    })
-    .filter((market) => market.volume > 0 && market.slug)
-    .filter((market) => {
-      // One row per event, so four Fed outcomes don't crowd out the rest.
-      if (seen.has(market.slug)) return false;
-      seen.add(market.slug);
-      return true;
-    })
-    .slice(0, 8);
-  try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
-  return list;
+  return Array.isArray(saved?.list) ? saved.list : [];
 }
 
 function polymarketRows(list) {
   const head = el('div', { class: 'pm-head' },
-    el('span', { class: 'pm-q', textContent: 'Most traded · Polymarket' }),
+    el('span', { class: 'pm-q', textContent: 'What people expect · Polymarket' }),
     el('span', { class: 'pm-chance', textContent: 'Chance' }),
-    el('span', { class: 'pm-move', textContent: '24h' }),
-    el('span', { class: 'pm-vol', textContent: 'Volume' }));
-  const rows = list.map((market, index) => el('a', {
+    el('span', { class: 'pm-move', textContent: '24h' }));
+  const rows = list.map((market) => el('a', {
     class: 'pm-row',
     href: `https://polymarket.com/event/${encodeURIComponent(market.slug)}`,
     target: '_blank',
     rel: 'noopener noreferrer',
     title: market.question,
   },
-  el('span', { class: 'pm-q' }, el('b', { textContent: String(index + 1) }), el('span', { textContent: market.question })),
+  el('span', { class: 'pm-q' },
+    el('span', { class: 'pm-topic', textContent: market.topic }),
+    el('span', { class: 'pm-title', textContent: market.question })),
   el('span', { class: 'pm-chance', textContent: `${Math.round(market.chance * 100)}%` }),
-  el('span', { class: `pm-move${market.change > 0 ? ' is-up' : market.change < 0 ? ' is-down' : ''}`, textContent: market.change ? `${market.change > 0 ? '+' : '−'}${Math.abs(market.change * 100).toFixed(1)}` : '—' }),
-  el('span', { class: 'pm-vol', textContent: compactMoney(market.volume) })));
+  el('span', { class: `pm-move${market.change > 0 ? ' is-up' : market.change < 0 ? ' is-down' : ''}`, textContent: market.change ? `${market.change > 0 ? '+' : '−'}${Math.abs(market.change * 100).toFixed(1)}` : '—' })));
   return el('div', { class: 'pm-wrap' }, head, el('div', { class: 'pm-list' }, ...rows));
 }
 
@@ -3514,25 +3489,52 @@ function youtubeTitle(id) {
     .catch(() => '');
 }
 
+const YT_TODAY = 6; // all channels are checked; six are shown and the rest rotate in next time
+
 async function newYouTubeUploads() {
   const seen = readYtSeen();
+  const lists = new Set();
   const channels = listFavorites()
     .map((favorite) => ({ favorite, source: parseSource(favorite.input) }))
     .filter(({ source }) => source.kind === 'youtube' && source.youtube.list?.startsWith('UU'))
-    .slice(0, 4);
+    .filter(({ source }) => {
+      if (lists.has(source.youtube.list)) return false;
+      lists.add(source.youtube.list);
+      return true;
+    });
   if (!channels.length) return [];
-  const found = await Promise.all(channels.map(async ({ favorite, source }) => {
-    const id = await newestUpload(source.youtube.list);
+  const found = (await Promise.all(channels.map(async ({ favorite, source }) => {
+    const list = source.youtube.list;
+    const id = await newestUpload(list);
     if (!id) return null;
-    const before = seen[source.youtube.list];
+    const before = seen[list];
     const changed = Boolean(before && before.id !== id);
     const opened = !changed && Boolean(before?.opened);
-    const title = !changed && before?.title ? before.title : await youtubeTitle(id);
-    seen[source.youtube.list] = { id, title, at: Date.now(), ...(opened ? { opened: true } : {}) };
-    return { favorite, id, title, first: !changed, list: source.youtube.list, opened };
+    const fresh = changed || (!changed && Boolean(before?.fresh) && !opened);
+    const title = !changed && before?.title ? before.title : '';
+    seen[list] = {
+      id, title, at: Date.now(), fresh,
+      ...(opened ? { opened: true } : {}),
+      ...(before?.shownAt ? { shownAt: before.shownAt } : {}),
+    };
+    return { favorite, id, title, fresh, list, opened };
+  }))).filter(Boolean).filter((item) => !item.opened);
+  // A genuinely new upload goes first. The rest wait their turn, oldest shown first.
+  found.sort((a, b) => (Number(b.fresh) - Number(a.fresh))
+    || ((seen[a.list]?.shownAt || 0) - (seen[b.list]?.shownAt || 0)));
+  const shown = found.slice(0, YT_TODAY);
+  const now = Date.now();
+  await Promise.all(shown.map(async (item) => {
+    if (!item.title) item.title = await youtubeTitle(item.id);
+    const entry = seen[item.list];
+    if (entry) {
+      entry.title = item.title;
+      entry.fresh = false;
+      entry.shownAt = now;
+    }
   }));
   writeYtSeen(seen);
-  return found.filter(Boolean);
+  return shown;
 }
 
 function youtubeTodayRow(item) {
@@ -3543,7 +3545,7 @@ function youtubeTodayRow(item) {
   }, true);
   return todayRow({
     art,
-    top: el('span', { textContent: `${item.first ? 'Newest' : 'New'} from ${item.favorite.name}` }),
+    top: el('span', { textContent: `${item.fresh ? 'New' : 'Newest'} from ${item.favorite.name}` }),
     title: item.title || 'New video',
     onClick() {
       markYoutubeOpened(item.list, item.id);
