@@ -9,7 +9,8 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { newestUpload, tiktokAccounts } from './players.js';
+import { addTikTokAccounts, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { parseFollowingList } from './tiktok-list.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
@@ -197,15 +198,21 @@ function buildAccountMenu(id) {
     on: { click: () => pick(account.name) },
   },
     el('span', { class: 'account-name', textContent: `@${account.name}` }),
-    el('span', { class: 'account-note', textContent: account.name === current ? 'Playing' : account.title || `${account.videos} video${account.videos === 1 ? '' : 's'}` }),
+    el('span', { class: 'account-note', textContent: account.name === current ? 'Playing' : account.title || (account.videos ? `${account.videos} videos` : '') }),
     account.name === current ? icon('check') : null);
 
   const mine = accounts.filter((account) => account.local);
   const built = accounts.filter((account) => !account.local);
+  const following = tiktokFollowing();
   menu.replaceChildren(...[
     el('p', { class: 'account-heading', textContent: 'Switch TikTok account' }),
     mine.length ? el('p', { class: 'account-heading is-sub', textContent: 'Added here' }) : null,
     ...mine.map(item),
+    el('button', {
+      type: 'button',
+      class: 'account-add',
+      on: { click() { closePopovers(); chooseFollowing(); } },
+    }, icon('saved'), el('span', { textContent: following.length ? `Choose followed accounts… (${following.length})` : 'Import following list…' })),
     el('button', {
       type: 'button',
       class: 'account-add',
@@ -214,6 +221,103 @@ function buildAccountMenu(id) {
     built.length ? el('p', { class: 'account-heading is-sub', textContent: 'Built in' }) : null,
     ...built.map(item),
   ].filter(Boolean));
+}
+
+/** The list-tick screen needs an import first; after that it opens straight up. */
+function chooseFollowing() {
+  if (tiktokFollowing().length) openFollowingPicker();
+  else pickFollowingFile();
+}
+
+/** Asks for the TikTok export file and remembers the names it contains. */
+function pickFollowingFile() {
+  const input = el('input', { type: 'file', accept: '.txt,.json,text/plain,application/json', hidden: true });
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    input.remove();
+    if (!file) return;
+    let text = '';
+    try {
+      text = await file.text();
+    } catch {
+      toast("Couldn't read that file.");
+      return;
+    }
+    const result = parseFollowingList(text, file.name);
+    if (result.error) {
+      toast(result.error);
+      return;
+    }
+    if (!saveTikTokFollowing(result.names)) {
+      toast("Couldn't save the list. This browser's storage may be full.");
+      return;
+    }
+    toast(`Imported ${result.names.length} followed accounts.`);
+    openFollowingPicker();
+  });
+  document.body.append(input);
+  input.click();
+}
+
+/** The full following list, so accounts can be ticked rather than remembered. */
+function openFollowingPicker() {
+  const box = $('following-box');
+  if (box.open) return;
+  const following = tiktokFollowing();
+  if (!following.length) {
+    pickFollowingFile();
+    return;
+  }
+  const added = new Set(tiktokAccounts().filter((account) => account.local).map((account) => account.name));
+  const rows = following.map((name) => {
+    const check = el('input', { type: 'checkbox', checked: added.has(name), value: name });
+    const row = el('label', { class: 'follow-row' }, check, el('span', { class: 'follow-name', textContent: `@${name}` }));
+    row.dataset.name = name;
+    return { row, check, name };
+  });
+  const filter = el('input', { type: 'search', class: 'follow-filter', placeholder: 'Filter by name', autocomplete: 'off' });
+  const count = el('span', { class: 'follow-count' });
+  const submit = el('button', { type: 'submit', class: 'add-button' });
+  const list = el('div', { class: 'follow-list' }, ...rows.map(({ row }) => row));
+  const already = following.filter((name) => added.has(name)).length;
+  const refresh = () => {
+    const chosen = rows.reduce((total, { check }) => total + (check.checked ? 1 : 0), 0);
+    count.textContent = `${chosen} selected`;
+    submit.textContent = chosen ? `Add ${chosen} selected` : already ? 'Remove all' : 'Add selected';
+    submit.disabled = !chosen && !already;
+  };
+  list.addEventListener('change', refresh);
+  filter.addEventListener('input', () => {
+    const query = filter.value.trim().toLowerCase();
+    for (const { row, name } of rows) row.hidden = Boolean(query) && !name.includes(query);
+  });
+  refresh();
+
+  const reimport = el('button', { type: 'button', class: 'plain-button', on: { click() { box.close(); pickFollowingFile(); } } }, 'Import a newer file…');
+  box.replaceChildren(el('form', {
+    on: {
+      submit(event) {
+        event.preventDefault();
+        const chosen = rows.filter(({ check }) => check.checked).map(({ name }) => name);
+        const chosenSet = new Set(chosen);
+        const drop = following.filter((name) => added.has(name) && !chosenSet.has(name));
+        addTikTokAccounts(chosen.filter((name) => !added.has(name)));
+        removeTikTokAccounts(drop);
+        box.close();
+        toast(`${chosen.length} account${chosen.length === 1 ? '' : 's'} in the TikTok menu.`);
+      },
+    },
+  },
+  el('h2', { textContent: 'Choose followed accounts' }),
+  el('p', { class: 'follow-note', textContent: `${following.length} accounts from your TikTok export. Tick the ones you want in the menu.` }),
+  filter,
+  list,
+  el('div', { class: 'follow-foot' }, count, reimport),
+  el('div', { class: 'dialog-actions' },
+    el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel'),
+    submit)));
+  openDialog(box);
+  filter.focus();
 }
 
 /** Every stream's sound in one sheet, with One sound and Ticker at the top. */

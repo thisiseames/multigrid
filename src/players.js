@@ -538,6 +538,7 @@ const TIKTOK_ERRORS = {
 const FEEDS_TTL = 15 * 60 * 1000;
 const ACCOUNT_TTL = 6 * 60 * 60 * 1000;
 const ACCOUNT_KEY = 'multigrid.tiktok.accounts';
+const FOLLOWING_KEY = 'multigrid.tiktok.following';
 const FEED_READER = 'https://r.jina.ai/';
 let feeds = null;
 let feedsAt = 0;
@@ -551,12 +552,64 @@ function localAccounts() {
   }
 }
 
-function saveAccount(name, entry) {
+function writeLocalAccounts(list) {
   try {
-    localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ ...localAccounts(), [name]: entry }));
+    localStorage.setItem(ACCOUNT_KEY, JSON.stringify(list));
+    return true;
   } catch {
     // A browser that refuses storage still plays the list it just fetched.
+    return false;
   }
+}
+
+function saveAccount(name, entry) {
+  writeLocalAccounts({ ...localAccounts(), [name]: entry });
+}
+
+/** The following list imported from TikTok's data export, or an empty list. */
+export function tiktokFollowing() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FOLLOWING_KEY) || 'null');
+    return Array.isArray(saved?.names) ? saved.names.filter((name) => typeof name === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Replaces the imported following list with a fresh export. */
+export function saveTikTokFollowing(names) {
+  try {
+    localStorage.setItem(FOLLOWING_KEY, JSON.stringify({ at: Date.now(), names: [...new Set(names)] }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Adds accounts to the menu without fetching any videos yet. */
+export function addTikTokAccounts(names) {
+  const list = localAccounts();
+  let changed = false;
+  for (const name of names) {
+    if (!list[name]) {
+      list[name] = { title: '', videos: [], at: 0 };
+      changed = true;
+    }
+  }
+  return changed ? writeLocalAccounts(list) : true;
+}
+
+/** Takes accounts (and any videos remembered for them) back out of the menu. */
+export function removeTikTokAccounts(names) {
+  const list = localAccounts();
+  let changed = false;
+  for (const name of names) {
+    if (list[name]) {
+      delete list[name];
+      changed = true;
+    }
+  }
+  return changed ? writeLocalAccounts(list) : true;
 }
 
 /**

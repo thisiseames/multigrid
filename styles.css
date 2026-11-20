@@ -545,6 +545,23 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .account-add:hover { background: var(--hover); color: var(--text); }
 .account-add svg { width: 14px; height: 14px; flex: none; }
 
+/* Ticking accounts out of an imported TikTok following list */
+.following-box { width: min(460px, calc(100vw - 16px)); padding: 0; }
+.following-box form { display: flex; flex-direction: column; gap: 8px; padding: 14px; max-height: min(82dvh, 680px); }
+.following-box h2 { margin: 0; }
+.follow-note { margin: 0; font-size: 12px; color: var(--text-2); }
+.follow-filter { height: 32px; font-size: 13px; }
+.follow-list { flex: 1; min-height: 140px; overflow-y: auto; padding: 4px; border: 1px solid var(--border); border-radius: 8px; overscroll-behavior: contain; }
+.follow-row { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.follow-row:hover { background: var(--hover); }
+.follow-row[hidden] { display: none; }
+.follow-row input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--accent); }
+.follow-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.follow-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.follow-count { font-size: 12px; color: var(--text-2); }
+.follow-foot .plain-button { font-size: 12px; }
+body.is-phone .following-box { width: calc(100vw - 24px); }
+
 .hidden-menu { width: 280px; max-width: calc(100vw - 16px); padding: 6px; }
 .hidden-menu p { margin: 4px 8px 6px; color: var(--text-2); font-size: 12px; }
 .hidden-list { list-style: none; margin: 0; padding: 0; }
