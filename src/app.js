@@ -3046,6 +3046,25 @@ function weekKeys(now = Date.now()) {
   end.setDate(end.getDate() + 7);
   return { today: dayKey(now), start: dayKey(start.getTime()), end: dayKey(end.getTime()) };
 }
+
+/** The week ahead: tomorrow through the next seven days. Today belongs to the Today view. */
+function weekAheadKeys(now = Date.now()) {
+  const from = new Date(now);
+  from.setHours(0, 0, 0, 0);
+  from.setDate(from.getDate() + 1);
+  const end = new Date(from);
+  end.setDate(end.getDate() + 7);
+  return { today: dayKey(now), from: dayKey(from.getTime()), end: dayKey(end.getTime()) };
+}
+
+function weekAheadLabel(now = Date.now()) {
+  const { from, end } = weekAheadKeys(now);
+  if (from >= end) return 'Nothing left this week';
+  const start = new Date(`${from}T12:00:00`);
+  const last = new Date(new Date(`${end}T12:00:00`).getTime() - 86400000);
+  const short = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+  return start.toDateString() === last.toDateString() ? short.format(start) : `${short.format(start)}–${short.format(last)}`;
+}
 function dayLabel(time) {
   const diff = daysAway(time);
   if (diff === 0) return 'Today';
@@ -3476,13 +3495,12 @@ let todayAsked = 0;
 
 /** One-offs on my TV channels from now to the end of tonight: specials that are live or new
     (awards shows, concerts), and premieres and finales. Routine shows and reruns are left out. */
-function eventsToday(now = Date.now()) {
-  const end = new Date(now);
-  end.setHours(28, 0, 0, 0); // 4:00 am, so a late show still counts as tonight
+/** TV specials, premieres and finales between two times. */
+function eventsBetween(from, to, limit = 8) {
   const rows = [];
   const seen = new Set();
   for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
-    for (const show of showsBetween(item.name, parseSource(item.input), now, end.getTime())) {
+    for (const show of showsBetween(item.name, parseSource(item.input), from, to)) {
       if (!(show.special || show.premiere || show.finale)) continue;
       const key = `${guideKey(item.name)}|${show.start}`;
       if (seen.has(key)) continue;
@@ -3490,7 +3508,19 @@ function eventsToday(now = Date.now()) {
       rows.push({ item, show });
     }
   }
-  return rows.sort((a, b) => a.show.start - b.show.start).slice(0, 8);
+  return rows.sort((a, b) => a.show.start - b.show.start).slice(0, limit);
+}
+
+function eventsToday(now = Date.now()) {
+  const end = new Date(now);
+  end.setHours(28, 0, 0, 0); // 4:00 am, so a late show still counts as tonight
+  return eventsBetween(now, end.getTime());
+}
+
+function eventsThisWeek(now = Date.now()) {
+  const { from, end } = weekAheadKeys(now);
+  if (from >= end) return [];
+  return eventsBetween(new Date(`${from}T00:00:00`).getTime(), new Date(`${end}T00:00:00`).getTime(), 12);
 }
 
 /* Movies this week: cinema openings and streaming premieres, refreshed by the guide job from Wikipedia. */
@@ -3506,11 +3536,11 @@ async function loadMovies() {
   }
 }
 
-/** One day or the current Monday-Sunday week, in date order. Today is only in the Today view. */
+/** One day or the rest of this week. Today is only in the Today view. */
 function moviesForView(movies, view, now = Date.now()) {
-  const { today, start, end } = weekKeys(now);
+  const { today, from, end } = weekAheadKeys(now);
   return movies
-    .filter((movie) => (view === 'today' ? movie.date === today : movie.date >= start && movie.date < end && movie.date !== today))
+    .filter((movie) => (view === 'today' ? movie.date === today : movie.date >= from && movie.date < end))
     .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 
@@ -3536,11 +3566,11 @@ function premieresOf(data) {
   return items;
 }
 
-/** One day or the current Monday-Sunday week, in date order. Today is only in the Today view. */
+/** One day or the rest of this week. Today is only in the Today view. */
 function premieresForView(items, view, now = Date.now()) {
-  const { today, start, end } = weekKeys(now);
+  const { today, from, end } = weekAheadKeys(now);
   return items
-    .filter((show) => (view === 'today' ? show.date === today : show.date >= start && show.date < end && show.date !== today))
+    .filter((show) => (view === 'today' ? show.date === today : show.date >= from && show.date < end))
     .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }
 
@@ -3715,12 +3745,11 @@ async function episodesForFavorites() {
   return found.filter(({ info }) => info?.next || info?.last);
 }
 
-/** An episode already in this Monday-Sunday week, leaving today for the Today view. */
+/** An upcoming episode in the rest of this week, leaving today for the Today view. */
 function episodeInWeek(info, now = Date.now()) {
-  const { today, start, end } = weekKeys(now);
-  const inWeek = (episode) => episode?.at && dayKey(episode.at) >= start && dayKey(episode.at) < end;
-  const chosen = inWeek(info?.next) ? info.next : inWeek(info?.last) ? info.last : null;
-  return Boolean(chosen && dayKey(chosen.at) !== today);
+  const { from, end } = weekAheadKeys(now);
+  const at = info?.next?.at;
+  return Boolean(at && dayKey(at) >= from && dayKey(at) < end);
 }
 
 function episodeTodayRow({ item, info }, now) {
@@ -3766,6 +3795,8 @@ function dateSection() {
 
 let todayView = 'today';
 let redrawTodayDates = null;
+let redrawTodayView = null;
+let todayChrome = null;
 
 /** The Today / This week switch under the date line. */
 function todayViewBar() {
@@ -3784,7 +3815,7 @@ function todayViewBar() {
           button.classList.toggle('is-on', on);
           button.setAttribute('aria-selected', String(on));
         }
-        redrawTodayDates?.();
+        redrawTodayView?.();
       },
     },
   }));
@@ -4034,7 +4065,7 @@ function fillTodayTrends(holder, asked) {
   const show = (initial) => {
     if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
     holder.replaceChildren(...trendingSection(initial).childNodes);
-    holder.hidden = false;
+    holder.hidden = todayView !== 'today';
   };
   loadTrends('ca').then((list) => {
     if (list.length) show({ ca: list });
@@ -4220,6 +4251,16 @@ async function fillToday() {
     onClick() { closePopovers(); addStream(item.input); },
   }))) : null;
 
+  const weekEvents = eventsThisWeek(now);
+  const weekEventList = weekEvents.length ? el('ul', { class: 'rlist' }, ...weekEvents.map(({ item, show }) => todayRow({
+    art: favoriteArt(item, parseSource(item.input)),
+    top: el('span', { textContent: `${shortDay(show.start)} ${clock(show.start)} · ${item.name}` }),
+    title: show.title,
+    sub: eventKind(show),
+    onClick() { closePopovers(); addStream(item.input); },
+  }))) : null;
+  const weekEventsSection = todaySection('Events this week', weekEventList);
+
   const moviesSection = dateSection();
   const episodesSection = dateSection();
   const premieresSection = dateSection();
@@ -4268,21 +4309,53 @@ async function fillToday() {
   const podcastList = todayPodcasts(news);
   const tubeList = tube.filter((item) => !item.opened);
   const trendHolder = el('section', { class: 'today-section', hidden: true });
+  const headlinesSection = todaySection('Top headlines', newsList);
+  const polySection = todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null);
+  const continueSection = todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null);
+  const podcastSection = todaySection('New podcasts', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null);
+  const youtubeSection = todaySection('New on YouTube', tubeList.length ? el('ul', { class: 'rlist' }, ...tubeList.map(youtubeTodayRow)) : null);
+  const teamSection = todaySection('Your teams', teamList);
+  const eventSection = todaySection('Events today', eventList);
+  const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
+  const weekFlightSection = todaySection('Flight deals from Toronto', flightsView(flights));
+  const chartsSection = todaySection('Charts', chartsView(charts));
+  const todayOnlySections = [headlinesSection, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, flightSection].filter(Boolean);
+  const weekOnlySections = [weekEventsSection, weekFlightSection].filter(Boolean);
   const parts = [
-    todaySection('Top headlines', newsList),
+    headlinesSection,
     trendHolder,
-    todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
-    todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null),
-    todaySection('New podcasts', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
-    todaySection('New on YouTube', tubeList.length ? el('ul', { class: 'rlist' }, ...tubeList.map(youtubeTodayRow)) : null),
-    todaySection('Your teams', teamList),
-    todaySection('Events today', eventList),
-    todaySection('Flight deals from Toronto', flightsView(flights)),
+    polySection,
+    continueSection,
+    podcastSection,
+    youtubeSection,
+    teamSection,
+    eventSection,
+    flightSection,
+    weekEventsSection,
     moviesSection.section,
     episodesSection.section,
     premieresSection.section,
-    todaySection('Charts', chartsView(charts)),
+    weekFlightSection,
+    chartsSection,
   ].filter(Boolean);
+
+  redrawTodayView = () => {
+    const week = todayView === 'week';
+    if (todayChrome) {
+      todayChrome.title.textContent = week ? 'This week' : 'Today';
+      todayChrome.date.textContent = week ? weekAheadLabel(now) : dayFormat.format(new Date(now));
+      if (week) todayChrome.line.hidden = true;
+      else todayChrome.drawWeather(todayChrome.weather);
+      todayChrome.hoursBox.hidden = true;
+      todayChrome.line.classList.remove('is-open');
+      todayChrome.line.setAttribute('aria-expanded', 'false');
+    }
+    for (const section of todayOnlySections) section.hidden = week;
+    for (const section of weekOnlySections) section.hidden = !week;
+    trendHolder.hidden = week || !trendHolder.childElementCount;
+    redrawTodayDates();
+  };
+  redrawTodayView();
   const scroll = body.scrollTop;
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
   body.scrollTop = scroll;
@@ -4315,6 +4388,7 @@ function buildToday() {
   chartTab = 0;
   todayView = 'today';
   redrawTodayDates = null;
+  redrawTodayView = null;
   const hoursBox = el('ul', { class: 'wx-hours', hidden: true, aria: { label: 'The next 12 hours' } });
   const line = el('button', {
     type: 'button',
@@ -4329,19 +4403,27 @@ function buildToday() {
       },
     },
   });
+  const title = el('h3', { textContent: 'Today' });
+  const date = el('span', { class: 'today-date', textContent: dayFormat.format(new Date()) });
+  const drawWeather = (weather) => {
+    todayChrome.weather = weather;
+    weatherLine(line, hoursBox, weather);
+    if (todayView === 'week') {
+      line.hidden = true;
+      hoursBox.hidden = true;
+    }
+  };
+  todayChrome = { title, date, line, hoursBox, weather: null, drawWeather };
   // The markets ticker runs along the bottom, above "Updated", like a TV ticker.
   const markets = el('div', { class: 'mk-bar', hidden: true });
   menu.replaceChildren(
-    el('div', { class: 'today-head' },
-      el('h3', { textContent: 'Today' }),
-      el('span', { class: 'today-date', textContent: dayFormat.format(new Date()) }),
-      line),
+    el('div', { class: 'today-head' }, title, date, line),
     todayViewBar(),
     hoursBox,
     el('div', { class: 'matches-body' }),
     markets,
     el('p', { class: 'matches-updated', textContent: '' }));
-  weatherLine(line, hoursBox, loadWeather((fresh) => { if (line.isConnected) weatherLine(line, hoursBox, fresh); }));
+  loadWeather((fresh) => { if (line.isConnected) drawWeather(fresh); });
   const refreshMarkets = () => loadMarkets().then((data) => { if (markets.isConnected && !menu.hidden) showMarkets(markets, data, clock); });
   refreshMarkets();
   clearInterval(marketsTimer);
