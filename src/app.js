@@ -26,7 +26,7 @@ import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
-import { TREND_REGIONS, categoryOf, isVague, parseTrends, trendKey } from './trends.js';
+import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
@@ -3837,8 +3837,9 @@ function polymarketRows(list) {
 }
 
 /* Trending on X in Canada or the US, with a little context from Wikipedia. */
-const TREND_STORE = 'multigrid.trends.v2';
+const TREND_STORE = 'multigrid.trends.v3';
 const TREND_TTL = 10 * 60 * 1000;
+const TREND_CATEGORIES = ['News', 'Sport', 'Culture', 'Tech'];
 const trendAsks = new Map();
 
 const readTrendCache = () => {
@@ -3892,27 +3893,35 @@ async function loadTrends(country = 'ca') {
         signal: AbortSignal.timeout?.(15000),
       });
       if (!response.ok) throw new Error(`Trends answered ${response.status}`);
-      const trends = parseTrends(await response.text(), 16);
-      const enriched = await Promise.all(trends.map(async (trend) => {
-        const summary = await wikiSummary(trend.name);
-        if (!summary) return null;
-        const category = categoryOf(summary.description, summary.extract);
-        if (!category) return null;
-        const title = summary.title && summary.title.toLocaleLowerCase() !== trend.name.toLocaleLowerCase() ? summary.title : '';
-        return {
-          ...trend,
-          category,
-          detail: [title, summary.description].filter(Boolean).join(' · '),
-          key: trendKey(summary.title, summary.description),
-        };
-      }));
+      const trends = parseTrends(await response.text(), 50);
       const seen = new Set();
       const list = [];
-      for (const item of enriched) {
-        if (!item || seen.has(item.key)) continue;
-        seen.add(item.key);
-        list.push({ name: item.name, volume: item.volume, category: item.category, detail: item.detail });
-        if (list.length >= 8) break;
+      const counts = new Map();
+      // Ask Wikipedia in small batches, and stop once each category has five.
+      for (let at = 0; at < trends.length; at += 6) {
+        const batch = trends.slice(at, at + 6);
+        const enriched = await Promise.all(batch.map(async (trend) => {
+          const summary = await wikiSummary(trend.name);
+          if (!summary) return null;
+          const category = categoryOf(summary.description, summary.extract);
+          if (!category) return null;
+          const title = summary.title && summary.title.toLocaleLowerCase() !== trend.name.toLocaleLowerCase() ? summary.title : '';
+          return {
+            ...trend,
+            category,
+            detail: [title, summary.description].filter(Boolean).join(' · '),
+            key: trendKey(summary.title, summary.description),
+          };
+        }));
+        for (const item of enriched) {
+          if (!item || seen.has(item.key)) continue;
+          const count = counts.get(item.category) || 0;
+          if (count >= 5) continue;
+          seen.add(item.key);
+          counts.set(item.category, count + 1);
+          list.push({ name: item.name, volume: item.volume, category: item.category, detail: item.detail });
+        }
+        if (TREND_CATEGORIES.every((category) => (counts.get(category) || 0) >= 5)) break;
       }
       if (list.length) {
         writeTrendCache(country, list);
@@ -3970,7 +3979,7 @@ function trendingSection(initial = {}) {
 
   const draw = () => {
     const list = lists[country] || [];
-    const categories = ['News', 'Sport', 'Culture', 'Tech'].filter((category) => list.some((item) => item.category === category));
+    const categories = TREND_CATEGORIES.filter((category) => list.some((item) => item.category === category));
     if (tab !== 'All' && !categories.includes(tab)) tab = 'All';
     tabs.hidden = !list.length;
     tabs.replaceChildren(...['All', ...categories].map((category) => el('button', {
@@ -3986,7 +3995,8 @@ function trendingSection(initial = {}) {
         },
       },
     })));
-    rows.replaceChildren(...list.filter((item) => tab === 'All' || item.category === tab).map(trendRow));
+    const shown = tab === 'All' ? trendLeaders(list) : categoryTrends(list, tab);
+    rows.replaceChildren(...shown.map(trendRow));
     empty.hidden = Boolean(list.length);
     empty.textContent = `No trends for ${TREND_REGIONS[country].label} right now.`;
     syncRegions();

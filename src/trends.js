@@ -61,3 +61,20 @@ export function trendKey(title, description = '') {
 }
 
 export const isVague = (description) => SKIP_DESCRIPTION.test(String(description || ''));
+
+/** The first trend in each category, in the order they appear. */
+export function trendLeaders(list) {
+  const seen = new Set();
+  const leaders = [];
+  for (const item of Array.isArray(list) ? list : []) {
+    if (!item?.category || seen.has(item.category)) continue;
+    seen.add(item.category);
+    leaders.push(item);
+  }
+  return leaders;
+}
+
+/** Up to five trends in one category, in trend order. */
+export function categoryTrends(list, category) {
+  return (Array.isArray(list) ? list : []).filter((item) => item?.category === category).slice(0, 5);
+}

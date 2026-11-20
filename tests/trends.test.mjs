@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { parseTrends, categoryOf, trendKey, isVague } = await import('../src/trends.js');
-const { TREND_REGIONS } = await import('../src/trends.js');
+const { TREND_REGIONS, trendLeaders, categoryTrends } = await import('../src/trends.js');
 
 const markdown = `
 ## Canada X (Twitter) Trends for last 24 hours
@@ -61,4 +61,26 @@ test('trends: Canada and the US use their own trends24 pages', () => {
   assert.equal(TREND_REGIONS.ca.url, 'https://trends24.in/canada/');
   assert.equal(TREND_REGIONS.us.label, 'US');
   assert.equal(TREND_REGIONS.us.url, 'https://trends24.in/united-states/');
+});
+
+test('trends: All is one leader per category and a category is its top five', () => {
+  const list = [
+    { name: 'A', category: 'News' },
+    { name: 'B', category: 'Sport' },
+    { name: 'C', category: 'News' },
+    { name: 'D', category: 'Culture' },
+    { name: 'E', category: 'News' },
+    { name: 'F', category: 'News' },
+    { name: 'G', category: 'News' },
+    { name: 'H', category: 'News' },
+    { name: 'I', category: 'Tech' },
+    { name: 'J', category: 'Tech' },
+    { name: 'K', category: 'Tech' },
+    { name: 'L', category: 'Tech' },
+    { name: 'M', category: 'Tech' },
+    { name: 'N', category: 'Tech' },
+  ];
+  assert.deepEqual(trendLeaders(list).map((item) => item.name), ['A', 'B', 'D', 'I']);
+  assert.deepEqual(categoryTrends(list, 'News').map((item) => item.name), ['A', 'C', 'E', 'F', 'G']);
+  assert.deepEqual(categoryTrends(list, 'Tech').map((item) => item.name), ['I', 'J', 'K', 'L', 'M']);
 });
