@@ -1422,6 +1422,21 @@ body.is-phone .resume-note button { height: 44px; padding: 0 16px; font-size: 14
 .today-head span { font-size: 13px; color: var(--text-2); }
 .today-section + .today-section { margin-top: 2px; }
 
+/* Trending on X in Today */
+.trend-head { justify-content: space-between; }
+.trend-head small { margin-left: auto; font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-2); }
+.trend-tabs { gap: 3px; padding: 6px 10px 8px; border-bottom: 0; flex-wrap: wrap; overflow: visible; }
+.trend-tabs .matches-tab { padding: 0 8px; font-size: 12px; }
+.trend-list { list-style: none; margin: 0; padding: 0; }
+.trend-item + .trend-item { border-top: 1px solid var(--border); }
+.trend-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 16px; color: var(--text); text-decoration: none; }
+.trend-row:hover { background: var(--hover); }
+.trend-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trend-topic { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.trend-name { font-size: 13px; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; }
+.trend-desc { font-size: 11.5px; line-height: 1.3; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.trend-vol { flex: none; margin-left: auto; padding-top: 1px; font-size: 11.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+
 /* Prediction markets in Today */
 .pm-head, .pm-row { display: grid; grid-template-columns: minmax(0, 1fr) 48px 44px; gap: 8px; align-items: center; }
 .pm-head { padding: 6px 16px 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
@@ -1673,6 +1688,8 @@ body.remote-open { overflow: hidden; }
 
   /* Everything else you tap, inside sheets and dialogs, gets the full-size target too. */
   body.is-phone .matches-tab { height: 44px; padding: 0 18px; font-size: 15px; }
+  /* The trend filters are secondary; keep all five visible on one line. */
+  body.is-phone .trend-tabs .matches-tab { height: 40px; padding: 0 10px; font-size: 13px; }
   body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file, body.is-phone .match-watch { min-height: 44px; }
   body.is-phone .match-watch { padding: 0 16px; font-size: 14.5px; }
   body.is-phone .gview { height: 44px; padding: 0 18px; font-size: 14.5px; }

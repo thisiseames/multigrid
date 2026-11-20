@@ -26,6 +26,7 @@ import { getCinema } from './crop.js';
 import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
+import { categoryOf, isVague, parseTrends, trendKey } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
@@ -3465,6 +3466,140 @@ function polymarketRows(list) {
   return el('div', { class: 'pm-wrap' }, head, el('div', { class: 'pm-list' }, ...rows));
 }
 
+/* Trending on X in Canada, with a little context from Wikipedia. */
+const TREND_STORE = 'multigrid.trends.v1';
+const TREND_TTL = 10 * 60 * 1000;
+let trendAsk = null;
+
+const readTrendCache = () => {
+  try { return JSON.parse(localStorage.getItem(TREND_STORE) || 'null'); } catch { return null; }
+};
+const writeTrendCache = (list) => {
+  try { localStorage.setItem(TREND_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
+};
+
+async function wikiSummary(name) {
+  const raw = String(name || '').replace(/^[#$]/, '').trim();
+  if (!raw || String(name).startsWith('$')) return null;
+  try {
+    const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(raw.replace(/ /g, '_'))}`, {
+      cache: 'no-cache',
+      signal: AbortSignal.timeout?.(6000),
+      headers: { accept: 'application/json' },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const description = String(data?.description || '').trim();
+    if (data?.type === 'disambiguation' || isVague(description)) return null;
+    return {
+      title: String(data?.title || raw),
+      description,
+      extract: String(data?.extract || '').split('\n')[0].trim(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function loadTrends() {
+  const saved = readTrendCache();
+  if (saved && Array.isArray(saved.list) && Date.now() - saved.at < TREND_TTL) return saved.list;
+  if (trendAsk) return trendAsk;
+  trendAsk = (async () => {
+    try {
+      const response = await fetch('https://r.jina.ai/https://trends24.in/canada/', {
+        cache: 'no-cache',
+        signal: AbortSignal.timeout?.(15000),
+      });
+      if (!response.ok) throw new Error(`Trends answered ${response.status}`);
+      const trends = parseTrends(await response.text(), 16);
+      const enriched = await Promise.all(trends.map(async (trend) => {
+        const summary = await wikiSummary(trend.name);
+        if (!summary) return null;
+        const category = categoryOf(summary.description, summary.extract);
+        if (!category) return null;
+        const title = summary.title && summary.title.toLocaleLowerCase() !== trend.name.toLocaleLowerCase() ? summary.title : '';
+        return {
+          ...trend,
+          category,
+          detail: [title, summary.description].filter(Boolean).join(' · '),
+          key: trendKey(summary.title, summary.description),
+        };
+      }));
+      const seen = new Set();
+      const list = [];
+      for (const item of enriched) {
+        if (!item || seen.has(item.key)) continue;
+        seen.add(item.key);
+        list.push({ name: item.name, volume: item.volume, category: item.category, detail: item.detail });
+        if (list.length >= 8) break;
+      }
+      if (list.length) {
+        writeTrendCache(list);
+        return list;
+      }
+    } catch {
+      // Use the last good list below.
+    }
+    return Array.isArray(saved?.list) ? saved.list : [];
+  })().finally(() => { trendAsk = null; });
+  return trendAsk;
+}
+
+function trendRow(item) {
+  return el('li', { class: 'trend-item' },
+    el('a', {
+      class: 'trend-row',
+      href: `https://x.com/search?q=${encodeURIComponent(item.name)}`,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      title: [item.name, item.detail].filter(Boolean).join(' · '),
+    },
+    el('span', { class: 'trend-main' },
+      el('span', { class: 'trend-topic', textContent: item.category }),
+      el('b', { class: 'trend-name', textContent: item.name }),
+      item.detail ? el('small', { class: 'trend-desc', textContent: item.detail }) : null),
+    item.volume ? el('span', { class: 'trend-vol', textContent: item.volume }) : null));
+}
+
+function trendingSection(list) {
+  const categories = ['News', 'Sport', 'Culture', 'Tech'].filter((category) => list.some((item) => item.category === category));
+  let tab = 'All';
+  const tabs = el('div', { class: 'matches-tabs trend-tabs', role: 'tablist' }, ...['All', ...categories].map((category) => el('button', {
+    type: 'button',
+    role: 'tab',
+    class: `matches-tab${category === tab ? ' is-on' : ''}`,
+    aria: { selected: String(category === tab) },
+    textContent: category,
+    on: {
+      click(event) {
+        tab = category;
+        for (const button of event.currentTarget.parentElement.children) {
+          const on = button === event.currentTarget;
+          button.classList.toggle('is-on', on);
+          button.setAttribute('aria-selected', String(on));
+        }
+        draw();
+      },
+    },
+  })));
+  const rows = el('ul', { class: 'trend-list' });
+  const draw = () => rows.replaceChildren(...list.filter((item) => tab === 'All' || item.category === tab).map(trendRow));
+  draw();
+  return el('section', { class: 'today-section' },
+    el('h4', { class: 'match-day trend-head' }, el('span', { textContent: 'Trending on X' }), el('small', { textContent: 'Canada' })),
+    tabs,
+    rows);
+}
+
+function fillTodayTrends(holder, asked) {
+  loadTrends().then((list) => {
+    if (!list.length || asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
+    holder.replaceChildren(...trendingSection(list).childNodes);
+    holder.hidden = false;
+  }).catch(() => {});
+}
+
 /* New from the YouTube channels kept as favourites: the newest upload, shown once. */
 const YT_SEEN = 'multigrid.ytseen.v1';
 const readYtSeen = () => {
@@ -3678,8 +3813,10 @@ async function fillToday() {
   const continueList = listPlaces(5);
   const podcastList = todayPodcasts(news);
   const tubeList = tube.filter((item) => !item.opened);
+  const trendHolder = el('section', { class: 'today-section', hidden: true });
   const parts = [
     todaySection('Top headlines', newsList),
+    trendHolder,
     todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
     todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null),
     todaySection('New podcasts', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
@@ -3695,6 +3832,7 @@ async function fillToday() {
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
   body.scrollTop = scroll;
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
+  fillTodayTrends(trendHolder, asked);
 }
 
 /* Weather on Today's date line; tapping it shows the next 12 hours. */
