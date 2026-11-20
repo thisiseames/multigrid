@@ -681,6 +681,7 @@ function tunedTile() {
 /** Steps one favorite along in the tuned tile, staying inside its folder when it has one. */
 function surfChannels(step, id = null) {
   const tile = (id ? tileById(id) : null) || tunedTile();
+  closePopovers();
   if (!tile || !isStream(tile) || !isVisible(tile)) {
     toast('Click a tile first, then surf with the arrow keys.');
     return;
@@ -724,7 +725,7 @@ window.addEventListener('keydown', (event) => {
   if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
   const target = event.target;
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return;
-  if (document.querySelector('dialog[open], .popover:not([hidden])')) return;
+  if (document.querySelector('dialog[open]')) return;
   event.preventDefault();
   surfChannels(event.key === 'ArrowDown' ? 1 : -1);
 });
@@ -3499,6 +3500,8 @@ function buildMoreMenu() {
   ].filter(Boolean));
 }
 
+$('surf-prev').addEventListener('click', () => surfChannels(-1));
+$('surf-next').addEventListener('click', () => surfChannels(1));
 $('more-button').addEventListener('click', () => togglePopover($('more-button'), $('more-menu'), buildMoreMenu));
 $('saved-button').addEventListener('click', () => togglePopover($('saved-button'), $('saved-menu'), buildSavedMenu));
 $('saved-button').title = 'Saved layouts';

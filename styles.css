@@ -70,6 +70,12 @@ svg { display: block; }
 .bar-button-text { overflow: hidden; text-overflow: ellipsis; }
 .chevron { color: var(--text-2); }
 .layout-icon { color: var(--text-2); display: inline-flex; }
+.surf-pill { display: inline-flex; align-items: center; flex: none; height: 28px; border-radius: 7px; background: rgba(255, 255, 255, 0.05); }
+.surf-pill button { width: 25px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text-2); }
+.surf-pill button:hover { background: var(--hover); color: var(--text); }
+.surf-pill button svg { width: 14px; height: 14px; }
+.surf-sep { width: 1px; height: 14px; background: var(--border); }
+body.is-phone .surf-pill { display: none; }
 
 .add-button {
   display: inline-flex;
