@@ -1027,8 +1027,41 @@ const httpsOnly = (raw) => {
 };
 
 // Favorites outside a Series folder that still get their show's picture: what the name looks like, and the show to look up.
-const SHOW_PICTURES = [[/hell.?s kitchen/i, "Hell's Kitchen"]];
+const SHOW_PICTURES = [
+  [/hell.?s kitchen/i, "Hell's Kitchen"],
+  [/fear factor/i, 'Fear Factor'],
+  [/entertainment tonight/i, 'Entertainment Tonight'],
+  [/masterchef/i, 'MasterChef'],
+  [/schitt.?s creek/i, "Schitt's Creek"],
+  [/today all day/i, 'Today'],
+  [/\btyt\b|young turks/i, 'The Young Turks'],
+];
 const showPictureFor = (name) => SHOW_PICTURES.find(([pattern]) => pattern.test(name || ''))?.[1] ?? '';
+
+// Channels that have a logo of their own but no picture in the guide: the site's own mark.
+const CHANNEL_PICTURES = [
+  [/^cbc comedy$/i, 'cbc.ca'],
+  [/^cbc news toronto$/i, 'cbc.ca'],
+  [/^cw$/i, 'cwtv.com'],
+  [/^showtime next$/i, 'showtime.com'],
+  [/^sky witness$/i, 'sky.com'],
+  [/^syfy$/i, 'syfy.com'],
+  [/^citynews$/i, 'citynews.ca'],
+  [/^nbc news now$/i, 'nbcnews.com'],
+  [/^usa today$/i, 'usatoday.com'],
+  [/^bein (sports )?extra$/i, 'beinsports.com'],
+  [/^cbs sports$/i, 'cbssports.com'],
+  [/^(the zone|dazn canada|nfl game pass on dazn)$/i, 'dazn.com'],
+  [/^espn plus$/i, 'espn.com'],
+  [/^nba league pass$/i, 'nba.com'],
+  [/^paramount plus$/i, 'paramountplus.com'],
+  [/^sky sports (action|uhd 1)$/i, 'skysports.com'],
+  [/^stan sport$/i, 'stan.com.au'],
+  [/^sportsnet$/i, 'sportsnet.ca'],
+  [/^tnt sports ultimate$/i, 'tntsports.co.uk'],
+];
+const plainChannelName = (name) => String(name || '').replace(/\s*live\s*stream\s*$/i, '').replace(/\s+/g, ' ').trim();
+const channelPictureFor = (name) => CHANNEL_PICTURES.find(([pattern]) => pattern.test(plainChannelName(name)))?.[1] ?? '';
 
 /** A series' pictures from TVmaze: its main wide picture and its poster, either may be ''. */
 function posterFor(name) {
@@ -1098,6 +1131,13 @@ function favoriteArt(item, source) {
     return art;
   }
   const pictureShow = showPictureFor(item.name);
+  const channelPicture = pictureShow ? '' : channelPictureFor(item.name);
+  const showChannel = (domain) => {
+    art.className = 'fart is-logo is-dark';
+    // Two free icon services, so one quiet moment doesn't leave the card blank.
+    artPicture(art, `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+      () => artPicture(art, `https://icons.duckduckgo.com/ip3/${domain}.ico`, quiet));
+  };
   if (isSeriesFolder(item.group) || pictureShow) {
     const showPoster = (url) => {
       const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
@@ -1107,7 +1147,10 @@ function favoriteArt(item, source) {
       art.replaceChildren(backdrop, poster);
     };
     posterFor(pictureShow || item.name).then((found) => {
-      if (!found) return;
+      if (!found) {
+        if (channelPicture) showChannel(channelPicture);
+        return;
+      }
       if (found.wide) {
         // The wide picture, shrunk. If the shrinking service can't help, the poster stands in.
         art.className = 'fart is-picture';
@@ -1116,6 +1159,8 @@ function favoriteArt(item, source) {
         showPoster(found.poster);
       }
     });
+  } else if (channelPicture) {
+    showChannel(channelPicture);
   }
   return art;
 }
