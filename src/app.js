@@ -23,7 +23,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
-import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo } from './resume.js';
+import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
@@ -770,11 +770,16 @@ function muteAll() {
 /* ---------- Adding, replacing, removing ---------- */
 
 function addStream(input, target = { mode: 'add' }, title = '') {
+  const source = parseSource(input);
+  // A podcast is audio, so it plays in the dock instead of taking a tile.
+  if (source.kind === 'audio') {
+    openPodcast(input, { title: title || favoriteName(input) || '', from: '' });
+    return null;
+  }
   if (target.mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
     toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
     return;
   }
-  const source = parseSource(input);
   let addedId = null;
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
@@ -1136,9 +1141,8 @@ function episodeRow(item) {
     title: item.title,
     on: {
       click() {
-        const target = sourceTarget;
         if ($('source-dialog').open) $('source-dialog').close();
-        addStream(audioInput(`${item.source}: ${item.title}`, item.audio), target);
+        openPodcast(audioInput(`${item.source}: ${item.title}`, item.audio), { title: item.title, image: item.image, from: item.source });
       },
     },
   },
@@ -1198,6 +1202,263 @@ function podcastsView(holder) {
     : el('p', { class: 'favorites-empty', textContent: 'No podcast episodes yet' });
 }
 onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fillAddFavorites($('source-favorites')); });
+
+/* ---------- Podcast dock ---------- */
+
+const PODCAST_STORE = 'multigrid.podcast.v1';
+const PODCAST_SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+let podcastState = null;
+let podcastAudio = null;
+let podcastUI = null;
+let podcastSwitching = false;
+
+const readPodcastStore = () => {
+  try { return JSON.parse(localStorage.getItem(PODCAST_STORE) || 'null'); } catch { return null; }
+};
+const writePodcastStore = (value) => {
+  try {
+    if (value) localStorage.setItem(PODCAST_STORE, JSON.stringify(value));
+    else localStorage.removeItem(PODCAST_STORE);
+  } catch { /* not remembered */ }
+};
+const savePodcastStore = () => {
+  if (!podcastState) return;
+  writePodcastStore({
+    input: podcastState.input,
+    title: podcastState.title,
+    image: podcastState.image,
+    from: podcastState.from,
+    speed: podcastState.speed,
+    muted: podcastState.muted,
+  });
+};
+const podcastKey = () => (podcastState ? `audio:${podcastState.url}` : '');
+const savePodcastPlace = () => {
+  if (!podcastAudio || !podcastState || !Number.isFinite(podcastAudio.duration)) return;
+  notePlace(podcastKey(), podcastAudio.currentTime, podcastAudio.duration, {
+    input: podcastState.input, name: podcastState.title, from: podcastState.from,
+  });
+};
+
+function updatePodcastProgress() {
+  if (!podcastUI || !podcastAudio) return;
+  const { fill } = podcastUI;
+  const length = podcastAudio.duration;
+  const share = Number.isFinite(length) && length > 0 ? Math.min(1, Math.max(0, podcastAudio.currentTime / length)) : 0;
+  fill.style.width = `${share * 100}%`;
+  if ('mediaSession' in navigator && Number.isFinite(length) && length > 0) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: length,
+        playbackRate: podcastAudio.playbackRate,
+        position: Math.min(length, Math.max(0, podcastAudio.currentTime)),
+      });
+    } catch { /* lock-screen details are a bonus */ }
+  }
+}
+
+function updatePodcastDock() {
+  if (!podcastUI || !podcastState || !podcastAudio) return;
+  const { art, name, sub, play, speed, mute } = podcastUI;
+  name.textContent = podcastState.title;
+  name.title = podcastState.title;
+  sub.textContent = podcastState.from || 'Podcast';
+  art.replaceChildren();
+  if (/^https:\/\//.test(podcastState.image)) {
+    art.append(el('img', { src: podcastState.image, alt: '', referrerPolicy: 'no-referrer' }));
+  } else {
+    art.append(icon('sound', 18));
+  }
+  const paused = podcastAudio.paused;
+  play.replaceChildren(icon(paused ? 'play' : 'pause'));
+  play.title = paused ? 'Play' : 'Pause';
+  play.setAttribute('aria-label', play.title);
+  speed.textContent = `${podcastState.speed}×`;
+  mute.replaceChildren(icon(podcastState.muted ? 'muted' : 'sound'));
+  mute.title = podcastState.muted ? 'Unmute podcast' : 'Mute podcast';
+  mute.setAttribute('aria-label', mute.title);
+  if ('mediaSession' in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: podcastState.title,
+        artist: podcastState.from || 'Podcast',
+        artwork: /^https:\/\//.test(podcastState.image) ? [{ src: podcastState.image }] : [],
+      });
+      navigator.mediaSession.playbackState = paused ? 'paused' : 'playing';
+    } catch { /* lock-screen details are a bonus */ }
+  }
+  updatePodcastProgress();
+}
+
+function togglePodcast() {
+  if (!podcastAudio) return;
+  if (podcastAudio.paused) podcastAudio.play().catch(() => {});
+  else podcastAudio.pause();
+}
+
+function seekPodcast(seconds) {
+  if (!podcastAudio || !Number.isFinite(podcastAudio.duration)) return;
+  podcastAudio.currentTime = Math.max(0, Math.min(podcastAudio.duration - 1, podcastAudio.currentTime + seconds));
+}
+
+function cyclePodcastSpeed() {
+  if (!podcastState || !podcastAudio) return;
+  const at = PODCAST_SPEEDS.indexOf(podcastState.speed);
+  podcastState.speed = PODCAST_SPEEDS[(at + 1) % PODCAST_SPEEDS.length];
+  podcastAudio.playbackRate = podcastState.speed;
+  savePodcastStore();
+  updatePodcastDock();
+}
+
+function togglePodcastMute() {
+  if (!podcastState || !podcastAudio) return;
+  podcastState.muted = !podcastState.muted;
+  podcastAudio.muted = podcastState.muted;
+  savePodcastStore();
+  updatePodcastDock();
+}
+
+function closePodcast() {
+  if (!podcastAudio) return;
+  savePodcastPlace();
+  podcastAudio.pause();
+  podcastAudio.removeAttribute('src');
+  podcastAudio.load();
+  podcastState = null;
+  writePodcastStore(null);
+  $('podcast-dock').hidden = true;
+}
+
+function drawPodcastDock() {
+  const dock = $('podcast-dock');
+  if (!podcastState) {
+    dock.hidden = true;
+    return;
+  }
+  if (!podcastAudio) {
+    podcastAudio = document.createElement('audio');
+    podcastAudio.preload = 'metadata';
+    podcastAudio.addEventListener('loadedmetadata', () => {
+      const point = resumePoint(podcastKey());
+      if (point > 0 && point < podcastAudio.duration - 5) podcastAudio.currentTime = point;
+      updatePodcastDock();
+    });
+    podcastAudio.addEventListener('timeupdate', () => {
+      updatePodcastProgress();
+      if (Date.now() - (podcastAudio.lastKeep || 0) < 10000) return;
+      podcastAudio.lastKeep = Date.now();
+      savePodcastPlace();
+    });
+    podcastAudio.addEventListener('pause', () => {
+      // A pause caused by moving to another episode was saved before the swap.
+      if (!podcastSwitching) savePodcastPlace();
+      podcastSwitching = false;
+      updatePodcastDock();
+    });
+    podcastAudio.addEventListener('play', updatePodcastDock);
+    podcastAudio.addEventListener('ended', () => {
+      // A finished episode isn't waiting to be resumed on the next visit.
+      writePodcastStore(null);
+      updatePodcastDock();
+    });
+    podcastAudio.addEventListener('error', () => {
+      if (podcastAudio.getAttribute('src')) toast("That episode didn't load. Its server may be offline.");
+    });
+    const art = el('span', { class: 'pod-art' });
+    const name = el('b', { class: 'pod-name' });
+    const sub = el('small', { class: 'pod-sub' });
+    const back = iconButton('back10', 'Back 10 seconds', () => seekPodcast(-10));
+    const play = iconButton('play', 'Play', togglePodcast);
+    play.classList.add('pod-play');
+    const forward = iconButton('fwd10', 'Forward 10 seconds', () => seekPodcast(10));
+    const speed = el('button', { type: 'button', class: 'pod-speed', title: 'Playback speed', aria: { label: 'Playback speed' }, on: { click: cyclePodcastSpeed } }, '1×');
+    const mute = iconButton('sound', 'Mute podcast', togglePodcastMute);
+    const close = iconButton('close', 'Close podcast', closePodcast);
+    const fill = el('span', { class: 'pod-progress-fill' });
+    const progress = el('button', {
+      type: 'button',
+      class: 'pod-progress',
+      title: 'Seek in this episode',
+      aria: { label: 'Seek in this episode' },
+      on: {
+        click(event) {
+          if (!podcastAudio || !Number.isFinite(podcastAudio.duration)) return;
+          const bounds = progress.getBoundingClientRect();
+          const share = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+          podcastAudio.currentTime = share * podcastAudio.duration;
+          updatePodcastProgress();
+        },
+      },
+    }, fill);
+    dock.replaceChildren(
+      art,
+      el('span', { class: 'pod-text' }, name, sub),
+      el('span', { class: 'pod-controls' }, back, play, forward, speed, mute, close),
+      progress);
+    // Kept in the page so its media controls and lock-screen details work everywhere.
+    podcastAudio.hidden = true;
+    dock.append(podcastAudio);
+    podcastUI = { art, name, sub, play, speed, mute, progress, fill };
+    if ('mediaSession' in navigator) {
+      const handle = (action, handler) => { try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* not supported */ } };
+      handle('play', () => podcastAudio.play().catch(() => {}));
+      handle('pause', () => podcastAudio.pause());
+      handle('seekbackward', () => seekPodcast(-10));
+      handle('seekforward', () => seekPodcast(10));
+    }
+  }
+  dock.hidden = false;
+  updatePodcastDock();
+}
+
+/** Plays a podcast in the dock. `restore` opens quietly at the saved place. */
+function openPodcast(input, extra = {}) {
+  const source = parseSource(input);
+  if (!source.ok || source.kind !== 'audio') return;
+  const restore = Boolean(extra.restore);
+  if (podcastState && podcastAudio && podcastState.url === source.url) {
+    drawPodcastDock();
+    if (!restore) {
+      if (podcastAudio.ended) podcastAudio.currentTime = 0;
+      podcastAudio.play().catch(() => {});
+    }
+    return;
+  }
+  if (podcastAudio) {
+    savePodcastPlace();
+    if (!podcastAudio.paused) podcastSwitching = true;
+    podcastAudio.pause();
+  }
+  const saved = readPodcastStore();
+  const previous = saved && saved.input === input ? saved : null;
+  const text = (value) => (typeof value === 'string' ? value : '');
+  podcastState = {
+    input,
+    url: source.url,
+    title: extra.title || text(previous?.title) || source.label,
+    image: extra.image || text(previous?.image),
+    from: extra.from || text(previous?.from),
+    speed: PODCAST_SPEEDS.includes(previous?.speed) ? previous.speed : 1,
+    muted: Boolean(previous?.muted),
+  };
+  drawPodcastDock();
+  podcastAudio.src = source.url;
+  podcastAudio.playbackRate = podcastState.speed;
+  podcastAudio.muted = podcastState.muted;
+  podcastAudio.load();
+  savePodcastStore();
+  if (!restore) podcastAudio.play().catch(() => {});
+}
+
+function restorePodcast() {
+  const saved = readPodcastStore();
+  if (!saved?.input) return;
+  openPodcast(saved.input, { title: saved.title, image: saved.image, from: saved.from, restore: true });
+}
+
+// Save the place when the tab is put away, so closing mid-episode loses nothing.
+window.addEventListener('pagehide', savePodcastPlace);
+document.addEventListener('visibilitychange', () => { if (document.hidden) savePodcastPlace(); });
 
 /* ---------- Add stream: favorites as cards ---------- */
 
@@ -1428,7 +1689,8 @@ function continueCard(item) {
         click() {
           const target = sourceTarget;
           if ($('source-dialog').open) $('source-dialog').close();
-          addStream(item.input, target);
+          if (source.kind === 'audio') openPodcast(item.input, { title: item.name, from: item.from });
+          else addStream(item.input, target);
         },
       },
     },
@@ -2234,7 +2496,7 @@ function openItem(item) {
   markRead(item.id);
   closePopovers();
   if (item.kind === 'youtube' && item.video) addStream(`https://www.youtube.com/watch?v=${item.video}`);
-  else if (item.kind === 'podcast' && item.audio) addStream(audioInput(`${item.source}: ${item.title}`, item.audio));
+  else if (item.kind === 'podcast' && item.audio) openPodcast(audioInput(`${item.source}: ${item.title}`, item.audio), { title: item.title, image: item.image, from: item.source });
   else addStream(readerInput(item.id, item.title));
 }
 
@@ -3039,7 +3301,7 @@ function podcastTodayRow(item) {
     title: item.title,
     onClick() {
       closePopovers();
-      addStream(audioInput(`${item.source}: ${item.title}`, item.audio));
+      openPodcast(audioInput(`${item.source}: ${item.title}`, item.audio), { title: item.title, image: item.image, from: item.source });
     },
   });
 }
@@ -3054,7 +3316,8 @@ function continueTodayRow(item) {
     title: item.name,
     onClick() {
       closePopovers();
-      addStream(item.input);
+      if (source.kind === 'audio') openPodcast(item.input, { title: item.name, from: item.from });
+      else addStream(item.input);
     },
   });
 }
@@ -3932,6 +4195,7 @@ $('help-close').addEventListener('click', () => $('help-dialog').close());
 $('parent-host').textContent = env.hostname;
 
 hydrateIcons();
+restorePodcast();
 
 /* Today's icon: a calendar page showing today's date, redrawn when the day changes. */
 function drawTodayIcon() {
