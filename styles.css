@@ -88,6 +88,38 @@ svg { display: block; }
 }
 .add-button:hover { filter: brightness(1.08); }
 .add-button:disabled { background: var(--raised); color: var(--text-2); cursor: default; filter: none; }
+
+/* The bar keeps its main sections; the occasional switches live in the overflow. */
+body:not(.is-phone) #matches-button,
+body:not(.is-phone) #standings-button,
+body:not(.is-phone) #remote-button,
+body:not(.is-phone) #saved-button,
+body:not(.is-phone) #help-button,
+body:not(.is-phone) #fullscreen-button { display: none; }
+body.is-phone #sports-button, body.is-phone #more-button { display: none; }
+@media (min-width: 641px) and (max-width: 980px) {
+  .topbar .bar-button-text { display: none; }
+  .topbar .bar-button { padding: 0 8px; }
+}
+
+/* One Sports button opens Games and Standings, with this switch between them. */
+.sports-switch { display: flex; gap: 2px; margin: 0 10px 8px; padding: 3px; border-radius: 8px; background: var(--surface); }
+.sports-tab { flex: 1; height: 28px; border-radius: 6px; font-size: 12.5px; font-weight: 550; color: var(--text-2); }
+.sports-tab:hover { color: var(--text); }
+.sports-tab.is-on { background: var(--hover); color: var(--text); }
+body.is-phone .sports-switch { display: none; }
+
+/* The overflow menu */
+.more-menu { width: 238px; max-width: calc(100vw - 16px); padding: 6px; }
+.more-action { display: flex; width: 100%; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 7px; text-align: left; font-size: 13px; color: var(--text); }
+.more-action:hover { background: var(--hover); }
+.more-action svg { width: 15px; height: 15px; flex: none; color: var(--text-2); }
+.more-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.more-switch { position: relative; width: 26px; height: 15px; margin-left: auto; flex: none; border-radius: 8px; background: var(--border-strong); transition: background 0.15s; }
+.more-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--text); transition: transform 0.15s; }
+.more-switch.is-on { background: var(--accent); }
+.more-switch.is-on::after { transform: translateX(11px); }
+.more-sep { height: 1px; margin: 5px 4px; background: var(--border); }
 form .add-button, .welcome .add-button { padding: 0 14px; margin: 0; }
 
 .text-button { color: var(--accent); }
@@ -133,8 +165,10 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 .mixer-channels::-webkit-scrollbar { display: none; }
 .channel {
   flex: none;
-  height: 30px;
-  padding: 0 10px 0 3px;
+  height: 32px;
+  padding: 0 10px 0 6px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1379,7 +1413,8 @@ body.remote-open { overflow: hidden; }
 
   /* The top bar keeps Layout, Sound and Add, each a full-size tap. */
   #reader-button, #matches-button, #standings-button, #guide-button,
-  #remote-button, #saved-button, #help-button, #fullscreen-button { display: none !important; }
+  #remote-button, #saved-button, #help-button, #fullscreen-button,
+  #sports-button, #more-button { display: none !important; }
   #today-button { display: inline-flex !important; width: 44px; height: 44px; padding: 0; border-radius: 12px; }
   #today-button { order: 1; } #mixer-button { order: 2; } .topbar .add-button { order: 3; }
   #today-button svg { width: 21px; height: 21px; }

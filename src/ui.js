@@ -29,6 +29,7 @@ const ICON_PATHS = {
   back: '<path d="M10 3.5 5.5 8l4.5 4.5"/>',
   reader: '<path d="M3 3.5h7.5l2.5 2.5v6.5H3z"/><path d="M5 7h6M5 9.2h6M5 11.4h4"/>',
   calendar: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.3"/><path d="M2.5 6.8h11M5.5 2v3M10.5 2v3"/>',
+  sports: '<path d="M5 2.5h6v3.2a3 3 0 0 1-6 0z"/><path d="M5 4H3.2v1.1a2 2 0 0 0 2 2M11 4h1.8v1.1a2 2 0 0 1-2 2M8 8.7v2.8M5.8 13h4.4"/>',
   table: '<rect x="2.5" y="3" width="11" height="10" rx="1.2"/><path d="M2.5 6.3h11M2.5 9.6h11M6 3v10"/>',
   next: '<path d="m6 3.5 4.5 4.5L6 12.5"/>',
   chat: '<path d="M3 3.5h10v7H7l-3 2.5v-2.5H3z"/>',

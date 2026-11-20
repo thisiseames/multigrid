@@ -29,13 +29,17 @@
     <button id="hidden-button" class="bar-button quiet" type="button" aria-haspopup="true" aria-expanded="false" hidden></button>
     <button id="mixer-button" class="icon-button" type="button" aria-controls="mixer" hidden></button>
     <button id="today-button" class="bar-button" type="button" title="Today" aria-label="Today" aria-haspopup="true" aria-expanded="false">
-      <span data-icon="today" class="narrow-only"></span>
+      <span data-icon="today"></span>
       <span class="bar-button-text wide-only">Today</span>
       <span class="bar-sub" aria-hidden="true">Today</span>
     </button>
     <button id="reader-button" class="bar-button" type="button" title="Reader" aria-label="Reader" aria-haspopup="true" aria-expanded="false">
-      <span data-icon="reader" class="narrow-only"></span>
+      <span data-icon="reader"></span>
       <span class="bar-button-text wide-only">Reader</span>
+    </button>
+    <button id="sports-button" class="bar-button" type="button" title="Sports" aria-label="Sports" aria-haspopup="true" aria-expanded="false">
+      <span data-icon="sports"></span>
+      <span class="bar-button-text wide-only">Sports</span>
     </button>
     <button id="matches-button" class="bar-button" type="button" title="Games" aria-label="Games" aria-haspopup="true" aria-expanded="false">
       <span data-icon="calendar" class="narrow-only"></span>
@@ -46,7 +50,7 @@
       <span class="bar-button-text wide-only">Standings</span>
     </button>
     <button id="guide-button" class="bar-button" type="button" title="TV guide" aria-label="TV guide" hidden>
-      <span data-icon="guide" class="narrow-only"></span>
+      <span data-icon="guide"></span>
       <span class="bar-button-text wide-only">Guide</span>
     </button>
     <button id="remote-button" class="bar-button" type="button" title="Phone remote" aria-label="Phone remote">
@@ -59,6 +63,7 @@
     </button>
     <button id="help-button" class="icon-button" type="button" aria-label="How it works" title="How it works"><span data-icon="help"></span></button>
     <button id="fullscreen-button" class="icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><span data-icon="expand"></span></button>
+    <button id="more-button" class="icon-button" type="button" aria-label="More" title="More" aria-haspopup="true" aria-expanded="false"><span data-icon="more"></span></button>
     <button id="add-button" class="add-button" type="button">
       <span data-icon="plus"></span><span class="wide-only">Add stream</span><span class="phone-only">Add</span>
     </button>
@@ -86,7 +91,7 @@
   <nav id="tabbar" class="tabbar" aria-label="Sections">
     <button class="tab is-on" type="button" data-tab="watch" aria-current="page"><span data-icon="tiles"></span><span>Watch</span></button>
     <button id="tab-reader" class="tab" type="button" data-tab="reader"><span class="tab-icon"><span data-icon="reader"></span></span><span>Reader</span></button>
-    <button class="tab" type="button" data-tab="sports"><span data-icon="calendar"></span><span>Sports</span></button>
+    <button class="tab" type="button" data-tab="sports"><span data-icon="sports"></span><span>Sports</span></button>
     <button id="tab-guide" class="tab" type="button" data-tab="guide" hidden><span data-icon="guide"></span><span>Guide</span></button>
     <button id="tab-remote" class="tab" type="button" data-tab="remote"><span data-icon="remote"></span><span>Remote</span></button>
   </nav>
@@ -105,6 +110,7 @@
   <div id="stream-menu" class="popover stream-menu" hidden></div>
   <div id="account-menu" class="popover account-menu" hidden></div>
   <div id="sound-menu" class="popover sound-menu" hidden></div>
+  <div id="more-menu" class="popover more-menu" hidden></div>
 
   <div id="layout-menu" class="popover layout-menu" hidden></div>
   <div id="saved-menu" class="popover saved-menu" hidden></div>
@@ -171,7 +177,7 @@
     <h3>TV guide</h3>
     <p>Guide in the top bar shows what's on now and next for favorites that are TV channels, matched by their names, like CNN or Sky Sports Premier League. Favorites also show what's on beside their names. Shows, YouTube channels and streaming services have no schedule. Times are in this device's time zone.</p>
     <h3>Sound</h3>
-    <p>The speaker in the top bar opens the mixer, a row with every stream by name. Mute or unmute one, or change its level, without hunting for it in the grid.</p>
+    <p>The speaker in the top bar opens the mixer, a row with every stream by name. Mute or unmute one, or change its level, without hunting for it in the grid. One sound, Ticker and Mute all sit in the ⋯ menu at the end of the bar.</p>
     <p>Pasted iframe code and links from other sites keep their sound to themselves. In Chrome on a computer, the MULTIGRID Sound extension lets the mixer reach them, and gives Kick and TikTok a level too. iPhones set levels with the phone's own buttons, so the mixer shows mute only there.</p>
     <h3>Arranging</h3>
     <p>Drag a tile's top bar onto another tile to swap them. Choose Custom in the layout menu to drag the lines between tiles, or drag a tile's corner to change how much space it takes.</p>

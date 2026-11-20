@@ -89,9 +89,6 @@ const mixer = createMixer($('mixer'), {
   onToggleMute: toggleMute,
   onVolume: changeVolume,
   onVolumeDone: commit,
-  onMuteAll: muteAll,
-  onToggleOne: toggleOneSound,
-  onToggleTicker: toggleTicker,
 });
 
 function labelOf(tile) {
@@ -527,7 +524,7 @@ function renderSound() {
   button.replaceChildren(icon(anyAudible ? 'sound' : 'muted'), el('span', { class: 'bar-sub', aria: { hidden: 'true' }, textContent: 'Sound' }));
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
-  mixer.render(open ? playing : [], anyAudible ? 'Mute all' : 'Unmute all', Boolean(muteableTiles().length), isOneSound(), isTickerOn());
+  mixer.render(open ? playing : []);
   if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();
@@ -1953,7 +1950,7 @@ function buildStandings() {
       },
     },
   })));
-  menu.replaceChildren(tabs, conferences, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  menu.replaceChildren(sportsSwitch('standings'), tabs, conferences, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
   conferenceSwitch(conferences);
   requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillStandings();
@@ -1964,6 +1961,28 @@ function buildStandings() {
   }, 5 * 60 * 1000);
 }
 
+/** Games and Standings are one Sports button; this is the switch inside its panel. */
+function sportsSwitch(current) {
+  const tab = (label, panel) => el('button', {
+    type: 'button',
+    class: `sports-tab${current === panel ? ' is-on' : ''}`,
+    aria: { selected: String(current === panel) },
+    textContent: label,
+    on: { click: () => openSports(panel) },
+  });
+  return el('div', { class: 'sports-switch', role: 'tablist', aria: { label: 'Sports' } }, tab('Games', 'games'), tab('Standings', 'standings'));
+}
+
+function openSports(panel) {
+  if (document.body.classList.contains('is-phone')) {
+    $(panel === 'standings' ? 'standings-button' : 'matches-button').click();
+    return;
+  }
+  const menu = panel === 'standings' ? $('standings-menu') : $('matches-menu');
+  togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : buildMatches);
+}
+
+$('sports-button').addEventListener('click', () => openSports('games'));
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
 
 /* ---------- Reader ---------- */
@@ -2446,7 +2465,7 @@ function buildMatches() {
       },
     },
   })));
-  menu.replaceChildren(tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  menu.replaceChildren(sportsSwitch('games'), tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
   requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillMatches();
   clearInterval(matchesTimer);
@@ -3382,6 +3401,40 @@ function buildSavedMenu() {
   $('saved-menu').replaceChildren(form, message, list, ...clear);
 }
 
+/** The overflow: the occasional switches and actions, out of the bar's way. */
+function buildMoreMenu() {
+  const menu = $('more-menu');
+  const then = (action) => () => {
+    closePopovers();
+    action();
+  };
+  const row = (label, iconName, onClick, extra = null) => el('button', {
+    type: 'button',
+    class: 'more-action',
+    on: { click: onClick },
+  }, icon(iconName, 16), el('span', { class: 'more-label', textContent: label }), extra);
+  const switchRow = (label, iconName, on, onClick) => row(label, iconName, onClick, el('span', { class: `more-switch${on ? ' is-on' : ''}`, aria: { hidden: 'true' } }));
+  const audible = muteableTiles().some((tile) => !tile.muted);
+  const canFullscreen = fullscreen.enabled() && !$('fullscreen-button').hidden;
+  menu.replaceChildren(...[
+    row('Saved layouts', 'saved', then(() => togglePopover($('more-button'), $('saved-menu'), buildSavedMenu))),
+    row('Phone remote', 'remote', then(openRemoteDialog)),
+    el('div', { class: 'more-sep' }),
+    switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
+    switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
+    row(audible ? 'Mute all' : 'Unmute all', audible ? 'muted' : 'sound', () => { muteAll(); buildMoreMenu(); }),
+    canFullscreen ? el('div', { class: 'more-sep' }) : null,
+    canFullscreen ? row(fullscreen.element() ? 'Exit fullscreen' : 'Fullscreen', 'expand', then(() => {
+      coverDuringFullscreenChange();
+      if (fullscreen.element()) fullscreen.exit();
+      else fullscreen.enter(document.documentElement);
+    })) : null,
+    el('div', { class: 'more-sep' }),
+    row('How it works', 'help', then(() => openDialog($('help-dialog')))),
+  ].filter(Boolean));
+}
+
+$('more-button').addEventListener('click', () => togglePopover($('more-button'), $('more-menu'), buildMoreMenu));
 $('saved-button').addEventListener('click', () => togglePopover($('saved-button'), $('saved-menu'), buildSavedMenu));
 $('saved-button').title = 'Saved layouts';
 $('saved-button').setAttribute('aria-label', 'Saved layouts');
