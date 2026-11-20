@@ -119,6 +119,8 @@ class TileView {
         this.paused = paused;
         this.grid.handlers.onPlayerChanged();
       },
+      // A note saves its text through the tile it belongs to.
+      onNoteText: (text) => this.grid.handlers.onNoteText?.(this.id, text),
     });
     if (!this.player) return;
     // A feed adds its own Back and Next to the tile's top bar.
@@ -304,12 +306,13 @@ class TileView {
   buildStrip() {
     const { handlers } = this.grid;
     const label = this.source.ok ? this.source.label : 'Not playable';
+    const isNote = this.source.kind === 'note';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
-    this.starButton = this.source.ok ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
+    this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
-    this.cropButton = this.source.ok ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
-    this.cinemaButton = this.source.ok ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
+    this.cropButton = this.source.ok && !isNote ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
+    this.cinemaButton = this.source.ok && !isNote ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
@@ -317,11 +320,12 @@ class TileView {
     this.popButton = this.source.ok ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
     this.popButton?.classList.add('strip-pop');
     // A file lives on this computer, so it can't be sent.
-    this.sendButton = this.source.ok && this.source.kind !== 'file' && handlers.onSendToPhone
+    this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && handlers.onSendToPhone
       ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
     this.sendButton?.classList.add('strip-send');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
+    this.primaryButton.hidden = isNote;
     const actions = el('div', { class: 'strip-actions' },
       this.primaryButton,
       this.starButton,

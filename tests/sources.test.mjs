@@ -238,3 +238,11 @@ test('x: an account link becomes a feed, other pages still explain themselves', 
   assert.match(parseSource('https://x.com/home').error, /isn't a post/);
   assert.match(parseSource('https://x.com/search?q=acyn').error, /isn't a post/);
 });
+
+test('note: text is kept with the tile and comes back decoded', () => {
+  const source = parseSource(`note:${encodeURIComponent('Hello\nworld')}`);
+  assert.equal(source.kind, 'note');
+  assert.equal(source.label, 'Note');
+  assert.equal(source.note.text, 'Hello\nworld');
+  assert.equal(parseSource('note:').note.text, '');
+});

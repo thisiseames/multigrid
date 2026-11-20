@@ -245,6 +245,12 @@ body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top));
 .tune-note { position: absolute; left: 10px; bottom: 10px; z-index: 6; max-width: calc(100% - 20px); padding: 5px 9px; border-radius: 7px; background: rgba(0, 0, 0, 0.76); color: var(--text); font-size: 11.5px; font-weight: 600; pointer-events: none; }
 .tune-note span, .tune-note small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tune-note small { margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-2); }
+
+/* A note tile: plain text kept with the layout */
+.note-tile { position: absolute; inset: 0; background: #151517; }
+.note-area { width: 100%; height: 100%; padding: 14px 16px; border: 0; resize: none; background: transparent; color: var(--text); font: 13.5px/1.55 system-ui, -apple-system, sans-serif; outline: none; }
+.note-area::placeholder { color: var(--text-2); }
+body.is-phone .note-area { font-size: 16px; }
 .grid.stacked .tile.maximized { height: auto; }
 .grid.stacked .tile.maximized .tile-body { flex: 1; aspect-ratio: auto; }
 .tile:fullscreen { margin: 0; border-radius: 0; }

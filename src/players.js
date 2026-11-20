@@ -1364,8 +1364,48 @@ function genericPlayer(source, options) {
   return closedPlayer(makeFrame(source.url), options);
 }
 
+/* A note: plain text that lives with the layout. It saves quietly as it's typed. */
+function notePlayer(source, options) {
+  const holder = document.createElement('div');
+  holder.className = 'note-tile';
+  const area = document.createElement('textarea');
+  area.className = 'note-area';
+  area.value = source.note?.text || '';
+  area.placeholder = 'Type a note…';
+  area.spellcheck = true;
+  area.setAttribute('aria-label', 'Note');
+  let timer = null;
+  const save = () => {
+    clearTimeout(timer);
+    timer = null;
+    options.onNoteText?.(area.value);
+  };
+  area.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(save, 500);
+  });
+  area.addEventListener('blur', save);
+  holder.append(area);
+  return {
+    el: holder,
+    canMute: false,
+    canPause: false,
+    canSeek: false,
+    start() {},
+    focus() { area.focus(); },
+    setMuted() {},
+    setVolume() {},
+    setPaused() {},
+    seekBy() {},
+    destroy() {
+      clearTimeout(timer);
+    },
+  };
+}
+
 const PLAYERS = {
   youtube: youtubePlayer,
+  note: notePlayer,
   twitch: twitchPlayer,
   kick: addressMutedPlayer,
   tiktok: tiktokPlayer,

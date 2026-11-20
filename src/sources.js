@@ -219,6 +219,18 @@ function parseX(url, host, input) {
   return fail(input, "This X page isn't a post or an account. Paste the link to a post, or to an account like x.com/@name.");
 }
 
+/** A note: plain text kept with the layout, shown in a tile. */
+function parseNote(input) {
+  const raw = input.slice(5);
+  let text = raw;
+  try {
+    text = decodeURIComponent(raw);
+  } catch {
+    // A damaged note still opens with the text it has.
+  }
+  return { ok: true, input, kind: 'note', label: 'Note', openUrl: null, note: { text } };
+}
+
 function parseLocal(input) {
   const match = input.match(/^local:([\w-]+):(.*)$/s);
   if (!match) return fail(input, "That isn't a link. Paste a full address or iframe code.");
@@ -291,6 +303,7 @@ export function parseSource(raw) {
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);
+  if (input.startsWith('note:')) return parseNote(input);
 
   let text = input;
   if (/^</.test(input) || /<iframe\b/i.test(input)) {

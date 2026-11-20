@@ -66,6 +66,12 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
   onTune: (id) => { tunedId = id; },
+  onNoteText: (id, text) => {
+    const tile = tileById(id);
+    if (!tile) return;
+    tile.input = `note:${encodeURIComponent(text)}`;
+    saveCurrent(ws);
+  },
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
@@ -516,7 +522,7 @@ function muteableTiles() {
 
 function renderSound() {
   const button = $('mixer-button');
-  const streams = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile));
+  const streams = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && parseSource(tile.input).kind !== 'note');
   button.hidden = !streams.length;
   const anyAudible = muteableTiles().some((tile) => !tile.muted);
   const open = isMixerOpen();
@@ -642,15 +648,20 @@ function addStream(input, target = { mode: 'add' }) {
     return;
   }
   const source = parseSource(input);
+  let addedId = null;
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
-    if (tile) tile.input = input;
+    if (tile) {
+      tile.input = input;
+      addedId = tile.id;
+    }
   } else {
     let slot = target.mode === 'fill' ? tileById(target.id) : null;
     if (!slot || isStream(slot)) slot = makeRoom(ws);
     slot.input = input;
     slot.muted = true;
     slot.volume = 100;
+    addedId = slot.id;
     // A TikTok account is vertical video, so it gets its own tall column and the
     // other streams sit beside it. A second account joins the grid as usual.
     if (!isPhoneLayout(ws) && source.kind === 'tiktok' && source.tiktok?.profile) phoneColumn(ws, slot.id);
@@ -661,6 +672,7 @@ function addStream(input, target = { mode: 'add' }) {
   }
   ws.started = true;
   commit();
+  return addedId;
 }
 
 function removeStream(id) {
@@ -1050,12 +1062,12 @@ onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fi
 let addFolder = '';
 const KIND_NAMES = {
   youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
-  hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story',
+  hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'reader', 'audio']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', note: 'pencil' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'reader', 'audio', 'note']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -3149,6 +3161,14 @@ for (const dialog of [$('source-dialog'), $('help-dialog')]) {
 $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }));
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
+$('note-add').addEventListener('click', () => {
+  const target = sourceTarget;
+  $('source-dialog').close();
+  const id = addStream('note:', target);
+  if (!id) return;
+  // The new note is ready to type in straight away.
+  requestAnimationFrame(() => grid.viewFor(id)?.player?.focus?.());
+});
 $('welcome-files').addEventListener('click', () => pickFilesFor({ mode: 'add' }));
 
 // A file dropped anywhere else must not make the browser navigate away from the workspace.
