@@ -25,7 +25,19 @@ class TileView {
     this.source = null;
     this.root = el('article', { class: 'tile' });
     this.root.dataset.id = tile.id;
+    this.root.addEventListener('pointerdown', (event) => {
+      if (event.button === 0) this.grid.handlers.onTune?.(this.id);
+    }, true);
     grid.gridEl.append(this.root);
+  }
+
+  /** A short note over the picture: what channel the surf just landed on. */
+  note(text) {
+    this.root.querySelector('.tune-note')?.remove();
+    const note = el('div', { class: 'tune-note', textContent: text });
+    this.root.append(note);
+    clearTimeout(this.noteTimer);
+    this.noteTimer = setTimeout(() => note.remove(), 2600);
   }
 
   /** Rebuilds the contents only when the tile's source has really changed. */
@@ -500,6 +512,11 @@ export class GridView {
 
   viewFor(id) {
     return this.views.get(id);
+  }
+
+  /** A short note over the tile's picture, used when channel surfing. */
+  note(id, text) {
+    this.viewFor(id)?.note(text);
   }
 
   render(ws) {

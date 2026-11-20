@@ -236,6 +236,7 @@ body.is-fullscreen .mixer { height: calc(var(--bar) + env(safe-area-inset-top));
 /* A TikTok card isn't video-shaped, so stacked on a phone it gets its own height. */
 .grid.stacked .tile-body:has(.frame-card) { aspect-ratio: auto; height: 490px; }
 .tile.maximized { position: fixed; inset: 0; margin: 0; z-index: 40; border-radius: 0; padding-top: env(safe-area-inset-top); }
+.tune-note { position: absolute; left: 10px; bottom: 10px; z-index: 6; max-width: calc(100% - 20px); padding: 5px 9px; border-radius: 7px; background: rgba(0, 0, 0, 0.76); color: var(--text); font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .grid.stacked .tile.maximized { height: auto; }
 .grid.stacked .tile.maximized .tile-body { flex: 1; aspect-ratio: auto; }
 .tile:fullscreen { margin: 0; border-radius: 0; }

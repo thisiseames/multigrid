@@ -4,7 +4,7 @@
 
 import {
   MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isPhoneLayout, isStream, isVisible, makeRoom,
-  phoneColumn, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
+  phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
@@ -49,6 +49,7 @@ const STARTERS = [
 
 let ws = loadCurrent();
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
+let tunedId = null; // the tile channel surf changes: the one last touched
 
 const grid = new GridView($('grid'), $('stage'), env, {
   onFill: (id) => openSourceDialog({ mode: 'fill', id }),
@@ -64,6 +65,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
+  onTune: (id) => { tunedId = id; },
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
@@ -166,6 +168,8 @@ function buildStreamMenu(id) {
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
     feed && !feed[0].hidden ? bigButton('back', 'Previous video', () => feed[0].click()) : null,
     feed && !feed[2].hidden ? bigButton('next', 'Next video', () => feed[2].click()) : null,
+    bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
+    bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
@@ -663,6 +667,67 @@ function removeStream(id) {
   removeTile(ws, id);
   commit();
 }
+
+/* ---------- Channel surf ---------- */
+
+/** The tile the arrow keys change: the one last touched, else the primary, else the first. */
+function tunedTile() {
+  const tuned = tunedId ? tileById(tunedId) : null;
+  if (tuned && isVisible(tuned) && isStream(tuned)) return tuned;
+  const primary = ws.tiles.find((tile) => tile.primary && isVisible(tile) && isStream(tile));
+  return primary || ws.tiles.find((tile) => isVisible(tile) && isStream(tile)) || null;
+}
+
+/** Steps one favorite along in the tuned tile, staying inside its folder when it has one. */
+function surfChannels(step, id = null) {
+  const tile = (id ? tileById(id) : null) || tunedTile();
+  if (!tile || !isStream(tile) || !isVisible(tile)) {
+    toast('Click a tile first, then surf with the arrow keys.');
+    return;
+  }
+  const all = listFavorites().sort(byName);
+  if (!all.length) {
+    toast('Add some favorites first.');
+    return;
+  }
+  const phone = phoneTile(ws);
+  const current = all.find((item) => item.input === tile.input);
+  let pool = all;
+  if (phone && tile.id === phone.id) {
+    // The TikTok column keeps its shape only for another TikTok account.
+    pool = all.filter((item) => {
+      const source = parseSource(item.input);
+      return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
+    });
+    if (!pool.length) {
+      toast('No TikTok accounts in Favorites to surf.');
+      return;
+    }
+  } else if (current?.group) {
+    pool = all.filter((item) => item.group && item.group.toLowerCase() === current.group.toLowerCase());
+  }
+  if (pool.length < 2) {
+    toast(current?.group ? `Only one favorite in ${current.group}.` : 'Add more favorites to surf.');
+    return;
+  }
+  const at = pool.findIndex((item) => item.input === tile.input);
+  const index = at < 0 ? (step > 0 ? 0 : pool.length - 1) : (at + step + pool.length) % pool.length;
+  const target = pool[index];
+  addStream(target.input, { mode: 'replace', id: tile.id });
+  tunedId = tile.id;
+  grid.note(tile.id, `${index + 1} / ${pool.length} · ${target.name}`);
+}
+
+// Up and down are free on the bare grid; boxes, dialogs and menus keep their own keys.
+window.addEventListener('keydown', (event) => {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+  const target = event.target;
+  if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+  if (document.querySelector('dialog[open], .popover:not([hidden])')) return;
+  event.preventDefault();
+  surfChannels(event.key === 'ArrowDown' ? 1 : -1);
+});
 
 /* ---------- Favorites ---------- */
 
