@@ -804,6 +804,10 @@ const httpsOnly = (raw) => {
   return /^https:\/\//.test(url) ? url : '';
 };
 
+// Favorites outside a Series folder that still get their show's picture: what the name looks like, and the show to look up.
+const SHOW_PICTURES = [[/hell.?s kitchen/i, "Hell's Kitchen"]];
+const showPictureFor = (name) => SHOW_PICTURES.find(([pattern]) => pattern.test(name || ''))?.[1] ?? '';
+
 /** A series' pictures from TVmaze: its main wide picture and its poster, either may be ''. */
 function posterFor(name) {
   const key = name.trim().toLocaleLowerCase();
@@ -871,7 +875,8 @@ function favoriteArt(item, source) {
     });
     return art;
   }
-  if (isSeriesFolder(item.group)) {
+  const pictureShow = showPictureFor(item.name);
+  if (isSeriesFolder(item.group) || pictureShow) {
     const showPoster = (url) => {
       const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
       const poster = el('img', { class: 'fart-poster', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
@@ -879,7 +884,7 @@ function favoriteArt(item, source) {
       art.className = 'fart is-poster';
       art.replaceChildren(backdrop, poster);
     };
-    posterFor(item.name).then((found) => {
+    posterFor(pictureShow || item.name).then((found) => {
       if (!found) return;
       if (found.wide) {
         // The wide picture, shrunk. If the shrinking service can't help, the poster stands in.
