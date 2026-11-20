@@ -1746,8 +1746,12 @@ body.remote-open { overflow: hidden; }
   body.is-phone .matches-tab { height: 44px; padding: 0 18px; font-size: 15px; }
   /* The trend filters are secondary; keep all five visible on one line. */
   body.is-phone .trend-tabs .matches-tab { height: 40px; padding: 0 10px; font-size: 13px; }
-  body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file, body.is-phone .match-watch { min-height: 44px; }
-  body.is-phone .match-watch { padding: 0 16px; font-size: 14.5px; }
+  body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file { min-height: 44px; }
+  /* The Watch shortcut is secondary; the fixture names should lead the row. */
+  body.is-phone .match-watch { height: 34px; min-height: 34px; padding: 0 11px 0 9px; gap: 5px; font-size: 12.5px; position: relative; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  body.is-phone .match-watch:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); filter: none; }
+  body.is-phone .match-watch svg { width: 12px; height: 12px; }
+  body.is-phone .match-watch::after { content: ''; position: absolute; inset: -5px 0; }
   body.is-phone .match-lineups { min-height: 44px; padding: 0 16px; font-size: 13.5px; }
   body.is-phone .gview { height: 44px; padding: 0 18px; font-size: 14.5px; }
   body.is-phone .gviews { padding: 2px; }
