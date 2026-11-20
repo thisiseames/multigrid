@@ -6,6 +6,8 @@ const FEED = 'https://site.api.espn.com/apis/v2/sports';
 export const LEAGUES = [
   { id: 'pl', name: 'Premier League', path: 'soccer/eng.1', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c' },
   { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1', kind: 'soccer' },
+  { id: 'bundesliga', name: 'Bundesliga', path: 'soccer/ger.1', kind: 'soccer' },
+  { id: 'ligue1', name: 'Ligue 1', path: 'soccer/fra.1', kind: 'soccer' },
   {
     id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c',
   },

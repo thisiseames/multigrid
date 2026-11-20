@@ -17,6 +17,13 @@ globalThis.fetch = async (url) => {
 const { LEAGUES, loadLeague, withConference } = await import('../src/standings.js');
 const league = (id) => LEAGUES.find((item) => item.id === id);
 
+test('standings include the Bundesliga and Ligue 1 tables', () => {
+  assert.deepEqual(
+    LEAGUES.filter((item) => item.id === 'bundesliga' || item.id === 'ligue1').map((item) => [item.name, item.path, item.kind]),
+    [['Bundesliga', 'soccer/ger.1', 'soccer'], ['Ligue 1', 'soccer/fra.1', 'soccer']],
+  );
+});
+
 test('soccer tables come back in league order', async () => {
   const [group] = await loadLeague(league('pl'));
   assert.deepEqual(group.rows.map((row) => row.name), ['City', 'Town']);

@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formationRows, parseLineups, toMatch, inWindow, isMine } from '../src/matches.js';
+import { TABS, formationRows, parseLineups, toMatch, inWindow, isMine } from '../src/matches.js';
+
+test('games include the Bundesliga and Ligue 1 tabs', () => {
+  assert.deepEqual(
+    TABS.filter((tab) => tab.id === 'bundesliga' || tab.id === 'ligue1').map((tab) => [tab.name, tab.path]),
+    [['Bundesliga', 'soccer/ger.1'], ['Ligue 1', 'soccer/fra.1']],
+  );
+});
 
 test('games read the same from the scoreboard and from a team schedule', () => {
   const scoreboard = toMatch({ id: '1', date: '2026-11-24T20:00Z', status: { type: { state: 'pre', shortDetail: 'Scheduled' } }, competitions: [{ competitors: [

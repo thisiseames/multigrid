@@ -12,6 +12,8 @@ export const TABS = [
   { id: 'mine', name: 'My teams', mine: true },
   { id: 'pl', name: 'Premier League', path: 'soccer/eng.1' },
   { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1' },
+  { id: 'bundesliga', name: 'Bundesliga', path: 'soccer/ger.1' },
+  { id: 'ligue1', name: 'Ligue 1', path: 'soccer/fra.1' },
   { id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions' },
   { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations' },
   { id: 'united', name: 'Man United', united: true, hidden: true },
