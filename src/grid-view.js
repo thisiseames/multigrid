@@ -327,8 +327,9 @@ class TileView {
       }, icon('open')) : null,
       iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)),
       this.moreButton);
-    // A TikTok account can be switched from its own name, without going through Add stream.
-    this.switchable = this.source.kind === 'tiktok' && Boolean(this.source.tiktok?.profile);
+    // An account feed can be switched from its own name, without going through Add stream.
+    this.switchable = (this.source.kind === 'tiktok' && Boolean(this.source.tiktok?.profile))
+      || (this.source.kind === 'x' && Boolean(this.source.x?.profile));
     this.labelTextEl = el('span', { class: 'strip-label-text', textContent: label });
     this.labelEl = this.switchable
       ? el('button', {

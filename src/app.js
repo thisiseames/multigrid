@@ -242,8 +242,12 @@ function openXListBox() {
 function buildAccountMenu(id) {
   const tile = tileById(id);
   const view = grid.viewFor(id);
-  const menu = $('account-menu');
   if (!tile || !view) return;
+  if (view.source?.kind === 'x' && view.source.x?.profile) {
+    buildXAccountMenu(id);
+    return;
+  }
+  const menu = $('account-menu');
   const current = view.source?.tiktok?.profile || '';
   const pick = (name) => {
     closePopovers();
@@ -280,6 +284,51 @@ function buildAccountMenu(id) {
   paint();
   // feeds.json may still be on its way; add the built-in accounts when it lands.
   loadTikTokFeeds().then(() => { if (!menu.hidden) paint(); });
+}
+
+/** The X accounts kept in Favorites, so an X feed can switch in place too. */
+function buildXAccountMenu(id) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  const menu = $('account-menu');
+  if (!tile || !view) return;
+  const current = tile.input;
+  const accounts = listFavorites()
+    .filter((item) => {
+      const source = parseSource(item.input);
+      return source.kind === 'x' && source.x?.profile && !source.x.id;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const pick = (item) => {
+    closePopovers();
+    if (item.input === current) return;
+    addStream(item.input, { mode: 'replace', id });
+    toast(`Switched to ${item.name}.`);
+  };
+  const row = (item) => el('button', {
+    type: 'button',
+    class: `account-item${item.input === current ? ' is-current' : ''}`,
+    on: { click: () => pick(item) },
+  },
+    el('span', { class: 'account-name', textContent: item.name }),
+    el('span', { class: 'account-note', textContent: item.input === current ? 'Playing' : '' }),
+    item.input === current ? icon('check') : null);
+
+  menu.replaceChildren(...[
+    el('p', { class: 'account-heading', textContent: 'Switch X account' }),
+    accounts.length ? null : el('p', { class: 'account-empty', textContent: 'No X accounts in Favorites yet.' }),
+    ...accounts.map(row),
+    el('button', {
+      type: 'button',
+      class: 'account-add',
+      on: { click() { closePopovers(); openXListBox(); } },
+    }, icon('saved'), el('span', { textContent: 'Import an X list…' })),
+    el('button', {
+      type: 'button',
+      class: 'account-add',
+      on: { click() { closePopovers(); openSourceDialog({ mode: 'replace', id }); } },
+    }, icon('plus'), el('span', { textContent: 'Another account…' })),
+  ].filter(Boolean));
 }
 
 /** The list-tick screen needs an import first; after that it opens straight up. */
