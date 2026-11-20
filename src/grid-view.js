@@ -31,13 +31,15 @@ class TileView {
     grid.gridEl.append(this.root);
   }
 
-  /** A short note over the picture: what channel the surf just landed on. */
-  note(text) {
+  /** A short note over the picture: the channel, and what's on next. */
+  note(text, sub = '') {
     this.root.querySelector('.tune-note')?.remove();
-    const note = el('div', { class: 'tune-note', textContent: text });
+    const note = el('div', { class: 'tune-note' },
+      el('span', { textContent: text }),
+      sub ? el('small', { textContent: sub }) : null);
     this.root.append(note);
     clearTimeout(this.noteTimer);
-    this.noteTimer = setTimeout(() => note.remove(), 2600);
+    this.noteTimer = setTimeout(() => note.remove(), 4600);
   }
 
   /** Rebuilds the contents only when the tile's source has really changed. */
@@ -515,8 +517,8 @@ export class GridView {
   }
 
   /** A short note over the tile's picture, used when channel surfing. */
-  note(id, text) {
-    this.viewFor(id)?.note(text);
+  note(id, text, sub = '') {
+    this.viewFor(id)?.note(text, sub);
   }
 
   render(ws) {

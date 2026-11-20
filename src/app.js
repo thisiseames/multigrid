@@ -678,6 +678,14 @@ function tunedTile() {
   return primary || ws.tiles.find((tile) => isVisible(tile) && isStream(tile)) || null;
 }
 
+/** What follows on a channel, from the guide: "Next: News at 8:00 pm". */
+function nextUpFor(input, name) {
+  const info = nowAndNext(name, parseSource(input));
+  if (info?.next) return `Next: ${info.next.title} · ${clock(info.next.start)}`;
+  if (info?.current) return `Now: ${info.current.title} · until ${clock(info.current.end)}`;
+  return '';
+}
+
 /** Steps one favorite along in the tuned tile, staying inside its folder when it has one. */
 function surfChannels(step, id = null) {
   const tile = (id ? tileById(id) : null) || tunedTile();
@@ -716,7 +724,7 @@ function surfChannels(step, id = null) {
   const target = pool[index];
   addStream(target.input, { mode: 'replace', id: tile.id });
   tunedId = tile.id;
-  grid.note(tile.id, `${index + 1} / ${pool.length} · ${target.name}`);
+  grid.note(tile.id, `${index + 1} / ${pool.length} · ${target.name}`, nextUpFor(target.input, target.name));
 }
 
 // Up and down are free on the bare grid; boxes, dialogs and menus keep their own keys.
