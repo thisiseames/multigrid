@@ -103,7 +103,7 @@ const mixer = createMixer($('mixer'), {
 function labelOf(tile) {
   const source = parseSource(tile.input);
   if (!source.ok) return 'Not playable';
-  return favoriteName(tile.input) ?? source.label;
+  return favoriteName(tile.input) ?? tile.title ?? source.label;
 }
 
 /** Pauses or plays one stream. Not saved: a reload plays everything again. */
@@ -769,7 +769,7 @@ function muteAll() {
 
 /* ---------- Adding, replacing, removing ---------- */
 
-function addStream(input, target = { mode: 'add' }) {
+function addStream(input, target = { mode: 'add' }, title = '') {
   if (target.mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
     toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
     return;
@@ -780,12 +780,14 @@ function addStream(input, target = { mode: 'add' }) {
     const tile = tileById(target.id);
     if (tile) {
       tile.input = input;
+      tile.title = title || undefined;
       addedId = tile.id;
     }
   } else {
     let slot = target.mode === 'fill' ? tileById(target.id) : null;
     if (!slot || isStream(slot)) slot = makeRoom(ws);
     slot.input = input;
+    slot.title = title || undefined;
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
@@ -799,6 +801,16 @@ function addStream(input, target = { mode: 'add' }) {
   }
   ws.started = true;
   commit();
+  // YouTube only gives the video's title through its small public card, so ask for it.
+  if (!title && source.kind === 'youtube' && source.youtube.id) {
+    youtubeTitle(source.youtube.id).then((found) => {
+      if (!found) return;
+      const current = tileById(addedId);
+      if (!current || current.input !== input) return;
+      current.title = found;
+      commit();
+    });
+  }
   return addedId;
 }
 
@@ -2998,7 +3010,7 @@ function youtubeTodayRow(item) {
     title: item.title || 'New video',
     onClick() {
       closePopovers();
-      addStream(`https://www.youtube.com/watch?v=${item.id}`);
+      addStream(`https://www.youtube.com/watch?v=${item.id}`, { mode: 'add' }, item.title);
     },
   });
 }

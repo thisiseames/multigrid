@@ -53,6 +53,7 @@ function sanitize(raw) {
       volume: Number.isFinite(tile.volume) ? Math.min(100, Math.max(0, Math.round(tile.volume))) : 100,
       place: tile.place ? { ...tile.place } : null,
       primary: tile.primary === true && Boolean(tile.input),
+      ...(typeof tile.title === 'string' && tile.title.trim() ? { title: tile.title.trim().slice(0, 300) } : {}),
     });
   }
   return {
@@ -87,7 +88,7 @@ function snapshot(ws) {
     fit: ws.fit,
     cols: ws.cols,
     rows: ws.rows,
-    tiles: ws.tiles.map(({ input, muted, volume, place, primary }) => ({ input, muted, volume, place, ...(primary && input ? { primary: true } : {}) })),
+    tiles: ws.tiles.map(({ input, muted, volume, place, primary, title }) => ({ input, muted, volume, place, ...(primary && input ? { primary: true } : {}), ...(title ? { title } : {}) })),
   };
 }
 

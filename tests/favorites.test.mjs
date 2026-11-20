@@ -168,3 +168,12 @@ test('a favourite keeps a channel logo, including when it is renamed', () => {
   saveFavorite('plain', 'No logo');
   assert.equal('logo' in listFavorites().find((item) => item.input === 'plain'), false);
 });
+
+test('a tile title is kept with the workspace', () => {
+  saveCurrent({
+    v: 1, presetId: 'equal', minSlots: 0, started: true, fit: true,
+    cols: [1], rows: [1],
+    tiles: [{ input: 'https://www.youtube.com/watch?v=abcdefghijk', muted: true, volume: 100, place: { c: 0, r: 0, cs: 1, rs: 1 }, title: 'A real video title' }],
+  });
+  assert.equal(loadCurrent().tiles[0].title, 'A real video title');
+});

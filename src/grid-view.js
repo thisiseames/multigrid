@@ -305,7 +305,7 @@ class TileView {
 
   buildStrip() {
     const { handlers } = this.grid;
-    const label = this.source.ok ? this.source.label : 'Not playable';
+    const label = this.tile.title || (this.source.ok ? this.source.label : 'Not playable');
     const isNote = this.source.kind === 'note';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
@@ -387,7 +387,7 @@ class TileView {
     if (this.starButton) {
       const favoriteTitle = this.grid.handlers.favoriteName(this.tile.input);
       const favorite = favoriteTitle !== null;
-      const tileLabel = favoriteTitle ?? this.source.label;
+      const tileLabel = favoriteTitle ?? this.tile.title ?? this.source.label;
       this.labelTextEl.textContent = tileLabel;
       this.labelEl.title = this.switchable ? `${tileLabel} — click to switch account` : tileLabel;
       const starLabel = favorite ? 'Edit favorite' : 'Add to favorites';
