@@ -2977,10 +2977,10 @@ async function newYouTubeUploads() {
     const id = await newestUpload(source.youtube.list);
     if (!id) return null;
     const before = seen[source.youtube.list];
-    if (before?.id === id) return null;
-    const title = await youtubeTitle(id);
+    const changed = Boolean(before && before.id !== id);
+    const title = !changed && before?.title ? before.title : await youtubeTitle(id);
     seen[source.youtube.list] = { id, title, at: Date.now() };
-    return { favorite, id, title, first: !before };
+    return { favorite, id, title, first: !changed };
   }));
   writeYtSeen(seen);
   return found.filter(Boolean);
@@ -3003,12 +3003,11 @@ function youtubeTodayRow(item) {
   });
 }
 
-/** Podcast episodes from the Reader published since midnight. */
+/** The newest podcast episodes from the Reader, so there is always something there. */
 function todayPodcasts(news) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  const since = Date.now() - 7 * 86400000;
   return (news?.items ?? [])
-    .filter((item) => item.kind === 'podcast' && item.audio && Number(item.time) >= start.getTime())
+    .filter((item) => item.kind === 'podcast' && item.audio && Number(item.time) >= since)
     .sort((a, b) => b.time - a.time)
     .slice(0, 4);
 }
@@ -3129,7 +3128,7 @@ async function fillToday() {
     todaySection('Top headlines', newsList),
     todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
     todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null),
-    todaySection('New podcasts today', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
+    todaySection('New podcasts', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
     todaySection('New on YouTube', tube.length ? el('ul', { class: 'rlist' }, ...tube.map(youtubeTodayRow)) : null),
     todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
