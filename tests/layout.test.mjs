@@ -241,3 +241,17 @@ test('fit: uniform grids aim for 16:9 and near-misses fill', () => {
   const custom = enterCustom(withStreams(2, 'row'));
   assert.deepEqual(fitStage(custom, 1000, 700, 26), { width: 1000, height: 700 });
 });
+
+test('phone layouts keep the primary stream in a video slot, not the phone column', () => {
+  const ws = emptyWorkspace();
+  ws.tiles.push(
+    { id: 'poi', input: 'https://example.com/film', primary: true, muted: true, place: null },
+    { id: 'feed', input: 'https://www.tiktok.com/@acyn', muted: true, place: null },
+  );
+  applyPreset(ws, 'phone', 3);
+  const poi = ws.tiles.find((tile) => tile.id === 'poi');
+  const feed = ws.tiles.find((tile) => tile.id === 'feed');
+  assert.equal(poi.place.r, 0, 'primary should stay in the top video slot');
+  assert.equal(poi.place.rs, 1, 'primary should not take the tall phone slot');
+  assert.equal(feed.place.rs, 2, 'the feed should own the tall slot');
+});

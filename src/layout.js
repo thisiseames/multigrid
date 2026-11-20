@@ -243,7 +243,19 @@ export function applyPreset(ws, presetId, minSlots = 0) {
   const primary = streams.find((tile) => tile.primary);
   if (primary && slots.length) {
     streams.splice(streams.indexOf(primary), 1);
-    streams.splice(Math.min(biggestIndex(slots, cols, rows), streams.length), 0, primary);
+    // A phone column belongs to the feed, so the primary takes the biggest other slot.
+    const phoneAt = isPhoneLayout({ presetId: preset.id }) ? phoneSlotIndex(preset.id, slots) : -1;
+    let best = 0;
+    let bestArea = -1;
+    slots.forEach((place, index) => {
+      if (index === phoneAt) return;
+      const area = placeArea(place, cols, rows);
+      if (area > bestArea) {
+        bestArea = area;
+        best = index;
+      }
+    });
+    streams.splice(Math.min(best, streams.length), 0, primary);
   }
   ws.tiles = slots.map((place, index) => (
     index < streams.length ? Object.assign(streams[index], { place: { ...place } }) : emptyTile({ ...place })
