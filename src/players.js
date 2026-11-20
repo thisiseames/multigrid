@@ -613,18 +613,18 @@ export function removeTikTokAccounts(names) {
 }
 
 /**
- * Every TikTok account this browser knows about, the ones added here first (newest
- * first), then the built-in ones from feeds.json. Used by the tile's account switcher.
+ * Every TikTok account this browser knows about, in one A–Z list: the ones added
+ * here, then the built-in ones from feeds.json. Used by the tile's account switcher.
  */
 export function tiktokAccounts() {
   const list = new Map();
-  for (const [name, entry] of Object.entries(localAccounts()).reverse()) {
+  for (const [name, entry] of Object.entries(localAccounts())) {
     list.set(name, { name, title: entry?.title || '', videos: entry?.videos?.length || 0, local: true });
   }
   for (const [name, entry] of Object.entries(feeds?.tiktok || {})) {
     if (!list.has(name)) list.set(name, { name, title: entry?.title || '', videos: entry?.videos?.length || 0, local: false });
   }
-  return [...list.values()];
+  return [...list.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** The second a TikTok video was posted sits in the top 32 bits of its number. */
@@ -672,6 +672,9 @@ function loadFeeds() {
     })
     .catch(() => feeds);
 }
+
+/** The built-in feed list, so the account menu can include it on a first open. */
+export const loadTikTokFeeds = () => loadFeeds();
 
 /** A feed for `name`, looked up now if this browser hasn't seen it recently. */
 async function accountVideos(name) {

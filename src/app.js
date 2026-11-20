@@ -9,7 +9,7 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { addTikTokAccounts, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
@@ -185,7 +185,6 @@ function buildAccountMenu(id) {
   const menu = $('account-menu');
   if (!tile || !view) return;
   const current = view.source?.tiktok?.profile || '';
-  const accounts = tiktokAccounts();
   const pick = (name) => {
     closePopovers();
     if (name === current) return;
@@ -201,26 +200,26 @@ function buildAccountMenu(id) {
     el('span', { class: 'account-note', textContent: account.name === current ? 'Playing' : account.title || (account.videos ? `${account.videos} videos` : '') }),
     account.name === current ? icon('check') : null);
 
-  const mine = accounts.filter((account) => account.local);
-  const built = accounts.filter((account) => !account.local);
   const following = tiktokFollowing();
-  menu.replaceChildren(...[
-    el('p', { class: 'account-heading', textContent: 'Switch TikTok account' }),
-    mine.length ? el('p', { class: 'account-heading is-sub', textContent: 'Added here' }) : null,
-    ...mine.map(item),
-    el('button', {
-      type: 'button',
-      class: 'account-add',
-      on: { click() { closePopovers(); chooseFollowing(); } },
-    }, icon('saved'), el('span', { textContent: following.length ? `Choose followed accounts… (${following.length})` : 'Import following list…' })),
-    el('button', {
-      type: 'button',
-      class: 'account-add',
-      on: { click() { closePopovers(); openSourceDialog({ mode: 'replace', id }); } },
-    }, icon('plus'), el('span', { textContent: 'Another account…' })),
-    built.length ? el('p', { class: 'account-heading is-sub', textContent: 'Built in' }) : null,
-    ...built.map(item),
-  ].filter(Boolean));
+  const paint = () => {
+    menu.replaceChildren(...[
+      el('p', { class: 'account-heading', textContent: 'Switch TikTok account' }),
+      ...tiktokAccounts().map(item),
+      el('button', {
+        type: 'button',
+        class: 'account-add',
+        on: { click() { closePopovers(); chooseFollowing(); } },
+      }, icon('saved'), el('span', { textContent: following.length ? `Choose followed accounts… (${following.length})` : 'Import following list…' })),
+      el('button', {
+        type: 'button',
+        class: 'account-add',
+        on: { click() { closePopovers(); openSourceDialog({ mode: 'replace', id }); } },
+      }, icon('plus'), el('span', { textContent: 'Another account…' })),
+    ].filter(Boolean));
+  };
+  paint();
+  // feeds.json may still be on its way; add the built-in accounts when it lands.
+  loadTikTokFeeds().then(() => { if (!menu.hidden) paint(); });
 }
 
 /** The list-tick screen needs an import first; after that it opens straight up. */
@@ -303,8 +302,14 @@ function openFollowingPicker() {
         const drop = following.filter((name) => added.has(name) && !chosenSet.has(name));
         addTikTokAccounts(chosen.filter((name) => !added.has(name)));
         removeTikTokAccounts(drop);
+        // A tick is a favorite too, so the account is saved in Favorites as well.
+        for (const name of chosen) {
+          const link = `https://www.tiktok.com/@${name}`;
+          if (favoriteName(link) === null) saveFavorite(link, `@${name}`);
+        }
+        for (const name of drop) removeFavorite(`https://www.tiktok.com/@${name}`);
         box.close();
-        toast(`${chosen.length} account${chosen.length === 1 ? '' : 's'} in the TikTok menu.`);
+        toast(chosen.length ? `${chosen.length} account${chosen.length === 1 ? '' : 's'} in the menu and Favorites.` : 'Cleared the picked accounts from the menu and Favorites.');
       },
     },
   },
