@@ -1633,8 +1633,9 @@ body.remote-open { overflow: hidden; }
   .phone-bar-button { flex: none; width: 40px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--text-2); }
   .phone-bar-button:hover { background: var(--hover); color: var(--text); }
   .phone-bar-button svg { width: 19px; height: 19px; }
-  .phone-bar-play { width: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+  .phone-bar-play { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
   .phone-bar-play:hover { background: var(--accent); color: var(--accent-ink); filter: brightness(1.08); }
+.phone-bar-play svg { width: 18px; height: 18px; }
   .phone-bar-play[hidden], .phone-bar-mute[hidden] { display: none; }
   .tabbar {
     display: flex;
