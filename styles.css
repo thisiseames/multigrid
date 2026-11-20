@@ -916,6 +916,61 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .gdetail-card { width: 100%; border-radius: 18px 18px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
 
+/* ---------- Lineups ---------- */
+.match-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.match-lineups { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px 0 9px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--text); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.match-lineups:hover { background: rgba(255,255,255,.12); }
+.match-lineups svg { width: 14px; height: 14px; color: var(--accent); }
+.lineup { width: min(760px, calc(100vw - 24px)); max-height: min(880px, calc(100dvh - 32px)); padding: 0; display: flex; flex-direction: column; overflow: hidden; background: #141416; }
+.lineup[open] { display: flex; }
+.lineup-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 14px 10px 18px; border-bottom: 1px solid var(--border); }
+.lineup-head-text { min-width: 0; }
+.lineup-head h2 { margin: 0; font-size: 19px; font-weight: 750; letter-spacing: -.01em; }
+.lineup-head small { display: block; margin-top: 3px; font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lineup-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 18px 18px; }
+.lineup-teams { display: flex; gap: 6px; margin-bottom: 10px; }
+.lineup-team { flex: 1; min-width: 0; height: 42px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border-radius: 10px; background: var(--surface); border: 1px solid rgba(255,255,255,.05); color: var(--text-2); text-align: left; }
+.lineup-team:hover { background: #1d1d21; color: var(--text); }
+.lineup-team.is-on { background: var(--raised); border-color: var(--border-strong); color: var(--text); }
+.lineup-team b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; }
+.lineup-team .crest { --size: 22px; width: 22px; height: 22px; }
+.lineup-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 4px 2px 8px; font-size: 11.5px; color: var(--text-2); }
+.lineup-meta b { color: var(--text); font-size: 12.5px; letter-spacing: .02em; }
+.lineup-pitch { position: relative; width: 100%; aspect-ratio: 1.95 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-color: #1b3a27; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8%, transparent 8% 16%), linear-gradient(110deg, #183622, #245136); box-shadow: inset 0 0 46px rgba(0,0,0,.28); }
+.lp-half, .lp-circle, .lp-box, .lp-six, .lp-goal { position: absolute; border-color: rgba(255,255,255,.32); pointer-events: none; }
+.lp-half { right: 0; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.3); border: 0; }
+.lp-circle { right: -9%; top: 50%; width: 18%; aspect-ratio: 1 / 1; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; transform: translateY(-50%); }
+.lp-box { left: 0; top: 20%; width: 16%; height: 60%; border: 1px solid rgba(255,255,255,.3); border-left: 0; }
+.lp-six { left: 0; top: 33%; width: 7%; height: 34%; border: 1px solid rgba(255,255,255,.3); border-left: 0; }
+.lp-goal { left: 0; top: 42%; width: 1.6%; height: 16%; border: 1px solid rgba(255,255,255,.4); border-left: 0; }
+.lp-player { position: absolute; z-index: 2; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; transform: translate(-50%, -50%); }
+.lp-shirt { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--team, var(--accent)); color: #fff; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lp-name { max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 600; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.95); }
+.lineup-label { margin: 14px 2px 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.lineup-subs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 14px; }
+.lineup-sub { display: flex; align-items: center; gap: 7px; min-width: 0; min-height: 28px; font-size: 12px; }
+.lp-sub-num { flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--raised); color: var(--text-2); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lp-sub-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp-sub-pos { flex: none; margin-left: auto; font-size: 10px; color: var(--text-2); }
+.lineup-source { margin: 14px 2px 0; font-size: 11px; color: var(--text-2); }
+.lineup-note { padding: 34px 18px; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; }
+.lineup-note-icon { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: rgba(255,255,255,.06); color: var(--accent); }
+.lineup-note b { margin-top: 3px; font-size: 15px; font-weight: 650; color: var(--text); }
+.lineup-note span { max-width: 34em; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+.lineup-check { margin-top: 8px; height: 34px; padding: 0 16px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 12.5px; font-weight: 700; }
+.lineup-check:hover { filter: brightness(1.08); }
+@media (max-width: 640px) {
+  .lineup { width: 100vw; height: 100dvh; max-width: 100vw; max-height: 100dvh; margin: 0; border-radius: 0; border: 0; }
+  .lineup-head { padding: calc(12px + env(safe-area-inset-top)) 10px 8px 14px; }
+  .lineup-body { padding: 10px 12px calc(16px + env(safe-area-inset-bottom)); }
+  .lineup-pitch { aspect-ratio: 1.42 / 1; }
+  .lp-player { width: 62px; }
+  .lp-shirt { width: 28px; height: 28px; font-size: 11px; }
+  .lp-name { max-width: 62px; font-size: 9px; }
+  .lineup-subs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 10px; }
+  .lineup-team { height: 44px; }
+}
+
 /* ---------- TikTok feeds ---------- */
 /* A feed is vertical video, so it keeps a phone's 9:16 shape and takes the tile's full
    height. In a wide tile it sits centred on black instead of shrinking to a stamp. */
@@ -1692,6 +1747,7 @@ body.remote-open { overflow: hidden; }
   body.is-phone .trend-tabs .matches-tab { height: 40px; padding: 0 10px; font-size: 13px; }
   body.is-phone .rmark, body.is-phone .menu-item, body.is-phone .addp-file, body.is-phone .match-watch { min-height: 44px; }
   body.is-phone .match-watch { padding: 0 16px; font-size: 14.5px; }
+  body.is-phone .match-lineups { min-height: 44px; padding: 0 16px; font-size: 13.5px; }
   body.is-phone .gview { height: 44px; padding: 0 18px; font-size: 14.5px; }
   body.is-phone .gviews { padding: 2px; }
   body.is-phone .dialog .icon-button, body.is-phone .ghead button[aria-label="Close"], body.is-phone .gdetail-top button, body.is-phone #source-close, body.is-phone #help-close {

@@ -17,7 +17,7 @@ import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague, withConference } from './standings.js';
-import { TABS as MATCH_TABS, crest, isMine, loadDetails, loadTab, outcome } from './matches.js';
+import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
@@ -2515,6 +2515,18 @@ $('guide-dialog').addEventListener('keydown', (event) => {
   }
 });
 
+$('lineup-close').addEventListener('click', () => $('lineup-dialog').close());
+$('lineup-dialog').addEventListener('click', (event) => {
+  if (event.target === $('lineup-dialog')) $('lineup-dialog').close();
+});
+$('lineup-dialog').addEventListener('close', () => {
+  clearInterval(lineupTimer);
+  lineupTimer = null;
+  lineupMatch = null;
+  lineupAsked += 1;
+  $('lineup-body').replaceChildren();
+});
+
 /* ---------- Standings ---------- */
 
 // Standings always opens on Premier League (and a conference switch on its first side).
@@ -3061,12 +3073,170 @@ function detailsBody(match, details) {
   }
   const facts = [details.venue || match.venue, match.tv.length ? match.tv.slice(0, 3).join(' · ') : ''].filter(Boolean);
   const watch = watchButton(match);
-  if (facts.length || watch) {
+  const lineups = lineupsButton(match);
+  const actions = lineups || watch ? el('span', { class: 'match-actions' }, lineups, watch) : null;
+  if (facts.length || actions) {
     parts.push(el('div', { class: 'match-facts' },
       el('span', { class: 'match-facts-text' }, ...facts.map((text, i) => el('span', { class: i ? 'fact-tv' : 'fact-venue', textContent: text }))),
-      watch));
+      actions));
   }
   return parts;
+}
+
+/* ---------- Lineup board ---------- */
+
+let lineupMatch = null;
+let lineupTimer = null;
+let lineupAsked = 0;
+
+const ROW_SPREAD = {
+  1: [50], 2: [30, 70], 3: [20, 50, 80], 4: [14, 38, 62, 86], 5: [10, 30, 50, 70, 90], 6: [8, 25, 42, 58, 75, 92],
+};
+const rowY = (count, index) => ROW_SPREAD[count]?.[index] ?? 50;
+
+function lineupsButton(match) {
+  if (match.sport !== 'soccer/all') return null;
+  return el('button', {
+    type: 'button',
+    class: 'match-lineups',
+    title: `Lineups for ${match.home.name} v ${match.away.name}`,
+    on: {
+      click(event) {
+        event.stopPropagation();
+        openLineups(match);
+      },
+    },
+  }, icon('pitch', 14), 'Lineups');
+}
+
+function lineupPitch(side) {
+  const pitch = el('div', { class: 'lineup-pitch', style: `--team:${side.match.color || 'var(--accent)'}` });
+  pitch.append(
+    el('span', { class: 'lp-half' }),
+    el('span', { class: 'lp-circle' }),
+    el('span', { class: 'lp-box' }),
+    el('span', { class: 'lp-six' }),
+    el('span', { class: 'lp-goal' }));
+  const rows = formationRows(side.formation, side.starters);
+  rows.forEach((row, rowIndex) => {
+    const x = rows.length === 1 ? 50 : 10 + (rowIndex / (rows.length - 1)) * 80;
+    row.forEach((player, index) => {
+      pitch.append(el('span', {
+        class: 'lp-player',
+        style: `left:${x}%;top:${rowY(row.length, index)}%`,
+        title: [player.name, player.position].filter(Boolean).join(' · '),
+      },
+      el('span', { class: 'lp-shirt', textContent: player.jersey || '•' }),
+      el('small', { class: 'lp-name', textContent: player.short || player.name })));
+    });
+  });
+  return pitch;
+}
+
+function renderLineups(match, lineups) {
+  const body = $('lineup-body');
+  const sides = lineups.map((side) => ({ ...side, match: side.home ? match.home : match.away }));
+  const tabs = el('div', { class: 'lineup-teams' });
+  const panel = el('div', { class: 'lineup-panel' });
+  let active = 0;
+  const draw = () => {
+    [...tabs.children].forEach((button, index) => {
+      const on = index === active;
+      button.classList.toggle('is-on', on);
+      button.setAttribute('aria-selected', String(on));
+    });
+    const side = sides[active];
+    const bench = side.subs.slice().sort((a, b) => (Number(a.jersey) || 999) - (Number(b.jersey) || 999) || a.name.localeCompare(b.name));
+    const subs = bench.length
+      ? [el('h4', { class: 'lineup-label', textContent: `Subs (${bench.length})` }),
+        el('ul', { class: 'lineup-subs' }, ...bench.map((player) => el('li', { class: 'lineup-sub' },
+          el('span', { class: 'lp-sub-num', textContent: player.jersey || '' }),
+          el('span', { class: 'lp-sub-name', textContent: player.name, title: player.name }),
+          player.position ? el('span', { class: 'lp-sub-pos', textContent: player.position }) : null)))]
+      : [];
+    panel.replaceChildren(
+      el('div', { class: 'lineup-meta' }, el('span', { textContent: 'Starting XI' }), el('b', { textContent: side.formation || 'Formation' })),
+      lineupPitch(side),
+      ...subs);
+  };
+  sides.forEach((side, index) => {
+    tabs.append(el('button', {
+      type: 'button',
+      class: 'lineup-team',
+      title: side.match.full || side.match.name,
+      aria: { selected: String(index === 0) },
+      on: { click() { active = index; draw(); } },
+    }, crestOf(side.match, 22), el('b', { textContent: side.match.name || side.team })));
+  });
+  draw();
+  body.replaceChildren(tabs, panel, el('p', { class: 'lineup-source', textContent: `Lineups from ESPN · Updated ${clock(Date.now())}` }));
+}
+
+function lineupNote(match, title, text, canCheck = true) {
+  return el('div', { class: 'lineup-note' },
+    el('span', { class: 'lineup-note-icon' }, icon('pitch', 22)),
+    el('b', { textContent: title }),
+    el('span', { textContent: text }),
+    canCheck ? el('button', { type: 'button', class: 'lineup-check', on: { click() { fetchLineups(); } } }, 'Check again') : null);
+}
+
+function scheduleLineups(match) {
+  clearInterval(lineupTimer);
+  lineupTimer = null;
+  if (match.state === 'post') return;
+  // The dialog can stay open for days; only ask ESPN when kickoff is close.
+  lineupTimer = setInterval(() => {
+    if (!$('lineup-dialog').open) {
+      clearInterval(lineupTimer);
+      lineupTimer = null;
+      return;
+    }
+    const now = Date.now();
+    const near = match.state === 'in'
+      || (match.state === 'pre' && now >= match.start - 90 * 60000 && now < match.start + 30 * 60000);
+    if (near && !document.hidden) fetchLineups(true);
+  }, 60 * 1000);
+}
+
+async function fetchLineups(auto = false) {
+  const match = lineupMatch;
+  if (!match) return;
+  const asked = ++lineupAsked;
+  if (!auto) $('lineup-body').replaceChildren(lineupNote(match, 'Checking lineups…', 'Asking ESPN for the teams.', false));
+  try {
+    const data = await loadDetails(match);
+    if (asked !== lineupAsked || lineupMatch !== match || !$('lineup-dialog').open) return;
+    const lineups = Array.isArray(data?.lineups) ? data.lineups : [];
+    if (lineups.length) {
+      clearInterval(lineupTimer);
+      lineupTimer = null;
+      renderLineups(match, lineups);
+      return;
+    }
+    const text = match.state === 'pre'
+      ? 'ESPN usually posts them about an hour before kickoff. The board starts checking each minute once kickoff is close.'
+      : "ESPN doesn't have a lineup for this game yet.";
+    $('lineup-body').replaceChildren(lineupNote(match, match.state === 'pre' ? "Lineups aren't out yet" : "Lineups aren't available", text));
+    scheduleLineups(match);
+  } catch {
+    if (asked !== lineupAsked || lineupMatch !== match || !$('lineup-dialog').open) return;
+    $('lineup-body').replaceChildren(lineupNote(match, "Couldn't get the lineups", 'ESPN did not answer. Try again in a minute.'));
+    scheduleLineups(match);
+  }
+}
+
+function openLineups(match) {
+  lineupMatch = match;
+  lineupAsked += 1;
+  clearInterval(lineupTimer);
+  lineupTimer = null;
+  const when = match.state === 'pre' ? `${dayLabel(match.start)} · ${clock(match.start)}`
+    : match.state === 'post' ? finalText(match)
+      : match.detail || 'Live';
+  $('lineup-match').textContent = `${match.home.name} v ${match.away.name} · ${when}`;
+  $('lineup-body').replaceChildren(lineupNote(match, 'Checking lineups…', 'Asking ESPN for the teams.', false));
+  openDialog($('lineup-dialog'));
+  fetchLineups();
 }
 
 function fillDetails(match, holder, refresh = false) {
@@ -3157,10 +3327,12 @@ function heroCard(match, label) {
     : el('div', { class: 'hero-mid' }, el('span', { class: 'hero-time', textContent: clock(match.start) }), el('span', { class: 'hero-sub', textContent: dayLabel(match.start) === dayFormat.format(new Date(match.start)) ? dayLabel(match.start) : `${dayLabel(match.start)} · ${dayFormat.format(new Date(match.start))}` }));
   const facts = [match.venue, match.tv.slice(0, 2).join(' · ')].filter(Boolean).join('  ·  ');
   const watch = watchButton(match);
+  const lineups = lineupsButton(match);
+  const actions = lineups || watch ? el('span', { class: 'match-actions' }, lineups, watch) : null;
   return el('div', { class: `hero${match.state === 'in' ? ' is-live' : ''}` },
     el('div', { class: 'hero-top' }, el('span', { class: `hero-label${match.state === 'in' ? ' is-live' : ''}`, textContent: label }), match.league ? el('span', { class: 'hero-league', textContent: match.league }) : null),
     el('div', { class: 'hero-main' }, team(match.home, match.away), middle, team(match.away, match.home)),
-    facts || watch ? el('div', { class: 'hero-foot' }, facts ? el('span', { class: 'hero-facts', textContent: facts }) : null, watch) : null);
+    facts || actions ? el('div', { class: 'hero-foot' }, facts ? el('span', { class: 'hero-facts', textContent: facts }) : null, actions) : null);
 }
 
 function teamCardView({ card }) {

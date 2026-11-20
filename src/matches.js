@@ -28,6 +28,102 @@ export function shortName(name = '') {
   return parts.length < 2 ? parts[0] || '' : `${parts[0][0]}. ${parts.slice(1).join(' ')}`;
 }
 
+const positionOf = (player) => String(player?.position || '').toUpperCase();
+const isGoalkeeper = (player) => /^(G|GK)$/.test(positionOf(player)) || player?.formationPlace === 1;
+
+/** A rough back-to-front order for the positions ESPN uses. */
+const lineRank = (player) => {
+  const position = positionOf(player);
+  if (isGoalkeeper(player)) return 0;
+  // Wing-backs sit between the centre-backs and the midfield; in a back three they
+  // belong in the five, not the three.
+  if (/LWB|RWB|WB/.test(position)) return 1.5;
+  if (/DM|CDM/.test(position)) return 2;
+  if (/AM|CAM/.test(position)) return 3;
+  if (/[BD]/.test(position)) return 1;
+  if (/^(F|ST|CF|LW|RW|W|SS|WF|FW|LWF|RWF)$/.test(position) || /ST|CF|LW|RW|WF|SS/.test(position)) return 4;
+  return 2.5;
+};
+
+const sideRank = (player) => {
+  const position = positionOf(player);
+  if (/CD-L|CB-L/.test(position)) return -0.6;
+  if (/CD-R|CB-R/.test(position)) return 0.6;
+  if (/AM-L|AML/.test(position)) return -0.8;
+  if (/AM-R|AMR/.test(position)) return 0.8;
+  if (/L/.test(position)) return -1;
+  if (/R/.test(position)) return 1;
+  return 0;
+};
+
+const comparePlayers = (a, b) => (sideRank(a) - sideRank(b))
+  || ((a.formationPlace || 0) - (b.formationPlace || 0))
+  || String(a.name || '').localeCompare(String(b.name || ''));
+
+const playerOf = (entry) => {
+  const athlete = entry?.athlete || {};
+  const name = athlete.displayName || athlete.fullName || athlete.shortName || '?';
+  const position = entry?.position?.abbreviation || entry?.position?.name || '';
+  return {
+    name,
+    short: athlete.shortName || shortName(name),
+    jersey: entry?.jersey != null ? String(entry.jersey) : '',
+    // ESPN labels every substitute "SUB"; that is a bench tag, not a position.
+    position: /^sub(stitute)?$/i.test(position) ? '' : position,
+    formationPlace: Number(entry?.formationPlace) || 0,
+    subbedIn: Boolean(entry?.subbedIn),
+    subbedOut: Boolean(entry?.subbedOut),
+  };
+};
+
+/** ESPN's two rosters, when the lineups have been posted. Empty until then. */
+export function parseLineups(answer) {
+  return (Array.isArray(answer?.rosters) ? answer.rosters : [])
+    .map((side) => {
+      const roster = (Array.isArray(side?.roster) ? side.roster : []).filter((item) => item?.athlete);
+      const starters = roster.filter((item) => item.starter).map(playerOf);
+      if (!starters.length) return null;
+      return {
+        home: side.homeAway === 'home',
+        team: side.team?.displayName || '',
+        formation: typeof side.formation === 'string' ? side.formation : '',
+        starters,
+        subs: roster.filter((item) => !item.starter).map(playerOf),
+      };
+    })
+    .filter(Boolean);
+}
+
+/**
+ * The formation's rows, goalkeeper first and attackers last. Positions decide the line;
+ * the formation numbers decide how many go in each row.
+ */
+export function formationRows(formation, starters) {
+  const list = (Array.isArray(starters) ? starters : []).filter(Boolean);
+  const keeper = list.find(isGoalkeeper) || null;
+  const outfield = list.filter((player) => player !== keeper);
+  const counts = String(formation || '').split('-').map(Number).filter((count) => Number.isFinite(count) && count > 0);
+  const exact = counts.length > 0 && counts.reduce((sum, count) => sum + count, 0) === outfield.length;
+  let rows;
+  if (exact) {
+    const order = outfield.slice().sort((a, b) => (lineRank(a) - lineRank(b)) || comparePlayers(a, b));
+    rows = [];
+    let at = 0;
+    for (const count of counts) {
+      const row = order.slice(at, at + count).sort(comparePlayers);
+      if (row.length) rows.push(row);
+      at += count;
+    }
+  } else {
+    const defenders = outfield.filter((player) => lineRank(player) <= 1.5).sort(comparePlayers);
+    const midfield = outfield.filter((player) => lineRank(player) >= 2 && lineRank(player) <= 3).sort(comparePlayers);
+    const forwards = outfield.filter((player) => lineRank(player) === 4).sort(comparePlayers);
+    rows = [defenders, midfield, forwards].filter((row) => row.length);
+  }
+  if (keeper) rows.unshift([keeper]);
+  return rows;
+}
+
 /** What a tapped game opens to: goals and cards for football, the score by quarter otherwise. */
 export async function loadDetails(match) {
   const answer = await getJSON(`${SITE}/${match.sport}/summary?event=${encodeURIComponent(match.id)}`);
@@ -46,11 +142,11 @@ export async function loadDetails(match) {
         home: String(item.team?.id ?? '') === match.home.id,
       });
     }
-    return { venue, moments: list.length ? list : match.moments };
+    return { venue, moments: list.length ? list : match.moments, lineups: parseLineups(answer) };
   }
   const sides = answer.header?.competitions?.[0]?.competitors ?? [];
   const lines = (where) => (sides.find((item) => item.homeAway === where)?.linescores ?? []).map((item) => item.displayValue ?? item.value ?? '');
-  return { venue, periods: { home: lines('home'), away: lines('away') } };
+  return { venue, periods: { home: lines('home'), away: lines('away') }, lineups: [] };
 }
 const getJSON = (url) => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout?.(10000) })
   .then((response) => {
