@@ -531,6 +531,7 @@ function addStream(input, target = { mode: 'add' }) {
     toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
     return;
   }
+  const source = parseSource(input);
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
     if (tile) tile.input = input;
@@ -542,8 +543,11 @@ function addStream(input, target = { mode: 'add' }) {
     slot.volume = 100;
     // A TikTok account is vertical video, so it gets its own tall column and the
     // other streams sit beside it. A second account joins the grid as usual.
-    const source = parseSource(input);
     if (!isPhoneLayout(ws) && source.kind === 'tiktok' && source.tiktok?.profile) phoneColumn(ws, slot.id);
+  }
+  // An X account is kept in Favorites, in a Twitter folder, so the feed can be found again.
+  if (source.kind === 'x' && source.x?.profile && favoriteName(input) === null) {
+    saveFavorite(input, `@${source.x.profile}`, 'Twitter');
   }
   ws.started = true;
   commit();

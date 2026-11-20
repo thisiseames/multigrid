@@ -12,6 +12,12 @@ const TWITCH_RESERVED = new Set([
   'drops', 'wallet', 'friends', 'messages', 'search', 'turbo', 'prime', 'popout',
   'moderator', 'broadcast', 'store',
 ]);
+const X_RESERVED = new Set([
+  'home', 'explore', 'search', 'notifications', 'messages', 'i', 'settings', 'login', 'logout',
+  'signup', 'compose', 'intent', 'share', 'hashtag', 'tos', 'privacy', 'jobs', 'download',
+  'account', 'premium', 'about', 'help', 'rules', 'following', 'followers', 'lists',
+  'bookmarks', 'communities', 'jobs',
+]);
 const KICK_RESERVED = new Set([
   'categories', 'browse', 'following', 'search', 'dashboard', 'clips', 'video',
   'videos', 'community-guidelines', 'privacy-policy', 'terms-of-service', 'dmca-policy',
@@ -203,7 +209,14 @@ function parseX(url, host, input) {
   if (status >= 0 && /^\d+$/.test(segments[status + 1] || '')) {
     return make(segments[status + 1], status > 0 ? segments[status - 1] : null);
   }
-  return fail(input, "This X page isn't a post. Paste the link to the post with the video.");
+  // A profile: its recent videos play as a feed, the way a TikTok account does.
+  const handle = (segments[0] || '').replace(/^@/, '');
+  if (segments.length === 1 && /^[A-Za-z0-9_]{1,15}$/.test(handle) && !X_RESERVED.has(handle.toLowerCase())) {
+    return {
+      ok: true, input, kind: 'x', label: `X · @${handle}`, openUrl: url.href, x: { profile: handle },
+    };
+  }
+  return fail(input, "This X page isn't a post or an account. Paste the link to a post, or to an account like x.com/@name.");
 }
 
 function parseLocal(input) {

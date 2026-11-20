@@ -152,7 +152,7 @@ test('x: post links from either address become the player', () => {
 
 test('x: short links and non-post pages explain themselves', () => {
   assert.match(parseSource('https://t.co/abc123').error, /Short links/);
-  assert.match(parseSource('https://x.com/NASA').error, /isn't a post/);
+  assert.equal(parseSource('https://x.com/NASA').x.profile, 'NASA');
   assert.match(parseSource('https://twitter.com/home').error, /isn't a post/);
 });
 
@@ -226,4 +226,15 @@ test('nonsense gets a useful message', () => {
   assert.equal(parseSource('   ').ok, false);
   assert.equal(parseSource('shroud').ok, false);
   assert.equal(parseSource('not a link at all').ok, false);
+});
+
+test('x: an account link becomes a feed, other pages still explain themselves', () => {
+  for (const input of ['https://x.com/Acyn', 'https://twitter.com/acyn', 'https://www.x.com/@Acyn']) {
+    const source = parseSource(input);
+    assert.equal(source.kind, 'x', input);
+    assert.equal(source.x.profile.toLowerCase(), 'acyn', input);
+    assert.match(source.label, /^X · @Acyn$/i, input);
+  }
+  assert.match(parseSource('https://x.com/home').error, /isn't a post/);
+  assert.match(parseSource('https://x.com/search?q=acyn').error, /isn't a post/);
 });

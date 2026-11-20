@@ -13,6 +13,7 @@
 
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
+import { parseXProfile, parseXVideoPage } from './x-feed.js';
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 import { forgetPlace, notePlace, rememberMedia, resumePoint, showResumed } from './resume.js';
@@ -1010,7 +1011,213 @@ function readerPlayer(source) {
   return self;
 }
 
+/* An X account plays as a feed: its recent videos, one after another, in the tile itself.
+   X only shows a logged-out reader its latest handful of posts, so the list is short. */
+const X_FEED_TTL = 30 * 60 * 1000;
+const X_VIDEO_TTL = 25 * 60 * 1000;
+const X_FEED_KEY = 'multigrid.x.feeds';
+const X_VIDEO_KEY = 'multigrid.x.videos';
+const X_READER = 'https://r.jina.ai/';
+
+function readXCache(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeXCache(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Remembering is optional; the feed still plays.
+  }
+}
+
+async function xFeedList(profile) {
+  const key = profile.toLowerCase();
+  const cache = readXCache(X_FEED_KEY);
+  const saved = cache[key];
+  if (saved?.ids?.length && Date.now() - (saved.at || 0) < X_FEED_TTL) return saved.ids;
+  const response = await fetch(`${X_READER}https://x.com/${encodeURIComponent(profile)}`, {
+    cache: 'no-cache',
+    signal: AbortSignal.timeout?.(20000),
+  });
+  if (!response.ok) throw new Error(`X lookup failed (${response.status})`);
+  const found = parseXProfile(await response.text(), profile);
+  if (!found.posts) throw new Error('No recent posts');
+  cache[key] = { ids: found.ids, at: Date.now() };
+  writeXCache(X_FEED_KEY, cache);
+  return found.ids;
+}
+
+async function xFeedVideo(profile, id) {
+  const cache = readXCache(X_VIDEO_KEY);
+  const saved = cache[id];
+  if (saved?.url && Date.now() - (saved.at || 0) < X_VIDEO_TTL) return saved.url;
+  const response = await fetch(`${X_READER}https://x.com/${encodeURIComponent(profile)}/status/${id}`, {
+    cache: 'no-cache',
+    headers: { 'x-respond-with': 'html' },
+    signal: AbortSignal.timeout?.(20000),
+  });
+  if (!response.ok) return '';
+  const url = parseXVideoPage(await response.text());
+  if (url) {
+    cache[id] = { url, at: Date.now() };
+    writeXCache(X_VIDEO_KEY, cache);
+  }
+  return url;
+}
+
+function xFeedPlayer(source, options) {
+  const { muted, volume, autoplay, onError } = options;
+  const profile = source.x.profile;
+  const holder = document.createElement('div');
+  holder.className = 'player-fill';
+  const video = document.createElement('video');
+  video.controls = true;
+  video.setAttribute('playsinline', '');
+  video.preload = 'metadata';
+  video.volume = Math.max(0, Math.min(1, Number(volume) / 100));
+  video.muted = Boolean(muted);
+  let wanted = Boolean(muted);
+  let ids = [];
+  let index = 0;
+  let destroyed = false;
+  let fallback = null;
+  let asked = null;
+  let objectUrl = '';
+
+  const counter = el('span', { class: 'feed-count', textContent: '' });
+  const stripButtons = [
+    iconButton('back', 'Previous video', () => show(index - 1)),
+    counter,
+    iconButton('next', 'Next video', () => show(index + 1)),
+  ];
+
+  const note = (text) => {
+    holder.replaceChildren(el('p', { class: 'feed-note', textContent: text }));
+  };
+
+  const embed = (id, at) => {
+    fallback = makeFrame(`https://platform.twitter.com/embed/Tweet.html?id=${id}&theme=dark&dnt=true&hideThread=true`);
+    fallback.className = 'frame-post';
+    holder.replaceChildren(fallback);
+    counter.textContent = `${at + 1}/${ids.length}`;
+  };
+
+  const release = () => {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = '';
+  };
+
+  const show = async (at) => {
+    if (!ids.length || destroyed) return;
+    index = (at + ids.length) % ids.length;
+    const position = index;
+    const id = ids[position];
+    counter.textContent = `${position + 1}/${ids.length}`;
+    const token = {};
+    asked = token;
+    note('Loading…');
+    let url = '';
+    try {
+      url = await xFeedVideo(profile, id);
+    } catch {
+      url = '';
+    }
+    if (destroyed || asked !== token) return;
+    if (!url) {
+      asked = null;
+      embed(id, position);
+      return;
+    }
+    // The video server refuses a request that carries this page as its referrer, so the
+    // file is fetched without one and played from memory.
+    let blob = null;
+    try {
+      const response = await fetch(url, { referrerPolicy: 'no-referrer' });
+      blob = response.ok ? await response.blob() : null;
+    } catch {
+      blob = null;
+    }
+    if (destroyed || asked !== token) return;
+    asked = null;
+    if (!blob) {
+      embed(id, position);
+      return;
+    }
+    fallback = null;
+    release();
+    objectUrl = URL.createObjectURL(blob);
+    video.src = objectUrl;
+    holder.replaceChildren(video);
+    if (autoplay !== false) video.play().catch(() => {});
+    // Pull the next video's address now, so Next is quick.
+    const following = ids[(position + 1) % ids.length];
+    if (following && ids.length > 1) xFeedVideo(profile, following).catch(() => {});
+  };
+
+  video.addEventListener('ended', () => { if (!destroyed) show(index + 1); });
+  video.addEventListener('error', () => { if (!destroyed && video.getAttribute('src')) embed(ids[index], index); });
+  video.addEventListener('play', () => options.onPlayState?.(false));
+  video.addEventListener('pause', () => options.onPlayState?.(true));
+
+  return {
+    el: holder,
+    canMute: true,
+    canVolume: true,
+    canPause: true,
+    canSeek: true,
+    stripButtons,
+    async start() {
+      note(`Looking up @${profile}…`);
+      let found = [];
+      try {
+        found = await xFeedList(profile);
+      } catch {
+        if (!destroyed) onError(`Couldn't look up @${profile} right now. Check the spelling, or try again in a minute.`);
+        return;
+      }
+      if (destroyed) return;
+      ids = found;
+      if (!ids.length) {
+        onError(`@${profile} has no recent videos.`);
+        return;
+      }
+      show(0);
+    },
+    setPaused(next) {
+      if (next) video.pause();
+      else video.play().catch(() => {});
+    },
+    seekBy(seconds) {
+      const duration = Number(video.duration);
+      const target = Number(video.currentTime) + Number(seconds);
+      video.currentTime = Number.isFinite(duration) && duration > 0 ? Math.max(0, Math.min(duration - 0.2, target)) : Math.max(0, target);
+    },
+    setMuted(next) {
+      wanted = Boolean(next);
+      video.muted = wanted;
+      if (!wanted) video.play().catch(() => {});
+    },
+    setVolume(next) {
+      video.volume = Math.max(0, Math.min(1, Number(next) / 100));
+    },
+    destroy() {
+      destroyed = true;
+      video.pause();
+      video.removeAttribute('src');
+      video.load?.();
+      release();
+      fallback?.removeAttribute('src');
+    },
+  };
+}
+
 function xPlayer(source, options) {
+  if (source.x?.profile) return xFeedPlayer(source, options);
   const frame = makeFrame(buildEmbedUrl(source, options, options.env));
   frame.className = 'frame-post';
   // A post isn't something to pause; its sound still works through the extension.

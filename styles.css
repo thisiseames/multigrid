@@ -824,6 +824,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   max-width: 100%;
 }
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.feed-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 14px; background: #000; color: var(--text-2); font: 13px system-ui, sans-serif; text-align: center; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
 /* In a phone layout the feed tile itself is a real 9:16 column: full height, with
    the rest of the grid taking the remaining width. */
