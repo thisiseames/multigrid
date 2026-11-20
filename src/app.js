@@ -2887,13 +2887,13 @@ async function fillToday() {
   const newsList = stories.length ? el('ul', { class: 'rlist' }, ...stories.map((item) => readerRow(item, read.has(item.id)))) : null;
 
   const parts = [
-    todaySection('Your teams', teamList),
+    todaySection('Top headlines', newsList),
     todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
+    todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
     todaySection('Movies this week', movieList),
     todaySection('New episodes this week', episodeList),
     todaySection('Premieres this week', premiereList),
-    todaySection('Top headlines', newsList),
     todaySection('Charts', chartsView(charts)),
   ].filter(Boolean);
   const scroll = body.scrollTop;
