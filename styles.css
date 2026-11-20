@@ -921,7 +921,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .match-lineups { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px 0 9px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--text); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .match-lineups:hover { background: rgba(255,255,255,.12); }
 .match-lineups svg { width: 14px; height: 14px; color: var(--accent); }
-.lineup { width: min(760px, calc(100vw - 24px)); max-height: min(880px, calc(100dvh - 32px)); padding: 0; display: flex; flex-direction: column; overflow: hidden; background: #141416; }
+.lineup { width: min(760px, calc(100vw - 24px)); max-height: min(880px, calc(100dvh - 32px)); padding: 0; flex-direction: column; overflow: hidden; background: #141416; }
 .lineup[open] { display: flex; }
 .lineup-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 14px 10px 18px; border-bottom: 1px solid var(--border); }
 .lineup-head-text { min-width: 0; }
