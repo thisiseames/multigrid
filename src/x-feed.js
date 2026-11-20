@@ -43,3 +43,68 @@ export function parseXVideoPage(html) {
   if (!found.length) return '';
   return found.sort((a, b) => sizeOf(b) - sizeOf(a))[0];
 }
+
+const HANDLE_ONLY = /^@([A-Za-z0-9_]{1,15})$/;
+const PROFILE_LINK = /^(?:https?:\/\/)?(?:www\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/?$/i;
+
+/**
+ * Usernames out of a copied X list: the members panel as it pastes (name, @handle, bio,
+ * one member per blank-line block), one handle per line, or a CSV with a handle field.
+ */
+export function parseXList(text) {
+  const body = String(text || '');
+  const found = [];
+  const take = (name) => {
+    const clean = String(name).trim().replace(/^@/, '');
+    if (/^[A-Za-z0-9_]{1,15}$/.test(clean)) found.push(clean);
+  };
+  const firstIn = (lines) => {
+    for (const line of lines) {
+      const handle = line.match(HANDLE_ONLY);
+      if (handle) return handle[1];
+      const link = line.match(PROFILE_LINK);
+      if (link) return link[1];
+    }
+    return '';
+  };
+
+  // The list panel: each member block holds its handle before any bio mentions.
+  const blocks = body.split(/\n\s*\n/)
+    .map((block) => block.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))
+    .filter((lines) => lines.length);
+  const fromBlocks = blocks.map(firstIn).filter(Boolean);
+  if (/\n\s*\n/.test(body) && fromBlocks.length >= 2) {
+    fromBlocks.forEach(take);
+  } else {
+    // One handle or profile link per line.
+    const lines = body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    for (const line of lines) {
+      const handle = line.match(/^@?([A-Za-z0-9_]{1,15})$/);
+      if (handle) {
+        take(handle[1]);
+        continue;
+      }
+      const link = line.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})(?:[/?#]|$)/i);
+      if (link) take(link[1]);
+    }
+    // Still nothing: a CSV, with the handle field found by its header.
+    if (!found.length) {
+      const rows = body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+        .map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')));
+      const header = rows[0]?.findIndex((cell) => /^(handle|username|user|account)$/i.test(cell)) ?? -1;
+      if (header >= 0) for (const row of rows.slice(1)) if (row[header]) take(row[header]);
+      else for (const row of rows) for (const cell of row) {
+        const link = cell.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})(?:[/?#]|$)/i);
+        if (link) take(link[1]);
+      }
+    }
+  }
+  const seen = new Set();
+  return found
+    .map((name) => name.toLowerCase())
+    .filter((name) => {
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+}

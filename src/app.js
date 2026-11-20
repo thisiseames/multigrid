@@ -11,6 +11,7 @@ import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { parseFollowingList } from './tiktok-list.js';
+import { parseXList } from './x-feed.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
@@ -176,6 +177,65 @@ function buildStreamMenu(id) {
     bigButton('trash', 'Remove', then(() => removeStream(id)), { danger: true }),
   ].filter(Boolean);
   menu.replaceChildren(...[transportRow(tile, view, redraw), volumeSlider(tile, view), el('div', { class: 'sa-grid' }, ...actions)].filter(Boolean));
+}
+
+/** An X list, pasted or chosen as a file: its members become Favorites in Twitter. */
+function openXListBox() {
+  const box = $('x-list-box');
+  if (box.open) return;
+  const area = el('textarea', { rows: 8, placeholder: 'Paste the list members here', spellcheck: false });
+  const count = el('p', { class: 'x-list-count' });
+  const submit = el('button', { type: 'submit', class: 'add-button', disabled: true });
+  const found = () => parseXList(area.value);
+  const refresh = () => {
+    const names = found();
+    count.textContent = names.length ? `${names.length} account${names.length === 1 ? '' : 's'} found` : '';
+    submit.textContent = names.length ? `Add ${names.length}` : 'Add';
+    submit.disabled = !names.length;
+  };
+  area.addEventListener('input', refresh);
+  const file = el('input', { type: 'file', accept: '.txt,.csv,text/plain,text/csv', hidden: true });
+  file.addEventListener('change', async () => {
+    const chosen = file.files?.[0];
+    if (!chosen) return;
+    try {
+      area.value = await chosen.text();
+      refresh();
+    } catch {
+      toast("Couldn't read that file.");
+    }
+  });
+  const choose = el('button', { type: 'button', class: 'plain-button', on: { click: () => file.click() } }, 'Choose a file…');
+  box.replaceChildren(el('form', {
+    on: {
+      submit(event) {
+        event.preventDefault();
+        const names = found();
+        if (!names.length) return;
+        let added = 0;
+        for (const name of names) {
+          const link = `https://x.com/${name}`;
+          if (favoriteName(link) === null) {
+            saveFavorite(link, `@${name}`, 'Twitter');
+            added++;
+          }
+        }
+        box.close();
+        renderAddFavorites($('source-favorites'), () => sourceTarget);
+        toast(added ? `${added} account${added === 1 ? '' : 's'} added to Favorites → Twitter.` : 'Those accounts are already in Favorites.');
+      },
+    },
+  },
+  el('h2', { textContent: 'Import an X list' }),
+  el('p', { class: 'x-list-note', textContent: 'Paste the list members — the copied members panel, one handle per line, or a CSV from an exporter. They are saved to Favorites in the Twitter folder.' }),
+  area,
+  el('div', { class: 'x-list-foot' }, count, choose),
+  file,
+  el('div', { class: 'dialog-actions' },
+    el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel'),
+    submit)));
+  openDialog(box);
+  area.focus();
 }
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
@@ -2858,6 +2918,7 @@ function submitXName() {
   addStream(`https://x.com/${name}`, target);
 }
 $('source-x-add').addEventListener('click', submitXName);
+$('source-x-list').addEventListener('click', openXListBox);
 $('source-x').addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
