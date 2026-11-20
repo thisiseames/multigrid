@@ -3506,11 +3506,11 @@ async function loadMovies() {
   }
 }
 
-/** One day or the current Monday-Sunday week, in date order. */
+/** One day or the current Monday-Sunday week, in date order. Today is only in the Today view. */
 function moviesForView(movies, view, now = Date.now()) {
   const { today, start, end } = weekKeys(now);
   return movies
-    .filter((movie) => (view === 'today' ? movie.date === today : movie.date >= start && movie.date < end))
+    .filter((movie) => (view === 'today' ? movie.date === today : movie.date >= start && movie.date < end && movie.date !== today))
     .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 
@@ -3536,11 +3536,11 @@ function premieresOf(data) {
   return items;
 }
 
-/** One day or the current Monday-Sunday week, in date order. */
+/** One day or the current Monday-Sunday week, in date order. Today is only in the Today view. */
 function premieresForView(items, view, now = Date.now()) {
   const { today, start, end } = weekKeys(now);
   return items
-    .filter((show) => (view === 'today' ? show.date === today : show.date >= start && show.date < end))
+    .filter((show) => (view === 'today' ? show.date === today : show.date >= start && show.date < end && show.date !== today))
     .sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }
 
@@ -3715,11 +3715,12 @@ async function episodesForFavorites() {
   return found.filter(({ info }) => info?.next || info?.last);
 }
 
-/** An episode already in this Monday-Sunday week. */
+/** An episode already in this Monday-Sunday week, leaving today for the Today view. */
 function episodeInWeek(info, now = Date.now()) {
-  const { start, end } = weekKeys(now);
-  return [info?.next?.at, info?.last?.at].filter(Boolean)
-    .some((at) => dayKey(at) >= start && dayKey(at) < end);
+  const { today, start, end } = weekKeys(now);
+  const inWeek = (episode) => episode?.at && dayKey(episode.at) >= start && dayKey(episode.at) < end;
+  const chosen = inWeek(info?.next) ? info.next : inWeek(info?.last) ? info.last : null;
+  return Boolean(chosen && dayKey(chosen.at) !== today);
 }
 
 function episodeTodayRow({ item, info }, now) {
@@ -4232,7 +4233,7 @@ async function fillToday() {
     moviesSection.list.hidden = !movieItems.length;
     moviesSection.list.replaceChildren(...movieItems.map(movieRow));
     moviesSection.empty.hidden = Boolean(movieItems.length);
-    moviesSection.empty.textContent = week ? 'No movies out this week.' : 'No movies out today.';
+    moviesSection.empty.textContent = week ? 'No more movies this week.' : 'No movies out today.';
 
     const episodeItems = week
       ? episodes.filter(({ info }) => episodeInWeek(info, now))
@@ -4245,14 +4246,14 @@ async function fillToday() {
     episodesSection.list.hidden = !episodeItems.length;
     episodesSection.list.replaceChildren(...episodeItems);
     episodesSection.empty.hidden = Boolean(episodeItems.length);
-    episodesSection.empty.textContent = week ? 'No new episodes this week.' : 'No new episodes today.';
+    episodesSection.empty.textContent = week ? 'No more episodes this week.' : 'No new episodes today.';
 
     const premiereItems = premieresForView(premiereAll, todayView, now);
     premieresSection.heading.textContent = week ? 'Premieres this week' : 'Premieres today';
     premieresSection.list.hidden = !premiereItems.length;
     premieresSection.list.replaceChildren(...premiereItems.map(premiereRow));
     premieresSection.empty.hidden = Boolean(premiereItems.length);
-    premieresSection.empty.textContent = week ? 'No premieres this week.' : 'No premieres today.';
+    premieresSection.empty.textContent = week ? 'No more premieres this week.' : 'No premieres today.';
   };
   redrawTodayDates();
 
