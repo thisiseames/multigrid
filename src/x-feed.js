@@ -108,3 +108,26 @@ export function parseXList(text) {
       return true;
     });
 }
+
+/** The account's post ids in a profile's HTML: its own links, wherever they sit. */
+export function parseXProfileHtml(html, handle) {
+  const body = String(html || '');
+  const wanted = String(handle || '');
+  if (!wanted) return { ids: [], posts: 0 };
+  const safe = wanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`/${safe}/status/(\\d{10,25})`, 'gi');
+  const ids = [];
+  for (const match of body.matchAll(pattern)) {
+    if (!ids.includes(match[1])) ids.push(match[1]);
+  }
+  return { ids, posts: ids.length };
+}
+
+/** When an X post was made, from its id (X counts milliseconds from November 2010). */
+export function xPostedAt(id) {
+  try {
+    return Number((BigInt(id) >> 22n) + 1288834974657n);
+  } catch {
+    return 0;
+  }
+}

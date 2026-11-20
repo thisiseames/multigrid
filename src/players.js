@@ -13,7 +13,7 @@
 
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
-import { parseXProfile, parseXVideoPage } from './x-feed.js';
+import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 import { forgetPlace, notePlace, rememberMedia, resumePoint, showResumed } from './resume.js';
@@ -1035,27 +1035,55 @@ function writeXCache(key, value) {
   }
 }
 
+const X_FRESH = 180 * 86400000;
+
+/** The account's recent posts, newest first, from the page's HTML or its Markdown. */
 async function xFeedList(profile) {
   const key = profile.toLowerCase();
   const cache = readXCache(X_FEED_KEY);
   const saved = cache[key];
   if (saved?.ids?.length && Date.now() - (saved.at || 0) < X_FEED_TTL) return saved.ids;
-  const response = await fetch(`${X_READER}https://x.com/${encodeURIComponent(profile)}`, {
+  const ask = (html) => fetch(`${X_READER}https://x.com/${encodeURIComponent(profile)}`, {
     cache: 'no-cache',
+    ...(html ? { headers: { 'x-respond-with': 'html' } } : {}),
     signal: AbortSignal.timeout?.(20000),
   });
-  if (!response.ok) throw new Error(`X lookup failed (${response.status})`);
-  const found = parseXProfile(await response.text(), profile);
-  if (!found.posts) throw new Error('No recent posts');
-  cache[key] = { ids: found.ids, at: Date.now() };
+  let ids = [];
+  for (const html of [true, false]) {
+    try {
+      const response = await ask(html);
+      if (!response.ok) continue;
+      const text = await response.text();
+      const found = html ? parseXProfileHtml(text, profile) : parseXProfile(text, profile);
+      ids = found.ids;
+      if (ids.length) break;
+    } catch {
+      // Try the other route before giving up.
+    }
+  }
+  const cutoff = Date.now() - X_FRESH;
+  const recent = [...new Set(ids)]
+    .filter((id) => {
+      const at = xPostedAt(id);
+      return !at || at > cutoff;
+    })
+    .sort((a, b) => {
+      try {
+        return BigInt(b) > BigInt(a) ? 1 : BigInt(b) < BigInt(a) ? -1 : 0;
+      } catch {
+        return 0;
+      }
+    });
+  if (!recent.length) throw new Error('No recent posts');
+  cache[key] = { ids: recent, at: Date.now() };
   writeXCache(X_FEED_KEY, cache);
-  return found.ids;
+  return recent;
 }
 
 async function xFeedVideo(profile, id) {
   const cache = readXCache(X_VIDEO_KEY);
   const saved = cache[id];
-  if (saved?.url && Date.now() - (saved.at || 0) < X_VIDEO_TTL) return saved.url;
+  if (saved && Date.now() - (saved.at || 0) < X_VIDEO_TTL) return saved.url || '';
   const response = await fetch(`${X_READER}https://x.com/${encodeURIComponent(profile)}/status/${id}`, {
     cache: 'no-cache',
     headers: { 'x-respond-with': 'html' },
@@ -1063,10 +1091,8 @@ async function xFeedVideo(profile, id) {
   });
   if (!response.ok) return '';
   const url = parseXVideoPage(await response.text());
-  if (url) {
-    cache[id] = { url, at: Date.now() };
-    writeXCache(X_VIDEO_KEY, cache);
-  }
+  cache[id] = { url, at: Date.now() };
+  writeXCache(X_VIDEO_KEY, cache);
   return url;
 }
 
@@ -1112,7 +1138,7 @@ function xFeedPlayer(source, options) {
     objectUrl = '';
   };
 
-  const show = async (at) => {
+  const show = async (at, tried = 0) => {
     if (!ids.length || destroyed) return;
     index = (at + ids.length) % ids.length;
     const position = index;
@@ -1130,6 +1156,11 @@ function xFeedPlayer(source, options) {
     if (destroyed || asked !== token) return;
     if (!url) {
       asked = null;
+      // A post without a video file steps aside, unless nothing in the list has one.
+      if (tried < ids.length - 1) {
+        show(position + 1, tried + 1);
+        return;
+      }
       embed(id, position);
       return;
     }
@@ -1177,13 +1208,13 @@ function xFeedPlayer(source, options) {
       try {
         found = await xFeedList(profile);
       } catch {
-        if (!destroyed) onError(`Couldn't look up @${profile} right now. Check the spelling, or try again in a minute.`);
+        if (!destroyed) onError(`X isn't answering for @${profile} right now. Try again in a minute.`);
         return;
       }
       if (destroyed) return;
       ids = found;
       if (!ids.length) {
-        onError(`@${profile} has no recent videos.`);
+        onError(`@${profile} has no recent posts.`);
         return;
       }
       show(0);

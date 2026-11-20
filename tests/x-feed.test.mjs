@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseXList, parseXProfile, parseXVideoPage } from '../src/x-feed.js';
+import { parseXList, parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from '../src/x-feed.js';
 
 const PAGE = `
 *   [](https://x.com/NASA/status/1111111111111111111)[![Image 3: @NASA](https://pbs.twimg.com/a)](https://x.com/NASA)  [NASA](https://x.com/NASA) [7h](https://x.com/NASA/status/1111111111111111111)   A launch video  [Video 2](https://x.com/NASA)![Image 4](https://pbs.twimg.com/amplify_video_thumb/1)     00:00
@@ -69,4 +69,17 @@ test('x list: one handle or profile link per line, duplicates removed', () => {
 
 test('x list: a CSV uses its handle column', () => {
   assert.deepEqual(parseXList('ProfileId,Username,Name\n1,@acyn,Acyn\n2,espn,ESPN'), ['acyn', 'espn']);
+});
+
+test('x feed: the profile HTML gives the account own post ids, relative or absolute', () => {
+  const html = '<a href="/Acyn/status/1111111111111111111">now</a>'
+    + '<a href="https://x.com/Acyn/status/2222222222222222222">later</a>'
+    + '<a href="/someone/status/3333333333333333333">quoted</a>';
+  assert.deepEqual(parseXProfileHtml(html, 'acyn').ids, ['1111111111111111111', '2222222222222222222']);
+  assert.equal(parseXProfileHtml(html, 'acyn').posts, 2);
+});
+
+test('x feed: an id tells when it was posted', () => {
+  assert.equal(new Date(xPostedAt('2123611523054711203')).getUTCFullYear(), 2026);
+  assert.equal(xPostedAt('not-a-number'), 0);
 });
