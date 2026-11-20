@@ -3420,7 +3420,7 @@ function todaySection(title, items) {
 }
 
 /* Prediction markets: important, near-term questions from Polymarket's featured events. */
-const POLY_STORE = 'multigrid.polymarket.v3';
+const POLY_STORE = 'multigrid.polymarket.v4';
 const POLY_TTL = 10 * 60 * 1000;
 
 async function loadPolymarkets() {

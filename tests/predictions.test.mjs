@@ -211,3 +211,26 @@ test("predictions: a Ballon d'Or market is eligible when it is the notable sport
   assert.match(sport.question, /Ballon d'Or/);
   assert.equal(sport.chance, 0.45);
 });
+
+const gtaRevenue = {
+  title: 'Will GTA VI make $2 billion by December 1?',
+  slug: 'gta-revenue',
+  tags: ['gta', 'gaming', 'games', 'business'],
+  volume24hr: 300000,
+  markets: [market('Will GTA VI make $2 billion by December 1?', '2026-12-01T00:00:00Z', 0.40)],
+};
+const deltaMatch = {
+  title: 'Delta Force: Team A vs Team B - Game 2 Winner',
+  slug: 'delta-match',
+  tags: ['gaming', 'esports', 'delta-force'],
+  volume24hr: 250000,
+  markets: [market('Delta Force: Team A vs Team B - Game 2 Winner', '2026-11-21T00:00:00Z', 0.55)],
+};
+
+test('predictions: a broad game milestone is allowed, an esports match is not', () => {
+  const rows = pickPredictions([events[0], events[3], events[6], gtaRevenue, timePerson], now);
+  const culture = rows.find((row) => row.topic === 'Culture');
+  assert.ok(culture);
+  assert.match(culture.question, /GTA VI make \$2 billion/);
+  assert.deepEqual(pickPredictions([deltaMatch], now), []);
+});

@@ -9,11 +9,11 @@ const MAX_ROWS = 5;
 
 // Never part of a quick briefing: games, streams, company gossip, price ladders, box office.
 const NEVER_TAGS = new Set([
-  'gaming', 'gta', 'streamer', 'celebrities', 'box-office', 'hit-price', 'crypto-prices',
-  'fdv', 'pre-market', 'acquisitions',
+  'streamer', 'gta-streamers', 'esports', 'celebrities', 'box-office', 'hit-price',
+  'crypto-prices', 'fdv', 'pre-market', 'acquisitions',
 ]);
 const BLOCK_TITLE = [
-  /counter-strike/, /\bdota\b/, /\bgta\b/, /kai cenat/, /ishowspeed/, /\bxqc\b/,
+  /counter-strike/, /\bdota\b/, /delta force/, /kai cenat/, /ishowspeed/, /\bxqc\b/,
   /metacritic/, /\bmayor\b/, /\bsecretary\b/, /\bceo\b/, /\bvaluation\b/, /\bipo\b/,
   /\btweets?\b/, /\baliens?\b/, /riemann/, /\bdivorce\b/, /\bcuba\b/, /bab el[- ]mandeb/,
   /box office/,
@@ -47,7 +47,20 @@ const CULTURE_TAGS = new Set([
   'album-of-the-year', 'emmys', 'golden-globes', 'awards', 'time-poty', 'poty',
   'eurovision', 'magazine', 'film', 'television',
 ]);
-const CULTURE_SIGNS = /best (picture|actor|actress|supporting|director|original|animated|documentary|new artist)|album of the year|song of the year|record of the year|person of the year|oscar|grammy|emmy|golden globe|eurovision|palme d'or|booker prize|nobel/i;
+const CULTURE_SIGNS = /best (picture|actor|actress|supporting|director|original|animated|documentary|new artist)|album of the year|song of the year|record of the year|person of the year|oscar|grammy|emmy|golden globe|eurovision|palme d'or|booker prize|nobel|game of the year|best game/i;
+
+// A whole-industry milestone is a thing of note; a match inside one game's community is not.
+const ESPORTS_TAGS = new Set([
+  'esports', 'gaming', 'dota', 'dota-2', 'cs2', 'counter-strike', 'valorant',
+  'league-of-legends', 'call-of-duty', 'overwatch', 'rocket-league', 'fortnite',
+  'minecraft', 'roblox', 'twitch', 'gta-streamers', 'streamer',
+]);
+const GAME_TAGS = new Set([
+  'gta', 'gta-vi', 'gaming', 'games', 'video-games', 'nintendo', 'playstation',
+  'xbox', 'game-sales', 'game-industry',
+]);
+const GAME_SIGNS = /revenue|sales|billion|million|record|most played|players|sold/i;
+const GAME_NOISE = /metacritic|review|streamer|finishes|speedrun|game \d|map \d|\bbo\d\b|\bvs\.?\b/i;
 
 const TOPIC_BONUS = { Economy: 25, World: 20, Politics: 15 };
 
@@ -87,12 +100,23 @@ const topicOf = (tags) => {
 };
 
 function notableTopic(tags, title) {
+  const culture = [...tags].some((tag) => CULTURE_TAGS.has(tag)) && CULTURE_SIGNS.test(title);
+  if (culture) return 'Culture';
+  const gaming = [...tags].some((tag) => ESPORTS_TAGS.has(tag));
+  if (gaming) {
+    const milestone = [...tags].some((tag) => GAME_TAGS.has(tag))
+      && GAME_SIGNS.test(title)
+      && !GAME_NOISE.test(title);
+    return milestone ? 'Culture' : null;
+  }
   const sport = [...tags].some((tag) => SPORT_TAGS.has(tag))
     && SPORT_SIGNS.test(title)
     && !/\bvs\.?\b/i.test(title);
   if (sport) return 'Sport';
-  const culture = [...tags].some((tag) => CULTURE_TAGS.has(tag)) && CULTURE_SIGNS.test(title);
-  return culture ? 'Culture' : null;
+  const milestone = [...tags].some((tag) => GAME_TAGS.has(tag))
+    && GAME_SIGNS.test(title)
+    && !GAME_NOISE.test(title);
+  return milestone ? 'Culture' : null;
 }
 
 const isLadder = (title) => /\b(through|by|before|continues|begins)\b/i.test(title);
@@ -153,6 +177,7 @@ function sportBonus(tags, title) {
 
 function cultureBonus(tags, title) {
   if (/best picture/i.test(title) || tags.has('best-picture')) return 16;
+  if (GAME_SIGNS.test(title) && [...tags].some((tag) => GAME_TAGS.has(tag))) return 14;
   if (/oscar|academy award/i.test(title) || tags.has('oscars')) return 14;
   if (/album of the year/i.test(title) || tags.has('grammys')) return 12;
   if (/person of the year/i.test(title) || tags.has('time-poty')) return 10;
