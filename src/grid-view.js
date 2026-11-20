@@ -31,15 +31,16 @@ class TileView {
     grid.gridEl.append(this.root);
   }
 
-  /** A short note over the picture: the channel, and what's on next. */
+  /** A short note over the picture: the channel, then what's on and what follows. */
   note(text, sub = '') {
     this.root.querySelector('.tune-note')?.remove();
+    const lines = Array.isArray(sub) ? sub.filter(Boolean) : [sub].filter(Boolean);
     const note = el('div', { class: 'tune-note' },
       el('span', { textContent: text }),
-      sub ? el('small', { textContent: sub }) : null);
+      ...lines.map((line) => el('small', { textContent: line })));
     this.root.append(note);
     clearTimeout(this.noteTimer);
-    this.noteTimer = setTimeout(() => note.remove(), 4600);
+    this.noteTimer = setTimeout(() => note.remove(), 5600);
   }
 
   /** Rebuilds the contents only when the tile's source has really changed. */
