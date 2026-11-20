@@ -102,7 +102,10 @@ function phoneBottomGrid(n) {
 }
 
 /** Layouts where a TikTok feed becomes a real phone-shaped column. */
-export const isPhoneLayout = (ws) => ws.presetId === 'phone' || ws.presetId === 'phoneBottom';
+export const isPhoneLayout = (ws) => ws.presetId === 'phone' || ws.presetId === 'phoneBottom' || ws.presetId === 'phoneSide';
+
+/** The slot a phone layout keeps for the vertical feed. */
+const phoneSlotIndex = (presetId, slots) => (presetId === 'phoneSide' ? 1 : slots.length - 1);
 
 /**
  * `build(n)` returns tracks and slots for n streams. A preset with `fixed` always has that
@@ -118,6 +121,11 @@ export const PRESETS = [
   { id: 'row', name: 'Horizontal row', sample: 3, build: (n) => cells(Math.max(n, 2), 1) },
   { id: 'phone', name: 'Grid and phone', hint: 'A tall phone on the right, the rest beside it', sample: 5, build: phoneGrid },
   { id: 'phoneBottom', name: 'Feature and phone', hint: 'One big stream on top, the phone below', sample: 5, build: phoneBottomGrid },
+  { id: 'phoneSide', name: 'Big screen and phone', hint: 'One big stream, phone above a second screen', fixed: 3, build: () => ({
+    cols: units(2),
+    rows: [2, 1],
+    slots: [{ c: 0, r: 0, cs: 1, rs: 2 }, { c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
+  }) },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
@@ -237,20 +245,20 @@ export function applyPreset(ws, presetId, minSlots = 0) {
     streams.splice(streams.indexOf(primary), 1);
     streams.splice(Math.min(biggestIndex(slots, cols, rows), streams.length), 0, primary);
   }
-  // A phone layout keeps its last slot for the vertical feed; the rest keep their order.
-  if (preset.id === 'phone' || preset.id === 'phoneBottom') {
-    const feed = streams.find(isTikTokFeed);
-    if (feed) {
-      streams.splice(streams.indexOf(feed), 1);
-      streams.splice(Math.min(slots.length - 1, streams.length), 0, feed);
-    }
-  }
   ws.tiles = slots.map((place, index) => (
     index < streams.length ? Object.assign(streams[index], { place: { ...place } }) : emptyTile({ ...place })
   ));
   for (const extra of streams.slice(slots.length)) {
     extra.place = null;
     ws.tiles.push(extra);
+  }
+  // A phone layout keeps one slot for the vertical feed, wherever that slot sits.
+  if (isPhoneLayout({ presetId: preset.id })) {
+    const feed = ws.tiles.find((tile) => isStream(tile) && isTikTokFeed(tile));
+    const occupant = ws.tiles[phoneSlotIndex(preset.id, slots)];
+    if (feed && occupant && occupant !== feed) {
+      [feed.place, occupant.place] = [occupant.place, feed.place];
+    }
   }
   return ws;
 }
@@ -266,6 +274,14 @@ export function reflowPhone(ws) {
   // becomes an even grid rather than leaving two tiles stacked in one spot.
   if (!phone) return applyPreset(ws, 'equal', 0);
   const streams = visualOrder(ws).filter((tile) => isStream(tile) && tile !== phone);
+  if (ws.presetId === 'phoneSide') {
+    // The feed belongs in the top-right cell; anything else there swaps with it.
+    const occupant = ws.tiles.find((tile) => tile !== phone && tile.place
+      && tile.place.c === 1 && tile.place.r === 0 && tile.place.cs === 1 && tile.place.rs === 1);
+    if (occupant) [phone.place, occupant.place] = [occupant.place, phone.place];
+    else phone.place = { c: 1, r: 0, cs: 1, rs: 1 };
+    return ws;
+  }
   if (ws.presetId === 'phone') {
     const { cols, rows, slots } = phoneGrid(streams.length + 1);
     ws.cols = [...cols];
