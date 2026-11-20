@@ -10,6 +10,7 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { CHANNEL_CATEGORIES, parseChannelList } from './channels.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeFor, isNewToday } from './episodes.js';
@@ -243,6 +244,124 @@ function openXListBox() {
     submit)));
   openDialog(box);
   area.focus();
+}
+
+/* ---------- Channel Finder ---------- */
+
+const CHANNEL_TTL = 12 * 60 * 60 * 1000;
+const CHANNEL_STORE = 'multigrid.channels.v1';
+const channelLoaded = new Map();
+
+async function loadChannelCategory(id) {
+  const cached = channelLoaded.get(id);
+  if (cached && Date.now() - cached.at < CHANNEL_TTL) return cached.list;
+  try {
+    const saved = JSON.parse(localStorage.getItem(`${CHANNEL_STORE}.${id}`) || 'null');
+    if (saved && Array.isArray(saved.list) && Date.now() - saved.at < CHANNEL_TTL) {
+      channelLoaded.set(id, saved);
+      return saved.list;
+    }
+  } catch {
+    // A damaged cache just means fetch it again.
+  }
+  const category = CHANNEL_CATEGORIES.find((item) => item.id === id) ?? CHANNEL_CATEGORIES[0];
+  const response = await fetch(category.url, { cache: 'no-cache', signal: AbortSignal.timeout?.(12000) });
+  if (!response.ok) throw new Error(String(response.status));
+  const entry = { at: Date.now(), list: parseChannelList(await response.text()) };
+  channelLoaded.set(id, entry);
+  try { localStorage.setItem(`${CHANNEL_STORE}.${id}`, JSON.stringify(entry)); } catch { /* not remembered */ }
+  return entry.list;
+}
+
+function channelResultRow(item, target) {
+  const art = el('span', { class: 'ch-logo' });
+  if (item.logo) art.append(el('img', { src: item.logo, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
+  else art.append(icon('live', 16));
+  return el('button', {
+    type: 'button',
+    class: 'ch-row',
+    title: `Add ${item.name}`,
+    on: {
+      click() {
+        $('channel-box').close();
+        $('source-dialog').close();
+        addStream(item.url, target);
+        toast(`Adding ${item.name}…`);
+      },
+    },
+  },
+  art,
+  el('span', { class: 'ch-text' }, el('b', { textContent: item.name }), el('small', { textContent: item.group || 'Live channel' })),
+  el('span', { class: 'ch-add', textContent: 'Add' }));
+}
+
+/** The directory inside Add stream: pick a kind, search, and add a channel. */
+function openChannelFinder() {
+  const box = $('channel-box');
+  if (box.open) return;
+  const target = sourceTarget;
+  let tab = CHANNEL_CATEGORIES[0].id;
+  let list = [];
+  let loading = false;
+  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search channels by name', autocomplete: 'off' });
+  const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Channel kinds' } });
+  const count = el('p', { class: 'ch-count', textContent: '' });
+  const results = el('div', { class: 'ch-results' });
+  const paint = () => {
+    const query = search.value.trim().toLowerCase();
+    const matches = query ? list.filter((item) => item.name.toLowerCase().includes(query)) : list;
+    const shown = matches.slice(0, 80);
+    count.textContent = loading ? 'Loading…' : matches.length ? `${matches.length} channel${matches.length === 1 ? '' : 's'}` : '';
+    results.replaceChildren(...(shown.length
+      ? shown.map((item) => channelResultRow(item, target))
+      : [el('p', { class: 'ch-empty', textContent: loading ? 'Loading channels…' : 'No channels match.' })]));
+  };
+  const load = async () => {
+    loading = true;
+    paint();
+    try {
+      list = await loadChannelCategory(tab);
+    } catch {
+      list = [];
+    }
+    loading = false;
+    if (box.open) paint();
+  };
+  tabs.replaceChildren(...CHANNEL_CATEGORIES.map((category) => {
+    const button = el('button', {
+      type: 'button',
+      class: `ch-tab${category.id === tab ? ' is-on' : ''}`,
+      role: 'tab',
+      aria: { selected: String(category.id === tab) },
+      textContent: category.name,
+      on: {
+        click() {
+          if (tab === category.id) return;
+          tab = category.id;
+          for (const other of tabs.children) {
+            const on = other.dataset.tab === category.id;
+            other.classList.toggle('is-on', on);
+            other.setAttribute('aria-selected', String(on));
+          }
+          search.value = '';
+          load();
+        },
+      },
+    });
+    button.dataset.tab = category.id;
+    return button;
+  }));
+  search.addEventListener('input', paint);
+  box.replaceChildren(
+    el('div', { class: 'ch-head' }, el('h2', { textContent: 'Find a live channel' }), iconButton('close', 'Close', () => box.close())),
+    search,
+    tabs,
+    count,
+    results,
+    el('p', { class: 'ch-note', textContent: 'Public directory of live channels. Only feeds that allow an outside player are listed; some are offline or blocked where you are.' }));
+  openDialog(box);
+  search.focus();
+  load();
 }
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
@@ -3339,6 +3458,7 @@ for (const dialog of [$('source-dialog'), $('help-dialog')]) {
 $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }));
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
+$('channel-find').addEventListener('click', openChannelFinder);
 $('note-add').addEventListener('click', () => {
   const target = sourceTarget;
   $('source-dialog').close();

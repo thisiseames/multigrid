@@ -1200,6 +1200,31 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .addp-x input:focus { outline: none; }
 .addp-x-add { flex: none; height: 26px; padding: 0 12px; border-radius: 999px; background: var(--text); color: #111; font-size: 12px; font-weight: 700; }
 .addp-x-list { flex: none; align-self: flex-start; margin: 4px 16px 0; font-size: 12px; }
+/* Channel Finder */
+.channel-box { width: min(640px, calc(100vw - 16px)); }
+.ch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ch-head h2 { margin: 0; font-size: 16px; font-weight: 650; }
+.ch-search { width: 100%; height: 38px; margin-top: 10px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 14px; }
+.ch-search:focus { outline: none; border-color: var(--accent); }
+.ch-tabs { display: flex; gap: 4px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+.ch-tabs::-webkit-scrollbar { display: none; }
+.ch-tab { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 550; }
+.ch-tab:hover { color: var(--text); }
+.ch-tab.is-on { background: var(--accent); color: var(--accent-ink); }
+.ch-count { margin: 10px 2px 6px; font-size: 11.5px; color: var(--text-2); }
+.ch-results { min-height: 180px; max-height: 52dvh; overflow-y: auto; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.ch-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 2px; text-align: left; color: var(--text); }
+.ch-row:hover { background: var(--hover); }
+.ch-logo { flex: none; width: 38px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #1f1f23; color: var(--text-2); overflow: hidden; }
+.ch-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.ch-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ch-text b { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-text small { font-size: 11px; color: var(--text-2); }
+.ch-add { flex: none; font-size: 11px; font-weight: 700; color: var(--accent); }
+.ch-note { margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--text-2); }
+.ch-empty { margin: 18px 2px; color: var(--text-2); font-size: 13px; }
+body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
+
 .x-list-box { width: min(560px, calc(100vw - 16px)); }
 .x-list-box form { display: flex; flex-direction: column; gap: 8px; }
 .x-list-note { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-2); }
