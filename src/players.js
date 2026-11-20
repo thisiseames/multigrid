@@ -532,23 +532,101 @@ const TIKTOK_ERRORS = {
 };
 
 /* A TikTok account plays as a feed: its latest videos, one after another, in TikTok's own
-   player. The list comes from feeds.json, which the GitHub job refreshes every 3 hours,
-   because a page isn't allowed to read TikTok's account card itself. */
+   player. Built-in lists come from feeds.json, which the GitHub job refreshes every 3 hours.
+   An account that isn't in that list is looked up once in this browser and kept for six
+   hours, so any public account can be added without changing the site. */
+const FEEDS_TTL = 15 * 60 * 1000;
+const ACCOUNT_TTL = 6 * 60 * 60 * 1000;
+const ACCOUNT_KEY = 'multigrid.tiktok.accounts';
+const FEED_READER = 'https://r.jina.ai/';
 let feeds = null;
 let feedsAt = 0;
 
+function localAccounts() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveAccount(name, entry) {
+  try {
+    localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ ...localAccounts(), [name]: entry }));
+  } catch {
+    // A browser that refuses storage still plays the list it just fetched.
+  }
+}
+
+/**
+ * Every TikTok account this browser knows about, the ones added here first (newest
+ * first), then the built-in ones from feeds.json. Used by the tile's account switcher.
+ */
+export function tiktokAccounts() {
+  const list = new Map();
+  for (const [name, entry] of Object.entries(localAccounts()).reverse()) {
+    list.set(name, { name, title: entry?.title || '', videos: entry?.videos?.length || 0, local: true });
+  }
+  for (const [name, entry] of Object.entries(feeds?.tiktok || {})) {
+    if (!list.has(name)) list.set(name, { name, title: entry?.title || '', videos: entry?.videos?.length || 0, local: false });
+  }
+  return [...list.values()];
+}
+
+/** The second a TikTok video was posted sits in the top 32 bits of its number. */
+function postedAt(id) {
+  try { return Number(BigInt(id) >> 32n); } catch { return 0; }
+}
+
+function newestVideos(ids) {
+  const now = Math.floor(Date.now() / 1000);
+  return [...new Set(ids)]
+    .map((id) => ({ id, at: postedAt(id) }))
+    .filter(({ at }) => at > now - 30 * 86400 && at <= now + 3600)
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 20)
+    .map(({ id }) => id);
+}
+
+async function lookupAccount(name) {
+  const response = await fetch(`${FEED_READER}https://www.tiktok.com/embed/@${encodeURIComponent(name)}?lang=en-US`, {
+    cache: 'no-cache',
+    signal: AbortSignal.timeout?.(20000),
+  });
+  if (!response.ok) throw new Error(`Lookup failed (${response.status})`);
+  const text = await response.text();
+  const ids = [...text.matchAll(/video\/(\d{15,25})/g)].map((match) => match[1]);
+  const videos = newestVideos(ids);
+  if (!videos.length) throw new Error('No recent videos found');
+  return videos;
+}
+
 function loadFeeds() {
-  if (feeds && Date.now() - feedsAt < 15 * 60 * 1000) return Promise.resolve(feeds);
+  if (feeds && Date.now() - feedsAt < FEEDS_TTL) return Promise.resolve(feeds);
   return fetch('feeds.json', { cache: 'no-cache' })
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
-      if (data?.tiktok && typeof data.tiktok === 'object') {
-        feeds = data;
+      const tiktok = { ...(data?.tiktok || {}) };
+      for (const [name, entry] of Object.entries(localAccounts())) {
+        if (entry?.videos?.length) tiktok[name] = entry;
+      }
+      if (Object.keys(tiktok).length) {
+        feeds = { ...data, tiktok };
         feedsAt = Date.now();
       }
       return feeds;
     })
     .catch(() => feeds);
+}
+
+/** A feed for `name`, looked up now if this browser hasn't seen it recently. */
+async function accountVideos(name) {
+  const saved = localAccounts()[name];
+  if (saved?.videos?.length && Date.now() - (saved.at || 0) < ACCOUNT_TTL) return saved.videos;
+  const videos = await lookupAccount(name);
+  saveAccount(name, { title: saved?.title || null, videos, at: Date.now() });
+  return videos;
 }
 
 function tiktokFeedPlayer(source, options) {
@@ -636,9 +714,34 @@ function tiktokFeedPlayer(source, options) {
       const data = await loadFeeds();
       if (destroyed) return;
       videos = data?.tiktok?.[profile]?.videos?.filter((id) => /^\d{15,25}$/.test(id)) ?? [];
+      const saved = localAccounts()[profile];
+      if (saved && Date.now() - (saved.at || 0) > ACCOUNT_TTL) {
+        // Refresh an account this browser added a while ago, ready for the next visit.
+        lookupAccount(profile)
+          .then((fresh) => saveAccount(profile, { title: saved.title || null, videos: fresh, at: Date.now() }))
+          .catch(() => {});
+      }
       if (!videos.length) {
-        onError(`The feed for @${source.tiktok.profile} isn't set up yet. Ask Claude to add it to MULTIGRID's TikTok feeds.`);
-        return;
+        const note = (text) => {
+          const doc = frame.contentDocument;
+          if (!doc) return;
+          doc.body.style.cssText = 'margin:0;height:100%;display:flex;align-items:center;justify-content:center;background:#000;color:#9a9aa2;font:13px system-ui,sans-serif;text-align:center;padding:0 14px;box-sizing:border-box';
+          doc.body.textContent = text;
+        };
+        frame.src = 'about:blank';
+        note(`Looking up @${source.tiktok.profile}…`);
+        try {
+          videos = await accountVideos(profile);
+        } catch {
+          if (destroyed) return;
+          onError(`Couldn't look up @${source.tiktok.profile} right now. Check the spelling, or try again in a minute.`);
+          return;
+        }
+        if (destroyed) return;
+        if (!videos.length) {
+          onError(`@${source.tiktok.profile} has no videos from the last month.`);
+          return;
+        }
       }
       show(0);
     },

@@ -3,13 +3,13 @@
 // saving in storage.js and drawing in grid-view.js.
 
 import {
-  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isStream, isVisible, makeRoom,
-  presetById, presetDiagram, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
+  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isPhoneLayout, isStream, isVisible, makeRoom,
+  phoneColumn, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { newestUpload } from './players.js';
+import { newestUpload, tiktokAccounts } from './players.js';
 import { episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
@@ -63,6 +63,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
+  onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
   onEditFavorite(id, anchor) {
     const tile = tileById(id);
@@ -176,6 +177,45 @@ function buildStreamMenu(id) {
   menu.replaceChildren(...[transportRow(tile, view, redraw), volumeSlider(tile, view), el('div', { class: 'sa-grid' }, ...actions)].filter(Boolean));
 }
 
+/** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
+function buildAccountMenu(id) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  const menu = $('account-menu');
+  if (!tile || !view) return;
+  const current = view.source?.tiktok?.profile || '';
+  const accounts = tiktokAccounts();
+  const pick = (name) => {
+    closePopovers();
+    if (name === current) return;
+    addStream(`https://www.tiktok.com/@${name}`, { mode: 'replace', id });
+    toast(`Switched to @${name}.`);
+  };
+  const item = (account) => el('button', {
+    type: 'button',
+    class: `account-item${account.name === current ? ' is-current' : ''}`,
+    on: { click: () => pick(account.name) },
+  },
+    el('span', { class: 'account-name', textContent: `@${account.name}` }),
+    el('span', { class: 'account-note', textContent: account.name === current ? 'Playing' : account.title || `${account.videos} video${account.videos === 1 ? '' : 's'}` }),
+    account.name === current ? icon('check') : null);
+
+  const mine = accounts.filter((account) => account.local);
+  const built = accounts.filter((account) => !account.local);
+  menu.replaceChildren(...[
+    el('p', { class: 'account-heading', textContent: 'Switch TikTok account' }),
+    mine.length ? el('p', { class: 'account-heading is-sub', textContent: 'Added here' }) : null,
+    ...mine.map(item),
+    el('button', {
+      type: 'button',
+      class: 'account-add',
+      on: { click() { closePopovers(); openSourceDialog({ mode: 'replace', id }); } },
+    }, icon('plus'), el('span', { textContent: 'Another account…' })),
+    built.length ? el('p', { class: 'account-heading is-sub', textContent: 'Built in' }) : null,
+    ...built.map(item),
+  ].filter(Boolean));
+}
+
 /** Every stream's sound in one sheet, with One sound and Ticker at the top. */
 function buildSoundMenu() {
   const menu = $('sound-menu');
@@ -210,6 +250,9 @@ function togglePrimary(id, on) {
 }
 
 function commit() {
+  // Phone layouts are packed from the streams that are actually there, so adding or
+  // removing one never leaves a blank cell behind.
+  reflowPhone(ws);
   if (!saveCurrent(ws)) toast("Couldn't save. This browser's storage may be full or turned off.");
   render();
 }
@@ -225,8 +268,9 @@ function render() {
   grid.render(ws);
 
   const custom = ws.presetId === 'custom';
-  $('layout-name').textContent = custom ? 'Custom' : presetById(ws.presetId).name;
-  const current = ws.started ? currentDiagram() : presetDiagram(presetById(ws.presetId));
+  const preset = presetById(ws.presetId) ?? presetById('equal');
+  $('layout-name').textContent = custom ? 'Custom' : preset.name;
+  const current = ws.started ? currentDiagram() : presetDiagram(preset);
   $('layout-icon').replaceChildren(layoutDiagram(current, 18, 13));
   $('layout-button').title = 'Choose a layout';
 
@@ -387,6 +431,10 @@ function addStream(input, target = { mode: 'add' }) {
     slot.input = input;
     slot.muted = true;
     slot.volume = 100;
+    // A TikTok account is vertical video, so it gets its own tall column and the
+    // other streams sit beside it. A second account joins the grid as usual.
+    const source = parseSource(input);
+    if (!isPhoneLayout(ws) && source.kind === 'tiktok' && source.tiktok?.profile) phoneColumn(ws, slot.id);
   }
   ws.started = true;
   commit();

@@ -4,7 +4,7 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
@@ -327,7 +327,18 @@ class TileView {
       }, icon('open')) : null,
       iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)),
       this.moreButton);
-    this.labelEl = el('span', { class: 'strip-label', textContent: label, title: label });
+    // A TikTok account can be switched from its own name, without going through Add stream.
+    this.switchable = this.source.kind === 'tiktok' && Boolean(this.source.tiktok?.profile);
+    this.labelTextEl = el('span', { class: 'strip-label-text', textContent: label });
+    this.labelEl = this.switchable
+      ? el('button', {
+        type: 'button',
+        class: 'strip-label is-switch',
+        title: `${label} — click to switch account`,
+        aria: { haspopup: 'menu', expanded: 'false' },
+        on: { click: () => handlers.onAccountMenu?.(this.id, this.labelEl) },
+      }, this.labelTextEl, icon('chevron'))
+      : el('span', { class: 'strip-label', title: label }, this.labelTextEl);
     const strip = el('header', { class: 'strip' },
       el('span', { class: 'strip-grip', aria: { hidden: 'true' } }, icon('grip')),
       this.labelEl,
@@ -357,8 +368,8 @@ class TileView {
       const favoriteTitle = this.grid.handlers.favoriteName(this.tile.input);
       const favorite = favoriteTitle !== null;
       const tileLabel = favoriteTitle ?? this.source.label;
-      this.labelEl.textContent = tileLabel;
-      this.labelEl.title = tileLabel;
+      this.labelTextEl.textContent = tileLabel;
+      this.labelEl.title = this.switchable ? `${tileLabel} — click to switch account` : tileLabel;
       const starLabel = favorite ? 'Edit favorite' : 'Add to favorites';
       this.starButton.title = starLabel;
       this.starButton.setAttribute('aria-label', starLabel);
@@ -495,10 +506,15 @@ export class GridView {
     this.ws = ws;
     this.gridEl.classList.toggle('stacked', this.isStacked);
     this.gridEl.classList.toggle('is-custom', this.isCustom);
-    this.gridEl.style.gridTemplateColumns = template(ws.cols);
-    this.gridEl.style.gridTemplateRows = template(ws.rows);
-
     const placed = visualOrder(ws);
+    const phone = phoneTile(ws);
+    const phoneBelow = Boolean(phone) && ws.presetId === 'phoneBottom';
+    this.gridEl.classList.toggle('has-phone', Boolean(phone));
+    this.gridEl.classList.toggle('has-phone-bottom', phoneBelow);
+    // The phone column is sized by its own 9:16 shape, so it gets an `auto` track
+    // rather than a share of the width.
+    this.gridEl.style.gridTemplateColumns = phone ? `${template(ws.cols)} auto` : template(ws.cols);
+    this.gridEl.style.gridTemplateRows = template(ws.rows);
     const keep = new Set(placed.map((tile) => tile.id));
     for (const [id, view] of this.views) {
       if (!keep.has(id)) {
@@ -513,6 +529,15 @@ export class GridView {
         this.views.set(tile.id, view);
       }
       view.update(tile);
+      view.root.classList.toggle('is-phone', Boolean(phone) && tile.id === phone.id);
+      if (phone) {
+        if (tile.id === phone.id) {
+          view.root.style.gridArea = phoneBelow ? '2 / -2 / -1 / -1' : '1 / -2 / -1 / -1';
+        } else if (phoneBelow && tile.place.r === 0) {
+          // The featured stream runs the full width, over the phone's column too.
+          view.root.style.gridArea = '1 / 1 / 2 / -1';
+        }
+      }
       view.root.style.order = index;
       this.attachCorners(view);
     });
@@ -525,6 +550,13 @@ export class GridView {
     if (this.isStacked) {
       this.gridEl.style.width = '';
       this.gridEl.style.height = '';
+      return;
+    }
+    if (this.gridEl.classList.contains('has-phone')) {
+      const box = this.stageEl.getBoundingClientRect();
+      this.gridEl.style.width = `${box.width}px`;
+      this.gridEl.style.height = `${box.height}px`;
+      this.gridEl.style.gridTemplateRows = template(this.ws.rows);
       return;
     }
     const box = this.stageEl.getBoundingClientRect();

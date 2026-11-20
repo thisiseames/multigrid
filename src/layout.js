@@ -6,6 +6,8 @@
 // about templates. A tile with `place: null` is hidden; a tile with `input: null` is an
 // empty slot.
 
+import { parseSource } from './sources.js';
+
 export const MAX_STREAMS = 16;
 const FINE_TRACKS = 12; // Custom layouts are refined to at least this many tracks per axis.
 const MIN_LINE_SHARE = 0.08; // A divider can't squeeze a region below this share of the stage.
@@ -54,6 +56,54 @@ function focusRow(n) {
 }
 
 /**
+ * A grid of the other streams, with the phone in its own tall column on the right.
+ * Rows grow downwards and the first row holds any remainder, so three streams read as
+ * one across the top and two underneath, and no cell is ever left blank.
+ */
+function phoneGrid(n) {
+  const others = Math.max(n - 1, 0);
+  if (others === 0) return { cols: [1], rows: [1], slots: [{ c: 0, r: 0, cs: 1, rs: 1 }] };
+  // Horizontal video reads better in wide cells: one column until there are three
+  // streams, then two columns. Three streams become one across and two underneath.
+  const gridCols = others <= 2 ? 1 : 2;
+  const gridRows = Math.ceil(others / gridCols);
+  const firstRow = others - gridCols * (gridRows - 1);
+  const slots = [];
+  let index = 0;
+  for (let row = 0; row < gridRows; row++) {
+    const count = row === 0 ? firstRow : Math.min(gridCols, others - index);
+    // Share the row's columns evenly, giving any remainder to the earliest tiles.
+    const base = Math.floor(gridCols / count);
+    const extra = gridCols % count;
+    let c = 0;
+    for (let i = 0; i < count; i++) {
+      const span = base + (i < extra ? 1 : 0);
+      slots.push({ c, r: row, cs: span, rs: 1 });
+      c += span;
+      index++;
+    }
+  }
+  // The tall slot is drawn in a separate auto-width column after these tracks.
+  slots.push({ c: 0, r: 0, cs: 1, rs: gridRows });
+  return { cols: units(gridCols), rows: units(gridRows), slots };
+}
+
+/** One big stream across the top, the rest and the phone in a row underneath. */
+function phoneBottomGrid(n) {
+  const below = Math.max(n - 2, 0);
+  const gridCols = Math.max(below, 1);
+  const slots = [{ c: 0, r: 0, cs: gridCols, rs: 1 }];
+  for (let i = 0; i < below; i++) slots.push({ c: i, r: 1, cs: 1, rs: 1 });
+  // The phone lives in its own auto-width column to the right of the bottom row, but
+  // the slot itself sits inside the tracks so diagrams and area maths stay in range.
+  slots.push({ c: gridCols - 1, r: 1, cs: 1, rs: 1 });
+  return { cols: units(gridCols), rows: [2, 1], slots };
+}
+
+/** Layouts where a TikTok feed becomes a real phone-shaped column. */
+export const isPhoneLayout = (ws) => ws.presetId === 'phone' || ws.presetId === 'phoneBottom';
+
+/**
  * `build(n)` returns tracks and slots for n streams. A preset with `fixed` always has that
  * many slots; the rest grow with the number of streams.
  */
@@ -65,6 +115,8 @@ export const PRESETS = [
   } },
   { id: 'stack', name: 'Vertical stack', sample: 3, build: (n) => cells(1, Math.max(n, 2)) },
   { id: 'row', name: 'Horizontal row', sample: 3, build: (n) => cells(Math.max(n, 2), 1) },
+  { id: 'phone', name: 'Grid and phone', hint: 'A tall phone on the right, the rest beside it', sample: 5, build: phoneGrid },
+  { id: 'phoneBottom', name: 'Feature and phone', hint: 'One big stream on top, the phone below', sample: 5, build: phoneBottomGrid },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
@@ -148,6 +200,19 @@ export const visualOrder = (ws) => ws.tiles.filter(isVisible).sort(byPosition);
 
 const orderedStreams = (ws) => [...visualOrder(ws).filter(isStream), ...hiddenTiles(ws)];
 
+/** A stream that is a TikTok account, which plays as a vertical feed. */
+const isTikTokFeed = (tile) => {
+  if (!tile?.input) return false;
+  const source = parseSource(tile.input);
+  return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
+};
+
+/** The stream that belongs in the phone column, worked out fresh from its link. */
+export function phoneTile(ws) {
+  if (!isPhoneLayout(ws)) return null;
+  return visualOrder(ws).find((tile) => isStream(tile) && isTikTokFeed(tile)) ?? null;
+}
+
 export function emptyWorkspace() {
   return { v: 1, presetId: 'equal', minSlots: 0, started: false, fit: true, cols: [1], rows: [1], tiles: [] };
 }
@@ -171,12 +236,73 @@ export function applyPreset(ws, presetId, minSlots = 0) {
     streams.splice(streams.indexOf(primary), 1);
     streams.splice(Math.min(biggestIndex(slots, cols, rows), streams.length), 0, primary);
   }
+  // A phone layout keeps its last slot for the vertical feed; the rest keep their order.
+  if (preset.id === 'phone' || preset.id === 'phoneBottom') {
+    const feed = streams.find(isTikTokFeed);
+    if (feed) {
+      streams.splice(streams.indexOf(feed), 1);
+      streams.splice(Math.min(slots.length - 1, streams.length), 0, feed);
+    } else if (slots.length > 1) {
+      // With no feed to put there, the tall slot would just overlap a neighbour.
+      slots.pop();
+    }
+  }
   ws.tiles = slots.map((place, index) => (
     index < streams.length ? Object.assign(streams[index], { place: { ...place } }) : emptyTile({ ...place })
   ));
   for (const extra of streams.slice(slots.length)) {
     extra.place = null;
     ws.tiles.push(extra);
+  }
+  return ws;
+}
+
+/**
+ * Packs a phone layout again after streams are added or removed, so the grid keeps
+ * filling every cell instead of leaving a hole where a tile used to be.
+ */
+export function reflowPhone(ws) {
+  if (!isPhoneLayout(ws)) return ws;
+  const phone = phoneTile(ws);
+  // With no vertical feed left, the phone layout has nothing to size its column, so it
+  // becomes an even grid rather than leaving two tiles stacked in one spot.
+  if (!phone) return applyPreset(ws, 'equal', 0);
+  const streams = visualOrder(ws).filter((tile) => isStream(tile) && tile !== phone);
+  if (ws.presetId === 'phone') {
+    const { cols, rows, slots } = phoneGrid(streams.length + 1);
+    ws.cols = [...cols];
+    ws.rows = [...rows];
+    streams.forEach((tile, index) => { tile.place = { ...slots[index] }; });
+    phone.place = { ...slots[slots.length - 1] };
+    return ws;
+  }
+  // Feature and phone: the biggest stream keeps the top row, the rest share the bottom.
+  const primary = streams.find((tile) => tile.primary) ?? streams[0] ?? null;
+  const below = streams.filter((tile) => tile !== primary);
+  const { cols, rows, slots } = phoneBottomGrid(streams.length + 1);
+  ws.cols = [...cols];
+  ws.rows = [...rows];
+  if (primary) primary.place = { ...slots[0] };
+  below.forEach((tile, index) => { tile.place = { ...slots[index + 1] }; });
+  phone.place = { ...slots[slots.length - 1] };
+  return ws;
+}
+
+/** Puts one stream in a full-height phone column and lays the rest out beside it. */
+export function phoneColumn(ws, phoneId) {
+  const phone = ws.tiles.find((tile) => tile.id === phoneId);
+  if (!phone) return ws;
+  const streams = orderedStreams(ws).filter((tile) => tile !== phone);
+  const { cols, rows, slots } = phoneGrid(streams.length + 1);
+  ws.presetId = 'phone';
+  ws.fit = false;
+  ws.started = true;
+  ws.cols = [...cols];
+  ws.rows = [...rows];
+  phone.place = { ...slots[slots.length - 1] };
+  streams.forEach((tile, index) => { tile.place = { ...slots[index] }; });
+  for (const tile of ws.tiles) {
+    if (tile !== phone && !streams.includes(tile)) tile.place = null;
   }
   return ws;
 }

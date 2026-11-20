@@ -205,7 +205,19 @@ export function togglePopover(button, popover, build) {
   const box = button.getBoundingClientRect();
   const left = Math.max(8, Math.min(box.left, window.innerWidth - popover.offsetWidth - 8));
   popover.style.left = `${left}px`;
-  popover.style.top = `${box.bottom + 6}px`;
+  if (popover.classList.contains('is-sheet')) {
+    popover.style.top = `${box.bottom + 6}px`;
+    popover.style.bottom = '';
+    popover.style.maxHeight = '';
+  } else {
+    // Open above the button when there isn't room below, and stay scrollable inside the window.
+    const roomBelow = window.innerHeight - box.bottom - 14;
+    const roomAbove = box.top - 14;
+    const below = roomBelow >= Math.min(popover.offsetHeight, 280) || roomBelow >= roomAbove;
+    popover.style.top = below ? `${box.bottom + 6}px` : 'auto';
+    popover.style.bottom = below ? 'auto' : `${window.innerHeight - box.top + 6}px`;
+    popover.style.maxHeight = `${Math.max(140, below ? roomBelow : roomAbove)}px`;
+  }
   openPopovers.set(popover, button);
   tellWatchers(popover);
 }

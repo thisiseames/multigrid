@@ -526,6 +526,25 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .menu-item { display: block; width: 100%; padding: 6px 8px; border-radius: 6px; text-align: left; color: var(--text-2); }
 .menu-item:hover { background: var(--hover); color: var(--text); }
 
+/* TikTok account switcher, opened from the feed tile's own name */
+.strip-label-text { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.strip-label.is-switch { display: inline-flex; align-items: center; gap: 3px; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.strip-label.is-switch:hover { color: var(--text); }
+.strip-label.is-switch .strip-label-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strip-label.is-switch svg { width: 12px; height: 12px; flex: none; opacity: 0.7; }
+.account-menu { width: 248px; max-width: calc(100vw - 16px); padding: 6px; }
+.account-heading { margin: 4px 6px; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); }
+.account-heading.is-sub { margin-top: 10px; }
+.account-item { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; text-align: left; color: var(--text); }
+.account-item:hover { background: var(--hover); }
+.account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.account-note { margin-left: auto; flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; color: var(--text-2); }
+.account-item svg { flex: none; color: var(--accent); }
+.account-item.is-current .account-name { color: var(--accent); }
+.account-add { display: flex; width: 100%; align-items: center; gap: 8px; margin-top: 4px; padding: 8px; border-top: 1px solid var(--border); border-radius: 0 0 6px 6px; color: var(--text-2); text-align: left; font-size: 12.5px; }
+.account-add:hover { background: var(--hover); color: var(--text); }
+.account-add svg { width: 14px; height: 14px; flex: none; }
+
 .hidden-menu { width: 280px; max-width: calc(100vw - 16px); padding: 6px; }
 .hidden-menu p { margin: 4px 8px 6px; color: var(--text-2); font-size: 12px; }
 .hidden-list { list-style: none; margin: 0; padding: 0; }
@@ -773,12 +792,25 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .gdetail { align-items: flex-end; padding: 0; }
   .gdetail-card { width: 100%; border-radius: 18px 18px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
-}
 
 /* ---------- TikTok feeds ---------- */
-.tile-body iframe.frame-feed { color-scheme: light; max-width: 420px; margin: 0 auto; }
+/* A feed is vertical video, so it keeps a phone's 9:16 shape and takes the tile's full
+   height. In a wide tile it sits centred on black instead of shrinking to a stamp. */
+.tile-body iframe.frame-feed {
+  color-scheme: light;
+  inset: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  max-width: 100%;
+}
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 3 / 4; max-height: 78vh; }
+.grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
+/* In a phone layout the feed tile itself is a real 9:16 column: full height, with
+   the rest of the grid taking the remaining width. */
+.grid.has-phone .tile.is-phone { height: 100%; aspect-ratio: 9 / 16; justify-self: end; }
 .strip-actions [hidden] { display: none !important; }
 .mixer-one { flex: none; height: 26px; padding: 0 9px 0 6px; display: inline-flex; align-items: center; gap: 7px; border-radius: 6px; color: var(--text-2); white-space: nowrap; }
 .mixer-one:hover { background: var(--hover); color: var(--text); }
