@@ -94,6 +94,16 @@
     </section>
   </main>
   <footer id="ticker" class="ticker" aria-label="Scores and headlines" hidden></footer>
+  <section id="phone-bar" class="phone-bar" aria-label="Current stream" hidden>
+    <button id="phone-bar-name" class="phone-bar-name" type="button" aria-haspopup="menu">
+      <b id="phone-bar-title"></b>
+      <small id="phone-bar-sub"></small>
+    </button>
+    <button id="phone-bar-prev" class="phone-bar-button" type="button" title="Previous channel" aria-label="Previous channel"><span data-icon="back"></span></button>
+    <button id="phone-bar-play" class="phone-bar-button phone-bar-play" type="button" title="Pause" aria-label="Pause"></button>
+    <button id="phone-bar-next" class="phone-bar-button" type="button" title="Next channel" aria-label="Next channel"><span data-icon="next"></span></button>
+    <button id="phone-bar-mute" class="phone-bar-button" type="button" title="Mute" aria-label="Mute"></button>
+  </section>
   <nav id="tabbar" class="tabbar" aria-label="Sections">
     <button class="tab is-on" type="button" data-tab="watch" aria-current="page"><span data-icon="tiles"></span><span>Watch</span></button>
     <button id="tab-reader" class="tab" type="button" data-tab="reader"><span class="tab-icon"><span data-icon="reader"></span></span><span>Reader</span></button>

@@ -68,7 +68,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
-  onTune: (id) => { tunedId = id; },
+  onTune: (id) => { tunedId = id; renderPhoneBar(); },
   onNoteText: (id, text) => {
     const tile = tileById(id);
     if (!tile) return;
@@ -112,7 +112,10 @@ function labelOf(tile) {
 function togglePause(id) {
   const view = grid.viewFor(id);
   if (!view?.player?.canPause) return;
-  view.paused = !view.paused;
+  // The browser's own pause can be ahead of our last event, so trust the media element.
+  const media = view.player.el instanceof HTMLMediaElement ? view.player.el : null;
+  const paused = media ? media.paused : view.paused;
+  view.paused = !paused;
   view.player.setPaused(view.paused);
   renderSound();
 }
@@ -668,6 +671,52 @@ function renderSound() {
   if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();
+  renderPhoneBar();
+}
+
+/** The phone's always-on stream bar: who's on, switch channel, play/pause and sound. */
+function renderPhoneBar() {
+  const bar = $('phone-bar');
+  const onPhone = document.body.classList.contains('is-phone');
+  let tile = tunedTile();
+  let view = tile ? grid.viewFor(tile.id) : null;
+  // A broken tile shouldn't take the controls away from a working one.
+  if (tile && !view?.player) {
+    const working = ws.tiles.find((item) => isVisible(item) && isStream(item) && grid.viewFor(item.id)?.player);
+    if (working) { tile = working; view = grid.viewFor(working.id); tunedId = working.id; }
+  }
+  const show = onPhone && Boolean(tile) && Boolean(view?.player);
+  bar.hidden = !show;
+  document.body.classList.toggle('has-phonebar', show);
+  if (!show) return;
+  const source = parseSource(tile.input);
+  const name = labelOf(tile);
+  const listing = nowAndNext(name, source);
+  const media = view.player?.el instanceof HTMLMediaElement ? view.player.el : null;
+  const paused = media ? media.paused : Boolean(view.paused);
+  $('phone-bar-title').textContent = name;
+  $('phone-bar-sub').textContent = paused ? 'Paused' : listing?.current?.title || 'Playing';
+  $('phone-bar-name').title = `Options for ${name}`;
+  $('phone-bar-name').setAttribute('aria-label', `Options for ${name}`);
+  const play = $('phone-bar-play');
+  const canPause = Boolean(view.player.canPause);
+  play.hidden = !canPause;
+  if (canPause) {
+    const label = paused ? 'Play' : 'Pause';
+    play.replaceChildren(icon(paused ? 'play' : 'pause'));
+    play.title = label;
+    play.setAttribute('aria-label', label);
+  }
+  const mute = $('phone-bar-mute');
+  const canMute = Boolean(view.player.canMute);
+  mute.hidden = !canMute;
+  if (canMute) {
+    const label = tile.muted ? 'Unmute' : 'Mute';
+    mute.replaceChildren(icon(tile.muted ? 'muted' : 'sound'));
+    mute.title = label;
+    mute.setAttribute('aria-label', label);
+    mute.classList.toggle('is-on', !tile.muted);
+  }
 }
 
 /* ---------- Sound ---------- */
@@ -4408,6 +4457,31 @@ $('topbar').addEventListener('focusin', syncBarCover);
 $('topbar').addEventListener('focusout', () => setTimeout(syncBarCover));
 fullscreen.onChange(syncBarCover);
 
+$('phone-bar-prev').addEventListener('click', () => {
+  const tile = tunedTile();
+  if (tile) surfChannels(-1, tile.id);
+});
+$('phone-bar-next').addEventListener('click', () => {
+  const tile = tunedTile();
+  if (tile) surfChannels(1, tile.id);
+});
+$('phone-bar-play').addEventListener('click', () => {
+  const tile = tunedTile();
+  if (!tile) return;
+  togglePause(tile.id);
+  renderPhoneBar();
+});
+$('phone-bar-mute').addEventListener('click', () => {
+  const tile = tunedTile();
+  if (tile) toggleMute(tile.id);
+});
+$('phone-bar-name').addEventListener('click', () => {
+  const tile = tunedTile();
+  if (!tile) return;
+  togglePopover($('phone-bar-name'), $('stream-menu'), () => buildStreamMenu(tile.id));
+});
+window.addEventListener('resize', renderPhoneBar);
+
 $('mixer-button').addEventListener('click', () => {
   // On a phone, sound gets a sheet of big controls instead of the row.
   if (document.body.classList.contains('is-phone')) {
@@ -4445,6 +4519,7 @@ receiveFavorites();
 loadGuide().then(() => {
   syncGuideButton();
   refreshFavoriteLists();
+  renderPhoneBar();
 });
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);
