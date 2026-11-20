@@ -83,21 +83,22 @@ function phoneGrid(n) {
       index++;
     }
   }
-  // The tall slot is drawn in a separate auto-width column after these tracks.
-  slots.push({ c: 0, r: 0, cs: 1, rs: gridRows });
-  return { cols: units(gridCols), rows: units(gridRows), slots };
+  // The phone gets its own column after the video tracks. It is made `auto` wide
+  // whenever a feed is actually playing, so its 9:16 shape sets the width.
+  slots.push({ c: gridCols, r: 0, cs: 1, rs: gridRows });
+  return { cols: units(gridCols + 1), rows: units(gridRows), slots };
 }
 
 /** One big stream across the top, the rest and the phone in a row underneath. */
 function phoneBottomGrid(n) {
   const below = Math.max(n - 2, 0);
   const gridCols = Math.max(below, 1);
-  const slots = [{ c: 0, r: 0, cs: gridCols, rs: 1 }];
+  const slots = [{ c: 0, r: 0, cs: gridCols + 1, rs: 1 }];
   for (let i = 0; i < below; i++) slots.push({ c: i, r: 1, cs: 1, rs: 1 });
-  // The phone lives in its own auto-width column to the right of the bottom row, but
-  // the slot itself sits inside the tracks so diagrams and area maths stay in range.
-  slots.push({ c: gridCols - 1, r: 1, cs: 1, rs: 1 });
-  return { cols: units(gridCols), rows: [2, 1], slots };
+  // With no second stream the bottom row still needs a slot beside the phone.
+  if (!below) slots.push({ c: 0, r: 1, cs: 1, rs: 1 });
+  slots.push({ c: gridCols, r: 1, cs: 1, rs: 1 });
+  return { cols: units(gridCols + 1), rows: [2, 1], slots };
 }
 
 /** Layouts where a TikTok feed becomes a real phone-shaped column. */
@@ -242,9 +243,6 @@ export function applyPreset(ws, presetId, minSlots = 0) {
     if (feed) {
       streams.splice(streams.indexOf(feed), 1);
       streams.splice(Math.min(slots.length - 1, streams.length), 0, feed);
-    } else if (slots.length > 1) {
-      // With no feed to put there, the tall slot would just overlap a neighbour.
-      slots.pop();
     }
   }
   ws.tiles = slots.map((place, index) => (

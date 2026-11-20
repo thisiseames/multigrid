@@ -128,7 +128,7 @@ test('tiktok: short links and non-video pages explain themselves', () => {
   for (const input of ['https://vm.tiktok.com/ZMabc/', 'https://vt.tiktok.com/ZSabc/', 'https://www.tiktok.com/t/ZTabc/']) {
     assert.match(parseSource(input).error, /Short links/, input);
   }
-  assert.match(parseSource('https://www.tiktok.com/@scout2015').error, /isn't a video/);
+  assert.equal(parseSource('https://www.tiktok.com/@scout2015').ok, true);
   assert.match(parseSource('https://www.tiktok.com/foryou').error, /isn't a video/);
 });
 

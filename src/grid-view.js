@@ -508,12 +508,12 @@ export class GridView {
     this.gridEl.classList.toggle('is-custom', this.isCustom);
     const placed = visualOrder(ws);
     const phone = phoneTile(ws);
-    const phoneBelow = Boolean(phone) && ws.presetId === 'phoneBottom';
     this.gridEl.classList.toggle('has-phone', Boolean(phone));
-    this.gridEl.classList.toggle('has-phone-bottom', phoneBelow);
-    // The phone column is sized by its own 9:16 shape, so it gets an `auto` track
-    // rather than a share of the width.
-    this.gridEl.style.gridTemplateColumns = phone ? `${template(ws.cols)} auto` : template(ws.cols);
+    // A phone layout keeps its last track for the feed. While the feed is playing that
+    // track is sized by the video's own 9:16 shape instead of a share of the width.
+    this.gridEl.style.gridTemplateColumns = phone
+      ? `${template(ws.cols.slice(0, -1))} auto`
+      : template(ws.cols);
     this.gridEl.style.gridTemplateRows = template(ws.rows);
     const keep = new Set(placed.map((tile) => tile.id));
     for (const [id, view] of this.views) {
@@ -530,14 +530,6 @@ export class GridView {
       }
       view.update(tile);
       view.root.classList.toggle('is-phone', Boolean(phone) && tile.id === phone.id);
-      if (phone) {
-        if (tile.id === phone.id) {
-          view.root.style.gridArea = phoneBelow ? '2 / -2 / -1 / -1' : '1 / -2 / -1 / -1';
-        } else if (phoneBelow && tile.place.r === 0) {
-          // The featured stream runs the full width, over the phone's column too.
-          view.root.style.gridArea = '1 / 1 / 2 / -1';
-        }
-      }
       view.root.style.order = index;
       this.attachCorners(view);
     });
