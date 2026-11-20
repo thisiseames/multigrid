@@ -1820,13 +1820,16 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 }
 
 /* Today: weather on the date line, and the next 12 hours */
-.today-head { flex-wrap: wrap; row-gap: 4px; }
-.wx-line { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; margin-left: -2px; border-radius: 999px; color: var(--text); font-size: 13px; background: none; }
+.today-head { flex-wrap: nowrap; row-gap: 4px; }
+.today-head h3 { flex: none; }
+.today-head .today-date { flex: none; white-space: nowrap; }
+.wx-line { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 2px 8px; margin-left: -2px; border-radius: 999px; color: var(--text); font-size: 13px; background: none; }
 .wx-line:hover, .wx-line.is-open { background: rgba(255,255,255,.08); }
 .wx-line[hidden] { display: none; }
 .wx-line .wx-icon { display: inline-flex; color: #f5c451; }
 .wx-line .wx-icon.is-rain, .wx-line .wx-icon.is-storm, .wx-line .wx-icon.is-cloud, .wx-line .wx-icon.is-fog, .wx-line .wx-icon.is-snow, .wx-line .wx-icon.is-moon { color: var(--text-2); }
-.wx-place { font-weight: 650; }
+.wx-place { flex: none; font-weight: 650; white-space: nowrap; }
+.wx-line > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wx-hours { flex: none; list-style: none; margin: 0; padding: 8px 12px 10px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--border); }
 .wx-hours::-webkit-scrollbar { display: none; }
 .wx-hours[hidden] { display: none; }
