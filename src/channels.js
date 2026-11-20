@@ -43,3 +43,13 @@ export function parseChannelList(text) {
   }
   return found.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
 }
+
+/** Directory names carry quality and notes; a favourite title is clean and uppercase. */
+export function channelTitle(name) {
+  return String(name || '')
+    .replace(/\s*\(\d{3,4}p\)\s*/i, ' ')
+    .replace(/\s*\[[^\]]*\]\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleUpperCase();
+}

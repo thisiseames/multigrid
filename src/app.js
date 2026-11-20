@@ -10,7 +10,7 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
-import { CHANNEL_CATEGORIES, parseChannelList } from './channels.js';
+import { CHANNEL_CATEGORIES, channelTitle, parseChannelList } from './channels.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeFor, isNewToday } from './episodes.js';
@@ -273,15 +273,6 @@ async function loadChannelCategory(id) {
   return entry.list;
 }
 
-/** Directory names carry quality and notes; the favorite name stays clean. */
-function tidyChannelName(name) {
-  return String(name || '')
-    .replace(/\s*\(\d{3,4}p\)\s*/i, ' ')
-    .replace(/\s*\[[^\]]*\]\s*$/, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function channelResultRow(item, target, folder) {
   const art = el('span', { class: 'ch-logo' });
   if (item.logo) art.append(el('img', { src: item.logo, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
@@ -294,7 +285,7 @@ function channelResultRow(item, target, folder) {
       click() {
         $('channel-box').close();
         $('source-dialog').close();
-        const name = tidyChannelName(item.name);
+        const name = channelTitle(item.name);
         saveFavorite(item.url, name, folder, item.logo);
         addStream(item.url, target);
         toast(`Adding ${name}…`);

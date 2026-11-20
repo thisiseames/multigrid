@@ -36,3 +36,10 @@ test('channels: drops insecure, header-locked, Pluto and duplicate feeds', () =>
 test('channels: an empty list is empty', () => {
   assert.deepEqual(parseChannelList(''), []);
 });
+
+import { channelTitle } from '../src/channels.js';
+
+test('channels: a favourite title drops quality and notes, and is uppercase', () => {
+  assert.equal(channelTitle('CNN International North America (1080p) [Geo-blocked]'), 'CNN INTERNATIONAL NORTH AMERICA');
+  assert.equal(channelTitle('Sky Sports  Action (720p)'), 'SKY SPORTS ACTION');
+});
