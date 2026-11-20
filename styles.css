@@ -1337,6 +1337,22 @@ body.is-phone .resume-note button { height: 44px; padding: 0 16px; font-size: 14
 .today-head h3 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
 .today-head span { font-size: 13px; color: var(--text-2); }
 .today-section + .today-section { margin-top: 2px; }
+
+/* Prediction markets in Today */
+.pm-head, .pm-row { display: grid; grid-template-columns: minmax(0, 1fr) 48px 44px 56px; gap: 8px; align-items: center; }
+.pm-head { padding: 6px 16px 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.pm-head .pm-q { text-transform: none; letter-spacing: 0; font-size: 10.5px; }
+.pm-row { padding: 8px 16px; color: var(--text); text-decoration: none; border-top: 1px solid var(--border); }
+.pm-row:hover { background: var(--hover); }
+.pm-row .pm-q { display: flex; gap: 7px; min-width: 0; align-items: baseline; }
+.pm-row .pm-q b { flex: none; width: 13px; font-size: 10.5px; font-weight: 700; color: var(--text-2); }
+.pm-row .pm-q span { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; }
+.pm-chance, .pm-move, .pm-vol { text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+.pm-chance { font-weight: 700; }
+.pm-move { color: var(--text-2); }
+.pm-move.is-up { color: #34c26b; }
+.pm-move.is-down { color: #ff6b6b; }
+.pm-vol { color: var(--text-2); }
 .trow + .trow { border-top: 1px solid var(--border); }
 .trow-main { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; text-align: left; color: var(--text); }
 .trow-main:hover { background: rgba(255,255,255,.04); }

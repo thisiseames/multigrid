@@ -2740,6 +2740,78 @@ function todaySection(title, items) {
   return items ? el('section', { class: 'today-section' }, el('h4', { class: 'match-day', textContent: title }), items) : null;
 }
 
+/* Prediction markets: Polymarket's public data, ranked by the last 24 hours of volume. */
+const POLY_STORE = 'multigrid.polymarket.v1';
+const POLY_TTL = 3 * 60 * 1000;
+const parseJsonList = (value) => {
+  if (Array.isArray(value)) return value;
+  try { return JSON.parse(value); } catch { return []; }
+};
+const compactMoney = (value) => {
+  const number = Number(value) || 0;
+  if (number >= 1000000) return `$${(number / 1000000).toFixed(number >= 10000000 ? 0 : 1)}M`;
+  if (number >= 1000) return `$${Math.round(number / 1000)}k`;
+  return `$${Math.round(number)}`;
+};
+
+async function loadPolymarkets() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(POLY_STORE) || 'null');
+    if (saved && Array.isArray(saved.list) && Date.now() - saved.at < POLY_TTL) return saved.list;
+  } catch {
+    // A damaged cache just means ask again.
+  }
+  const response = await fetch('https://gamma-api.polymarket.com/markets?closed=false&active=true&archived=false&order=volume24hr&ascending=false&limit=30', {
+    cache: 'no-cache',
+    signal: AbortSignal.timeout?.(9000),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  const seen = new Set();
+  const list = (Array.isArray(data) ? data : [])
+    .map((market) => {
+      const prices = parseJsonList(market.outcomePrices);
+      const event = (market.events || [])[0] || {};
+      return {
+        question: market.question || event.title || 'Market',
+        chance: Number(prices[0]) || 0,
+        change: Number(market.oneDayPriceChange) || 0,
+        volume: Number(market.volume24hr) || 0,
+        slug: event.slug || '',
+      };
+    })
+    .filter((market) => market.volume > 0 && market.slug)
+    .filter((market) => {
+      // One row per event, so four Fed outcomes don't crowd out the rest.
+      if (seen.has(market.slug)) return false;
+      seen.add(market.slug);
+      return true;
+    })
+    .slice(0, 8);
+  try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
+  return list;
+}
+
+function polymarketRows(list) {
+  const head = el('div', { class: 'pm-head' },
+    el('span', { class: 'pm-q', textContent: 'Most traded · Polymarket' }),
+    el('span', { class: 'pm-chance', textContent: 'Chance' }),
+    el('span', { class: 'pm-move', textContent: '24h' }),
+    el('span', { class: 'pm-vol', textContent: 'Volume' }));
+  const rows = list.map((market, index) => el('a', {
+    class: 'pm-row',
+    href: `https://polymarket.com/event/${encodeURIComponent(market.slug)}`,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    title: market.question,
+  },
+  el('span', { class: 'pm-q' }, el('b', { textContent: String(index + 1) }), el('span', { textContent: market.question })),
+  el('span', { class: 'pm-chance', textContent: `${Math.round(market.chance * 100)}%` }),
+  el('span', { class: `pm-move${market.change > 0 ? ' is-up' : market.change < 0 ? ' is-down' : ''}`, textContent: market.change ? `${market.change > 0 ? '+' : '−'}${Math.abs(market.change * 100).toFixed(1)}` : '—' }),
+  el('span', { class: 'pm-vol', textContent: compactMoney(market.volume) })));
+  return el('div', { class: 'pm-wrap' }, head, el('div', { class: 'pm-list' }, ...rows));
+}
+
 function todayRow({ art, top, title, sub, live = false, onClick }) {
   return el('li', { class: 'trow' }, el('button', { type: 'button', class: 'trow-main', on: { click: onClick } },
     art,
@@ -2755,7 +2827,7 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows, poly] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesThisWeek(now).catch(() => []),
@@ -2763,6 +2835,7 @@ async function fillToday() {
     loadMovies(),
     loadJob('charts.json'),
     loadJob('shows.json'),
+    loadPolymarkets().catch(() => []),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -2815,6 +2888,7 @@ async function fillToday() {
 
   const parts = [
     todaySection('Your teams', teamList),
+    todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
     todaySection('Events today', eventList),
     todaySection('Movies this week', movieList),
     todaySection('New episodes this week', episodeList),
