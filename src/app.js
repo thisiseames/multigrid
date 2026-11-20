@@ -574,13 +574,14 @@ function openFollowingPicker() {
 function buildSoundMenu() {
   const menu = $('sound-menu');
   const tiles = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
-  const anyAudible = muteableTiles().some((tile) => !tile.muted);
+  const anyAudible = muteableTiles().some((tile) => !tile.muted) || podcastAssignedSound();
+  const hasSound = muteableTiles().length > 0 || Boolean(podcastState);
   const toggle = (label, on, onClick) => el('button', { type: 'button', class: `sa-switch${on ? ' is-on' : ''}`, aria: { pressed: String(on) }, on: { click() { onClick(); buildSoundMenu(); } } },
     el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: label }));
   const head = el('div', { class: 'sa-switches' },
     toggle('One sound', isOneSound(), toggleOneSound),
     toggle('Ticker', isTickerOn(), toggleTicker),
-    muteableTiles().length ? el('button', { type: 'button', class: 'sa-muteall', on: { click() { muteAll(); buildSoundMenu(); } } }, anyAudible ? 'Mute all' : 'Unmute all') : null);
+    hasSound ? el('button', { type: 'button', class: 'sa-muteall', on: { click() { muteAll(); buildSoundMenu(); } } }, anyAudible ? 'Mute all' : 'Unmute all') : null);
   const cards = tiles.map((tile) => {
     const view = grid.viewFor(tile.id);
     const reachable = view.player.canMute;
@@ -590,7 +591,7 @@ function buildSoundMenu() {
       reachable ? transportRow(tile, view, buildSoundMenu) : null,
       volumeSlider(tile, view));
   });
-  menu.replaceChildren(head, cards.length ? el('ul', { class: 'sa-cards' }, ...cards) : el('p', { class: 'match-quiet is-empty', textContent: 'Nothing is playing.' }));
+  menu.replaceChildren(head, cards.length ? el('ul', { class: 'sa-cards' }, ...cards) : el('p', { class: 'match-quiet is-empty', textContent: podcastState ? 'The podcast is in its dock.' : 'Nothing is playing.' }));
 }
 
 /** Makes a stream the primary one, or stops it being primary. */
@@ -653,7 +654,7 @@ function renderSound() {
   const button = $('mixer-button');
   const streams = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && parseSource(tile.input).kind !== 'note');
   button.hidden = !streams.length;
-  const anyAudible = muteableTiles().some((tile) => !tile.muted);
+  const anyAudible = muteableTiles().some((tile) => !tile.muted) || podcastAssignedSound();
   const open = isMixerOpen();
   const label = document.body.classList.contains('is-phone') ? 'Sound' : open ? 'Close sound mixer' : 'Open sound mixer';
   button.title = label;
@@ -695,7 +696,7 @@ function prepareAutoplaySound() {
     const control = event.target instanceof Element ? event.target.closest('button, input, [role="slider"]') : null;
     const label = `${control?.getAttribute('aria-label') || ''} ${control?.getAttribute('title') || ''}`;
     // A sound control is a deliberate choice; don't undo it.
-    if (control && (control.type === 'range' || /^(unmute|mute|turn sound|volume)/i.test(label.trim()))) {
+    if (control && (control.closest('.podcast-dock') || control.type === 'range' || /^(unmute|mute|turn sound|volume)/i.test(label.trim()))) {
       pendingSound.clear();
       return;
     }
@@ -716,10 +717,47 @@ function prepareAutoplaySound() {
       if (isOneSound()) break;
     }
     pendingSound.clear();
-    if (restored) commit();
+    if (restored) {
+      mutePodcastForStream();
+      commit();
+    }
   };
   document.addEventListener('click', restore);
   document.addEventListener('keydown', onKey);
+}
+
+/** A podcast counts as sound in One sound, just like a tile. */
+const podcastAssignedSound = () => Boolean(podcastState && !podcastState.muted);
+const podcastHasSound = () => Boolean(podcastState && podcastAudio && !podcastAudio.paused && !podcastAudio.muted);
+
+function setPodcastMuted(muted) {
+  if (!podcastState || !podcastAudio || podcastState.muted === muted) return false;
+  podcastState.muted = muted;
+  podcastAudio.muted = muted;
+  savePodcastStore();
+  updatePodcastDock();
+  renderSound();
+  return true;
+}
+
+function mutePodcastForStream() {
+  if (!isOneSound() || !podcastHasSound()) return false;
+  return setPodcastMuted(true);
+}
+
+function muteStreamsForPodcast() {
+  if (!isOneSound() || !podcastHasSound()) return false;
+  let changed = false;
+  for (const tile of muteableTiles()) {
+    if (tile.muted) continue;
+    tile.muted = true;
+    const view = grid.viewFor(tile.id);
+    view?.setMuted(true);
+    view?.syncControls();
+    changed = true;
+  }
+  if (changed) commit();
+  return changed;
 }
 
 /** With One sound on, the stream just given sound is the only one with it. */
@@ -732,6 +770,7 @@ function muteOthers(id) {
     view?.setMuted(true);
     view?.syncControls();
   }
+  mutePodcastForStream();
 }
 
 /* The ticker: shown while it's switched on and something is in the grid. */
@@ -764,7 +803,7 @@ function toggleOneSound() {
     if (keep) muteOthers(keep.id);
   }
   commit();
-  toast(on ? 'One sound: turning a stream on now turns the others off.' : 'Any number of streams can have sound now.');
+  toast(on ? 'One sound: turning a stream or podcast on now turns the others off.' : 'Any number of streams and the podcast can have sound now.');
 }
 
 function toggleMute(id) {
@@ -799,7 +838,7 @@ function changeVolume(id, volume) {
 
 function muteAll() {
   const reachable = muteableTiles();
-  const muted = reachable.some((tile) => !tile.muted);
+  const muted = reachable.some((tile) => !tile.muted) || podcastAssignedSound();
   // Asking for every stream's sound means One sound has to step aside.
   if (!muted && isOneSound()) setOneSound(false);
   for (const tile of reachable) {
@@ -808,15 +847,17 @@ function muteAll() {
       grid.viewFor(tile.id)?.setMuted(muted);
     }
   }
+  const podcastChanged = setPodcastMuted(muted);
   commit();
   const others = ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && !reachable.includes(tile));
   const playing = others.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
-  if (playing.length) {
+  if (!reachable.length) {
+    if (podcastChanged) toast(muted ? 'Podcast muted.' : 'Podcast unmuted.');
+    else toast('None of these tiles have sound that can be controlled from here.');
+  } else if (playing.length) {
     const names = playing.slice(0, 2).map(labelOf).join(', ');
     const more = playing.length > 2 ? ` and ${playing.length - 2} more` : '';
     toast(`${muted ? 'Muted' : 'Unmuted'} ${reachable.length}. Sound can't be controlled from here for ${names}${more}.`);
-  } else if (!reachable.length) {
-    toast('None of these tiles have sound that can be controlled from here.');
   }
 }
 
@@ -1370,10 +1411,10 @@ function cyclePodcastSpeed() {
 
 function togglePodcastMute() {
   if (!podcastState || !podcastAudio) return;
-  podcastState.muted = !podcastState.muted;
-  podcastAudio.muted = podcastState.muted;
-  savePodcastStore();
-  updatePodcastDock();
+  const next = !podcastState.muted;
+  if (!setPodcastMuted(next)) return;
+  // Sound coming back on the podcast is the one sound, so the streams let it through.
+  if (!next) muteStreamsForPodcast();
 }
 
 function closePodcast() {
@@ -1385,6 +1426,7 @@ function closePodcast() {
   podcastState = null;
   writePodcastStore(null);
   $('podcast-dock').hidden = true;
+  renderSound();
 }
 
 function drawPodcastDock() {
@@ -1413,7 +1455,11 @@ function drawPodcastDock() {
       podcastSwitching = false;
       updatePodcastDock();
     });
-    podcastAudio.addEventListener('play', updatePodcastDock);
+    podcastAudio.addEventListener('play', () => {
+      muteStreamsForPodcast();
+      updatePodcastDock();
+      renderSound();
+    });
     podcastAudio.addEventListener('ended', () => {
       // A finished episode isn't waiting to be resumed on the next visit.
       writePodcastStore(null);
@@ -1550,6 +1596,7 @@ function openPodcast(input, extra = {}) {
   podcastAudio.load();
   savePodcastStore();
   if (!restore) podcastAudio.play().catch(() => {});
+  renderSound();
 }
 
 function restorePodcast() {
@@ -4281,7 +4328,7 @@ function buildMoreMenu() {
     on: { click: onClick },
   }, icon(iconName, 16), el('span', { class: 'more-label', textContent: label }), extra);
   const switchRow = (label, iconName, on, onClick) => row(label, iconName, onClick, el('span', { class: `more-switch${on ? ' is-on' : ''}`, aria: { hidden: 'true' } }));
-  const audible = muteableTiles().some((tile) => !tile.muted);
+  const audible = muteableTiles().some((tile) => !tile.muted) || podcastAssignedSound();
   const canFullscreen = fullscreen.enabled() && !$('fullscreen-button').hidden;
   menu.replaceChildren(...[
     row('Saved layouts', 'saved', then(() => togglePopover($('more-button'), $('saved-menu'), buildSavedMenu))),
