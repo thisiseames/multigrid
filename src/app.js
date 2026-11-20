@@ -2812,6 +2812,104 @@ function polymarketRows(list) {
   return el('div', { class: 'pm-wrap' }, head, el('div', { class: 'pm-list' }, ...rows));
 }
 
+/* New from the YouTube channels kept as favourites: the newest upload, shown once. */
+const YT_SEEN = 'multigrid.ytseen.v1';
+const readYtSeen = () => {
+  try { return JSON.parse(localStorage.getItem(YT_SEEN) || '{}') || {}; } catch { return {}; }
+};
+const writeYtSeen = (value) => {
+  try { localStorage.setItem(YT_SEEN, JSON.stringify(value)); } catch { /* not remembered */ }
+};
+
+function youtubeTitle(id) {
+  return fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`, { signal: AbortSignal.timeout?.(4000) })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => data?.title || '')
+    .catch(() => '');
+}
+
+async function newYouTubeUploads() {
+  const seen = readYtSeen();
+  const channels = listFavorites()
+    .map((favorite) => ({ favorite, source: parseSource(favorite.input) }))
+    .filter(({ source }) => source.kind === 'youtube' && source.youtube.list?.startsWith('UU'))
+    .slice(0, 4);
+  if (!channels.length) return [];
+  const found = await Promise.all(channels.map(async ({ favorite, source }) => {
+    const id = await newestUpload(source.youtube.list);
+    if (!id) return null;
+    const before = seen[source.youtube.list];
+    if (before?.id === id) return null;
+    const title = await youtubeTitle(id);
+    seen[source.youtube.list] = { id, title, at: Date.now() };
+    return { favorite, id, title, first: !before };
+  }));
+  writeYtSeen(seen);
+  return found.filter(Boolean);
+}
+
+function youtubeTodayRow(item) {
+  const art = el('span', { class: 'fart is-picture' });
+  artPicture(art, `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`, () => {
+    art.className = 'fart is-icon';
+    art.replaceChildren(icon('play', 20));
+  }, true);
+  return todayRow({
+    art,
+    top: el('span', { textContent: `${item.first ? 'Newest' : 'New'} from ${item.favorite.name}` }),
+    title: item.title || 'New video',
+    onClick() {
+      closePopovers();
+      addStream(`https://www.youtube.com/watch?v=${item.id}`);
+    },
+  });
+}
+
+/** Podcast episodes from the Reader published since midnight. */
+function todayPodcasts(news) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return (news?.items ?? [])
+    .filter((item) => item.kind === 'podcast' && item.audio && Number(item.time) >= start.getTime())
+    .sort((a, b) => b.time - a.time)
+    .slice(0, 4);
+}
+
+function podcastTodayRow(item) {
+  const art = el('span', { class: 'fart is-icon' }, icon('sound', 20));
+  if (/^https:\/\//.test(item.image || '')) {
+    art.className = 'fart is-picture';
+    artPicture(art, item.image, () => {
+      art.className = 'fart is-icon';
+      art.replaceChildren(icon('sound', 20));
+    });
+  }
+  return todayRow({
+    art,
+    top: el('span', { textContent: `${item.source} · ${ago(item.time)}` }),
+    title: item.title,
+    onClick() {
+      closePopovers();
+      addStream(audioInput(`${item.source}: ${item.title}`, item.audio));
+    },
+  });
+}
+
+function continueTodayRow(item) {
+  const source = parseSource(item.input);
+  const favorite = listFavorites().find((fav) => fav.input === item.input);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '' }, source);
+  return todayRow({
+    art,
+    top: el('span', { textContent: `${timeLeft(item.length - item.at)}${item.from && item.from !== item.name ? ` · ${item.from}` : ''}` }),
+    title: item.name,
+    onClick() {
+      closePopovers();
+      addStream(item.input);
+    },
+  });
+}
+
 function todayRow({ art, top, title, sub, live = false, onClick }) {
   return el('li', { class: 'trow' }, el('button', { type: 'button', class: 'trow-main', on: { click: onClick } },
     art,
@@ -2827,7 +2925,7 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows, poly] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows, poly, tube] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesThisWeek(now).catch(() => []),
@@ -2836,6 +2934,7 @@ async function fillToday() {
     loadJob('charts.json'),
     loadJob('shows.json'),
     loadPolymarkets().catch(() => []),
+    newYouTubeUploads().catch(() => []),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -2886,9 +2985,14 @@ async function fillToday() {
   ] : [];
   const newsList = stories.length ? el('ul', { class: 'rlist' }, ...stories.map((item) => readerRow(item, read.has(item.id)))) : null;
 
+  const continueList = listPlaces(5);
+  const podcastList = todayPodcasts(news);
   const parts = [
     todaySection('Top headlines', newsList),
     todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null),
+    todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null),
+    todaySection('New podcasts today', podcastList.length ? el('ul', { class: 'rlist' }, ...podcastList.map(podcastTodayRow)) : null),
+    todaySection('New on YouTube', tube.length ? el('ul', { class: 'rlist' }, ...tube.map(youtubeTodayRow)) : null),
     todaySection('Your teams', teamList),
     todaySection('Events today', eventList),
     todaySection('Movies this week', movieList),
