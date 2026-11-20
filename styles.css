@@ -1142,6 +1142,13 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .addp .addp-paste textarea:focus { outline: none; border-color: var(--accent); }
 .addp-pastebtn { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); height: 32px; padding: 0 14px; border-radius: 999px; background: var(--text); color: #111; font-size: 13px; font-weight: 700; }
 .addp-pastebtn[hidden] { display: none; }
+/* A name is all an X account needs, so it gets a field of its own. */
+.addp-x { flex: none; display: flex; align-items: center; margin: 8px 16px 0; padding: 0 6px 0 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); }
+.addp-x:focus-within { border-color: var(--accent); }
+.addp-x-prefix { flex: none; font-size: 13px; color: var(--text-2); user-select: none; -webkit-user-select: none; }
+.addp-x input { flex: 1; min-width: 0; height: 34px; padding: 0 6px; border: 0; background: none; color: var(--text); font-size: 14px; }
+.addp-x input:focus { outline: none; }
+.addp-x-add { flex: none; height: 26px; padding: 0 12px; border-radius: 999px; background: var(--text); color: #111; font-size: 12px; font-weight: 700; }
 .addp-preview { flex: none; display: flex; align-items: center; gap: 12px; margin: 10px 16px 0; padding: 10px 12px; border-radius: 12px; background: rgba(142, 166, 232, .1); font-size: 13px; color: var(--text); }
 .addp-preview[hidden] { display: none; }
 .addp-preview.is-error { background: rgba(229, 72, 77, .12); color: #ff9a9d; }

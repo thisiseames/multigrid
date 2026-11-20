@@ -2768,6 +2768,7 @@ function openSourceDialog(target) {
   $('source-submit').textContent = replacing ? 'Replace' : 'Add';
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
   $('source-input').value = current.startsWith('local:') ? '' : current;
+  $('source-x').value = '';
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
   renderContinue();
@@ -2834,6 +2835,35 @@ function submitSource() {
   $('source-dialog').close();
   addStream(source.input, target);
 }
+
+/** The small X field: a name is enough, and a pasted profile link still works. */
+function submitXName() {
+  const raw = $('source-x').value.trim();
+  if (!raw) {
+    $('source-x').focus();
+    return;
+  }
+  const name = raw
+    .replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '')
+    .replace(/^@/, '')
+    .replace(/[/?#].*$/, '')
+    .trim();
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(name)) {
+    toast('Type just the X account name, like acyn.');
+    $('source-x').focus();
+    return;
+  }
+  const target = sourceTarget;
+  $('source-dialog').close();
+  addStream(`https://x.com/${name}`, target);
+}
+$('source-x-add').addEventListener('click', submitXName);
+$('source-x').addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  event.stopPropagation();
+  submitXName();
+});
 
 $('source-input').addEventListener('input', updateSourceMessage);
 $('source-input').addEventListener('keydown', (event) => {
