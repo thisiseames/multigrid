@@ -2243,11 +2243,11 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 /* Picture in picture: the second stream sits small in the bottom-right corner of the first, like a TV. */
 .strip-pipswap { display: none !important; }
 .tile.is-pip-inset .strip-pipswap { display: inline-flex !important; }
-.grid.is-pip .tile.is-pip-inset { z-index: 3; width: 30%; height: auto; align-self: end; justify-self: end; margin: 0 14px 14px 0; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 36px rgba(0, 0, 0, .6), 0 0 0 1px var(--border-strong); }
+.grid.is-pip .tile.is-pip-inset { z-index: 3; width: 21%; height: auto; align-self: end; justify-self: end; margin: 0 14px 14px 0; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 36px rgba(0, 0, 0, .6), 0 0 0 1px var(--border-strong); }
 .grid.is-pip .tile.is-pip-inset .tile-body { flex: none; aspect-ratio: 16 / 9; }
 /* With Twitch or YouTube as the big one, nothing may sit on top of it: the small one goes beside. */
-.grid.is-pip-beside .tile.is-pip-main { width: calc(70% - 14px); justify-self: start; }
+.grid.is-pip-beside .tile.is-pip-main { width: calc(79% - 14px); justify-self: start; }
 .grid.is-pip-beside .tile.is-pip-inset { margin: 0 0 14px 0; }
 /* On a phone the small screen is just the picture; Swap screens is in the stream's ⋯ sheet. */
 body.is-phone .grid.is-pip .tile.is-pip-inset .strip { display: none; }
-body.is-phone .grid.is-pip .tile.is-pip-inset { width: 34%; margin: 0 10px 10px 0; }
+body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 0; }
