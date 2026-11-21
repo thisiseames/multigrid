@@ -264,6 +264,9 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
     background-size: cover;
     background-repeat: no-repeat;
   }
+  /* One Add stream slot on the empty phone wall, not one for every empty saved slot. */
+  body.is-phone #stage.is-empty-wall .tile.is-empty { display: none; }
+  body.is-phone #stage.is-empty-wall .tile.is-empty:first-of-type { display: flex; }
 }
 .grid { display: grid; position: relative; width: 100%; height: 100%; }
 .grid.stacked {
