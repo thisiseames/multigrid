@@ -1810,7 +1810,7 @@ const readPosters = () => { try { return JSON.parse(localStorage.getItem(POSTER_
 const isSeriesFolder = (folder) => /series|shows?\b/i.test(folder || '');
 
 /** A wide picture shrunk by wsrv.nl, a free image service, to just the size the card shows. */
-const shrunk = (url) => `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=144&h=88&fit=cover&output=webp&q=78`;
+const shrunk = (url, w = 144, h = 88) => `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=${w}&h=${h}&fit=cover&output=webp&q=78`;
 const httpsOnly = (raw) => {
   const url = typeof raw === 'string' && raw.startsWith('http://') ? `https://${raw.slice(7)}` : raw || '';
   return /^https:\/\//.test(url) ? url : '';
@@ -1880,7 +1880,7 @@ function posterFor(name) {
 }
 
 /** A TV channel's logo, a YouTube picture, or one quiet grey icon for what it is. */
-function favoriteArt(item, source) {
+function favoriteArt(item, source, highRes = false) {
   const art = el('span', { class: 'fart' });
   const quiet = () => {
     art.className = 'fart is-icon';
@@ -1902,7 +1902,13 @@ function favoriteArt(item, source) {
     const { id, list, channel } = source.youtube ?? {};
     const show = (videoId) => {
       art.className = 'fart is-picture';
-      artPicture(art, `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`, quiet, true);
+      const base = `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}`;
+      if (highRes) {
+        // The shelf card is much larger than the old 72x44 list art.
+        artPicture(art, `${base}/maxresdefault.jpg`, () => artPicture(art, `${base}/mqdefault.jpg`, quiet, true), true);
+      } else {
+        artPicture(art, `${base}/mqdefault.jpg`, quiet, true);
+      }
     };
     quiet();
     if (id) show(id);
@@ -1950,7 +1956,7 @@ function favoriteArt(item, source) {
       if (found.wide) {
         // The wide picture, shrunk. If the shrinking service can't help, the poster stands in.
         art.className = 'fart is-picture';
-        artPicture(art, shrunk(found.wide), () => (found.poster ? showPoster(found.poster) : quiet()));
+        artPicture(art, shrunk(found.wide, highRes ? 640 : 144, highRes ? 360 : 88), () => (found.poster ? showPoster(found.poster) : quiet()));
       } else if (found.poster) {
         showPoster(found.poster);
       }
@@ -2079,7 +2085,7 @@ function favoriteCard(item, holder) {
         },
       },
     },
-    favoriteArt(item, source),
+    favoriteArt(item, source, true),
     el('span', { class: 'fcard-text' },
       el('b', { textContent: item.name, title: item.name }),
       (() => {
@@ -4839,21 +4845,7 @@ $('source-form').addEventListener('submit', (event) => {
   event.preventDefault();
   submitSource();
 });
-$('source-cancel').addEventListener('click', () => $('source-dialog').close());
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-// Paste fills the box from the clipboard in one tap. Browsers ask first, and some can't at all.
-if (!navigator.clipboard?.readText) $('source-paste').hidden = true;
-$('source-paste').addEventListener('click', async () => {
-  try {
-    const text = await navigator.clipboard.readText();
-    if (!text.trim()) { toast('The clipboard is empty.'); return; }
-    $('source-input').value = text.trim();
-    updateSourceMessage();
-    $('source-input').focus();
-  } catch {
-    toast("Couldn't read the clipboard. Paste into the box instead.");
-  }
-});
 for (const dialog of [$('source-dialog'), $('help-dialog')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
