@@ -4390,10 +4390,11 @@ function youtubeTodayRow(item) {
 }
 
 /** The newest podcast episodes from the Reader, so there is always something there. */
+/** Podcast episodes released today, newest first. None today, no section. */
 function todayPodcasts(news) {
-  const since = Date.now() - 7 * 86400000;
+  const today = dayKey(Date.now());
   return (news?.items ?? [])
-    .filter((item) => item.kind === 'podcast' && item.audio && Number(item.time) >= since)
+    .filter((item) => item.kind === 'podcast' && item.audio && Number.isFinite(Number(item.time)) && dayKey(Number(item.time)) === today)
     .sort((a, b) => b.time - a.time)
     .slice(0, 4);
 }
