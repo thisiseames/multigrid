@@ -10,7 +10,8 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
-import { CHANNEL_CATEGORIES, channelMatches, channelTitle, eventLabelFor, extraFeedFor, parseChannelList, withChannelExtras } from './channels.js';
+import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
+import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeCode, episodeFor, isNewToday } from './episodes.js';
@@ -33,7 +34,7 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
-  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
+  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
@@ -64,6 +65,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onRemove: removeStream,
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
+  onFeedSwitched: (id, name) => toast(`Switched ${name} to another feed.`),
   onPopOutFailed: () => toast("Couldn't pop this stream out. Try clicking Pop out again."),
   onSendToPhone: (id) => sendToPhone(id),
   onSwap(a, b) {
@@ -132,6 +134,7 @@ function togglePause(id) {
   const media = view.player.el instanceof HTMLMediaElement ? view.player.el : null;
   const paused = media ? media.paused : view.paused;
   view.paused = !paused;
+  view.pausedByUser = view.paused;
   view.player.setPaused(view.paused);
   renderSound();
 }
@@ -282,48 +285,15 @@ function openXListBox() {
 
 /* ---------- Channel Finder ---------- */
 
-const CHANNEL_TTL = 12 * 60 * 60 * 1000;
-const CHANNEL_STORE = 'multigrid.channels.v1';
-const channelLoaded = new Map();
-
-async function loadChannelCategory(id) {
-  const cached = channelLoaded.get(id);
-  if (cached && Date.now() - cached.at < CHANNEL_TTL) return cached.list;
-  try {
-    const saved = JSON.parse(localStorage.getItem(`${CHANNEL_STORE}.${id}`) || 'null');
-    if (saved && Array.isArray(saved.list) && Date.now() - saved.at < CHANNEL_TTL) {
-      const entry = { at: saved.at, list: withChannelExtras(id, saved.list) };
-      channelLoaded.set(id, entry);
-      return entry.list;
-    }
-  } catch {
-    // A damaged cache just means fetch it again.
-  }
-  const category = CHANNEL_CATEGORIES.find((item) => item.id === id) ?? CHANNEL_CATEGORIES[0];
-  const response = await fetch(category.url, { cache: 'no-cache', signal: AbortSignal.timeout?.(12000) });
-  if (!response.ok) throw new Error(String(response.status));
-  const base = parseChannelList(await response.text());
-  const entry = { at: Date.now(), list: withChannelExtras(id, base) };
-  channelLoaded.set(id, entry);
-  try { localStorage.setItem(`${CHANNEL_STORE}.${id}`, JSON.stringify({ at: entry.at, list: base })); } catch { /* not remembered */ }
-  return entry.list;
-}
-
-/** The first direct channel feed whose name means the same channel as this one. */
+/** The one verified catalog channel whose name means exactly this channel. */
 async function findDirectFeed(name) {
   const extra = extraFeedFor(name);
   if (extra) return extra;
-  const found = await Promise.allSettled(CHANNEL_CATEGORIES.map(async (category) => ({
-    category,
-    list: await loadChannelCategory(category.id),
-  })));
-  for (const result of found) {
-    if (result.status !== 'fulfilled') continue;
-    const { category, list } = result.value;
-    const match = list.find((item) => channelMatches(item.name, name));
-    if (match) return { ...match, category: category.id };
-  }
-  return null;
+  const data = await loadJob('live-channels.json');
+  const list = Array.isArray(data?.channels) ? data.channels : [];
+  const title = channelTitle(name);
+  const exact = list.filter((item) => channelTitle(item.name) === title);
+  return exact.length === 1 ? exact[0] : null;
 }
 
 /** Swaps a website embed for a direct stream of the same channel, when one is listed. */
@@ -340,7 +310,7 @@ async function switchToDirectFeed(id) {
   }
   const title = channelTitle(feed.name);
   const favorite = listFavorites().find((item) => item.input === tile.input);
-  const folder = favorite?.group || CHANNEL_CATEGORIES.find((category) => category.id === feed.category)?.name || '';
+  const folder = favorite?.group || feed.category || '';
   saveFavorite(feed.url, title, folder, feed.logo);
   addStream(feed.url, { mode: 'replace', id }, title);
   toast(`${title} now plays with MULTIGRID's own sound controls.`);
@@ -355,36 +325,6 @@ const MISSING_CHANNEL_NOTES = [
 
 const COUNTRY_ORDER = ['US', 'Canada', 'Australia', 'Ireland', 'New Zealand', 'UK'];
 const CATEGORY_ORDER = ['News', 'Sports', 'Entertainment', 'Movies', 'Kids', 'Documentary', 'Music', 'General'];
-
-/** A second, browser-side check before a catalog channel is allowed onto the wall. */
-async function channelPlays(url) {
-  try {
-    const headers = { Accept: 'application/vnd.apple.mpegurl,*/*' };
-    const response = await fetch(url, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
-    if (!response.ok) return false;
-    let text = await response.text();
-    if (!text.includes('#EXTM3U')) return false;
-    let base = response.url || url;
-    if (text.includes('#EXT-X-STREAM-INF')) {
-      const variant = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
-      if (!variant) return false;
-      const variantUrl = new URL(variant.trim(), base).href;
-      const next = await fetch(variantUrl, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
-      if (!next.ok) return false;
-      text = await next.text();
-      base = next.url || variantUrl;
-    }
-    const segment = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
-    if (!segment) return false;
-    const media = await fetch(new URL(segment.trim(), base).href, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout?.(7000),
-    });
-    return media.ok;
-  } catch {
-    return false;
-  }
-}
 
 function channelResultRow(item, now, onDead, target) {
   const art = el('span', { class: 'ch-logo' });
@@ -402,7 +342,7 @@ function channelResultRow(item, now, onDead, target) {
       async click() {
         row.disabled = true;
         add.textContent = 'Checking…';
-        if (!(await channelPlays(item.url))) {
+        if (!(await plays(item.url))) {
           item.dead = true;
           toast(`${item.name} isn't playing right now.`);
           onDead();
@@ -411,7 +351,7 @@ function channelResultRow(item, now, onDead, target) {
         $('channel-box').close();
         $('source-dialog').close();
         const name = channelTitle(item.name);
-        saveFavorite(item.url, name, item.country || '', item.logo);
+        saveFavorite(item.url, name, folderForCategory(item.category), item.logo);
         addStream(item.url, target);
         toast(`Adding ${name}…`);
       },
@@ -776,6 +716,7 @@ function render() {
   const showWelcome = !ws.started && streamCount(ws) === 0;
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
+  $('stage').classList.toggle('is-empty-wall', !showWelcome && streamCount(ws) === 0);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
@@ -784,7 +725,7 @@ function render() {
   const preset = presetById(ws.presetId) ?? presetById('equal');
   $('layout-name').textContent = custom ? 'Custom' : preset.name;
   const current = ws.started ? currentDiagram() : presetDiagram(preset);
-  $('layout-icon').replaceChildren(layoutDiagram(current, 18, 13));
+  $('layout-icon').replaceChildren(layoutDiagram(grid.isStacked ? PHONE_STACK : current, 18, 13));
   $('layout-button').title = 'Choose a layout';
 
   const full = streamCount(ws) >= MAX_STREAMS;
@@ -803,6 +744,13 @@ function render() {
 function currentDiagram() {
   return { cols: ws.cols, rows: ws.rows, slots: ws.tiles.filter(isVisible).map((tile) => tile.place) };
 }
+
+/** Portrait phones stack their tiles, so the top-bar icon shows a stack, not the saved grid. */
+const PHONE_STACK = {
+  cols: [1],
+  rows: [1, 1, 1],
+  slots: [{ c: 0, r: 0, cs: 1, rs: 1 }, { c: 0, r: 1, cs: 1, rs: 1 }, { c: 0, r: 2, cs: 1, rs: 1 }],
+};
 
 function muteableTiles() {
   return ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && grid.viewFor(tile.id)?.player?.canMute);
@@ -1862,7 +1810,7 @@ const readPosters = () => { try { return JSON.parse(localStorage.getItem(POSTER_
 const isSeriesFolder = (folder) => /series|shows?\b/i.test(folder || '');
 
 /** A wide picture shrunk by wsrv.nl, a free image service, to just the size the card shows. */
-const shrunk = (url) => `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=144&h=88&fit=cover&output=webp&q=78`;
+const shrunk = (url, w = 144, h = 88) => `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=${w}&h=${h}&fit=cover&output=webp&q=78`;
 const httpsOnly = (raw) => {
   const url = typeof raw === 'string' && raw.startsWith('http://') ? `https://${raw.slice(7)}` : raw || '';
   return /^https:\/\//.test(url) ? url : '';
@@ -1932,7 +1880,7 @@ function posterFor(name) {
 }
 
 /** A TV channel's logo, a YouTube picture, or one quiet grey icon for what it is. */
-function favoriteArt(item, source) {
+function favoriteArt(item, source, highRes = false) {
   const art = el('span', { class: 'fart' });
   const quiet = () => {
     art.className = 'fart is-icon';
@@ -1954,7 +1902,13 @@ function favoriteArt(item, source) {
     const { id, list, channel } = source.youtube ?? {};
     const show = (videoId) => {
       art.className = 'fart is-picture';
-      artPicture(art, `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`, quiet, true);
+      const base = `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}`;
+      if (highRes) {
+        // The shelf card is much larger than the old 72x44 list art.
+        artPicture(art, `${base}/maxresdefault.jpg`, () => artPicture(art, `${base}/mqdefault.jpg`, quiet, true), true);
+      } else {
+        artPicture(art, `${base}/mqdefault.jpg`, quiet, true);
+      }
     };
     quiet();
     if (id) show(id);
@@ -2002,7 +1956,7 @@ function favoriteArt(item, source) {
       if (found.wide) {
         // The wide picture, shrunk. If the shrinking service can't help, the poster stands in.
         art.className = 'fart is-picture';
-        artPicture(art, shrunk(found.wide), () => (found.poster ? showPoster(found.poster) : quiet()));
+        artPicture(art, shrunk(found.wide, highRes ? 640 : 144, highRes ? 360 : 88), () => (found.poster ? showPoster(found.poster) : quiet()));
       } else if (found.poster) {
         showPoster(found.poster);
       }
@@ -2131,7 +2085,7 @@ function favoriteCard(item, holder) {
         },
       },
     },
-    favoriteArt(item, source),
+    favoriteArt(item, source, true),
     el('span', { class: 'fcard-text' },
       el('b', { textContent: item.name, title: item.name }),
       (() => {
@@ -4906,21 +4860,7 @@ $('source-form').addEventListener('submit', (event) => {
   event.preventDefault();
   submitSource();
 });
-$('source-cancel').addEventListener('click', () => $('source-dialog').close());
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-// Paste fills the box from the clipboard in one tap. Browsers ask first, and some can't at all.
-if (!navigator.clipboard?.readText) $('source-paste').hidden = true;
-$('source-paste').addEventListener('click', async () => {
-  try {
-    const text = await navigator.clipboard.readText();
-    if (!text.trim()) { toast('The clipboard is empty.'); return; }
-    $('source-input').value = text.trim();
-    updateSourceMessage();
-    $('source-input').focus();
-  } catch {
-    toast("Couldn't read the clipboard. Paste into the box instead.");
-  }
-});
 for (const dialog of [$('source-dialog'), $('help-dialog')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {

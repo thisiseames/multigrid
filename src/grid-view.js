@@ -6,6 +6,7 @@
 
 import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
+import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
 import { castWay, startCast, watchAirPlay } from './cast.js';
@@ -24,6 +25,13 @@ class TileView {
     this.player = null;
     this.input = undefined;
     this.source = null;
+    this.feedUrl = '';
+    this.triedFeeds = new Set();
+    this.originalRetried = false;
+    this.recovering = false;
+    this.pausedByUser = false;
+    this.feedResetTimer = null;
+    this.generation = 0;
     this.root = el('article', { class: 'tile' });
     this.root.dataset.id = tile.id;
     this.root.addEventListener('pointerdown', (event) => {
@@ -51,6 +59,12 @@ class TileView {
     if (tile.input !== this.input) {
       // A replaced stream doesn't stay in the pop-out window.
       if (this.input !== undefined && isPoppedOut(this)) bringBack();
+      clearTimeout(this.feedResetTimer);
+      this.feedUrl = '';
+      this.triedFeeds.clear();
+      this.originalRetried = false;
+      this.recovering = false;
+      this.pausedByUser = false;
       this.input = tile.input;
       this.mount();
     }
@@ -59,6 +73,7 @@ class TileView {
 
   mount() {
     this.teardown();
+    const generation = this.generation;
     const { handlers, env } = this.grid;
     const { tile } = this;
     this.root.classList.toggle('is-empty', !isStream(tile));
@@ -77,6 +92,8 @@ class TileView {
     }
 
     this.source = parseSource(tile.input);
+    // A backup feed keeps the tile's own link and name; only the picture comes from elsewhere.
+    if (this.feedUrl && this.source.kind === 'hls') this.source = { ...this.source, url: this.feedUrl };
     this.body = el('div', { class: 'tile-body' });
     this.strip = this.buildStrip();
     this.root.replaceChildren(this.strip, this.body);
@@ -99,6 +116,7 @@ class TileView {
     // Every tile starts by itself, muted. Browsers allow that for any number of videos.
     const autoplay = true;
     this.paused = false;
+    this.pausedByUser = false;
     // A website tile that moved on (a series' later episode) opens where it was left.
     const page = this.page;
     this.player = createPlayer(page ? parseSource(page) : this.source, {
@@ -111,8 +129,8 @@ class TileView {
       // The extension says when the page inside moves on, so a reload comes back to it.
       onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
       onError: (message) => {
-        this.showError(message);
-        this.grid.handlers.onPlayerChanged();
+        if (generation !== this.generation) return;
+        this.recover(message);
       },
       onCapability: () => {
         this.syncControls();
@@ -195,6 +213,79 @@ class TileView {
     this.mount();
     this.syncControls();
     this.grid.handlers.onPlayerChanged();
+  }
+
+  /** Tries another listed feed for this channel before giving up on the tile. */
+  async recover(message) {
+    if (this.recovering) return;
+    if (!this.player || this.source?.kind !== 'hls' || this.pausedByUser || isPoppedOut(this) || /player didn't load/i.test(message)) {
+      this.showError(message);
+      this.grid.handlers.onPlayerChanged();
+      return;
+    }
+
+    this.recovering = true;
+    const input = this.tile.input;
+    const current = this.source.url;
+    try {
+      const feedIndex = await loadFeedIndex();
+      let chosen = null;
+      if (feedIndex) {
+        for (let attempt = 0; attempt < MAX_FEEDS; attempt += 1) {
+          const candidate = nextFeed(input, current, this.triedFeeds, feedIndex);
+          if (!candidate) break;
+          this.triedFeeds.add(candidate);
+          if (await plays(candidate)) {
+            chosen = candidate;
+            break;
+          }
+        }
+      }
+      // The tile may have been replaced or removed while the feeds were being checked.
+      if (this.tile.input !== input || !this.root.isConnected) return;
+
+      if (chosen) {
+        const name = this.grid.handlers.favoriteName(input) ?? this.source.label;
+        this.feedUrl = chosen;
+        this.recovering = false;
+        this.mount();
+        this.syncControls();
+        this.grid.handlers.onFeedSwitched?.(this.id, name);
+        this.grid.handlers.onPlayerChanged();
+        this.armFeedReset();
+        return;
+      }
+
+      // No other feed answered: give the original one more try, then show the error.
+      if (!this.originalRetried) {
+        this.originalRetried = true;
+        this.feedUrl = '';
+        this.recovering = false;
+        this.mount();
+        this.syncControls();
+        this.grid.handlers.onPlayerChanged();
+        return;
+      }
+
+      this.showError(message);
+      this.grid.handlers.onPlayerChanged();
+    } catch {
+      if (this.tile.input === input && this.root.isConnected) {
+        this.showError(message);
+        this.grid.handlers.onPlayerChanged();
+      }
+    } finally {
+      this.recovering = false;
+    }
+  }
+
+  /** After a backup has played for a minute, allow the whole list again. */
+  armFeedReset() {
+    clearTimeout(this.feedResetTimer);
+    this.feedResetTimer = setTimeout(() => {
+      this.triedFeeds.clear();
+      this.originalRetried = false;
+    }, 60000);
   }
 
   /** Cinema if it's on for this stream, otherwise any crop. */
@@ -457,6 +548,8 @@ class TileView {
   }
 
   showError(message) {
+    clearTimeout(this.feedResetTimer);
+    this.feedResetTimer = null;
     this.player?.destroy();
     this.player = null;
     this.cropInner = null;
@@ -481,6 +574,7 @@ class TileView {
   }
 
   teardown() {
+    this.generation = (this.generation || 0) + 1;
     this.player?.destroy();
     this.player = null;
     this.muteButton = null;
@@ -499,6 +593,7 @@ class TileView {
 
   destroy() {
     if (isPoppedOut(this)) bringBack();
+    clearTimeout(this.feedResetTimer);
     this.teardown();
     this.root.remove();
   }

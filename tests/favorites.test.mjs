@@ -10,7 +10,7 @@ globalThis.localStorage = {
 };
 
 const {
-  favoriteName, isFolderClosed, listFavorites, listFolders, removeFavorite, renameFolder, saveFavorite, setFolderClosed,
+  favoriteName, folderForCategory, isFolderClosed, listFavorites, listFolders, removeFavorite, renameFolder, saveFavorite, setFolderClosed,
 } = await import('../src/storage.js');
 
 beforeEach(() => store.clear());
@@ -78,6 +78,25 @@ test('a blank folder name changes nothing', () => {
   saveFavorite('a', 'A', 'News');
   assert.equal(renameFolder('News', '   '), false);
   assert.deepEqual(listFolders(), ['News']);
+});
+
+test('a finder channel joins the category folder that exists, and stays unfiled otherwise', () => {
+  saveFavorite('a', 'A', 'NEWS');
+  saveFavorite('b', 'B', 'SPORTS');
+  saveFavorite('c', 'C', 'ENTERTAINMENT');
+  assert.equal(folderForCategory('News'), 'NEWS');
+  assert.equal(folderForCategory('sports'), 'SPORTS');
+  assert.equal(folderForCategory('Entertainment'), 'ENTERTAINMENT');
+  assert.equal(folderForCategory('Movies'), '');
+  assert.equal(folderForCategory('General'), '');
+  assert.equal(folderForCategory(''), '');
+
+  saveFavorite('d', 'D', folderForCategory('News'));
+  saveFavorite('e', 'E', folderForCategory('Movies'));
+  assert.equal(listFavorites().find((item) => item.input === 'd').group, 'NEWS');
+  assert.equal(listFavorites().find((item) => item.input === 'e').group, '');
+  assert.equal(listFavorites().find((item) => item.input === 'a').group, 'NEWS');
+  assert.deepEqual(listFolders(), ['ENTERTAINMENT', 'NEWS', 'SPORTS']);
 });
 
 test('a closed folder stays closed, follows a rename, and opens when something is saved into it', () => {

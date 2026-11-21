@@ -147,6 +147,14 @@ export function listFolders() {
   return folders.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 }
 
+/** An existing folder with the category's name (any capitals), or '' so a new channel
+    stays unfiled instead of starting a second set of folders. */
+export function folderForCategory(category) {
+  const typed = cleanFolder(category);
+  if (!typed) return '';
+  return listFolders().find((folder) => sameFolder(folder, typed)) ?? '';
+}
+
 /** Adds a favorite, or changes one in place. "news" joins a folder already called "News". */
 export function saveFavorite(input, name, folder = '', logo) {
   const typed = cleanFolder(folder);

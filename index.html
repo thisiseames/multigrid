@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-u2/g1c7WL4Opt6/z7bb9t1AqsB4hPR98b1V80J2JdJg=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Mid2CiLJ/HR95sms9KHBAuAd3b/hANstFYbcLOmTnTk=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -23,6 +23,7 @@
     <button id="layout-button" class="bar-button" type="button" aria-haspopup="true" aria-expanded="false">
       <span id="layout-icon" class="layout-icon"></span>
       <span id="layout-name" class="bar-button-text"></span>
+      <span class="bar-sub" aria-hidden="true">Layout</span>
       <span class="chevron" data-icon="chevron"></span>
     </button>
     <span class="spacer"><span id="toast" class="toast" role="status" hidden></span></span>
@@ -70,7 +71,7 @@
     <button id="fullscreen-button" class="icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><span data-icon="expand"></span></button>
     <button id="more-button" class="icon-button" type="button" aria-label="More" title="More" aria-haspopup="true" aria-expanded="false"><span data-icon="more"></span></button>
     <button id="add-button" class="add-button" type="button">
-      <span data-icon="plus"></span><span class="wide-only">Add stream</span><span class="phone-only">Add</span>
+      <span data-icon="plus"></span><span class="wide-only">Add stream</span><span class="phone-only">Stream</span>
     </button>
   </header>
   <div id="top-hotzone" class="top-hotzone" aria-hidden="true"></div>
@@ -144,7 +145,7 @@
       </div>
       <div class="addp-paste">
         <textarea id="source-input" rows="1" wrap="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
-        <button id="source-paste" class="addp-pastebtn" type="button">Paste</button>
+        <button id="source-submit" class="add-button addp-pasteadd" type="submit">Add</button>
       </div>
       <div class="addp-x">
         <span class="addp-x-prefix" aria-hidden="true">x.com/@</span>
@@ -158,10 +159,6 @@
       <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
       <button id="note-add" class="addp-file" type="button"><span data-icon="pencil"></span><span>Add a note</span></button>
       <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
-      <div class="dialog-actions addp-actions">
-        <button id="source-cancel" class="plain-button" type="button">Cancel</button>
-        <button id="source-submit" class="add-button" type="submit">Add</button>
-      </div>
     </form>
   </dialog>
 
@@ -218,7 +215,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js'];
+    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/backups.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js'];
     // Ask the CSS for its current ETag, so a new version gets a new URL instead of a cached one.
     const styleVersion = fetch('styles.css', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.headers.get('etag') || response.headers.get('last-modified') || String(Date.now()))
