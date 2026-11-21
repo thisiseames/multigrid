@@ -1253,6 +1253,8 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '') {
   }
   ws.started = true;
   commit();
+  const added = tileById(addedId);
+  if (added) noteRecent(input, labelOf(added));
   // YouTube only gives the video's title through its small public card, so ask for it.
   if (!title && source.kind === 'youtube' && source.youtube.id) {
     youtubeTitle(source.youtube.id).then((found) => {
@@ -1602,6 +1604,24 @@ const PODCASTS = '\u0001podcasts';
 // On a phone held upright, saved layouts are a tab in Favorites, since there's no Layout button.
 const LAYOUTS = '\u0001layouts';
 const layoutsTab = () => grid.isStacked;
+// Recently watched: the last 10 streams opened on this device, live channels included, newest first.
+const RECENT = '\u0001recent';
+const RECENT_KEY = 'multigrid.recent.v1';
+const RECENT_MAX = 10;
+const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader']);
+function listRecent() {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+    return Array.isArray(list) ? list.filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+function noteRecent(input, name) {
+  if (!input || NOT_RECENT.has(parseSource(input).kind) || input.startsWith('local:')) return;
+  const list = [{ input, name, at: Date.now() }, ...listRecent().filter((item) => item.input !== input)].slice(0, RECENT_MAX);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* not remembered */ }
+}
 let podEpisodes = [];
 
 /** Podcast episodes from the Reader's feeds, newest first. Favorites redraw once they arrive. */
@@ -2278,7 +2298,7 @@ function seriesProgress(input) {
   return [episode ? `S${episode.season} E${episode.episode}` : '', minutes >= 1 ? `${minutes} min in` : ''].filter(Boolean).join(' · ');
 }
 
-function favoriteCard(item, holder) {
+function favoriteCard(item, holder, { plain = false } = {}) {
   const source = parseSource(item.input);
   const card = el('li', { class: 'fcard' });
   const listing = nowAndNext(item.name, source);
@@ -2330,7 +2350,7 @@ function favoriteCard(item, holder) {
           label ? el('span', { class: 'fcard-kind', textContent: label }) : null,
           nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null);
       })())),
-    el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16)));
+    ...(plain ? [] : [el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16))]));
   if (source.kind === 'twitch' && source.twitch?.type === 'channel') {
     const line = el('small', { class: 'fcard-twitch' });
     card.querySelector('.fcard-text')?.append(line);
@@ -2392,7 +2412,7 @@ function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
     // Folders and Podcasts in A to Z order; Saved layouts last, after a small bar, as it's not a folder.
-    const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder || 'All');
+    const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder === RECENT ? 'RECENT' : folder || 'All');
     const sorted = [...folders, ...(podEpisodes.length ? [PODCASTS] : [])]
       .sort((a, b) => label(a).localeCompare(label(b), undefined, { sensitivity: 'base' }));
     const tab = (folder) => el('button', {
@@ -2401,9 +2421,10 @@ function addFolderPills(holder, folders) {
       textContent: label(folder),
       on: { click() { addFolder = folder; podShow = ''; fillAddFavorites(holder); } },
     });
-    row.replaceChildren(...['', ...sorted].map(tab),
+    // Recent comes straight after All: it's the quickest way back to a stream.
+    row.replaceChildren(...['', ...(listRecent().length ? [RECENT] : []), ...sorted].map(tab),
       ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []),
-      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');
@@ -2446,15 +2467,16 @@ function fillAddFavorites(holder) {
   clear.hidden = !query;
   const all = listFavorites().sort(byName);
   const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
-  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
+  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
   const matches = (text) => text.toLocaleLowerCase().includes(query);
   const podcasts = addFolder === PODCASTS && !query;
   const layouts = addFolder === LAYOUTS && !query;
+  const recent = addFolder === RECENT && !query;
   // Account feeds stay out of All; a folder such as Twitter can still show them.
   const inAll = (item) => !isAccountSource(parseSource(item.input));
   const shown = query
     ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
-    : podcasts || layouts ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
+    : podcasts || layouts || recent ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
   // A search also finds podcast shows by name.
   const shows = query ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
@@ -2462,9 +2484,14 @@ function fillAddFavorites(holder) {
   const grid = el('div', { class: 'addp-grid-wrap' },
     podcasts ? podcastsView(holder)
       : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
+      : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
+        // A favorite shows as its favorite card; anything else by the name it had, without the favorite's menu.
+        const favorite = all.find((item) => item.input === seen.input);
+        return favoriteCard(favorite ?? { input: seen.input, name: seen.name, group: '' }, holder, { plain: !favorite });
+      }))
       : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
         : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
-  const pills = (folders.length || podEpisodes.length || layoutsTab()) && !query ? addFolderPills(holder, folders) : null;
+  const pills = (folders.length || podEpisodes.length || layoutsTab() || listRecent().length) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
   if (old) old.replaceWith(grid);
