@@ -414,7 +414,8 @@ class TileView {
   buildStrip() {
     const { handlers } = this.grid;
     const label = this.tile.title || (this.source.ok ? this.source.label : 'Not playable');
-    const isNote = this.source.kind === 'note';
+    // Notes and box scores aren't video: no favorite, crop or Cinema.
+    const isNote = this.source.kind === 'note' || this.source.kind === 'boxscore';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
     this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;

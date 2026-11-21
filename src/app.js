@@ -22,6 +22,7 @@ import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab,
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
+import { boxScoreInput } from './boxscore.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
@@ -1200,13 +1201,27 @@ async function gameTickerScores() {
 
 /* One game in Game mode. Every row has the same shape: a game on one of your channels has no
    Watch button; tapping the row opens the stream, and a small play mark replaces the arrow. */
+/** What a game is called on its Box score tile: "Man City vs Fulham", or "Bucks at 76ers". */
+const gameName = (match) => (match.sport === 'soccer/all' ? `${match.home.name} vs ${match.away.name}` : `${match.away.name} at ${match.home.name}`);
+const openBoxScore = (match) => { closePopovers(); addStream(boxScoreInput(match.sport, match.id, gameName(match))); };
+
+/** In a game's details, anywhere: open its box score as a tile. */
+function boxScoreLink(match) {
+  return el('button', { type: 'button', class: 'mrow-boxlink', on: { click: () => openBoxScore(match) } }, icon('table', 14), el('span', { textContent: 'Open the box score as a tile' }));
+}
+
 function gameRow(game) {
   const row = matchRow(game);
+  // Every row has the same small Box score button on the right, so the rows stay uniform.
+  const boxButton = el('span', { class: 'mrow-box', role: 'button', tabIndex: 0, title: 'Open the box score as a tile', aria: { label: `Box score: ${gameName(game)}` },
+    on: { click(event) { event.stopPropagation(); openBoxScore(game); }, keydown(event) { if (event.key === 'Enter') { event.stopPropagation(); openBoxScore(game); } } } }, icon('table', 15));
+  row.querySelector('.mrow-end')?.prepend(boxButton);
   const watch = row.querySelector('.match-watch');
   if (!watch) return row;
   watch.remove();
   row.querySelector('.mrow-chevron')?.replaceChildren(icon('play', 16));
   row.querySelector('.mrow-main')?.addEventListener('click', (event) => {
+    if (event.target.closest('.mrow-box')) return;
     event.stopImmediatePropagation();
     watch.click();
   }, { capture: true });
@@ -1743,7 +1758,7 @@ const layoutsTab = () => grid.isStacked;
 const RECENT = '\u0001recent';
 const RECENT_KEY = 'multigrid.recent.v1';
 const RECENT_MAX = 10;
-const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader']);
+const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore']);
 function listRecent() {
   try {
     const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
@@ -3850,7 +3865,7 @@ function matchRow(match, { withDay = false, result = '' } = {}) {
   el('span', { class: 'mrow-status' }, status, result ? el('span', { class: `result is-${result}`, textContent: result }) : null),
   el('span', { class: 'mrow-teams' }, team(match.home, match.away), team(match.away, match.home)),
   el('span', { class: 'mrow-end' }, tv, el('span', { class: 'mrow-chevron' }, icon('chevron'))));
-  item.append(main, details);
+  item.append(main, details, boxScoreLink(match));
   if (watch) main.querySelector('.mrow-end').prepend(watch);
   if (open) fillDetails(match, details, true);
   return item;

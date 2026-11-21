@@ -16,6 +16,7 @@ import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
+import { runBoxScore } from './boxscore.js';
 import { forgetPlace, notePlace, rememberMedia, resumePoint, showResumed } from './resume.js';
 
 const scripts = new Map();
@@ -1435,7 +1436,24 @@ const PLAYERS = {
   iframe: genericPlayer,
   reader: readerPlayer,
   audio: audioPlayer,
+  boxscore: boxScorePlayer,
 };
+
+/* A game's box score in a tile: no sound, it just keeps itself up to date. */
+function boxScorePlayer(source) {
+  const box = el('div', { class: 'boxscore' });
+  let stop = null;
+  return {
+    el: box,
+    canMute: false,
+    canVolume: false,
+    silent: true,
+    start() { stop = runBoxScore(box, source.path, source.gameId); },
+    setMuted() {},
+    setVolume() {},
+    destroy() { stop?.(); },
+  };
+}
 
 /** Returns a player, or throws-free null with onError called if it can't even be tried. */
 export function createPlayer(source, options) {

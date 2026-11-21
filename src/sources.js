@@ -255,6 +255,15 @@ function parseReader(input) {
   }
   return { ok: true, input, kind: 'reader', label: title, readerId: match[1], openUrl: null };
 }
+/** A game's box score as a tile: boxscore:<sport path>:<game id>:<name>. */
+function parseBoxScoreInput(input) {
+  const match = input.match(/^boxscore:([a-z]+\/[a-z0-9.]+):(\d+):?(.*)$/s);
+  if (!match) return fail(input, "That box score link isn't complete.");
+  let name = match[3] || 'Game';
+  try { name = decodeURIComponent(name); } catch { /* shown as it is */ }
+  return { ok: true, input, kind: 'boxscore', label: `Box score · ${name}`, path: match[1], gameId: match[2], openUrl: null };
+}
+
 export const readerInput = (id, title) => `reader:${id}:${encodeURIComponent(title.slice(0, 120))}`;
 
 /** A podcast episode: audio:<title>|<address>. Played with the browser's own audio player. */
@@ -304,6 +313,7 @@ export function parseSource(raw) {
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);
   if (input.startsWith('note:')) return parseNote(input);
+  if (input.startsWith('boxscore:')) return parseBoxScoreInput(input);
 
   let text = input;
   if (/^</.test(input) || /<iframe\b/i.test(input)) {
