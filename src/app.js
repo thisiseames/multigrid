@@ -5334,10 +5334,43 @@ function sameAsScreen(item) {
   return item.workspace.presetId === ws.presetId && inputs(item.workspace.tiles) === inputs(ws.tiles) && Boolean(inputs(ws.tiles));
 }
 
+/** "Save this layout" in the MULTIGRID drop-down: a row that becomes a name box and a Save button. */
+function saveHereRow() {
+  if (!streamCount(ws)) return null;
+  const row = el('div', { class: 'sdrop-save' });
+  const showButton = () => row.replaceChildren(el('button', {
+    type: 'button',
+    class: 'sdrop-row',
+    on: { click: showForm },
+  },
+  el('span', { class: 'sdrop-shape' }, icon('plus', 18)),
+  el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Save this layout' }), el('small', { textContent: `${streamCount(ws)} ${streamCount(ws) === 1 ? 'stream' : 'streams'} on screen` }))));
+  function showForm() {
+    const input = el('input', { type: 'text', placeholder: 'Name it, e.g. NEWS', maxLength: 60, enterKeyHint: 'done', aria: { label: 'Layout name' } });
+    const save = el('button', { type: 'submit', class: 'add-button', textContent: 'Save' });
+    input.addEventListener('input', () => { save.textContent = findSaved(input.value.trim()) ? 'Update' : 'Save'; });
+    row.replaceChildren(el('form', {
+      class: 'sdrop-form',
+      on: {
+        submit(event) {
+          event.preventDefault();
+          const name = input.value.trim();
+          if (!name) { input.focus(); return; }
+          if (!saveNamed(name, ws)) { toast(STORAGE_FULL); return; }
+          toast(`Saved ${name}.`);
+          buildSavedDrop();
+        },
+      },
+    }, input, save));
+    input.focus();
+  }
+  showButton();
+  return row;
+}
+
 function buildSavedDrop() {
   const saved = listSaved();
-  const where = grid.isStacked ? 'in Add stream, under Saved layouts' : 'from the ⋯ menu, under Saved layouts';
-  $('saved-drop').replaceChildren(
+  $('saved-drop').replaceChildren(...[
     el('p', { class: 'sdrop-head', textContent: 'Saved layouts' }),
     saved.length ? el('ul', { class: 'sdrop-list' }, ...saved.map((item) => {
       const { cols = [1], rows = [1], tiles = [] } = item.workspace;
@@ -5351,7 +5384,8 @@ function buildSavedDrop() {
       el('span', { class: 'sdrop-shape' }, layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, 40, 26)),
       el('span', { class: 'sdrop-text' }, el('b', { textContent: item.name }), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
-    })) : el('p', { class: 'sdrop-empty', textContent: `No saved layouts yet. Save the one on screen ${where}.` }),
+    })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
+    saveHereRow(),
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
     el('div', { class: 'sdrop-sep' }),
     el('button', {
@@ -5362,7 +5396,8 @@ function buildSavedDrop() {
     },
     el('span', { class: 'sdrop-shape' }, icon('live', 18)),
     el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Game mode' }), el('small', { textContent: grid.isStacked || onPhoneScreen() ? 'Live scores in the ticker' : 'Live scores beside the streams' })),
-    el('span', { class: `more-switch${isGameOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })));
+    el('span', { class: `more-switch${isGameOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })),
+  ].filter(Boolean));
 }
 $('wordmark').addEventListener('click', () => togglePopover($('wordmark'), $('saved-drop'), buildSavedDrop));
 

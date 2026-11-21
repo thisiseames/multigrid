@@ -2188,3 +2188,10 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .sdrop-switch .more-switch.is-on::after { transform: translateX(16px); }
 /* The arrow (or play mark) on the right is always the same width, so scores never shift. */
 .gamebar .mrow-chevron { flex: none; width: 16px; display: inline-flex; justify-content: center; }
+/* Save this layout, in the MULTIGRID drop-down. */
+.sdrop-save { margin-top: 2px; }
+.sdrop-form { display: flex; gap: 8px; padding: 8px 10px; }
+.sdrop-form input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.sdrop-form .add-button { flex: none; width: auto; height: 44px; padding: 0 16px; margin: 0; }
+/* Every picture box in the drop-down is the same size, so all the names start in one line. */
+.saved-drop .sdrop-shape { box-sizing: border-box; width: 52px; height: 38px; justify-content: center; align-items: center; }
