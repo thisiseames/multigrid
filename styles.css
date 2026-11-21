@@ -98,18 +98,22 @@ body.is-phone .surf-pill { display: none; }
 .add-button:hover { filter: brightness(1.08); }
 .add-button:disabled { background: var(--raised); color: var(--text-2); cursor: default; filter: none; }
 
-/* The three primary Add buttons match the off-white phone top bar. */
+/* The primary Add buttons use the same dark raised surface with a thin border. */
 .addp-pasteadd,
+.addp-x-add,
 .welcome-form .add-button,
 body:not(.is-phone) #add-button.add-button {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
 }
 .addp-pasteadd:disabled,
+.addp-x-add:disabled,
 .welcome-form .add-button:disabled,
 body:not(.is-phone) #add-button.add-button:disabled {
-  background: var(--raised);
+  background: var(--surface);
   color: var(--text-2);
+  border-color: var(--border);
 }
 
 /* The bar keeps its main sections; the occasional switches live in the overflow. */
@@ -1331,15 +1335,21 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .addp-paste { flex: none; display: flex; align-items: stretch; gap: 8px; margin: 8px 16px 0; }
 .addp .addp-paste textarea { display: block; flex: 1; width: auto; min-width: 0; height: 36px; min-height: 36px; max-height: 36px; padding: 8px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong); font-size: 15px; line-height: 18px; resize: none; white-space: pre; overflow-x: auto; overflow-y: hidden; }
 .addp .addp-paste textarea:focus { outline: none; border-color: var(--accent); }
-.addp-pasteadd { flex: none; height: 36px; margin-left: 0; padding: 0 16px; border-radius: 12px; font-size: 15px; font-weight: 600; }
+.addp .addp-pasteadd { flex: none; height: 36px; margin-left: 0; padding: 0 16px; border-radius: 12px; font-size: 15px; font-weight: 600; }
+.addp .addp-pasteadd,
+.addp-x-add { display: inline-flex; align-items: center; justify-content: center; gap: 0; }
+.addp-pasteadd:hover,
+.addp-x-add:hover,
+.welcome-form .add-button:hover,
+body:not(.is-phone) #add-button.add-button:hover { background: #28282d; filter: none; border-color: var(--border); }
 /* A name is all an X account needs, so it gets a field of its own. */
-.addp-x { flex: none; display: flex; align-items: center; min-height: 36px; margin: 8px 16px 0; padding: 0 6px 0 14px; border: 0; box-shadow: inset 0 0 0 1px var(--border-strong); border-radius: 12px; background: var(--surface); }
+.addp-x-row { flex: none; display: flex; align-items: stretch; gap: 8px; margin: 8px 16px 0; }
+.addp-x { flex: 1; min-width: 0; display: flex; align-items: center; min-height: 36px; margin: 0; padding: 0 14px; border: 0; box-shadow: inset 0 0 0 1px var(--border-strong); border-radius: 12px; background: var(--surface); }
 .addp-x:focus-within { box-shadow: inset 0 0 0 1px var(--accent); }
 .addp-x-prefix { flex: none; font-size: 15px; color: var(--text-2); user-select: none; -webkit-user-select: none; }
 .addp-x input { flex: 1; min-width: 0; height: 34px; padding: 0 6px; border: 0; background: none; color: var(--text); font-size: 15px; }
 .addp-x input:focus { outline: none; }
-.addp-x-add { flex: none; height: 36px; padding: 0 16px; border-radius: 12px; background: var(--text); color: var(--bg); font-size: 15px; font-weight: 600; }
-.addp-x-add:hover { filter: brightness(1.08); }
+.addp-x-add { flex: none; height: 36px; padding: 0 16px; border-radius: 12px; font-size: 15px; font-weight: 600; }
 .addp-x-list { flex: none; align-self: flex-start; margin: 4px 16px 0; font-size: 12.5px; font-weight: 500; }
 /* Channel Finder */
 .channel-box { width: min(640px, calc(100vw - 16px)); }
@@ -1464,7 +1474,7 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
   .addp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .fart { width: 64px; height: 40px; }
   .addp .addp-paste textarea { height: 46px; min-height: 46px; max-height: 46px; padding-top: 13px; padding-bottom: 13px; font-size: 16px; }
-  .addp-pasteadd { height: 46px; padding: 0 18px; font-size: 15px; }
+  .addp .addp-pasteadd { height: 46px; padding: 0 18px; font-size: 15px; }
   .addp-x { min-height: 46px; }
   .addp-x input { height: 46px; }
   .addp-x-add { height: 46px; padding: 0 18px; }
