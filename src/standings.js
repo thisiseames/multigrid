@@ -1,35 +1,36 @@
 // Live standings from ESPN's public feed, which any page is allowed to read. It needs no
 // key, and it's unofficial, so a failure says so instead of showing stale numbers.
 
+import { MY_LEAGUES } from './leagues.js';
+
 const FEED = 'https://site.api.espn.com/apis/v2/sports';
 
-export const LEAGUES = [
-  { id: 'pl', name: 'Premier League', path: 'soccer/eng.1', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c' },
-  { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1', kind: 'soccer' },
-  { id: 'bundesliga', name: 'Bundesliga', path: 'soccer/ger.1', kind: 'soccer' },
-  { id: 'ligue1', name: 'Ligue 1', path: 'soccer/fra.1', kind: 'soccer' },
-  {
-    id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions', kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c',
-  },
-  { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations', kind: 'soccer', groups: true },
+// How each league's table is drawn. Which leagues there are comes from leagues.js.
+const TABLES = {
+  pl: { kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c' },
+  ucl: { kind: 'soccer', highlight: 'Manchester United', highlightLabel: 'Man United', color: '#da291c' },
+  unl: { kind: 'soccer', groups: true },
   // Each conference is a switch inside its tab. The first is shown first; only it has my team.
-  {
-    id: 'nfl', name: 'NFL', path: 'football/nfl', kind: 'nfl', division: true,
+  nfl: {
+    kind: 'nfl', division: true,
     lines: [{ after: 7, label: 'Playoff line' }],
     conferences: [
       { id: 'nfc', name: 'NFC', pick: 'National Football Conference', highlight: '49ers', highlightLabel: '49ers', color: '#aa0000' },
       { id: 'afc', name: 'AFC', pick: 'American Football Conference' },
     ],
   },
-  {
-    id: 'nba', name: 'NBA', path: 'basketball/nba', kind: 'nba',
+  nba: {
+    kind: 'nba',
     lines: [{ after: 6, label: 'Playoff line' }, { after: 10, label: 'Play-in line' }],
     conferences: [
       { id: 'east', name: 'Eastern', pick: 'Eastern Conference', highlight: 'Raptors', highlightLabel: 'Raptors', color: '#ce1141' },
       { id: 'west', name: 'Western', pick: 'Western Conference' },
     ],
   },
-];
+};
+const kindOf = (path) => (path.startsWith('soccer/') ? 'soccer' : path.split('/')[1]);
+
+export const LEAGUES = MY_LEAGUES.map(({ id, name, path }) => ({ id, name, path, kind: kindOf(path), ...TABLES[id] }));
 
 /** A league with one of its conferences chosen, ready to load and draw. */
 export const withConference = (league, index = 0) => (league.conferences ? { ...league, ...league.conferences[index] ?? league.conferences[0], id: league.id, name: league.name } : league);

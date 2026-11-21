@@ -2,6 +2,8 @@
 // The feed refuses date ranges for soccer but accepts a whole month, so each league asks
 // for this month and next.
 
+import { MY_LEAGUES } from './leagues.js';
+
 const SITE = 'https://site.api.espn.com/apis/site/v2/sports';
 export const MY_TEAMS = ['Manchester United', '49ers', 'Raptors'];
 // Team schedules leave out colours, so mine are written down.
@@ -10,16 +12,10 @@ const TEAM_COLORS = { 'Man United': '#da291c', '49ers': '#aa0000', Raptors: '#ce
 // Team tabs are hidden: My teams covers them, but it reads their schedules from here.
 export const TABS = [
   { id: 'mine', name: 'My teams', mine: true },
-  { id: 'pl', name: 'Premier League', path: 'soccer/eng.1' },
-  { id: 'laliga', name: 'LaLiga', path: 'soccer/esp.1' },
-  { id: 'bundesliga', name: 'Bundesliga', path: 'soccer/ger.1' },
-  { id: 'ligue1', name: 'Ligue 1', path: 'soccer/fra.1' },
-  { id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions' },
-  { id: 'unl', name: 'Nations League', path: 'soccer/uefa.nations' },
+  ...MY_LEAGUES.map(({ id, name, path }) => ({ id, name, path })),
   { id: 'united', name: 'Man United', united: true, hidden: true },
   { id: 'niners', name: '49ers', hidden: true, team: { path: 'football/nfl', id: 'sf', league: 'NFL' } },
   { id: 'raptors', name: 'Raptors', hidden: true, team: { path: 'basketball/nba', id: 'tor', league: 'NBA' } },
-  { id: 'nba', name: 'NBA', path: 'basketball/nba' },
 ];
 
 const DAY = 86400000;
@@ -336,13 +332,8 @@ export async function loadTab(tab, now = Date.now()) {
 
 export const isMine = (side) => MY_TEAMS.some((name) => side.full.includes(name));
 
-/* Game mode: today's games in my teams' leagues, from ESPN's scoreboards. */
-export const GAME_LEAGUES = [
-  { name: 'Premier League', path: 'soccer/eng.1' },
-  { name: 'Champions League', path: 'soccer/uefa.champions' },
-  { name: 'NFL', path: 'football/nfl' },
-  { name: 'NBA', path: 'basketball/nba' },
-];
+/* Game mode: today's games in every one of your leagues (leagues.js), from ESPN's scoreboards. */
+export const GAME_LEAGUES = MY_LEAGUES.map(({ name, path }) => ({ name, path }));
 
 const dayParam = (time) => {
   const date = new Date(time);

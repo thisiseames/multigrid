@@ -47,3 +47,16 @@ test('one small request: only win markets, only around the games', () => {
   assert.equal(url.searchParams.get('tag_id'), '745');
   assert.ok(Number(url.searchParams.get('limit')) <= 100);
 });
+
+test('every sports feature uses exactly your leagues, in the same order', async () => {
+  const { MY_LEAGUES } = await import('../src/leagues.js');
+  const { TABS, GAME_LEAGUES } = await import('../src/matches.js');
+  const { LEAGUES } = await import('../src/standings.js');
+  const { ODDS_TAGS } = await import('../src/odds.js');
+  const names = MY_LEAGUES.map((league) => league.name);
+  assert.ok(names.includes('LaLiga'));
+  assert.deepEqual(TABS.filter((tab) => tab.path && !tab.hidden).map((tab) => tab.name), names);
+  assert.deepEqual(GAME_LEAGUES.map((league) => league.name), names);
+  assert.deepEqual(LEAGUES.map((league) => league.name), names);
+  assert.deepEqual(Object.keys(ODDS_TAGS), names);
+});

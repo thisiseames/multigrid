@@ -2,15 +2,12 @@
 // One small request per league with games today: just the win markets, for the hours those games
 // start. Each game is matched to ESPN's by the two team names.
 
+import { MY_LEAGUES } from './leagues.js';
+
 const API = 'https://gamma-api.polymarket.com/markets';
 
-/** Polymarket's tag for each of Game mode's leagues. */
-export const ODDS_TAGS = {
-  'Premier League': 306,
-  'Champions League': 100977,
-  NFL: 450,
-  NBA: 745,
-};
+/** Polymarket's tag for each of your leagues, by name (from leagues.js). */
+export const ODDS_TAGS = Object.fromEntries(MY_LEAGUES.filter((league) => league.odds).map((league) => [league.name, league.odds]));
 
 const NOISE = new Set(['fc', 'afc', 'cf', 'sc', 'ac', 'fk', 'sk', 'the', 'and', 'de', 'vs']);
 const words = (text) => String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
