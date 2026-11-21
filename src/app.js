@@ -10,7 +10,8 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
-import { CHANNEL_CATEGORIES, channelMatches, channelTitle, eventLabelFor, extraFeedFor, parseChannelList, withChannelExtras } from './channels.js';
+import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
+import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeCode, episodeFor, isNewToday } from './episodes.js';
@@ -64,6 +65,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onRemove: removeStream,
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
+  onFeedSwitched: (id, name) => toast(`Switched ${name} to another feed.`),
   onPopOutFailed: () => toast("Couldn't pop this stream out. Try clicking Pop out again."),
   onSendToPhone: (id) => sendToPhone(id),
   onSwap(a, b) {
@@ -132,6 +134,7 @@ function togglePause(id) {
   const media = view.player.el instanceof HTMLMediaElement ? view.player.el : null;
   const paused = media ? media.paused : view.paused;
   view.paused = !paused;
+  view.pausedByUser = view.paused;
   view.player.setPaused(view.paused);
   renderSound();
 }
@@ -282,48 +285,15 @@ function openXListBox() {
 
 /* ---------- Channel Finder ---------- */
 
-const CHANNEL_TTL = 12 * 60 * 60 * 1000;
-const CHANNEL_STORE = 'multigrid.channels.v1';
-const channelLoaded = new Map();
-
-async function loadChannelCategory(id) {
-  const cached = channelLoaded.get(id);
-  if (cached && Date.now() - cached.at < CHANNEL_TTL) return cached.list;
-  try {
-    const saved = JSON.parse(localStorage.getItem(`${CHANNEL_STORE}.${id}`) || 'null');
-    if (saved && Array.isArray(saved.list) && Date.now() - saved.at < CHANNEL_TTL) {
-      const entry = { at: saved.at, list: withChannelExtras(id, saved.list) };
-      channelLoaded.set(id, entry);
-      return entry.list;
-    }
-  } catch {
-    // A damaged cache just means fetch it again.
-  }
-  const category = CHANNEL_CATEGORIES.find((item) => item.id === id) ?? CHANNEL_CATEGORIES[0];
-  const response = await fetch(category.url, { cache: 'no-cache', signal: AbortSignal.timeout?.(12000) });
-  if (!response.ok) throw new Error(String(response.status));
-  const base = parseChannelList(await response.text());
-  const entry = { at: Date.now(), list: withChannelExtras(id, base) };
-  channelLoaded.set(id, entry);
-  try { localStorage.setItem(`${CHANNEL_STORE}.${id}`, JSON.stringify({ at: entry.at, list: base })); } catch { /* not remembered */ }
-  return entry.list;
-}
-
-/** The first direct channel feed whose name means the same channel as this one. */
+/** The one verified catalog channel whose name means exactly this channel. */
 async function findDirectFeed(name) {
   const extra = extraFeedFor(name);
   if (extra) return extra;
-  const found = await Promise.allSettled(CHANNEL_CATEGORIES.map(async (category) => ({
-    category,
-    list: await loadChannelCategory(category.id),
-  })));
-  for (const result of found) {
-    if (result.status !== 'fulfilled') continue;
-    const { category, list } = result.value;
-    const match = list.find((item) => channelMatches(item.name, name));
-    if (match) return { ...match, category: category.id };
-  }
-  return null;
+  const data = await loadJob('live-channels.json');
+  const list = Array.isArray(data?.channels) ? data.channels : [];
+  const title = channelTitle(name);
+  const exact = list.filter((item) => channelTitle(item.name) === title);
+  return exact.length === 1 ? exact[0] : null;
 }
 
 /** Swaps a website embed for a direct stream of the same channel, when one is listed. */
@@ -340,7 +310,7 @@ async function switchToDirectFeed(id) {
   }
   const title = channelTitle(feed.name);
   const favorite = listFavorites().find((item) => item.input === tile.input);
-  const folder = favorite?.group || CHANNEL_CATEGORIES.find((category) => category.id === feed.category)?.name || '';
+  const folder = favorite?.group || feed.category || '';
   saveFavorite(feed.url, title, folder, feed.logo);
   addStream(feed.url, { mode: 'replace', id }, title);
   toast(`${title} now plays with MULTIGRID's own sound controls.`);
@@ -355,36 +325,6 @@ const MISSING_CHANNEL_NOTES = [
 
 const COUNTRY_ORDER = ['US', 'Canada', 'Australia', 'Ireland', 'New Zealand', 'UK'];
 const CATEGORY_ORDER = ['News', 'Sports', 'Entertainment', 'Movies', 'Kids', 'Documentary', 'Music', 'General'];
-
-/** A second, browser-side check before a catalog channel is allowed onto the wall. */
-async function channelPlays(url) {
-  try {
-    const headers = { Accept: 'application/vnd.apple.mpegurl,*/*' };
-    const response = await fetch(url, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
-    if (!response.ok) return false;
-    let text = await response.text();
-    if (!text.includes('#EXTM3U')) return false;
-    let base = response.url || url;
-    if (text.includes('#EXT-X-STREAM-INF')) {
-      const variant = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
-      if (!variant) return false;
-      const variantUrl = new URL(variant.trim(), base).href;
-      const next = await fetch(variantUrl, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
-      if (!next.ok) return false;
-      text = await next.text();
-      base = next.url || variantUrl;
-    }
-    const segment = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
-    if (!segment) return false;
-    const media = await fetch(new URL(segment.trim(), base).href, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout?.(7000),
-    });
-    return media.ok;
-  } catch {
-    return false;
-  }
-}
 
 function channelResultRow(item, now, onDead, target) {
   const art = el('span', { class: 'ch-logo' });
@@ -402,7 +342,7 @@ function channelResultRow(item, now, onDead, target) {
       async click() {
         row.disabled = true;
         add.textContent = 'Checking…';
-        if (!(await channelPlays(item.url))) {
+        if (!(await plays(item.url))) {
           item.dead = true;
           toast(`${item.name} isn't playing right now.`);
           onDead();
