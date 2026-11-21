@@ -961,6 +961,21 @@ async function gameTickerScores() {
   return { live, next };
 }
 
+/* One game in Game mode. Every row has the same shape: a game on one of your channels has no
+   Watch button; tapping the row opens the stream, and a small play mark replaces the arrow. */
+function gameRow(game) {
+  const row = matchRow(game);
+  const watch = row.querySelector('.match-watch');
+  if (!watch) return row;
+  watch.remove();
+  row.querySelector('.mrow-chevron')?.replaceChildren(icon('play', 16));
+  row.querySelector('.mrow-main')?.addEventListener('click', (event) => {
+    event.stopImmediatePropagation();
+    watch.click();
+  }, { capture: true });
+  return row;
+}
+
 function drawGamebar() {
   const bar = $('gamebar');
   const head = el('div', { class: 'gamebar-head' },
@@ -974,7 +989,7 @@ function drawGamebar() {
   const body = el('div', { class: 'gamebar-body' }, ...(gameGroups.length
     ? gameGroups.map(({ title, games }) => el('section', { class: 'gamebar-group' },
       el('h4', { class: 'match-day', textContent: title }),
-      el('ul', { class: 'mrow-list' }, ...games.map((game) => matchRow(game)))))
+      el('ul', { class: 'mrow-list' }, ...games.map(gameRow))))
     : [el('p', { class: 'match-quiet is-empty', textContent: 'No games today in your leagues.' })]));
   bar.replaceChildren(head, body);
   body.scrollTop = scroll;
