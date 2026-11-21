@@ -1904,6 +1904,7 @@ const SHOW_PICTURES = [
   [/fear factor/i, 'Fear Factor'],
   [/entertainment tonight/i, 'Entertainment Tonight'],
   [/masterchef/i, 'MasterChef'],
+  [/top gear/i, 'Top Gear'],
   [/schitt.?s creek/i, "Schitt's Creek"],
   [/today all day/i, 'Today'],
   [/\btyt\b|young turks/i, 'The Young Turks'],
@@ -1934,6 +1935,27 @@ const CHANNEL_PICTURES = [
 ];
 const plainChannelName = (name) => String(name || '').replace(/\s*live\s*stream\s*$/i, '').replace(/\s+/g, ' ').trim();
 const channelPictureFor = (name) => CHANNEL_PICTURES.find(([pattern]) => pattern.test(plainChannelName(name)))?.[1] ?? '';
+
+// Services whose own mark is clearer than a favicon. "picture" fills the card; "logo" sits on a
+// dark or light tile, because a black wordmark would disappear on the dark one.
+const BRAND_PICTURES = [
+  [/^stan sport/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Stan_Sport_logo.svg/960px-Stan_Sport_logo.svg.png', fit: 'picture', domain: 'stan.com.au' }],
+  [/sky sports uhd/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Sky_Sports_2020.svg/960px-Sky_Sports_2020.svg.png', fit: 'logo', tone: 'light', domain: 'skysports.com' }],
+  [/red bull tv/i, { url: 'https://img.redbull.com/images/e_trim:10:transparent/c_limit,w_1500,h_1000/f_auto,q_auto/redbullcom/2017/09/14/c91a6d75-c4e7-4146-aa33-618e5d3b3e2c/red-bull-tv', fit: 'picture', domain: 'redbull.tv' }],
+  [/paramount\s*(?:\+|plus)/i, { url: 'https://www.paramountplus.com/assets/pplus/PPlus_Logo_1200x630_BLUE.png', fit: 'picture', domain: 'paramountplus.com' }],
+  [/nba on prime/i, { url: 'https://upload.wikimedia.org/wikipedia/en/1/1e/NBA_on_Prime_Logo.png', fit: 'picture', domain: 'nba.com' }],
+  [/\bdazn\b/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/DAZN_logo.svg/960px-DAZN_logo.svg.png', fit: 'logo', tone: 'dark', domain: 'dazn.com' }],
+  [/fox news/i, { url: 'https://static.foxnews.com/static/orion/styles/img/fox-news/og/og-fox-news.png', fit: 'picture', domain: 'foxnews.com' }],
+  [/fifa\s*(?:\+|plus)/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/FIFA%2B.svg/960px-FIFA%2B.svg.png', fit: 'logo', tone: 'light', domain: 'fifa.com' }],
+  [/eurosport 1/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Eurosport_1_Logo_2015.svg/960px-Eurosport_1_Logo_2015.svg.png', fit: 'logo', tone: 'light', domain: 'eurosport.com' }],
+  [/espn\s*(?:\+|plus)/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/ESPN_Plus.svg/960px-ESPN_Plus.svg.png', fit: 'logo', tone: 'light', domain: 'espn.com' }],
+  [/cnn international/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/CNN_Logo_%282014%29.svg/960px-CNN_Logo_%282014%29.svg.png', fit: 'logo', tone: 'light', domain: 'cnn.com' }],
+  [/cbc news/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/CBC_News_Network_2022.svg/960px-CBC_News_Network_2022.svg.png', fit: 'logo', tone: 'light', domain: 'cbc.ca' }],
+  [/^boomerang$/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Boomerang_2014_logo.svg/960px-Boomerang_2014_logo.svg.png', fit: 'logo', tone: 'light', domain: 'boomerang.com' }],
+  [/bein sports (?:extra|xtra)/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/BeIN_Sports_logo.svg/960px-BeIN_Sports_logo.svg.png', fit: 'logo', tone: 'dark', domain: 'beinsports.com' }],
+  [/bar[cç]a tv/i, { url: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Football_club_barcelona_television.png', fit: 'logo', tone: 'dark', domain: 'fcbarcelona.com' }],
+];
+const brandPictureFor = (name) => BRAND_PICTURES.find(([pattern]) => pattern.test(plainChannelName(name)))?.[1] ?? null;
 
 /** A series' pictures from TVmaze: its main wide picture and its poster, either may be ''. */
 function posterFor(name) {
@@ -1968,6 +1990,12 @@ function favoriteArt(item, source, highRes = false) {
     art.className = 'fart is-icon';
     art.replaceChildren(icon(KIND_ICONS[source.kind] || 'play', 20));
   };
+  const showChannel = (domain) => {
+    art.className = 'fart is-logo is-dark';
+    // Two free icon services, so one quiet moment doesn't leave the card blank.
+    artPicture(art, `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+      () => artPicture(art, `https://icons.duckduckgo.com/ip3/${domain}.ico`, quiet));
+  };
   if (item.logo) {
     // A channel from the directory keeps the logo it came with.
     art.className = 'fart is-logo is-dark';
@@ -1978,6 +2006,13 @@ function favoriteArt(item, source, highRes = false) {
   if (logo) {
     art.className = `fart is-logo is-${logo.tone}`;
     artPicture(art, logo.url, quiet);
+    return art;
+  }
+  const brand = brandPictureFor(item.name);
+  if (brand) {
+    art.className = brand.fit === 'picture' ? 'fart is-picture' : `fart is-logo is-${brand.tone || 'dark'}`;
+    // A broken or stand-in picture falls back to the site's own mark, then the kind icon.
+    artPicture(art, brand.url, () => (brand.domain ? showChannel(brand.domain) : quiet()), true);
     return art;
   }
   if (source.kind === 'youtube') {
@@ -2016,12 +2051,6 @@ function favoriteArt(item, source, highRes = false) {
   }
   const pictureShow = showPictureFor(item.name);
   const channelPicture = pictureShow ? '' : channelPictureFor(item.name);
-  const showChannel = (domain) => {
-    art.className = 'fart is-logo is-dark';
-    // Two free icon services, so one quiet moment doesn't leave the card blank.
-    artPicture(art, `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-      () => artPicture(art, `https://icons.duckduckgo.com/ip3/${domain}.ico`, quiet));
-  };
   if (isSeriesFolder(item.group) || pictureShow) {
     const showPoster = (url) => {
       const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
