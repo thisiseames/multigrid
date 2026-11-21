@@ -4786,8 +4786,12 @@ function openSourceDialog(target) {
   podShow = '';
   renderAddFavorites($('source-favorites'), () => sourceTarget);
   loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
+  // On a phone, Add stream is mostly for picking a favorite, so it opens without the keyboard:
+  // the close button takes the first focus instead of the paste box.
+  const phone = document.body.classList.contains('is-phone');
+  $('source-close').autofocus = phone;
   openDialog($('source-dialog'));
-  $('source-input').select();
+  if (!phone) $('source-input').select();
   if (replacing) updateSourceMessage();
 }
 
