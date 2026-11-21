@@ -10,6 +10,11 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 3. Pushing to `main` is deploying: the live site updates within a minute or two. Push only finished, tested work, in small commits with plain-English messages that say what changed for the owner.
 4. Check the change in a real browser at both laptop width and phone width (about 390 px) before calling it done.
 
+## Where things live
+- `extension/`: source of the MULTIGRID Sound Chrome extension. Chrome loads the unpacked copy at `~/MULTIGRID Sound` on the owner's Mac; after changing it, copy the files there and reload it in `chrome://extensions` (only possible on the Mac).
+- `notes/local-setup.md`: the owner's devices, Chrome extensions that affect playback, what's saved in the browser (favorites, layouts, Continue watching), and where secrets live.
+- `notes/todo.md`: ideas waiting for a plan and the owner's go.
+
 ## Never
 - Never commit secrets: `READER-KEY.txt`, API keys, tokens. Secrets live in GitHub repo secrets, and only the owner adds them.
 - Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `flights.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
