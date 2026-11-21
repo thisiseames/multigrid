@@ -8,6 +8,7 @@ import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, phon
 import { createPlayer } from './players.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
+import { castWay, startCast, watchAirPlay } from './cast.js';
 import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop, wholePicture } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
@@ -140,6 +141,11 @@ class TileView {
     this.resizeWatch.observe(this.cropFrame);
     this.applyFraming();
     this.player.start();
+    // Look for a TV for video links: Chromecast in Chrome, AirPlay in Safari.
+    if (this.source.kind === 'hls') {
+      watchAirPlay(this.player.el);
+      startCast();
+    }
   }
 
   /** The page this website tile had moved on to (a series' later episode), or null. */
@@ -330,6 +336,12 @@ class TileView {
     this.moreButton.classList.add('strip-more');
     this.popButton = this.source.ok ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
     this.popButton?.classList.add('strip-pop');
+    // A video link can go to the TV; the button shows only once a TV is found.
+    this.castButton = this.source.ok && this.source.kind === 'hls' ? iconButton('cast', 'Cast to TV', () => handlers.onCast?.(this.id)) : null;
+    if (this.castButton) {
+      this.castButton.classList.add('strip-cast');
+      this.castButton.hidden = true;
+    }
     // A file lives on this computer, so it can't be sent.
     this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && handlers.onSendToPhone
       ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
@@ -346,6 +358,7 @@ class TileView {
       this.fullButton,
       iconButton('reload', 'Reload this stream', () => this.reload()),
       this.popButton,
+      this.castButton,
       this.sendButton,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
       this.source.ok && this.source.openUrl ? el('a', {
@@ -407,6 +420,7 @@ class TileView {
       this.starButton.replaceChildren(icon(favorite ? 'starFilled' : 'star'));
       this.starButton.classList.toggle('is-favorite', favorite);
     }
+    if (this.castButton) this.castButton.hidden = !castWay(this.source, this.player?.el);
     if (this.popButton) {
       // Safari can only float a plain video, which only exists once the player has started.
       this.popButton.hidden = !this.canPopOut;

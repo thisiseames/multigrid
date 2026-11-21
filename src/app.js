@@ -23,6 +23,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
+import { castTile, castWay, onTvChange } from './cast.js';
 import { embedPlace, forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
@@ -88,6 +89,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     else delete tile.page;
     saveCurrent(ws);
   },
+  onCast: (id) => castStream(id),
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
@@ -175,6 +177,17 @@ function volumeSlider(tile, view) {
   });
 }
 
+/** Sends a video-link tile to the TV. Chrome shows its own list of TVs first. */
+async function castStream(id) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  if (!tile || !view?.source) return;
+  const result = await castTile(view.source, view.player?.el, labelOf(tile));
+  if (result === 'failed') toast(`${labelOf(tile)} couldn't be sent to the TV. Its server may not allow it.`);
+}
+// The Cast buttons show and hide as TVs come and go on the Wi-Fi.
+onTvChange(() => { for (const tile of ws.tiles) grid.viewFor(tile.id)?.syncControls(); });
+
 /** Everything you can do to one stream, as a sheet of big buttons. */
 function buildStreamMenu(id) {
   const tile = tileById(id);
@@ -195,6 +208,7 @@ function buildStreamMenu(id) {
     feed && !feed[2].hidden ? bigButton('next', 'Next video', () => feed[2].click()) : null,
     bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
     bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
+    castWay(view.source, view.player?.el) ? bigButton('cast', castWay(view.source, view.player?.el) === 'airplay' ? 'AirPlay' : 'Cast to TV', then(() => castStream(id))) : null,
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),

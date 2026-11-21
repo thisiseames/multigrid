@@ -44,6 +44,7 @@ const ICON_PATHS = {
   remote: '<rect x="5" y="1.8" width="6" height="12.4" rx="1.6"/><circle cx="8" cy="5.2" r="1.2"/><path d="M7 8.6h2M7 10.6h2"/>',
   tiles: '<rect x="2.3" y="2.3" width="5" height="5" rx="1.2"/><rect x="8.7" y="2.3" width="5" height="5" rx="1.2"/><rect x="2.3" y="8.7" width="5" height="5" rx="1.2"/><rect x="8.7" y="8.7" width="5" height="5" rx="1.2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
+  cast: '<path d="M2.5 6V4.5A1.5 1.5 0 0 1 4 3h8a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 12 13H9.5"/><path d="M2.5 8.6a4.4 4.4 0 0 1 4.4 4.4M2.5 10.8a2.2 2.2 0 0 1 2.2 2.2"/><path d="M2.5 13h.01" stroke-width="2"/>',
   popout: '<path d="M13.5 7.5V4a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 4v7A1.5 1.5 0 0 0 4 12.5h3"/><rect x="8.7" y="9" width="5.3" height="4.3" rx="1" fill="currentColor" stroke="none"/>',
   back10: '<path d="M4.2 4.6A5.2 5.2 0 1 1 2.9 9"/><path d="M4.4 1.9v2.9H1.5"/><text x="8.4" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
   fwd10: '<path d="M11.8 4.6A5.2 5.2 0 1 0 13.1 9"/><path d="M11.6 1.9v2.9h2.9"/><text x="7.6" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',
