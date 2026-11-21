@@ -2172,13 +2172,19 @@ function addSearchBox(holder) {
 function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
-    const tabs = ['', ...folders, ...(podEpisodes.length ? [PODCASTS] : []), ...(layoutsTab() ? [LAYOUTS] : [])];
-    row.replaceChildren(...tabs.map((folder) => el('button', {
+    // Folders and Podcasts in A to Z order; Saved layouts last, after a small bar, as it's not a folder.
+    const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder || 'All');
+    const sorted = [...folders, ...(podEpisodes.length ? [PODCASTS] : [])]
+      .sort((a, b) => label(a).localeCompare(label(b), undefined, { sensitivity: 'base' }));
+    const tab = (folder) => el('button', {
       type: 'button',
       class: `matches-tab${addFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
-      textContent: folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder || 'All',
+      textContent: label(folder),
       on: { click() { addFolder = folder; podShow = ''; fillAddFavorites(holder); } },
-    })), ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+    });
+    row.replaceChildren(...['', ...sorted].map(tab),
+      ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []),
+      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');

@@ -2145,3 +2145,4 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .addp-saved .saved-form input { height: 44px; font-size: 16px; }
 .addp-saved .saved-form .add-button { width: auto; height: 44px; padding: 0 18px; }
 .addp-saved .saved-open { min-height: 48px; }
+.addp-pills .addp-divider { flex: none; width: 1px; height: 16px; background: var(--border-strong); }
