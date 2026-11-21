@@ -2172,7 +2172,9 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .gamebar-title { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); }
 .gamebar-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 10px; }
 .gamebar .match-day { margin: 0 -8px; padding: 12px 14px 6px; }
-.gamebar .mrow-name { width: auto; }
+/* Names fill the row, so every score lines up in one column on the right. */
+.gamebar .mrow-teams { flex: 1; }
+.gamebar .mrow-name { flex: 1 1 auto; width: auto; }
 .gamebar .mrow-main { gap: 8px; padding: 8px 8px 8px 10px; }
 /* No channel names in Game mode: just the games. */
 .gamebar .mrow-tv { display: none; }
