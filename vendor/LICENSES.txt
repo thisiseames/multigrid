@@ -8,3 +8,9 @@ Each is released under the MIT License: permission is granted, free of charge, t
 modify, merge, publish, distribute, sublicense and/or sell copies, provided the copyright
 notice and this permission notice are included. The software is provided "as is", without
 warranty of any kind.
+
+vendor/nostr-lib.js is a bundle of these open-source libraries, used to sign the encrypted notes
+that keep favorites in sync between devices:
+
+- nostr-tools 2.26.1 (Unlicense, public domain) - https://github.com/nbd-wtf/nostr-tools
+- @noble/curves 2.0.1 and @noble/hashes 2.0.1 (MIT) - Copyright (c) 2022 Paul Miller (paulmillr.com)

@@ -21,9 +21,14 @@ function read(key) {
   }
 }
 
+// Favorites and saved layouts sync between paired devices, so sync hears about every change.
+const syncWatchers = new Set();
+export const onSyncedChange = (watch) => syncWatchers.add(watch);
+
 function write(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    if (key === FAVORITES_KEY || key === SAVED_KEY) syncWatchers.forEach((watch) => watch());
     return true;
   } catch {
     return false;
@@ -303,3 +308,10 @@ export function restoreSavedItem(item) {
 }
 
 export const openSaved = (item) => sanitize(item.workspace);
+
+/** For sync: the favorites and saved layouts as they are, and putting in what another device sent. */
+export const syncedLists = () => ({ favorites: listFavorites(), layouts: listSaved() });
+export function replaceSynced({ favorites, layouts }) {
+  write(FAVORITES_KEY, favorites);
+  write(SAVED_KEY, layouts);
+}

@@ -34,9 +34,10 @@ import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
-  loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
-  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites,
+  loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
+  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
+import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
 } from './ui.js';
@@ -1396,12 +1397,7 @@ function renderFavorites(holder, getTarget) {
   holder.hidden = listFavorites().length === 0;
   holder.getTarget = getTarget;
   const { wrap } = favoritesSearch(holder);
-  const send = el('button', {
-    type: 'button',
-    class: 'text-button favorites-send',
-    textContent: onPhone() ? 'Send to computer' : 'Send to phone',
-    on: { click: sendFavorites },
-  });
+  const send = syncButton();
   const head = el('div', { class: 'favorites-head' }, el('h2', { class: 'favorites-title', textContent: 'Favorites' }), send);
   const current = holder.querySelector('.favorites-body');
   if (current && holder.firstElementChild?.classList.contains('favorites-head')) {
@@ -2286,7 +2282,7 @@ function renderAddFavorites(holder, getTarget) {
   holder.getTarget = getTarget;
   loadPodcasts(holder);
   const { wrap } = addSearchBox(holder);
-  const send = el('button', { type: 'button', class: 'text-button favorites-send', textContent: onPhone() ? 'Send to computer' : 'Send to phone', on: { click: sendFavorites } });
+  const send = syncButton();
   holder.replaceChildren(
     el('div', { class: 'favorites-head' }, el('h3', { class: 'addp-label', textContent: 'Favorites' }), send),
     wrap,
@@ -4607,40 +4603,83 @@ $('today-button').addEventListener('click', () => togglePopover($('today-button'
 
 /* ---------- Favorites on another device ---------- */
 
-const onPhone = () => window.matchMedia('(pointer: coarse)').matches;
-const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+// Paired devices keep favorites and saved layouts the same. See sync.js.
+const syncStore = { read: syncedLists, write: replaceSynced, onChange: onSyncedChange };
+const syncCameIn = () => {
+  refreshFavorites();
+  if ($('sync-box').open) openSyncBox();
+};
 
-/** Copies a link holding every favorite, and offers the share sheet where there is one. */
-async function sendFavorites() {
-  const { items, left } = transferableFavorites();
-  const files = left ? ` ${plural(left, 'file')} from this device ${left === 1 ? 'stays' : 'stay'} here.` : '';
-  if (!items.length) {
-    toast(`There are no favorites to send.${files}`);
+function syncButton() {
+  return el('button', { type: 'button', class: 'text-button favorites-send', textContent: isSyncing() ? 'Synced' : 'Sync', on: { click: openSyncBox } });
+}
+
+/** Pairing and the state of sync, in one small box. */
+function openSyncBox(view = '') {
+  const box = $('sync-box');
+  const close = () => box.close();
+  const head = (title) => el('div', { class: 'help-head' }, el('h2', { textContent: title }), iconButton('close', 'Close', close));
+  const note = (text) => el('p', { class: 'x-list-note', textContent: text });
+  const actions = (...buttons) => el('div', { class: 'dialog-actions' }, ...buttons);
+  const button = (text, onClick, main = false) => el('button', { type: 'button', class: main ? 'add-button' : 'plain-button', textContent: text, on: { click: onClick } });
+  const show = (...parts) => {
+    box.replaceChildren(...parts);
+    if (!box.open) openDialog(box);
+  };
+  const showCode = async () => {
+    show(head('Sync favorites'), note('Making a code…'));
+    let code;
+    try {
+      code = await offerCode(syncStore, syncCameIn, () => {
+        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts.'), actions(button('Done', close, true)));
+        refreshFavorites();
+      });
+    } catch {
+      show(head('Sync favorites'), note("Couldn't make a code. Check the connection and try again."), actions(button('Close', close)));
+      return;
+    }
+    show(head('Sync favorites'),
+      note('On your other device, open Add stream, tap Sync next to Favorites, then Enter a code, and type this:'),
+      el('p', { class: 'sync-code', textContent: code }),
+      note(`It works for ${PAIR_MINUTES} minutes. This box says Paired once it's used.`),
+      actions(button('Close', close)));
+  };
+  const enterCode = () => {
+    const input = el('input', { type: 'text', class: 'sync-input', placeholder: 'XXXX-XXXX', autocomplete: 'off', autocapitalize: 'characters', spellcheck: false, maxLength: 12, aria: { label: 'Code' } });
+    const status = note('');
+    const go = button('Pair', async () => {
+      go.disabled = true;
+      status.textContent = 'Pairing…';
+      const ok = await joinWithCode(input.value, syncStore, syncCameIn).catch(() => false);
+      if (ok) {
+        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other.'), actions(button('Done', close, true)));
+        refreshFavorites();
+      } else {
+        go.disabled = false;
+        status.textContent = "That code didn't work. Check it, or show a new one on the other device.";
+      }
+    }, true);
+    input.addEventListener('keydown', (event) => { if (event.key === 'Enter') go.click(); });
+    show(head('Enter a code'), note('Type the code showing on your other device.'), input, status, actions(button('Back', () => openSyncBox()), go));
+    input.focus();
+  };
+  if (view === 'code') { showCode(); return; }
+  if (isSyncing()) {
+    const when = lastSynced();
+    show(head('Synced devices'),
+      note(`Favorites and saved layouts stay the same on every paired device.${when ? ` Last synced ${clock(when)}.` : ''}`),
+      actions(
+        button('Stop syncing here', () => { stopSync(); toast('This device stopped syncing. Its favorites stay as they are.'); refreshFavorites(); close(); }),
+        button('Add a device', showCode, true)));
     return;
   }
-  const url = `${location.origin}${location.pathname}${TRANSFER_PREFIX}${await packFavorites(items)}`;
-  const where = onPhone() ? 'your computer' : 'your phone';
-  let copied = false;
-  try {
-    await navigator.clipboard.writeText(url);
-    copied = true;
-  } catch {}
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: 'MULTIGRID favorites', url });
-      toast(`Sent ${plural(items.length, 'favorite')}. Open the link on ${where}.${files}`);
-      return;
-    } catch (error) {
-      if (error?.name !== 'AbortError' && !copied) {
-        toast("Couldn't copy the link. Try again.");
-        return;
-      }
-    }
-  }
-  toast(copied
-    ? `Link with ${plural(items.length, 'favorite')} copied. Text it to yourself and open it on ${where}.${files}`
-    : "Couldn't copy the link. Try again.");
+  show(head('Sync favorites'),
+    note('Keep favorites and saved layouts the same on your laptop and phone. Pair once with a code.'),
+    actions(button('Enter a code', enterCode), button('Show a code', showCode, true)));
 }
+
+const onPhone = () => window.matchMedia('(pointer: coarse)').matches;
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 /** A favorites link opened here asks before adding anything, then leaves the address bar clean. */
 async function receiveFavorites() {
@@ -5230,6 +5269,7 @@ function buildMoreMenu() {
   menu.replaceChildren(...[
     row('Saved layouts', 'saved', then(() => togglePopover($('more-button'), $('saved-menu'), buildSavedMenu))),
     row('Phone remote', 'remote', then(openRemoteDialog)),
+    row(isSyncing() ? 'Synced devices' : 'Sync favorites', 'phone', then(openSyncBox)),
     el('div', { class: 'more-sep' }),
     switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
@@ -5364,6 +5404,7 @@ prepareAutoplaySound();
 render();
 receiveReaderKey();
 receiveFavorites();
+startSync(syncStore, syncCameIn).catch(() => {});
 loadGuide().then(() => {
   syncGuideButton();
   refreshFavoriteLists();
