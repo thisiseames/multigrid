@@ -57,16 +57,16 @@ async function send(candidate) {
     const appTabs = await chrome.tabs.query({ url: APP_TABS });
     const app = appTabs[0];
     if (app) {
-      await chrome.tabs.update(app.id, { active: true });
-      try { await chrome.windows.update(app.windowId, { focused: true }); } catch { /* the tab is still active */ }
+      // Send while this popup still has focus. Focusing the app closes the popup and would
+      // kill the rest of this function before the stream ever reached it.
+      let sent = false;
       try {
         const result = await chrome.tabs.sendMessage(app.id, { multigrid: 'receive', payload }, { frameId: 0 });
-        if (result?.ok) {
-          window.close();
-          return;
-        }
-      } catch { /* the app tab is older than this check; reload it with the link */ }
-      await chrome.tabs.update(app.id, { url: appUrl(), active: true });
+        sent = Boolean(result?.ok);
+      } catch { /* the app tab predates the receiver; load it with the link below */ }
+      if (!sent) await chrome.tabs.update(app.id, { url: appUrl() });
+      await chrome.tabs.update(app.id, { active: true });
+      try { await chrome.windows.update(app.windowId, { focused: true }); } catch { /* the tab is still active */ }
       window.close();
       return;
     }
