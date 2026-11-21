@@ -44,7 +44,7 @@ test('channels: a favourite title drops quality and notes, and is uppercase', ()
   assert.equal(channelTitle('Sky Sports  Action (720p)'), 'SKY SPORTS ACTION');
 });
 
-import { CHANNEL_EXTRAS, channelMatches, extraFeedFor, withChannelExtras } from '../src/channels.js';
+import { CHANNEL_EXTRAS, channelMatches, eventLabelFor, extraFeedFor, webStreamSearch, withChannelExtras } from '../src/channels.js';
 
 test('channels: hand-kept https feeds join their directory kind once', () => {
   const extra = CHANNEL_EXTRAS[0];
@@ -69,4 +69,17 @@ test('channels: a favourite can find its hand-kept direct feed', () => {
   assert.equal(extraFeedFor('USA')?.url, CHANNEL_EXTRAS[0].url);
   assert.equal(extraFeedFor('USA Today'), null);
   assert.equal(extraFeedFor('Sky News'), null);
+});
+
+test('channels: an event URL becomes a searchable label', () => {
+  assert.equal(
+    eventLabelFor('<iframe src="https://taifood-blog.asia/embed/nba/2026-11-20/tor-det"></iframe>'),
+    'NBA · Nov 20 · Raptors at Pistons',
+  );
+  assert.equal(
+    eventLabelFor('https://example.com/embed/nhl/2026-12-01/tor-mtl'),
+    'NHL · Dec 1 · TOR at MTL',
+  );
+  assert.equal(eventLabelFor('https://example.com/live/foo'), '');
+  assert.match(webStreamSearch({ input: 'https://example.com/embed/nba/2026-11-20/tor-det', name: 'PPV', group: 'Sports' }), /raptors/);
 });

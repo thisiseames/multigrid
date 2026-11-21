@@ -8,6 +8,8 @@ export const CHANNEL_CATEGORIES = [
   { id: 'entertainment', name: 'Entertainment', url: 'https://iptv-org.github.io/iptv/categories/entertainment.m3u' },
   { id: 'movies', name: 'Movies', url: 'https://iptv-org.github.io/iptv/categories/movies.m3u' },
   { id: 'music', name: 'Music', url: 'https://iptv-org.github.io/iptv/categories/music.m3u' },
+  { id: 'us', name: 'US', url: 'https://iptv-org.github.io/iptv/countries/us.m3u' },
+  { id: 'ca', name: 'Canada', url: 'https://iptv-org.github.io/iptv/countries/ca.m3u' },
 ];
 
 const ATTRIBUTE = /([\w-]+)="([^"]*)"/g;
@@ -94,4 +96,40 @@ export function channelMatches(a, b) {
 /** A hand-kept direct feed for a channel name, if there is one. */
 export function extraFeedFor(name) {
   return CHANNEL_EXTRAS.find((item) => channelMatches(item.name, name)) || null;
+}
+
+// NBA team codes used by the sports embed sites. Other leagues fall back to the code.
+const NBA_TEAMS = {
+  ATL: 'Hawks', BOS: 'Celtics', BKN: 'Nets', CHA: 'Hornets', CHI: 'Bulls', CLE: 'Cavaliers',
+  DAL: 'Mavericks', DEN: 'Nuggets', DET: 'Pistons', GSW: 'Warriors', GS: 'Warriors', HOU: 'Rockets',
+  IND: 'Pacers', LAC: 'Clippers', LAL: 'Lakers', MEM: 'Grizzlies', MIA: 'Heat', MIL: 'Bucks',
+  MIN: 'Timberwolves', NOP: 'Pelicans', NO: 'Pelicans', NYK: 'Knicks', NY: 'Knicks', OKC: 'Thunder',
+  ORL: 'Magic', PHI: '76ers', PHX: 'Suns', PHO: 'Suns', POR: 'Trail Blazers', SAC: 'Kings',
+  SAS: 'Spurs', SA: 'Spurs', TOR: 'Raptors', UTA: 'Jazz', UTH: 'Jazz', WAS: 'Wizards', WSH: 'Wizards',
+};
+const EVENT_LEAGUES = { nba: 'NBA', wnba: 'WNBA', nfl: 'NFL', nhl: 'NHL', mlb: 'MLB', ucl: 'Champions League', soccer: 'Soccer' };
+
+/** "Raptors at Pistons" from an event URL such as .../nba/2026-11-20/tor-det. */
+export function eventLabelFor(raw) {
+  let text = String(raw || '').trim();
+  const iframe = text.match(/<iframe\b[^>]*\bsrc=["']([^"']+)/i);
+  if (iframe) text = iframe[1];
+  let url;
+  try { url = new URL(text); } catch { return ''; }
+  const parts = url.pathname.split('/').filter(Boolean);
+  const at = parts.findIndex((part) => /^\d{4}-\d{2}-\d{2}$/.test(part));
+  if (at < 1) return '';
+  const league = EVENT_LEAGUES[parts[at - 1].toLowerCase()];
+  if (!league) return '';
+  const [away, home] = (parts[at + 1] || '').split('-');
+  if (!away || !home) return '';
+  const team = (code) => (league === 'NBA' ? NBA_TEAMS[code.toUpperCase()] : '') || code.toUpperCase();
+  const date = new Date(`${parts[at]}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${league} · ${date} · ${team(away)} at ${team(home)}`;
+}
+
+/** Searchable text for a saved web stream: its name plus the event in its URL. */
+export function webStreamSearch(item) {
+  const event = eventLabelFor(item?.input);
+  return [item?.name, item?.group, event].filter(Boolean).join(' ').toLocaleLowerCase();
 }
