@@ -440,11 +440,7 @@ class TileView {
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     this.primaryButton.hidden = isNote;
-    // In picture in picture, the small screen can swap places with the big one.
-    this.swapButton = iconButton('pip', 'Swap with the small screen', () => handlers.onPipSwap?.(this.id));
-    this.swapButton.classList.add('strip-pipswap');
     const actions = el('div', { class: 'strip-actions' },
-      this.swapButton,
       this.primaryButton,
       this.starButton,
       this.cinemaButton,

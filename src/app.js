@@ -106,7 +106,6 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onCast: (id) => castStream(id),
   // Picture in picture: the small screen becomes the big one.
-  onPipSwap: (id) => swapPip(id),
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
@@ -133,6 +132,13 @@ const mixer = createMixer($('mixer'), {
   onVolume: changeVolume,
   onVolumeDone: commit,
 });
+
+// Picture in picture on a computer: Swap screens sits in the sound row.
+const mixerSwap = el('button', { type: 'button', class: 'mixer-all mixer-swap', hidden: true, title: 'Swap the big and small screens', on: { click() {
+  const small = ws.tiles.find((tile) => grid.viewFor(tile.id)?.root.classList.contains('is-pip-inset'));
+  if (small) swapPip(small.id);
+} } }, icon('pip', 15), el('span', { textContent: 'Swap screens' }));
+$('mixer').append(mixerSwap);
 
 function labelOf(tile) {
   const source = parseSource(tile.input);
@@ -1010,6 +1016,7 @@ function renderSound() {
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : []);
+  mixerSwap.hidden = !document.querySelector('.grid.is-pip .tile.is-pip-inset') || document.body.classList.contains('is-phone');
   if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();
