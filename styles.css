@@ -2081,9 +2081,9 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .bar-sub { display: none; }
 @media (max-width: 640px) {
   /* Same look as the bottom tabs: a 24 pt icon, 3 pt gap, then the label at its natural line height. */
-  #today-button, #mixer-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; padding: 0; }
-  #today-button .bar-sub, #mixer-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
-  #today-button svg, #mixer-button svg { width: 24px; height: 24px; }
+  #today-button, #mixer-button, #palette-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; padding: 0; }
+  #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
+  #today-button svg, #mixer-button svg, #palette-button svg { width: 24px; height: 24px; }
   #mixer-button:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
   .today-head h3 { display: none; }
 }
