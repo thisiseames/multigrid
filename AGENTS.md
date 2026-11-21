@@ -1,0 +1,32 @@
+# Working on MULTIGRID
+
+Rules for every AI agent working on this repo: Claude (desktop or claude.ai/code), OpenCode, Codex. Several agents work on it, so read this first, every session.
+
+MULTIGRID is a personal multiview video app for one person (the owner), live at https://thisiseames.github.io/multigrid. It is plain ES modules with no build step. GitHub Pages serves `main`.
+
+## Every session
+1. Get the latest `main` before touching anything (`git pull`). Another agent may have pushed minutes ago.
+2. Run the tests before every commit: `node --test tests/*.test.mjs` (Node 22). All must pass.
+3. Pushing to `main` is deploying: the live site updates within a minute or two. Push only finished, tested work, in small commits with plain-English messages that say what changed for the owner.
+4. Check the change in a real browser at both laptop width and phone width (about 390 px) before calling it done.
+
+## Never
+- Never commit secrets: `READER-KEY.txt`, API keys, tokens. Secrets live in GitHub repo secrets, and only the owner adds them.
+- Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `flights.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
+- Never store full article text unlocked in the repo (the Reader keeps it encrypted).
+- Never add a paid service, an account sign-up or anything that collects the owner's personal details without the owner's explicit yes.
+
+## The page's security hash
+`index.html` has a Content-Security-Policy with a `sha256-…` hash of its own inline `<script type="module">`. If you change that inline script (including its list of files), recompute the hash: take the exact text between `<script type="module">` and `</script>`, sha256 it, base64 it, and replace the `sha256-…` value. A test checks that the file list includes every file in `src/`.
+
+## Outside services in use (all free, no keys)
+Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed, ESPN, Twitch's preview images, api.ivr.fi (unofficial Twitch info), r.jina.ai (reader used for TikTok, X and trends24; about 20 requests a minute without a key), gamma-api.polymarket.com, iptv-org channel lists, google-flights-ts (in the flights job). Any of these can change or slow down; fail quietly (hide the section) rather than show errors or stale numbers as current.
+
+## How the owner wants things
+- Plain language, no jargon. Times like "2:00 pm". Dates like "Fri, Nov 20", never starting with the year.
+- Before building anything new, write a short plan that opens with: running cost per month (with how it's metered), every default you chose ("I decided X, change it?"), what you researched (with sources), and how you'll verify. Then wait for an explicit "go".
+- Build the plain thing that was asked, not something adjacent. No gimmicks (goal celebrations, score alerts and similar).
+- Put new lists inside existing structures (a Favorites folder tab, an existing section) rather than adding new space-eating sections.
+- Tickers go at the bottom, never the top.
+- Nothing may overlap a Twitch player (Twitch stops playback when covered).
+- "Done" means you saw it work on the live site, at laptop and phone width.
