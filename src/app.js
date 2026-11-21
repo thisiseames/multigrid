@@ -3976,7 +3976,7 @@ function eventsBetween(from, to, limit = 8) {
   const seen = new Set();
   for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
     for (const show of showsBetween(item.name, parseSource(item.input), from, to)) {
-      if (!(show.special || show.premiere || show.finale)) continue;
+      if (show.movie || !(show.special || show.premiere || show.finale)) continue;
       const key = `${guideKey(item.name)}|${show.start}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -4840,18 +4840,18 @@ async function fillToday() {
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
-  const todayOnlySections = [headlinesSection, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, ppvHolder, flightSection, chartsSection].filter(Boolean);
+  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
     headlinesSection,
     trendHolder,
-    polySection,
     continueSection,
     podcastSection,
     youtubeSection,
     teamSection,
-    eventSection,
     ppvHolder,
+    eventSection,
+    polySection,
     flightSection,
     weekTeamsSection,
     weekEventsSection,

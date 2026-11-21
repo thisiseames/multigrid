@@ -44,10 +44,11 @@ export function listingsFor(name, source) {
       title: String(title),
       about: String(about),
       live: String(flags).includes('L'),
-      // A one-off for Today: S special, P premiere, F finale.
+      // A one-off for Today: S special, P premiere, F finale. M is a film on a movie channel.
       special: String(flags).includes('S'),
       premiere: String(flags).includes('P'),
       finale: String(flags).includes('F'),
+      movie: String(flags).includes('M'),
     }))
     .filter((show) => show.end > now)
     .sort((a, b) => a.start - b.start);
