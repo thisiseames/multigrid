@@ -4317,10 +4317,9 @@ async function fillToday() {
   const teamSection = todaySection('Your teams', teamList);
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
-  const weekFlightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
   const todayOnlySections = [headlinesSection, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, flightSection].filter(Boolean);
-  const weekOnlySections = [weekEventsSection, weekFlightSection].filter(Boolean);
+  const weekOnlySections = [weekEventsSection].filter(Boolean);
   const parts = [
     headlinesSection,
     trendHolder,
@@ -4335,7 +4334,6 @@ async function fillToday() {
     moviesSection.section,
     episodesSection.section,
     premieresSection.section,
-    weekFlightSection,
     chartsSection,
   ].filter(Boolean);
 
