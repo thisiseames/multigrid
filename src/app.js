@@ -725,7 +725,7 @@ function render() {
   const preset = presetById(ws.presetId) ?? presetById('equal');
   $('layout-name').textContent = custom ? 'Custom' : preset.name;
   const current = ws.started ? currentDiagram() : presetDiagram(preset);
-  $('layout-icon').replaceChildren(layoutDiagram(current, 18, 13));
+  $('layout-icon').replaceChildren(layoutDiagram(grid.isStacked ? PHONE_STACK : current, 18, 13));
   $('layout-button').title = 'Choose a layout';
 
   const full = streamCount(ws) >= MAX_STREAMS;
@@ -744,6 +744,13 @@ function render() {
 function currentDiagram() {
   return { cols: ws.cols, rows: ws.rows, slots: ws.tiles.filter(isVisible).map((tile) => tile.place) };
 }
+
+/** Portrait phones stack their tiles, so the top-bar icon shows a stack, not the saved grid. */
+const PHONE_STACK = {
+  cols: [1],
+  rows: [1, 1, 1],
+  slots: [{ c: 0, r: 0, cs: 1, rs: 1 }, { c: 0, r: 1, cs: 1, rs: 1 }, { c: 0, r: 2, cs: 1, rs: 1 }],
+};
 
 function muteableTiles() {
   return ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && grid.viewFor(tile.id)?.player?.canMute);
