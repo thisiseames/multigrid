@@ -1391,6 +1391,22 @@ body:not(.is-phone) #add-button.add-button:hover { background: #28282d; filter: 
 .ch-empty { margin: 18px 2px; color: var(--text-2); font-size: 13px; }
 body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
 body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
+/* PPV events */
+.ppv-box { width: min(720px, calc(100vw - 16px)); }
+.ppv-results { min-height: 200px; max-height: 56dvh; overflow-y: auto; margin-top: 8px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.ppv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ppv-card { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--text); border-radius: 12px; border: 1px solid rgba(255,255,255,.05); background: var(--surface); cursor: pointer; }
+.ppv-card:hover { background: #1d1d21; }
+.ppv-art-wrap { position: relative; display: block; aspect-ratio: 16 / 9; background: #1f1f23; }
+.ppv-art { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #26262d, #151518); color: var(--text-2); }
+.ppv-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ppv-art svg { width: 26px; height: 26px; opacity: .4; }
+.ppv-badge { position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 7px; border-radius: 5px; background: rgba(0,0,0,.68); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.ppv-badge.is-live { background: #c92a2f; }
+.ppv-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 8px 10px 10px; }
+.ppv-text b { font-size: 13px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ppv-text small { font-size: 10.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 520px) { .ppv-grid { grid-template-columns: 1fr; } }
 
 .x-list-box { width: min(560px, calc(100vw - 16px)); }
 .x-list-box form { display: flex; flex-direction: column; gap: 8px; }

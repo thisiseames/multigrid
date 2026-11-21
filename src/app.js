@@ -32,6 +32,7 @@ import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendK
 import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
+import { loadPPV } from './ppv.js';
 import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -481,6 +482,107 @@ function openChannelFinder() {
     count.textContent = '';
     results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
   });
+}
+
+function addPPV(event, target) {
+  $('ppv-box').close();
+  $('source-dialog').close();
+  if (!addStream(event.input, target, event.name)) return;
+  saveFavorite(event.input, event.name, 'PPV', undefined, event.poster);
+  toast(`Adding ${event.name}…`);
+}
+
+/** PPV.st's live events, with their own posters. Fetched only while this dialog is open. */
+function openPPV() {
+  const box = $('ppv-box');
+  if (box.open) return;
+  const target = sourceTarget;
+  let events = [];
+  let category = 'All';
+  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search events, teams or shows', autocomplete: 'off' });
+  const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
+  const count = el('p', { class: 'ch-count' });
+  const results = el('div', { class: 'ppv-results' });
+  const cardFor = (event, eager = false) => {
+    const art = el('span', { class: 'ppv-art' }, icon('play', 24));
+    if (event.colors.length) art.style.background = `linear-gradient(135deg, ${event.colors[0]}, ${event.colors[1] || event.colors[0]})`;
+    if (event.poster) {
+      const img = el('img', { src: event.poster, alt: '', loading: eager ? 'eager' : 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => img.remove(), { once: true });
+      art.append(img);
+    }
+    const badge = event.always ? '24/7' : event.live ? 'Live' : event.upcoming ? clock(event.starts) : '';
+    const sub = [event.tag || event.source, event.category].filter(Boolean).join(' · ');
+    return el('button', {
+      type: 'button',
+      class: 'ppv-card',
+      title: `Add ${event.name}`,
+      on: { click() { addPPV(event, target); } },
+    },
+    el('span', { class: 'ppv-art-wrap' }, art,
+      badge ? el('span', { class: `ppv-badge${event.live && !event.always ? ' is-live' : ''}`, textContent: badge }) : null),
+    el('span', { class: 'ppv-text' },
+      el('b', { textContent: event.name }),
+      sub ? el('small', { textContent: sub }) : null));
+  };
+  const paint = () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    const pool = events.filter((event) => (category === 'All' || event.category === category)
+      && (!query || `${event.name} ${event.tag} ${event.source} ${event.category}`.toLocaleLowerCase().includes(query)));
+    count.textContent = query
+      ? `${pool.length} match${pool.length === 1 ? '' : 'es'}`
+      : `${pool.length} event${pool.length === 1 ? '' : 's'}`;
+    results.replaceChildren(...(pool.length
+      ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => cardFor(event, index < 8)))]
+      : [el('p', { class: 'ch-empty', textContent: query ? 'No events match.' : 'No PPV events right now.' })]));
+  };
+  const drawCategories = () => {
+    const present = [...new Set(events.map((event) => event.category).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+    if (category !== 'All' && !present.includes(category)) category = 'All';
+    cats.replaceChildren(...['All', ...present].map((name) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `ch-cat${name === category ? ' is-on' : ''}`,
+      aria: { selected: String(name === category) },
+      textContent: name,
+      on: {
+        click() {
+          category = name;
+          drawCategories();
+          paint();
+        },
+      },
+    })));
+  };
+  const load = (force = false) => {
+    count.textContent = 'Loading…';
+    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading PPV events…' }));
+    loadPPV(force).then((list) => {
+      if (!box.open) return;
+      if (!list) {
+        count.textContent = '';
+        results.replaceChildren(
+          el('p', { class: 'ch-empty', textContent: "PPV.st isn't answering right now." }),
+          el('button', { type: 'button', class: 'text-button', textContent: 'Try again', on: { click: () => load(true) } }));
+        return;
+      }
+      events = list;
+      drawCategories();
+      paint();
+    });
+  };
+  search.addEventListener('input', paint);
+  box.replaceChildren(
+    el('div', { class: 'ch-head' }, el('h2', { textContent: 'PPV events' }), iconButton('close', 'Close', () => box.close())),
+    search,
+    cats,
+    count,
+    results,
+    el('p', { class: 'ch-note', textContent: 'Live and upcoming events and posters from PPV.st.' }));
+  openDialog(box);
+  if (!document.body.classList.contains('is-phone')) search.focus();
+  load();
 }
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
@@ -2010,6 +2112,12 @@ function favoriteArt(item, source, highRes = false) {
     artPicture(art, `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
       () => artPicture(art, `https://icons.duckduckgo.com/ip3/${domain}.ico`, quiet));
   };
+  if (item.poster) {
+    // A favourite added from the PPV directory keeps the event's own picture.
+    art.className = 'fart is-picture';
+    artPicture(art, item.poster, quiet, true);
+    return art;
+  }
   if (item.logo) {
     // A channel from the directory keeps the logo it came with.
     art.className = 'fart is-logo is-dark';
@@ -2106,7 +2214,7 @@ function continueCard(item) {
   const source = parseSource(item.input);
   // A series keeps its favorite's folder, so it gets the series picture.
   const favorite = listFavorites().find((fav) => fav.input === item.input);
-  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '' }, source);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
   // A video link here is a recording with an end, not a live channel.
   if (source.kind === 'hls' && art.classList.contains('is-icon')) art.replaceChildren(icon('film', 20));
   // Under the name: the channel it came from, the series folder, or what kind of thing it is.
@@ -4422,7 +4530,7 @@ function podcastTodayRow(item) {
 function continueTodayRow(item) {
   const source = parseSource(item.input);
   const favorite = listFavorites().find((fav) => fav.input === item.input);
-  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '' }, source);
+  const art = favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
   return todayRow({
     art,
     top: el('span', { textContent: `${timeLeft(item.length - item.at)}${item.from && item.from !== item.name ? ` · ${item.from}` : ''}` }),
@@ -5036,7 +5144,7 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-for (const dialog of [$('source-dialog'), $('help-dialog')]) {
+for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
@@ -5046,6 +5154,8 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
+$('ppv-find').addEventListener('click', openPPV);
+$('source-dialog').addEventListener('close', () => { if ($('ppv-box').open) $('ppv-box').close(); });
 // A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
 for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
   $(id).addEventListener('click', () => {

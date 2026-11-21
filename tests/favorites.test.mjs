@@ -38,6 +38,15 @@ test('folders are A to Z, and news and News are the same folder', () => {
   assert.equal(listFavorites()[0].group, 'News');
 });
 
+test('an event poster stays with its favorite and survives a rename', () => {
+  saveFavorite('a', 'Event', 'PPV', undefined, 'https://img.test/poster.jpg');
+  assert.equal(listFavorites()[0].poster, 'https://img.test/poster.jpg');
+  saveFavorite('a', 'Event renamed', 'PPV');
+  assert.equal(listFavorites()[0].poster, 'https://img.test/poster.jpg');
+  saveFavorite('a', 'Event renamed', 'PPV', undefined, '');
+  assert.equal('poster' in listFavorites()[0], false);
+});
+
 test('a folder disappears with its last favorite', () => {
   saveFavorite('a', 'A', 'News');
   removeFavorite('a');

@@ -131,8 +131,10 @@ export function listFavorites() {
   if (!Array.isArray(list)) return [];
   return list
     .filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string')
-    .map(({ input, name, group, logo }) => ({
-      input, name, group: cleanFolder(group), ...(cleanLogo(logo) ? { logo: cleanLogo(logo) } : {}),
+    .map(({ input, name, group, logo, poster }) => ({
+      input, name, group: cleanFolder(group),
+      ...(cleanLogo(logo) ? { logo: cleanLogo(logo) } : {}),
+      ...(cleanLogo(poster) ? { poster: cleanLogo(poster) } : {}),
     }));
 }
 
@@ -156,13 +158,17 @@ export function folderForCategory(category) {
 }
 
 /** Adds a favorite, or changes one in place. "news" joins a folder already called "News". */
-export function saveFavorite(input, name, folder = '', logo) {
+export function saveFavorite(input, name, folder = '', logo, poster) {
   const typed = cleanFolder(folder);
   const group = listFolders().find((existing) => sameFolder(existing, typed)) ?? typed;
   const list = listFavorites();
   const at = list.findIndex((other) => other.input === input);
   const previous = at === -1 ? null : list[at];
-  const item = { input, name, group, ...(logo === undefined ? (previous?.logo ? { logo: previous.logo } : {}) : (cleanLogo(logo) ? { logo: cleanLogo(logo) } : {})) };
+  const item = {
+    input, name, group,
+    ...(logo === undefined ? (previous?.logo ? { logo: previous.logo } : {}) : (cleanLogo(logo) ? { logo: cleanLogo(logo) } : {})),
+    ...(poster === undefined ? (previous?.poster ? { poster: previous.poster } : {}) : (cleanLogo(poster) ? { poster: cleanLogo(poster) } : {})),
+  };
   if (at === -1) list.unshift(item);
   else list[at] = item;
   const saved = write(FAVORITES_KEY, list);

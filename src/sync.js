@@ -23,9 +23,9 @@ const PLACE_FIELDS = ['at', 'length', 'input', 'name', 'from', 'page'];
 /** Every favorite, saved layout and Continue watching place as keyed items. Files on this device stay here. */
 export function itemsOf({ favorites, layouts, places = {} }) {
   const items = {};
-  for (const { input, name, group, logo } of favorites) {
+  for (const { input, name, group, logo, poster } of favorites) {
     if (input.startsWith('local:')) continue;
-    items[`f:${input}`] = { name, group: group || '', ...(logo ? { logo } : {}) };
+    items[`f:${input}`] = { name, group: group || '', ...(logo ? { logo } : {}), ...(poster ? { poster } : {}) };
   }
   for (const { name, savedAt, workspace } of layouts) items[`l:${name}`] = { savedAt: savedAt || 0, workspace };
   const newest = Object.entries(places).filter(([key, point]) => !key.startsWith('file:') && point && Number.isFinite(point.at))

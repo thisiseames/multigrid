@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nqJmTpbDyRr/kKnBNPmXCmwtt9RcSYFm1KNcS80qEsU=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-QHauQm/FaPX/N5yh25CGeFQGetdzsbyqA5vTXSEaPt4=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -165,6 +165,7 @@
       <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
       <button id="note-add" class="addp-file" type="button"><span data-icon="pencil"></span><span>Add a note</span></button>
       <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
+      <button id="ppv-find" class="addp-file" type="button"><span data-icon="calendar"></span><span>Browse PPV events</span></button>
       <button id="source-help" class="addp-file portrait-only" type="button"><span data-icon="help"></span><span>How it works</span></button>
       <button id="source-fullscreen" class="addp-file portrait-only" type="button"><span data-icon="expand"></span><span>Fullscreen</span></button>
     </form>
@@ -175,6 +176,7 @@
   <dialog id="x-list-box" class="dialog x-list-box"></dialog>
   <dialog id="sync-box" class="dialog x-list-box sync-box" aria-label="Sync favorites"></dialog>
   <dialog id="channel-box" class="dialog channel-box"></dialog>
+  <dialog id="ppv-box" class="dialog channel-box ppv-box" aria-label="PPV events"></dialog>
   <dialog id="receive-dialog" class="dialog receive"></dialog>
   <dialog id="guide-dialog" class="dialog guide" aria-label="TV guide"></dialog>
   <dialog id="lineup-dialog" class="dialog lineup" aria-label="Team lineups">
@@ -223,7 +225,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/backups.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js'];
+    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/backups.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/ppv.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js'];
     // Ask the CSS for its current ETag, so a new version gets a new URL instead of a cached one.
     const styleVersion = fetch('styles.css', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.headers.get('etag') || response.headers.get('last-modified') || String(Date.now()))

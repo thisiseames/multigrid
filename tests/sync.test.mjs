@@ -12,6 +12,11 @@ test('favorites and saved layouts become keyed items; files stay on their device
   assert.deepEqual(items['f:https://a.test/1'], { name: 'CP24', group: 'NEWS' });
 });
 
+test('an event poster travels with its favorite', () => {
+  const items = itemsOf(lists([{ input: 'https://a.test/event', name: 'Event', group: 'PPV', poster: 'https://img.test/poster.jpg' }]));
+  assert.deepEqual(items['f:https://a.test/event'], { name: 'Event', group: 'PPV', poster: 'https://img.test/poster.jpg' });
+});
+
 test('a change is stamped once; nothing changed means nothing to send', () => {
   const items = itemsOf(lists([fav('https://a.test/1', 'CP24')]));
   const first = stamp(items, {}, 100);
