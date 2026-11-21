@@ -2127,3 +2127,5 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .sync-box .dialog-actions .add-button, .sync-box .dialog-actions .plain-button { width: auto; height: 40px; padding: 0 16px; margin: 0; white-space: nowrap; }
 /* This week's games have no scores yet, so phones have room for the channel. */
 @media (max-width: 480px) { .week-games .mrow-tv { display: block; max-width: 74px; } }
+/* Add stream selects itself when it opens on a phone; the box shows no outline for that. */
+#source-dialog:focus, #source-dialog:focus-visible { outline: none; }
