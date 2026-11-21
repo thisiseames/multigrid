@@ -5220,7 +5220,10 @@ function receiveSend() {
   if (!location.hash.startsWith(SEND_PREFIX)) return;
   let value = null;
   try { value = JSON.parse(decodeURIComponent(location.hash.slice(SEND_PREFIX.length))); } catch { /* a bad link */ }
-  history.replaceState(null, '', location.pathname + location.search);
+  const clean = new URL(location.href);
+  clean.searchParams.delete('send');
+  clean.hash = '';
+  history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
   const payload = sendPayload(value);
   if (payload) addIncoming(payload);
 }

@@ -45,7 +45,14 @@ function sendButton(candidate) {
 async function send(candidate) {
   const payload = { url: candidate.url, name: candidate.name, kind: candidate.kind, save: Boolean(candidate.save) };
   busy(true, 'Sending…');
-  const appUrl = `${APP}#send=${encodeURIComponent(JSON.stringify(payload))}`;
+  // A different query forces a full document load. A hash-only change would not reload an
+  // already-open app tab that predates this receiver, so its add would never run.
+  const appUrl = () => {
+    const url = new URL(APP);
+    url.searchParams.set('send', String(Date.now()));
+    url.hash = `send=${encodeURIComponent(JSON.stringify(payload))}`;
+    return url.href;
+  };
   try {
     const appTabs = await chrome.tabs.query({ url: APP_TABS });
     const app = appTabs[0];
@@ -59,11 +66,11 @@ async function send(candidate) {
           return;
         }
       } catch { /* the app tab is older than this check; reload it with the link */ }
-      await chrome.tabs.update(app.id, { url: appUrl, active: true });
+      await chrome.tabs.update(app.id, { url: appUrl(), active: true });
       window.close();
       return;
     }
-    await chrome.tabs.create({ url: appUrl });
+    await chrome.tabs.create({ url: appUrl() });
     window.close();
   } catch {
     busy(false, 'Couldn’t send. Try again.', true);
