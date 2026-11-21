@@ -28,7 +28,7 @@ import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
-import { hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
+import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
@@ -4386,7 +4386,9 @@ function weatherLine(holder, hoursBox, weather) {
 
 /* This week's weather: the seven days the This week view covers, always open there. */
 function weekWeather(box, weather) {
-  const days = weather?.days ?? [];
+  // The same days as the rest of This week, by this device's calendar.
+  const { from, end } = weekAheadKeys();
+  const days = daysBetween(weather?.days, from, end);
   box.hidden = todayView !== 'week' || !days.length;
   if (!days.length) return;
   box.setAttribute('aria-label', `This week's weather${weather.fallback ? ' in Toronto' : ''}`);

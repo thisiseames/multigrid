@@ -4,7 +4,7 @@
 
 import { holdOpenWhile } from './ui.js';
 
-// v2: the answer now holds 8 days for This week, so a kept 2-day answer isn't reused.
+// v2: the answer now holds 9 days for This week, so a kept 2-day answer isn't reused.
 const STORE = 'multigrid.weather.v2';
 const FRESH = 30 * 60 * 1000;
 const TORONTO = { lat: 43.65, lon: -79.38 };
@@ -37,7 +37,7 @@ async function ask({ lat, lon }) {
     + '&current=temperature_2m,weather_code,is_day'
     + '&hourly=temperature_2m,weather_code,precipitation_probability,is_day'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
-    + '&forecast_days=8&timezone=auto';
+    + '&forecast_days=9&timezone=auto';
   const response = await fetch(url, { signal: AbortSignal.timeout?.(8000) });
   if (!response.ok) throw new Error(`Open-Meteo answered ${response.status}`);
   return response.json();
@@ -83,14 +83,15 @@ export function shape({ data, fallback }) {
     low: Math.round(daily.temperature_2m_min[0]),
     rain: daily.precipitation_probability_max[0] ?? 0,
     hours,
-    days: weekDays(daily, String(current.time).slice(0, 10)),
+    days: forecastDays(daily),
   };
 }
 
-/** This week's weather: the seven days after today, each with its day name, high, low and chance of rain. */
-function weekDays(daily, today) {
+/** Every day in the forecast ("2026-11-22" and so on), each with its day name, high, low and chance of rain.
+    The forecast runs a day past the week, so This week is covered even when this device's date is ahead of the place's. */
+function forecastDays(daily) {
   const names = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
-  return (daily.time ?? []).map((date, i) => ({ date, i })).filter(({ date }) => date > today).slice(0, 7)
+  return (daily.time ?? []).map((date, i) => ({ date, i }))
     .filter(({ i }) => daily.temperature_2m_max[i] != null && daily.temperature_2m_min[i] != null)
     .map(({ date, i }) => ({
       date,
@@ -98,9 +99,12 @@ function weekDays(daily, today) {
       code: daily.weather_code?.[i] ?? 3,
       high: Math.round(daily.temperature_2m_max[i]),
       low: Math.round(daily.temperature_2m_min[i]),
-      rain: daily.precipitation_probability_max[i] ?? 0,
+      rain: daily.precipitation_probability_max?.[i] ?? 0,
     }));
 }
+
+/** The forecast days from one date up to (not including) another, like This week's own dates. */
+export const daysBetween = (days, from, end) => (days ?? []).filter((day) => day.date >= from && day.date < end);
 
 /** Open-Meteo's weather codes, in plain words. */
 export function weatherWords(code) {
