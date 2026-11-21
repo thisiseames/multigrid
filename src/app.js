@@ -23,6 +23,7 @@ import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead,
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
+import { chanceText, loadOdds } from './odds.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
@@ -1181,6 +1182,10 @@ const isGameOn = () => { try { return localStorage.getItem(GAME_KEY) === 'on'; }
 const onPhoneScreen = () => document.body.classList.contains('is-phone');
 let gameTimer = null;
 let gameGroups = null;
+// Scores or Odds: Game mode's two tabs, remembered. Odds are only asked for while that tab is open.
+const GAME_TAB_KEY = 'multigrid.gametab.v1';
+let gameTab = (() => { try { return localStorage.getItem(GAME_TAB_KEY) === 'odds' ? 'odds' : 'scores'; } catch { return 'scores'; } })();
+let gameOdds = null;
 
 function toggleGameMode() {
   try { localStorage.setItem(GAME_KEY, isGameOn() ? 'off' : 'on'); } catch { /* not remembered */ }
@@ -1228,28 +1233,72 @@ function gameRow(game) {
   return row;
 }
 
+/* A game on the Odds tab: the same row as on Scores, with each team's chance to win where the
+   score would be. Soccer has a third line for the draw. Every chance sits in one column. */
+function oddsRow(game) {
+  const row = gameRow(game);
+  row.classList.add('is-odds');
+  const odds = gameOdds?.get(game.id) ?? null;
+  const chances = [odds?.home, odds?.away];
+  const top = Math.max(...[...chances, odds?.draw].filter(Number.isFinite));
+  const chance = (value) => el('span', { class: `mrow-score mrow-chance${Number.isFinite(value) && value === top ? ' is-fav' : ''}`, textContent: odds ? chanceText(value) : '–' });
+  row.querySelectorAll('.mrow-main .mrow-team').forEach((line, index) => {
+    line.querySelector('.mrow-score')?.remove();
+    line.append(chance(chances[index]));
+  });
+  if (game.sport === 'soccer/all') {
+    row.querySelector('.mrow-main .mrow-teams')?.append(el('span', { class: 'mrow-team mrow-draw' },
+      el('span', { class: 'mrow-crest-gap' }), el('span', { class: 'mrow-name', textContent: 'Draw' }), chance(odds?.draw)));
+  }
+  return row;
+}
+
+async function refreshOdds() {
+  if (gameTab !== 'odds' || !gameGroups) return;
+  try { gameOdds = await loadOdds(gameGroups); } catch { /* keep the last odds */ }
+  if (!$('gamebar').hidden && gameTab === 'odds') drawGamebar();
+}
+
+function chooseGameTab(tab) {
+  if (tab === gameTab) return;
+  gameTab = tab;
+  try { localStorage.setItem(GAME_TAB_KEY, tab); } catch { /* not remembered */ }
+  drawGamebar();
+  refreshOdds();
+}
+
 function drawGamebar() {
   const bar = $('gamebar');
   const head = el('div', { class: 'gamebar-head' },
     el('span', { class: 'gamebar-title', textContent: 'Game mode' }),
     iconButton('close', 'Turn Game mode off', toggleGameMode));
+  const tabs = el('div', { class: 'gamebar-tabs addp-pills', role: 'tablist' }, ...[['scores', 'Scores'], ['odds', 'Odds']].map(([key, label]) => el('button', {
+    type: 'button', role: 'tab', class: `matches-tab${gameTab === key ? ' is-on' : ''}`, aria: { selected: String(gameTab === key) }, textContent: label,
+    on: { click: () => chooseGameTab(key) },
+  })));
   if (!gameGroups) {
-    bar.replaceChildren(head, el('p', { class: 'match-quiet', textContent: 'Loading scores…' }));
+    bar.replaceChildren(head, tabs, el('p', { class: 'match-quiet', textContent: 'Loading scores…' }));
     return;
   }
+  const odds = gameTab === 'odds';
+  // Odds are for games still to be decided: a finished game's market is closed, so it isn't listed.
+  const groups = odds ? gameGroups.map(({ title, games }) => ({ title, games: games.filter((game) => game.state !== 'post') })).filter(({ games }) => games.length) : gameGroups;
+  const empty = !gameGroups.length ? 'No games today in your leagues.' : 'Every game today is finished.';
   const scroll = bar.querySelector('.gamebar-body')?.scrollTop ?? 0;
-  const body = el('div', { class: 'gamebar-body' }, ...(gameGroups.length
-    ? gameGroups.map(({ title, games }) => el('section', { class: 'gamebar-group' },
+  const body = el('div', { class: `gamebar-body${odds ? ' is-odds' : ''}` }, ...(groups.length
+    ? groups.map(({ title, games }) => el('section', { class: 'gamebar-group' },
       el('h4', { class: 'match-day', textContent: title }),
-      el('ul', { class: 'mrow-list' }, ...games.map(gameRow))))
-    : [el('p', { class: 'match-quiet is-empty', textContent: 'No games today in your leagues.' })]));
-  bar.replaceChildren(head, body);
+      el('ul', { class: 'mrow-list' }, ...games.map(odds ? oddsRow : gameRow))))
+    : [el('p', { class: 'match-quiet is-empty', textContent: empty })]),
+  odds && groups.length ? el('p', { class: 'gamebar-source', textContent: gameOdds ? 'Chance to win · Polymarket' : 'Loading odds…' }) : null);
+  bar.replaceChildren(head, tabs, body);
   body.scrollTop = scroll;
 }
 
 async function refreshGames() {
   try { gameGroups = await todaysGames(); } catch { /* keep the last scores */ }
   if (!$('gamebar').hidden) drawGamebar();
+  refreshOdds();
   // Every 30 seconds while a game is on, every five minutes otherwise.
   const live = (gameGroups ?? []).some((group) => group.games.some((game) => game.state === 'in'));
   clearTimeout(gameTimer);

@@ -2329,3 +2329,12 @@ body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 
   .bx-table th:not(.bx-name), .bx-table td:not(.bx-name) { width: 30px; min-width: 30px; max-width: 30px; padding-left: 2px; padding-right: 2px; }
   .bx-table th.is-wide, .bx-table td.is-wide { width: 42px; min-width: 42px; max-width: 42px; }
 }
+
+/* Game mode's Scores and Odds tabs, and the Odds rows: each chance in one column, the favourite brighter. */
+.gamebar-tabs { display: flex; padding: 4px 14px 0; border-bottom: 1px solid var(--border); }
+.gamebar-tabs .matches-tab { height: 36px; }
+.gamebar .mrow-chance { min-width: 2.3em; color: var(--text-2); font-weight: 500; }
+.gamebar .mrow-chance.is-fav { color: var(--text); font-weight: 600; }
+.mrow-crest-gap { flex: none; width: 20px; height: 20px; }
+.mrow-draw .mrow-name { color: var(--text-2); }
+.gamebar-source { margin: 12px 4px 0; font-size: 11px; color: var(--text-2); }
