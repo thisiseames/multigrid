@@ -245,7 +245,7 @@ function buildStreamMenu(id) {
     bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
     bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
     castWay(view.source, view.player?.el) ? bigButton('cast', castWay(view.source, view.player?.el) === 'airplay' ? 'AirPlay' : 'Cast to TV', then(() => castStream(id))) : null,
-    pipOther(id) ? bigButton('replace', 'Swap screens', then(() => swapPip(id))) : null,
+    pipOther(id) ? bigButton('pip', 'Swap screens', then(() => swapPip(id))) : null,
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
