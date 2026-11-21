@@ -4330,9 +4330,13 @@ async function fillToday() {
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
-  // Your teams: the game on now, or the next one.
-  const games = (teams ?? []).map(({ card }) => card.live || card.next[0]).filter(Boolean).sort((a, b) => a.start - b.start);
-  const teamList = games.length ? el('ul', { class: 'mrow-list' }, ...games.map((match) => matchRow(match, { withDay: true }))) : null;
+  // Your teams: only games today, whether still to come, on now or finished. None today, no section.
+  const today = dayKey(now);
+  const seen = new Set();
+  const games = (teams ?? []).flatMap(({ card }) => [card.last, card.live, ...(card.upcoming ?? [])])
+    .filter((match) => match && dayKey(match.start) === today && !seen.has(match.id) && seen.add(match.id))
+    .sort((a, b) => a.start - b.start);
+  const teamList = games.length ? el('ul', { class: 'mrow-list' }, ...games.map((match) => matchRow(match))) : null;
 
   const events = eventsToday(now);
   const eventList = events.length ? el('ul', { class: 'rlist' }, ...events.map(({ item, show }) => todayRow({
