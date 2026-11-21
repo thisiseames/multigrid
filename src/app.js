@@ -716,6 +716,7 @@ function render() {
   const showWelcome = !ws.started && streamCount(ws) === 0;
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
+  $('stage').classList.toggle('is-empty-wall', !showWelcome && streamCount(ws) === 0);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);

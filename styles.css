@@ -251,6 +251,19 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
   justify-content: center;
   overflow: hidden;
 }
+/* The empty phone wall: the montage sits behind the grid until the first stream arrives. */
+@media (orientation: portrait) {
+  body.is-phone #stage.is-empty-wall {
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)),
+      linear-gradient(to bottom, rgba(11, 11, 12, 0.7), rgba(11, 11, 12, 0.05) 25%, rgba(11, 11, 12, 0.05) 70%, rgba(11, 11, 12, 0.85)),
+      url('assets/empty-wall.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+}
 .grid { display: grid; position: relative; width: 100%; height: 100%; }
 .grid.stacked {
   display: flex;
