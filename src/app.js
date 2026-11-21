@@ -4511,7 +4511,9 @@ async function fillToday() {
     moviesSection.heading.textContent = week ? 'Movies this week' : 'Movies today';
     moviesSection.list.hidden = !movieItems.length;
     moviesSection.list.replaceChildren(...movieItems.map(movieRow));
-    moviesSection.empty.hidden = Boolean(movieItems.length);
+    moviesSection.empty.hidden = true;
+    // Nothing today (or this week): no section at all.
+    moviesSection.section.hidden = !movieItems.length;
     moviesSection.empty.textContent = week ? 'No more movies this week.' : 'No movies out today.';
 
     const episodeItems = week
@@ -4524,14 +4526,18 @@ async function fillToday() {
     episodesSection.heading.textContent = week ? 'New episodes this week' : 'New episodes today';
     episodesSection.list.hidden = !episodeItems.length;
     episodesSection.list.replaceChildren(...episodeItems);
-    episodesSection.empty.hidden = Boolean(episodeItems.length);
+    episodesSection.empty.hidden = true;
+    // Nothing today (or this week): no section at all.
+    episodesSection.section.hidden = !episodeItems.length;
     episodesSection.empty.textContent = week ? 'No more episodes this week.' : 'No new episodes today.';
 
     const premiereItems = premieresForView(premiereAll, todayView, now);
     premieresSection.heading.textContent = week ? 'Premieres this week' : 'Premieres today';
     premieresSection.list.hidden = !premiereItems.length;
     premieresSection.list.replaceChildren(...premiereItems.map(premiereRow));
-    premieresSection.empty.hidden = Boolean(premiereItems.length);
+    premieresSection.empty.hidden = true;
+    // Nothing today (or this week): no section at all.
+    premieresSection.section.hidden = !premiereItems.length;
     premieresSection.empty.textContent = week ? 'No more premieres this week.' : 'No premieres today.';
   };
   redrawTodayDates();
