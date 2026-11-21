@@ -2174,7 +2174,8 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .gamebar .match-day { margin: 0 -8px; padding: 12px 14px 6px; }
 .gamebar .mrow-name { width: auto; }
 .gamebar .mrow-main { gap: 8px; padding: 8px 8px 8px 10px; }
-.gamebar .mrow-tv { max-width: 64px; }
+/* No channel names in Game mode: just the games. */
+.gamebar .mrow-tv { display: none; }
 /* The phone's Game mode switch, at the bottom of Add stream. */
 .phone-game { display: none !important; }
 body.is-phone .phone-game { display: flex !important; }
