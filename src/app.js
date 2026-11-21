@@ -24,6 +24,7 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
+import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
@@ -322,6 +323,106 @@ function openXListBox() {
     submit)));
   openDialog(box);
   area.focus();
+}
+
+/* YouTube subscriptions from Google Takeout: the file (or its .zip) becomes Favorites in YouTube.
+   Channels already in Favorites are skipped; the rest start ticked. */
+const TAKEOUT_URL = 'https://takeout.google.com/';
+const SYNC_SAFE_CHANNELS = 1500;
+
+function openYouTubeImport() {
+  const box = $('x-list-box');
+  if (box.open) return;
+  const file = el('input', { type: 'file', accept: '.zip,.csv,application/zip,text/csv', hidden: true });
+  const body = el('div', { class: 'yt-import-body' });
+  const submit = el('button', { type: 'submit', class: 'add-button', disabled: true, hidden: true, textContent: 'Add' });
+  // Until a file is chosen, choosing it is the one thing to do, so it's the main button.
+  const choose = el('button', { type: 'button', class: 'add-button', on: { click: () => file.click() } }, 'Choose the file…');
+  let channels = [];
+  const ticked = new Set();
+
+  const have = new Set(listFavorites().map((item) => channelOfFavorite(parseSource(item.input))).filter(Boolean));
+  const refresh = () => {
+    const count = ticked.size;
+    submit.textContent = count ? `Add ${count}` : 'Add';
+    submit.disabled = !count || count > SYNC_SAFE_CHANNELS;
+    body.querySelector('.yt-import-warn')?.toggleAttribute('hidden', count <= SYNC_SAFE_CHANNELS);
+    body.querySelector('.x-list-count').textContent = `${channels.length} channel${channels.length === 1 ? '' : 's'} · ${count} ticked`;
+  };
+  const steps = () => body.replaceChildren(
+    el('ol', { class: 'yt-import-steps' },
+      el('li', {}, 'On ', el('a', { href: TAKEOUT_URL, target: '_blank', rel: 'noopener', textContent: 'Google Takeout' }), ', untick everything except YouTube. Under YouTube, untick everything except subscriptions.'),
+      el('li', { textContent: 'Create the export. Google emails you a download link, usually within minutes.' }),
+      el('li', { textContent: 'Download it, then choose it here. The .zip is fine; no need to open it.' })));
+  const showList = () => {
+    const list = el('ul', { class: 'yt-import-list' }, ...channels.map(({ id, title }) => {
+      const already = have.has(id);
+      const box = el('input', { type: 'checkbox', checked: ticked.has(id), disabled: already, on: { change() { if (box.checked) ticked.add(id); else ticked.delete(id); refresh(); } } });
+      return el('li', {}, el('label', { class: `yt-import-row${already ? ' is-had' : ''}` }, box,
+        el('span', { class: 'yt-import-text' }, el('span', { class: 'yt-import-name', textContent: title.toUpperCase() }),
+          already ? el('span', { class: 'yt-import-had', textContent: 'Already in Favorites' }) : null)));
+    }));
+    const all = (on) => () => {
+      ticked.clear();
+      if (on) channels.forEach(({ id }) => { if (!have.has(id)) ticked.add(id); });
+      list.querySelectorAll('input').forEach((input, index) => { if (!input.disabled) input.checked = ticked.has(channels[index].id); });
+      refresh();
+    };
+    body.replaceChildren(
+      el('div', { class: 'x-list-foot' }, el('p', { class: 'x-list-count' }),
+        el('span', { class: 'yt-import-all' },
+          el('button', { type: 'button', class: 'text-button', on: { click: all(true) } }, 'Select all'),
+          el('button', { type: 'button', class: 'text-button', on: { click: all(false) } }, 'Select none'))),
+      list,
+      el('p', { class: 'x-list-note yt-import-warn', hidden: true, textContent: `Pick ${SYNC_SAFE_CHANNELS.toLocaleString()} or fewer: more than that is too big to sync to your other devices.` }));
+    refresh();
+  };
+  file.addEventListener('change', async () => {
+    const chosen = file.files?.[0];
+    file.value = '';
+    if (!chosen) return;
+    let found = [];
+    try { found = await subscriptionsFromFile(chosen); } catch { found = []; }
+    if (!found.length) {
+      steps();
+      body.append(el('p', { class: 'x-list-note yt-import-error', textContent: /\.zip$/i.test(chosen.name)
+        ? "Google left your subscriptions out of this download (it sometimes does). Request the export again on Google Takeout."
+        : "That file isn't a YouTube subscriptions file from Google Takeout." }));
+      return;
+    }
+    channels = found;
+    ticked.clear();
+    channels.forEach(({ id }) => { if (!have.has(id)) ticked.add(id); });
+    choose.textContent = 'Choose another file…';
+    choose.className = 'plain-button';
+    submit.hidden = false;
+    showList();
+  });
+
+  box.replaceChildren(el('form', {
+    on: {
+      submit(event) {
+        event.preventDefault();
+        const picked = channels.filter(({ id }) => ticked.has(id) && !have.has(id));
+        if (!picked.length || picked.length > SYNC_SAFE_CHANNELS) return;
+        // Oldest first, so they end up in the file's order at the top of Favorites.
+        for (const { id, title } of [...picked].reverse()) saveFavorite(id, title.toUpperCase(), 'YouTube');
+        box.close();
+        renderAddFavorites($('source-favorites'), () => sourceTarget);
+        toast(`${picked.length} channel${picked.length === 1 ? '' : 's'} added to Favorites → YouTube.`);
+      },
+    },
+  },
+  el('h2', { textContent: 'Import YouTube subscriptions' }),
+  body,
+  file,
+  el('div', { class: 'dialog-actions' },
+    choose,
+    el('span', { class: 'yt-import-gap' }),
+    el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel'),
+    submit)));
+  steps();
+  openDialog(box);
 }
 
 /* ---------- Channel Finder ---------- */
@@ -5439,6 +5540,7 @@ function submitXName() {
 }
 $('source-x-add').addEventListener('click', submitXName);
 $('source-x-list').addEventListener('click', openXListBox);
+$('source-yt-subs').addEventListener('click', openYouTubeImport);
 $('source-x').addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
