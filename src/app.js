@@ -5210,9 +5210,37 @@ function buildSavedRow(item) {
   return row;
 }
 
+/* The MULTIGRID name opens the saved layouts: tap one to open it. */
+function sameAsScreen(item) {
+  const inputs = (tiles) => tiles.filter((tile) => tile.input && tile.place).map((tile) => tile.input).sort().join('\n');
+  return item.workspace.presetId === ws.presetId && inputs(item.workspace.tiles) === inputs(ws.tiles) && Boolean(inputs(ws.tiles));
+}
+
+function buildSavedDrop() {
+  const saved = listSaved();
+  const where = grid.isStacked ? 'in Add stream, under Saved layouts' : 'from the ⋯ menu, under Saved layouts';
+  $('saved-drop').replaceChildren(
+    el('p', { class: 'sdrop-head', textContent: 'Saved layouts' }),
+    saved.length ? el('ul', { class: 'sdrop-list' }, ...saved.map((item) => {
+      const { cols = [1], rows = [1], tiles = [] } = item.workspace;
+      const slots = tiles.filter((tile) => tile.place).map((tile) => tile.place);
+      const here = sameAsScreen(item);
+      return el('li', {}, el('button', {
+        type: 'button',
+        class: `sdrop-row${here ? ' is-here' : ''}`,
+        on: { click() { closePopovers(); restore(item); } },
+      },
+      el('span', { class: 'sdrop-shape' }, layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, 40, 26)),
+      el('span', { class: 'sdrop-text' }, el('b', { textContent: item.name }), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
+      here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
+    })) : el('p', { class: 'sdrop-empty', textContent: `No saved layouts yet. Save the one on screen ${where}.` }));
+}
+$('wordmark').addEventListener('click', () => togglePopover($('wordmark'), $('saved-drop'), buildSavedDrop));
+
 /** Redraws saved layouts wherever they're showing: the menu, or the tab in Add stream. */
 function refreshSaved() {
   if (!$('saved-menu').hidden) buildSavedMenu();
+  if (!$('saved-drop').hidden) buildSavedDrop();
   if ($('source-dialog').open && addFolder === LAYOUTS) fillAddFavorites($('source-favorites'));
 }
 
