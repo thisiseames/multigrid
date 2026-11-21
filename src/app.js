@@ -43,6 +43,17 @@ import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
 } from './ui.js';
 
+// A page cached before the start-up version check has no marker. Reload it once at a new address
+// so it fetches the matching markup; the guard stops a bad cache from looping.
+if (!window.__mgPageVersion) {
+  const address = new URL(location.href);
+  if (!address.searchParams.has('mgv')) {
+    address.searchParams.set('mgv', String(Date.now()));
+    location.replace(address.href);
+    await new Promise(() => {});
+  }
+}
+
 const env = { hostname: location.hostname, origin: location.origin, protocol: location.protocol };
 const $ = (id) => document.getElementById(id);
 

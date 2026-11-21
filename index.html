@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Mid2CiLJ/HR95sms9KHBAuAd3b/hANstFYbcLOmTnTk=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nqJmTpbDyRr/kKnBNPmXCmwtt9RcSYFm1KNcS80qEsU=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -222,12 +222,42 @@
     const styleVersion = fetch('styles.css', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.headers.get('etag') || response.headers.get('last-modified') || String(Date.now()))
       .catch(() => String(Date.now()));
+    let pageVersion = '';
     const [, version] = await Promise.all([
       Promise.all(files.map((file) => fetch(file, { cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
-        .then((response) => response.arrayBuffer())
+        .then((response) => {
+          if (file === 'index.html') pageVersion = response.headers.get('etag') || response.headers.get('last-modified') || '';
+          return response.arrayBuffer();
+        })
         .catch(() => {}))),
       styleVersion,
     ]);
+    // GitHub can serve an old page with a new stylesheet. If this page is older than the live
+    // one, reload once at a new address so the browser has to fetch the matching markup too.
+    let reloading = false;
+    const address = new URL(location.href);
+    if (pageVersion) {
+      let seen = '';
+      try { seen = localStorage.getItem('multigrid.page.v1') || ''; } catch {}
+      if (seen && seen !== pageVersion) {
+        if (!address.searchParams.has('mgv')) {
+          try { localStorage.setItem('multigrid.page.v1', pageVersion); } catch {}
+          address.searchParams.set('mgv', String(Date.now()));
+          location.replace(address.href);
+          reloading = true;
+        }
+      } else {
+        try { localStorage.setItem('multigrid.page.v1', pageVersion); } catch {}
+      }
+    }
+    // The one-time reload address has done its job; keep the page's address clean.
+    if (!reloading && address.searchParams.has('mgv')) {
+      address.searchParams.delete('mgv');
+      history.replaceState(null, '', address.pathname + address.search + address.hash);
+    }
+    // app.js checks this to tell a new page from one cached before this check existed.
+    window.__mgPageVersion = pageVersion || 'unknown';
+    if (reloading) await new Promise(() => {});
     await new Promise((done) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
