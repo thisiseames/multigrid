@@ -4172,7 +4172,7 @@ function chartsView(data) {
     const [y, m, d] = String(chart.week || '').split('-').map(Number);
     note.textContent = y ? `Billboard · week of ${new Date(y, m - 1, d, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Billboard';
   };
-  const tabs = el('div', { class: 'chart-tabs', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
+  const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
     type: 'button',
     role: 'tab',
     class: `matches-tab${index === chartTab ? ' is-on' : ''}`,
