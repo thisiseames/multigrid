@@ -120,8 +120,18 @@ window.addEventListener('message', (event) => {
   const describe = frame && embedTiles.get(frame);
   const tile = describe?.();
   if (!tile?.input) return;
-  // The extension itself jumps back to the place; this only lists it.
-  notePlace(`embed:${tile.input}`, progress.at, progress.length, { input: tile.input, name: tile.name, from: '' });
+  // The extension itself jumps back to the place; this only lists it. A series that moved on
+  // keeps one card, which opens the episode it's on.
+  notePlace(`embed:${tile.input}`, progress.at, progress.length, { input: tile.input, page: tile.page || '', name: tile.name, from: '' });
+});
+// Extension 1.6 says where a tile's own page is now, such as a series' next episode.
+const pageTiles = new Map(); // frame -> onPage(href)
+window.addEventListener('message', (event) => {
+  const href = event.data?.multigridPage?.href;
+  if (typeof href !== 'string' || !event.source) return;
+  // Only a tile's own page, not anything inside it.
+  const frame = [...pageTiles.keys()].find((item) => item.contentWindow === event.source);
+  if (frame) pageTiles.get(frame)(href);
 });
 window.addEventListener('message', (event) => {
   const resumed = event.data?.multigridResumed;
@@ -892,9 +902,10 @@ function tiktokPlayer(source, options) {
 }
 
 /** A player MULTIGRID can't talk to. Its sound is only reachable through the extension. */
-function closedPlayer(frame, { muted, volume, describe }) {
+function closedPlayer(frame, { muted, volume, describe, onPage }) {
   const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
   if (describe) embedTiles.set(frame, describe);
+  if (onPage) pageTiles.set(frame, onPage);
   return {
     el: frame,
     canMute: Boolean(extension),
@@ -915,6 +926,7 @@ function closedPlayer(frame, { muted, volume, describe }) {
     destroy() {
       extension?.stop();
       embedTiles.delete(frame);
+      pageTiles.delete(frame);
       frame.removeAttribute('src');
     },
   };

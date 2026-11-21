@@ -3,6 +3,7 @@
 // worked out fresh on whichever domain the app is opened from.
 
 import { emptyWorkspace, uid } from './layout.js';
+import { episodePage } from './sources.js';
 
 const CURRENT_KEY = 'multigrid.current.v1';
 const SAVED_KEY = 'multigrid.workspaces.v1';
@@ -54,6 +55,7 @@ function sanitize(raw) {
       place: tile.place ? { ...tile.place } : null,
       primary: tile.primary === true && Boolean(tile.input),
       ...(typeof tile.title === 'string' && tile.title.trim() ? { title: tile.title.trim().slice(0, 300) } : {}),
+      ...(keptPage(tile) ? { page: keptPage(tile) } : {}),
     });
   }
   return {
@@ -78,6 +80,14 @@ function cleanPrevious(raw) {
   return { presetId: raw.presetId, minSlots: Number.isInteger(raw.minSlots) ? raw.minSlots : 0, places };
 }
 
+/** Where a website tile had moved on to (a series episode), kept only for the link it came from. */
+function keptPage(tile) {
+  const page = tile?.page;
+  if (!page || !tile.input || page.for !== tile.input) return null;
+  const href = episodePage(tile.input, page.href);
+  return href ? { for: tile.input, href } : null;
+}
+
 function snapshot(ws) {
   return {
     v: 1,
@@ -88,7 +98,11 @@ function snapshot(ws) {
     fit: ws.fit,
     cols: ws.cols,
     rows: ws.rows,
-    tiles: ws.tiles.map(({ input, muted, volume, place, primary, title }) => ({ input, muted, volume, place, ...(primary && input ? { primary: true } : {}), ...(title ? { title } : {}) })),
+    tiles: ws.tiles.map((tile) => {
+      const { input, muted, volume, place, primary, title } = tile;
+      const page = keptPage(tile);
+      return { input, muted, volume, place, ...(primary && input ? { primary: true } : {}), ...(title ? { title } : {}), ...(page ? { page } : {}) };
+    }),
   };
 }
 

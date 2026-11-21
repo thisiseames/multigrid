@@ -98,13 +98,17 @@ class TileView {
     // Every tile starts by itself, muted. Browsers allow that for any number of videos.
     const autoplay = true;
     this.paused = false;
-    this.player = createPlayer(this.source, {
+    // A website tile that moved on (a series' later episode) opens where it was left.
+    const page = this.page;
+    this.player = createPlayer(page ? parseSource(page) : this.source, {
       muted: tile.muted,
       volume: tile.volume,
       autoplay,
       env,
       // What this tile is, for Continue watching: its link and the name it shows.
-      describe: () => ({ input: this.tile.input, name: this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label }),
+      describe: () => ({ input: this.tile.input, page: this.page, name: this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label }),
+      // The extension says when the page inside moves on, so a reload comes back to it.
+      onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
       onError: (message) => {
         this.showError(message);
         this.grid.handlers.onPlayerChanged();
@@ -136,6 +140,12 @@ class TileView {
     this.resizeWatch.observe(this.cropFrame);
     this.applyFraming();
     this.player.start();
+  }
+
+  /** The page this website tile had moved on to (a series' later episode), or null. */
+  get page() {
+    const { page, input } = this.tile;
+    return page && page.for === input ? page.href : null;
   }
 
   /** Builds the tile again, for when it pops out or comes back. */

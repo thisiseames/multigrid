@@ -30,7 +30,7 @@ import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendK
 import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
-import { audioInput, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
+import { audioInput, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -75,6 +75,17 @@ const grid = new GridView($('grid'), $('stage'), env, {
     const tile = tileById(id);
     if (!tile) return;
     tile.input = `note:${encodeURIComponent(text)}`;
+    saveCurrent(ws);
+  },
+  // A website tile moved on inside (a series' next episode): remembered, so a reload opens it.
+  // The tile keeps playing; only what's saved changes.
+  onPage: (id, href) => {
+    const tile = tileById(id);
+    if (!tile?.input) return;
+    const page = episodePage(tile.input, href);
+    if ((tile.page?.href ?? null) === page && tile.page?.for === tile.input) return;
+    if (page) tile.page = { for: tile.input, href: page };
+    else delete tile.page;
     saveCurrent(ws);
   },
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
@@ -1006,7 +1017,10 @@ function muteAll() {
 
 /* ---------- Adding, replacing, removing ---------- */
 
-function addStream(input, target = { mode: 'add' }, title = '') {
+function addStream(input, target = { mode: 'add' }, title = '', page = '') {
+  // A series from Continue watching opens the episode it's on, still as its favorite.
+  const moved = episodePage(input, page);
+  const pageOf = () => (moved ? { for: input, href: moved } : undefined);
   const source = parseSource(input);
   // A podcast is audio, so it plays in the dock instead of taking a tile.
   if (source.kind === 'audio') {
@@ -1025,6 +1039,7 @@ function addStream(input, target = { mode: 'add' }, title = '') {
     if (tile) {
       tile.input = input;
       tile.title = autoTitle || undefined;
+      tile.page = pageOf();
       addedId = tile.id;
     }
   } else {
@@ -1032,6 +1047,7 @@ function addStream(input, target = { mode: 'add' }, title = '') {
     if (!slot || isStream(slot)) slot = makeRoom(ws);
     slot.input = input;
     slot.title = autoTitle || undefined;
+    slot.page = pageOf();
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
@@ -1984,7 +2000,7 @@ function continueCard(item) {
           const target = sourceTarget;
           if ($('source-dialog').open) $('source-dialog').close();
           if (source.kind === 'audio') openPodcast(item.input, { title: item.name, from: item.from });
-          else addStream(item.input, target);
+          else addStream(item.input, target, '', item.page);
         },
       },
     },
@@ -4257,7 +4273,7 @@ function continueTodayRow(item) {
     onClick() {
       closePopovers();
       if (source.kind === 'audio') openPodcast(item.input, { title: item.name, from: item.from });
-      else addStream(item.input);
+      else addStream(item.input, { mode: 'add' }, '', item.page);
     },
   });
 }

@@ -345,6 +345,23 @@ export function parseSource(raw) {
 }
 
 /** An http link is blocked by browsers on a secure page. Applies to direct links only. */
+/**
+ * The page a website tile has moved on to (a series' next episode, say), if it's worth keeping:
+ * a secure page on the same site as the tile's own link, and not that link itself. Otherwise null.
+ */
+export function episodePage(input, href) {
+  const source = parseSource(input);
+  if (!source.ok || source.kind !== 'iframe' || typeof href !== 'string') return null;
+  try {
+    const home = new URL(source.url);
+    const page = new URL(href);
+    if (page.protocol !== 'https:' || page.origin !== home.origin || page.href === home.href) return null;
+    return page.href;
+  } catch {
+    return null;
+  }
+}
+
 export function isBlockedMixedContent(source, env) {
   if (source.kind !== 'iframe' && source.kind !== 'hls') return false;
   return env.protocol === 'https:' && source.url.startsWith('http:');

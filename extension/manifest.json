@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MULTIGRID Sound",
-  "version": "1.5",
+  "version": "1.6",
   "description": "Lets MULTIGRID's sound mixer reach players inside embedded streams (sound, pause, play, back and forward, and where you stopped in an episode), and lets a Reader story show its real page in a tile. Does nothing on any other site.",
   "content_scripts": [
     {

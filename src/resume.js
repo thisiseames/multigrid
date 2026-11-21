@@ -45,6 +45,8 @@ export function notePlace(key, seconds, length, meta) {
       length: Math.round(length),
       saved: Date.now(),
       ...(what.input ? { input: what.input, name: what.name || '', from: what.from || '' } : {}),
+      // A series' card opens the episode it's on.
+      ...(what.input && what.page ? { page: what.page } : {}),
     };
     const keys = Object.keys(all);
     if (keys.length > KEEP) {

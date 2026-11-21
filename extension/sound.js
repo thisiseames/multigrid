@@ -17,6 +17,8 @@
     document.documentElement.dataset.multigridResume = '1';
     // And tell it how far into an episode you are, for Continue watching.
     document.documentElement.dataset.multigridProgress = '1';
+    // And tell it which page a tile is on, so a series reopens on the episode you were watching.
+    document.documentElement.dataset.multigridPage = '1';
     // Lets this tab's tiles show pages that normally refuse to appear inside other sites.
     try { chrome.runtime.sendMessage({ multigrid: 'tab' }); } catch {}
     return;
@@ -188,6 +190,23 @@
     });
     frames.forEach((frame) => frame.contentWindow?.postMessage({ multigridStartOver: true }, '*'));
   });
+
+  /* A tile's own page (not the players inside it) says where it is when it loads and whenever
+     its address changes, such as picking another episode. MULTIGRID keeps it, so a reload comes
+     back to the same episode. Sites often change the address without loading a new page, so
+     it's checked every second. */
+  if (window.parent === window.top) {
+    let told = '';
+    const tell = () => {
+      if (location.href === told) return;
+      told = location.href;
+      window.top.postMessage({ multigridPage: { href: told } }, topOrigin);
+    };
+    tell();
+    setInterval(tell, 1000);
+    window.addEventListener('popstate', tell);
+    window.addEventListener('hashchange', tell);
+  }
 
   window.parent.postMessage({ multigridSoundAsk: true }, '*');
 })();

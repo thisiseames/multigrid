@@ -246,3 +246,21 @@ test('note: text is kept with the tile and comes back decoded', () => {
   assert.equal(source.note.text, 'Hello\nworld');
   assert.equal(parseSource('note:').note.text, '');
 });
+
+import { episodePage } from '../src/sources.js';
+
+test("a website tile's next episode is kept only on the same site, over https, and when it moved", () => {
+  const series = 'https://atlantic.example/watch/247718/1/1';
+  assert.equal(episodePage(series, 'https://atlantic.example/watch/247718/2/8'), 'https://atlantic.example/watch/247718/2/8');
+  assert.equal(episodePage(series, 'https://atlantic.example/watch/247718/2/8?t=1#x'), 'https://atlantic.example/watch/247718/2/8?t=1#x');
+  assert.equal(episodePage(series, series), null);
+  assert.equal(episodePage(series, 'https://ads.example/win'), null);
+  assert.equal(episodePage(series, 'http://atlantic.example/watch/247718/2/8'), null);
+  assert.equal(episodePage(series, 'not a link'), null);
+  assert.equal(episodePage(series, undefined), null);
+  // Pasted iframe code counts by the address inside it.
+  assert.equal(episodePage(`<iframe src="${series}"></iframe>`, 'https://atlantic.example/watch/247718/3/1'), 'https://atlantic.example/watch/247718/3/1');
+  // Only plain website tiles: YouTube, Twitch and video links manage themselves.
+  assert.equal(episodePage('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://www.youtube.com/watch?v=abc'), null);
+  assert.equal(episodePage('https://cdn.example/live.m3u8', 'https://cdn.example/other.m3u8'), null);
+});

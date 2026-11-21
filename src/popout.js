@@ -89,7 +89,8 @@ export async function popOut(view, { name, makePlayer }) {
     const frame = win.document.createElement('iframe');
     frame.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
     frame.allowFullscreen = true;
-    frame.src = `pop.html#${encodeURIComponent(JSON.stringify({ input: tile.input, name, muted: tile.muted, volume: tile.volume }))}`;
+    // A series that moved on to a later episode pops out on that episode.
+    frame.src = `pop.html#${encodeURIComponent(JSON.stringify({ input: view.page || tile.input, name, muted: tile.muted, volume: tile.volume }))}`;
     box.append(frame);
   }
   win.addEventListener('pagehide', () => {

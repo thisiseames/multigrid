@@ -177,3 +177,20 @@ test('a tile title is kept with the workspace', () => {
   });
   assert.equal(loadCurrent().tiles[0].title, 'A real video title');
 });
+
+test("a series tile remembers the episode it moved on to, but only for its own link", () => {
+  const series = 'https://atlantic.example/watch/247718/1/1';
+  const ws = emptyWorkspace();
+  ws.tiles.push(
+    { id: 'a', input: series, muted: true, volume: 100, place: null, page: { for: series, href: 'https://atlantic.example/watch/247718/2/8' } },
+    // The tile was changed to another stream since: its old page is dropped.
+    { id: 'b', input: 'https://other.example/live', muted: true, volume: 100, place: null, page: { for: series, href: 'https://atlantic.example/watch/247718/2/8' } },
+    // Another site entirely, such as an ad: never kept.
+    { id: 'c', input: series, muted: true, volume: 100, place: null, page: { for: series, href: 'https://ads.example/win' } });
+  saveCurrent(ws);
+  const [a, b, c] = loadCurrent().tiles;
+  assert.deepEqual(a.page, { for: series, href: 'https://atlantic.example/watch/247718/2/8' });
+  assert.equal(a.input, series);
+  assert.equal(b.page, undefined);
+  assert.equal(c.page, undefined);
+});
