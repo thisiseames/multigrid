@@ -1322,8 +1322,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 /* A name is all an X account needs, so it gets a field of its own. */
 .addp-x { flex: none; display: flex; align-items: center; margin: 8px 16px 0; padding: 0 6px 0 14px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); }
 .addp-x:focus-within { border-color: var(--accent); }
-.addp-x-prefix { flex: none; font-size: 13px; color: var(--text-2); user-select: none; -webkit-user-select: none; }
-.addp-x input { flex: 1; min-width: 0; height: 34px; padding: 0 6px; border: 0; background: none; color: var(--text); font-size: 14px; }
+.addp-x-prefix { flex: none; font-size: 15px; color: var(--text-2); user-select: none; -webkit-user-select: none; }
+.addp-x input { flex: 1; min-width: 0; height: 34px; padding: 0 6px; border: 0; background: none; color: var(--text); font-size: 15px; }
 .addp-x input:focus { outline: none; }
 .addp-x-add { flex: none; height: 26px; padding: 0 12px; border-radius: 999px; background: var(--text); color: #111; font-size: 12px; font-weight: 700; }
 .addp-x-list { flex: none; align-self: flex-start; margin: 4px 16px 0; font-size: 12px; }
@@ -1831,6 +1831,7 @@ body.remote-open { overflow: hidden; }
   body.is-phone .saved-form .add-button { height: 44px; padding: 0 18px; }
   /* Typing at 16px or more stops the iPhone zooming in on a box. */
   body.is-phone input[type="text"], body.is-phone input[type="search"], body.is-phone input:not([type]), body.is-phone textarea { min-height: 44px; font-size: 16px; }
+  body.is-phone .addp-x-prefix, body.is-phone .addp-x input { font-size: 16px; }
 
   /* Notes and messages sit just above the tab bar. */
   .toast { bottom: calc(var(--tabbar) + var(--phonebar) + env(safe-area-inset-bottom) + 10px); }
