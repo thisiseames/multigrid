@@ -33,7 +33,7 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
-  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
+  TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
@@ -411,7 +411,7 @@ function channelResultRow(item, now, onDead, target) {
         $('channel-box').close();
         $('source-dialog').close();
         const name = channelTitle(item.name);
-        saveFavorite(item.url, name, item.country || '', item.logo);
+        saveFavorite(item.url, name, folderForCategory(item.category), item.logo);
         addStream(item.url, target);
         toast(`Adding ${name}…`);
       },
