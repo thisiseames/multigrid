@@ -12,7 +12,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 4. Check the change in a real browser at both laptop width and phone width (about 390 px) before calling it done.
 
 ## Where things live
-- `extension/`: source of the MULTIGRID Sound Chrome extension. Chrome loads the unpacked copy at `~/MULTIGRID Sound` on the owner's Mac; after changing it, copy the files there and reload it in `chrome://extensions` (only possible on the Mac).
+- `extension/`: the MULTIGRID Sound Chrome extension. Chrome on the owner's Mac loads it straight from a clone of this repo (`~/MULTIGRID-extension/extension`, linked at `~/MULTIGRID Sound`), and a launchd job (`com.eames.multigrid-extension`) pulls `main` into that clone every 5 minutes and at login (log: `~/Library/Logs/multigrid-extension.log`). After you push an extension change, bump its version in `extension/manifest.json`, and the only thing to ask the owner is: "Reload MULTIGRID Sound in chrome://extensions (in a few minutes), then reload MULTIGRID."
 - `notes/local-setup.md`: the owner's devices, Chrome extensions that affect playback, what's saved in the browser, and where secrets live. `notes/setup-data.json` is a snapshot of the favorites (with links), layouts and Continue watching.
 - `notes/todo.md`: ideas waiting for a plan and the owner's go.
 - `notes/owner-rules.md`: the owner's standing rules for every agent.

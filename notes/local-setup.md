@@ -8,9 +8,11 @@ Written Nov 20 from the owner's Mac so cloud sessions don't have to ask. No secr
 - The Mac's clock is set to Central time, so the laptop shows times an hour behind Toronto. The owner is in Toronto.
 
 ## The MULTIGRID Sound extension (Chrome)
-- Source: `extension/` in this repo (version 1.5). The copy Chrome actually loads is the unpacked folder `~/MULTIGRID Sound` on the Mac (an identical mirror is at `/Volumes/Seagate/Claude/multigrid-sound`).
+- Source: `extension/` in this repo (version 1.6 as of Nov 21). Chrome loads it from `~/MULTIGRID-extension/extension`, a clone of this repo kept on `main`; the old path `~/MULTIGRID Sound` is now a link to that folder, so Chrome's registration (extension id elagochopcmcnhjbicjnacnaimnagfak) didn't change.
+- Updates: the launchd job `~/Library/LaunchAgents/com.eames.multigrid-extension.plist` runs `git -C ~/MULTIGRID-extension pull --ff-only` every 5 minutes and at login, logging to `~/Library/Logs/multigrid-extension.log`.
 - What it does: lets MULTIGRID control sound in embedded players it can't otherwise reach, plus play/pause, the "resume where you left off" place inside embeds (stored in the frame as `multigrid.places.v1`), and progress messages back to the app.
-- After changing it: copy the files into `~/MULTIGRID Sound`, then reload it in `chrome://extensions` (Developer mode). A cloud session can't do that last step; say so to the owner.
+- After changing it: push to `main` with a new version number, then ask the owner: "Reload MULTIGRID Sound in chrome://extensions (in a few minutes), then reload MULTIGRID." Nobody copies files by hand any more. Chrome blocks automation on chrome://extensions, and a Chrome restart would lose his tabs (Chrome isn't set to reopen them), so that reload is his one click.
+- Check it's loaded: on the MULTIGRID page, `document.documentElement.dataset.multigridPage === '1'` (set by version 1.6 and later).
 
 ## Chrome extensions that can affect playback
 - **uBlock Origin Lite:** can block parts of embedded players or their ads.
