@@ -51,7 +51,26 @@ export function normalizePPV(data, now = Date.now()) {
     }
   }
   const rank = (item) => (item.live && !item.always ? 0 : item.upcoming ? 1 : item.always ? 2 : 3);
-  return found.sort((a, b) => rank(a) - rank(b) || (a.starts || Infinity) - (b.starts || Infinity) || a.name.localeCompare(b.name));
+  return found.sort((a, b) => {
+    const order = rank(a) - rank(b);
+    if (order) return order;
+    // Live events: the one that started most recently comes first, so a new game isn't
+    // buried behind everything that has been on since the morning.
+    if (rank(a) === 0) return b.starts - a.starts || a.name.localeCompare(b.name);
+    return (a.starts || Infinity) - (b.starts || Infinity) || a.name.localeCompare(b.name);
+  });
+}
+
+const skipToday = (event) => event.category === 'Ice Hockey'
+  || /\b(college|ncaa)\b/i.test(`${event.tag} ${event.source}`);
+
+/** The six events Today shows: live or starting in the next six hours, without college sports or hockey. */
+export function todayPPV(events, now = Date.now(), limit = 6) {
+  const end = now + 6 * 3600 * 1000;
+  return (events ?? [])
+    .filter((event) => !event.always && !skipToday(event)
+      && (event.live || (event.upcoming && event.starts <= end)))
+    .slice(0, limit);
 }
 
 let cache = null;

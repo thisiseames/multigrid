@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizePPV } from '../src/ppv.js';
+import { normalizePPV, todayPPV } from '../src/ppv.js';
 
 const now = 1800000000000;
 const stream = (over = {}) => ({
@@ -42,6 +42,31 @@ test('the PPV list puts live events first, then upcoming, then always-on channel
   assert.equal(list[2].upcoming, true);
   assert.equal(list[3].always, true);
   assert.equal(list[4].live, false);
+});
+
+test('live events that started most recently come first', () => {
+  const list = normalizePPV({ streams: [{ category: 'Football', streams: [
+    stream({ id: 1, name: 'Started at noon', starts_at: 1799985600, ends_at: 1800014400 }),
+    stream({ id: 2, name: 'Started at three', starts_at: 1799996400, ends_at: 1800025200 }),
+  ] }] }, now);
+  assert.deepEqual(list.map((item) => item.name), ['Started at three', 'Started at noon']);
+});
+
+test('Today leaves out college sports, hockey and always-on channels', () => {
+  const event = (name, over = {}) => ({
+    name, category: 'Football', tag: 'LaLiga', source: 'HD', always: false, live: true, upcoming: false, starts: now - 1800000, ...over,
+  });
+  const list = todayPPV([
+    event('Real Madrid vs. Celta Vigo'),
+    event('BYU Cougars at Kansas Jayhawks', { category: 'American Football', tag: 'College Football' }),
+    event('College basketball', { category: 'Basketball', tag: 'College Basketball' }),
+    event('NHL game', { category: 'Ice Hockey', tag: 'NHL' }),
+    event('NBA game', { category: 'Basketball', tag: 'NBA' }),
+    event('24/7 channel', { always: true }),
+    event('Upcoming soccer', { tag: 'MLS', live: false, upcoming: true, starts: now + 3600000 }),
+    event('Too far away', { tag: 'MLS', live: false, upcoming: true, starts: now + 7 * 3600000 }),
+  ], now);
+  assert.deepEqual(list.map((item) => item.name), ['Real Madrid vs. Celta Vigo', 'NBA game', 'Upcoming soccer']);
 });
 
 test('the PPV list drops past streams unless the service allows them', () => {
