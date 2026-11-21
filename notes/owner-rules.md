@@ -62,3 +62,11 @@ Nov 21, MULTIGRID: I told him it was ready to close the desktop app and work fro
 **Why:** my own plan said "verify: start a cloud session and make one tiny change" and I skipped it, then answered "yes, it's ready" anyway. A rules file is not the same as the cloud having everything.
 
 **How to apply:** before saying any project is ready for cloud/another device: inventory everything the work touches that lives only on this machine (extensions, unpacked folders, browser data, local copies, secrets' locations, settings), move it into the repo (no secret values), then actually run a cloud session against the repo with a realistic task and confirm it never needs the Mac. Only then say ready. Related: [[feedback-verify-before-asking-to-test]], [[reference-multigrid-opencode-nov20]].
+
+## Brainstorms: only fully worked-out ideas
+
+Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks ("corn niblets"), then bigger ideas that fell apart on his first questions: live rewind turned out to cover only 28 favorites (mostly news, none of the game streams), "Live now" included TikTok lives that MULTIGRID can't play, and "Share to MULTIGRID" on the iPhone can't reach the home-screen web app (iOS opens links in Safari, whose storage is separate).
+
+**Why:** I suggested ideas before checking them against his real setup (notes/setup-data.json) and the platform's limits.
+
+**How to apply:** before an idea goes in a brainstorm, work it through end to end: what exactly he taps, on which device, what it affects in his actual favorites, and every platform limit (iOS web app, embeds, CORS, keys). Drop anything that doesn't survive. Fewer, bigger ideas that hold up; no small tweaks to whatever was built last. His bar: OpenCode's extension (click on any site → it plays in MULTIGRID / a YouTube channel lands in Favorites).
