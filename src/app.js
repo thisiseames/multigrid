@@ -1938,7 +1938,8 @@ const channelPictureFor = (name) => CHANNEL_PICTURES.find(([pattern]) => pattern
 // dark or light tile, because a black wordmark would disappear on the dark one.
 const BRAND_PICTURES = [
   [/^stan sport/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Stan_Sport_logo.svg/960px-Stan_Sport_logo.svg.png', fit: 'picture', domain: 'stan.com.au' }],
-  [/sky sports uhd/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Sky_Sports_2020.svg/960px-Sky_Sports_2020.svg.png', fit: 'logo', tone: 'light', domain: 'skysports.com' }],
+  [/^sky sports/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Sky_Sports_2020.svg/960px-Sky_Sports_2020.svg.png', fit: 'logo', tone: 'light', domain: 'skysports.com' }],
+  [/^tnt sports/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/TNT_Sports_2021_logo.svg/960px-TNT_Sports_2021_logo.svg.png', fit: 'logo', tone: 'light', domain: 'tntsports.co.uk' }],
   [/red bull tv/i, { url: 'https://img.redbull.com/images/e_trim:10:transparent/c_limit,w_1500,h_1000/f_auto,q_auto/redbullcom/2017/09/14/c91a6d75-c4e7-4146-aa33-618e5d3b3e2c/red-bull-tv', fit: 'picture', domain: 'redbull.tv' }],
   [/paramount\s*(?:\+|plus)/i, { url: 'https://www.paramountplus.com/assets/pplus/PPlus_Logo_1200x630_BLUE.png', fit: 'picture', domain: 'paramountplus.com' }],
   [/nba on prime/i, { url: 'https://upload.wikimedia.org/wikipedia/en/1/1e/NBA_on_Prime_Logo.png', fit: 'picture', domain: 'nba.com' }],
