@@ -12,7 +12,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 
 ## Where things live
 - `extension/`: source of the MULTIGRID Sound Chrome extension. Chrome loads the unpacked copy at `~/MULTIGRID Sound` on the owner's Mac; after changing it, copy the files there and reload it in `chrome://extensions` (only possible on the Mac).
-- `notes/local-setup.md`: the owner's devices, Chrome extensions that affect playback, what's saved in the browser (favorites, layouts, Continue watching), and where secrets live.
+- `notes/local-setup.md`: the owner's devices, Chrome extensions that affect playback, what's saved in the browser, and where secrets live. `notes/setup-data.json` is a snapshot of the favorites (with links), layouts and Continue watching.
 - `notes/todo.md`: ideas waiting for a plan and the owner's go.
 
 ## Never

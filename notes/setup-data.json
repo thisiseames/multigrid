@@ -1,0 +1,2876 @@
+{
+ "note": "The owner's MULTIGRID setup as saved in Chrome on the Mac (localStorage), Nov 20. The Reader key and the phone-remote pairing code are deliberately left out.",
+ "favorites": [
+  {
+   "name": "NBA ON PRIME | TIMSTREAMS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://shoewiki.click/jqhakv8f-9102\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "NBA ON PRIME",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/nba/2026-11-20/tor-det\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "TIM STREAMS",
+   "folder": "STREAMING",
+   "link": "https://tim-streams.com/"
+  },
+  {
+   "name": "FOX NEWS CHANNEL",
+   "folder": "NEWS",
+   "link": "https://tvsen6.aynaott.com/foxnews/index.m3u8"
+  },
+  {
+   "name": "CNN INTERNATIONAL NORTH AMERICA",
+   "folder": "NEWS",
+   "link": "https://d2sybdl23b9psq.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-bocx3i7bjz0dg/CNNFAST_GB.m3u8"
+  },
+  {
+   "name": "BARCA TV",
+   "folder": "SPORTS",
+   "link": "https://live20.bozztv.com/dvrfl06/astv/astv-barca/index.m3u8"
+  },
+  {
+   "name": "FIFA +",
+   "folder": "SPORTS",
+   "link": "https://95cedebd.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/Vml6aW9fRklGQVBsdXNFbmdsaXNoX0hMUw/playlist.m3u8"
+  },
+  {
+   "name": "EUROSPORT 1",
+   "folder": "SPORTS",
+   "link": "https://r.eu.cdn-redge.media/livehls/oeu/mt/live/eurosport_1/live.livx/playlist.m3u8"
+  },
+  {
+   "name": "CBS NEWS 24/7",
+   "folder": "NEWS",
+   "link": "https://cbsn-us.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8"
+  },
+  {
+   "name": "RED BULL TV",
+   "folder": "ENTERTAINMENT",
+   "link": "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8"
+  },
+  {
+   "name": "TOP GEAR",
+   "folder": "ENTERTAINMENT",
+   "link": "https://amg00793-amg00793c5-vizio-us-2666.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-bbctopgear8minother-vizious/playlist.m3u8"
+  },
+  {
+   "name": "@arianaamore",
+   "folder": "",
+   "link": "https://www.tiktok.com/@arianaamore"
+  },
+  {
+   "name": "@appletv",
+   "folder": "",
+   "link": "https://www.tiktok.com/@appletv"
+  },
+  {
+   "name": "@2000smemes_",
+   "folder": "",
+   "link": "https://www.tiktok.com/@2000smemes_"
+  },
+  {
+   "name": "@lawrencejohnson",
+   "folder": "",
+   "link": "https://www.tiktok.com/@lawrencejohnson"
+  },
+  {
+   "name": "@lastweektonighthbo",
+   "folder": "",
+   "link": "https://www.tiktok.com/@lastweektonighthbo"
+  },
+  {
+   "name": "@kevonstagetiktok",
+   "folder": "",
+   "link": "https://www.tiktok.com/@kevonstagetiktok"
+  },
+  {
+   "name": "@kevbuildsapps",
+   "folder": "",
+   "link": "https://www.tiktok.com/@kevbuildsapps"
+  },
+  {
+   "name": "@jubilee",
+   "folder": "",
+   "link": "https://www.tiktok.com/@jubilee"
+  },
+  {
+   "name": "@joshjohnsoncomedy",
+   "folder": "",
+   "link": "https://www.tiktok.com/@joshjohnsoncomedy"
+  },
+  {
+   "name": "@joshjohnson.fan",
+   "folder": "",
+   "link": "https://www.tiktok.com/@joshjohnson.fan"
+  },
+  {
+   "name": "@headquarters",
+   "folder": "",
+   "link": "https://www.tiktok.com/@headquarters"
+  },
+  {
+   "name": "@couriernewsroom",
+   "folder": "",
+   "link": "https://www.tiktok.com/@couriernewsroom"
+  },
+  {
+   "name": "@calcookz",
+   "folder": "",
+   "link": "https://www.tiktok.com/@calcookz"
+  },
+  {
+   "name": "@bitesbyheart",
+   "folder": "",
+   "link": "https://www.tiktok.com/@bitesbyheart"
+  },
+  {
+   "name": "@anatomy.of.motion",
+   "folder": "",
+   "link": "https://www.tiktok.com/@anatomy.of.motion"
+  },
+  {
+   "name": "@ahormozi",
+   "folder": "",
+   "link": "https://www.tiktok.com/@ahormozi"
+  },
+  {
+   "name": "@7man_daily",
+   "folder": "",
+   "link": "https://www.tiktok.com/@7man_daily"
+  },
+  {
+   "name": "@dreekylie",
+   "folder": "",
+   "link": "https://www.tiktok.com/@dreekylie"
+  },
+  {
+   "name": "@curbyourfeeds",
+   "folder": "",
+   "link": "https://www.tiktok.com/@curbyourfeeds"
+  },
+  {
+   "name": "@calwillcookit",
+   "folder": "",
+   "link": "https://www.tiktok.com/@calwillcookit"
+  },
+  {
+   "name": "@grnasake",
+   "folder": "TWITTER",
+   "link": "https://x.com/grnasake"
+  },
+  {
+   "name": "@airplanmode1998",
+   "folder": "TWITTER",
+   "link": "https://x.com/airplanmode1998"
+  },
+  {
+   "name": "@101tino0",
+   "folder": "TWITTER",
+   "link": "https://x.com/101tino0"
+  },
+  {
+   "name": "@rizzolosophy",
+   "folder": "TWITTER",
+   "link": "https://x.com/rizzolosophy"
+  },
+  {
+   "name": "@luheah",
+   "folder": "TWITTER",
+   "link": "https://x.com/luheah"
+  },
+  {
+   "name": "@thexmatriarch",
+   "folder": "TWITTER",
+   "link": "https://x.com/thexmatriarch"
+  },
+  {
+   "name": "@men_sex_health",
+   "folder": "TWITTER",
+   "link": "https://x.com/men_sex_health"
+  },
+  {
+   "name": "@primal_edge",
+   "folder": "TWITTER",
+   "link": "https://x.com/primal_edge"
+  },
+  {
+   "name": "@fitnessdadx",
+   "folder": "TWITTER",
+   "link": "https://x.com/fitnessdadx"
+  },
+  {
+   "name": "@lab_for_men",
+   "folder": "TWITTER",
+   "link": "https://x.com/lab_for_men"
+  },
+  {
+   "name": "@heydoc_md",
+   "folder": "TWITTER",
+   "link": "https://x.com/heydoc_md"
+  },
+  {
+   "name": "@menslegithealth",
+   "folder": "TWITTER",
+   "link": "https://x.com/menslegithealth"
+  },
+  {
+   "name": "@xlifepad",
+   "folder": "TWITTER",
+   "link": "https://x.com/xlifepad"
+  },
+  {
+   "name": "@awakenthealphaa",
+   "folder": "TWITTER",
+   "link": "https://x.com/awakenthealphaa"
+  },
+  {
+   "name": "@kitchendiy_",
+   "folder": "TWITTER",
+   "link": "https://x.com/kitchendiy_"
+  },
+  {
+   "name": "@acyn",
+   "folder": "TWITTER",
+   "link": "https://x.com/acyn"
+  },
+  {
+   "name": "@anakasparian",
+   "folder": "TWITTER",
+   "link": "https://x.com/anakasparian"
+  },
+  {
+   "name": "@rt_com",
+   "folder": "TWITTER",
+   "link": "https://x.com/rt_com"
+  },
+  {
+   "name": "@johnkiriakou",
+   "folder": "TWITTER",
+   "link": "https://x.com/johnkiriakou"
+  },
+  {
+   "name": "@mehdirhasan",
+   "folder": "TWITTER",
+   "link": "https://x.com/mehdirhasan"
+  },
+  {
+   "name": "@youranonnews",
+   "folder": "TWITTER",
+   "link": "https://x.com/youranonnews"
+  },
+  {
+   "name": "@atrupar",
+   "folder": "TWITTER",
+   "link": "https://x.com/atrupar"
+  },
+  {
+   "name": "@hasanthehun",
+   "folder": "TWITTER",
+   "link": "https://x.com/hasanthehun"
+  },
+  {
+   "name": "@cenkuygur",
+   "folder": "TWITTER",
+   "link": "https://x.com/cenkuygur"
+  },
+  {
+   "name": "@covie_93",
+   "folder": "TWITTER",
+   "link": "https://x.com/covie_93"
+  },
+  {
+   "name": "@clashreport",
+   "folder": "TWITTER",
+   "link": "https://x.com/clashreport"
+  },
+  {
+   "name": "@hqnewsnow",
+   "folder": "TWITTER",
+   "link": "https://x.com/hqnewsnow"
+  },
+  {
+   "name": "@realcandaceo",
+   "folder": "TWITTER",
+   "link": "https://x.com/realcandaceo"
+  },
+  {
+   "name": "@i_ammukhtar",
+   "folder": "TWITTER",
+   "link": "https://x.com/i_ammukhtar"
+  },
+  {
+   "name": "@meidastouch",
+   "folder": "TWITTER",
+   "link": "https://x.com/meidastouch"
+  },
+  {
+   "name": "@logically_jc",
+   "folder": "TWITTER",
+   "link": "https://x.com/logically_jc"
+  },
+  {
+   "name": "@guychristensen_",
+   "folder": "TWITTER",
+   "link": "https://x.com/guychristensen_"
+  },
+  {
+   "name": "@zeteo_news",
+   "folder": "TWITTER",
+   "link": "https://x.com/zeteo_news"
+  },
+  {
+   "name": "@candaceoshow",
+   "folder": "TWITTER",
+   "link": "https://x.com/candaceoshow"
+  },
+  {
+   "name": "@explosivemediaa",
+   "folder": "TWITTER",
+   "link": "https://x.com/explosivemediaa"
+  },
+  {
+   "name": "@zeteonews",
+   "folder": "",
+   "link": "https://www.tiktok.com/@zeteonews"
+  },
+  {
+   "name": "@worldwidehassan",
+   "folder": "",
+   "link": "https://www.tiktok.com/@worldwidehassan"
+  },
+  {
+   "name": "@weeklyshowpodcast",
+   "folder": "",
+   "link": "https://www.tiktok.com/@weeklyshowpodcast"
+  },
+  {
+   "name": "@we.saw.that_extra",
+   "folder": "",
+   "link": "https://www.tiktok.com/@we.saw.that_extra"
+  },
+  {
+   "name": "@we.saw.that",
+   "folder": "",
+   "link": "https://www.tiktok.com/@we.saw.that"
+  },
+  {
+   "name": "@tuckercarlson",
+   "folder": "",
+   "link": "https://www.tiktok.com/@tuckercarlson"
+  },
+  {
+   "name": "@tsn",
+   "folder": "",
+   "link": "https://www.tiktok.com/@tsn"
+  },
+  {
+   "name": "@therecount",
+   "folder": "",
+   "link": "https://www.tiktok.com/@therecount"
+  },
+  {
+   "name": "@theovon",
+   "folder": "",
+   "link": "https://www.tiktok.com/@theovon"
+  },
+  {
+   "name": "@talksport",
+   "folder": "",
+   "link": "https://www.tiktok.com/@talksport"
+  },
+  {
+   "name": "@skysportsfootball",
+   "folder": "",
+   "link": "https://www.tiktok.com/@skysportsfootball"
+  },
+  {
+   "name": "@skysports",
+   "folder": "",
+   "link": "https://www.tiktok.com/@skysports"
+  },
+  {
+   "name": "@shxtsngigs",
+   "folder": "",
+   "link": "https://www.tiktok.com/@shxtsngigs"
+  },
+  {
+   "name": "@pikerdailynews",
+   "folder": "",
+   "link": "https://www.tiktok.com/@pikerdailynews"
+  },
+  {
+   "name": "@pikerbroadcastingpbs",
+   "folder": "",
+   "link": "https://www.tiktok.com/@pikerbroadcastingpbs"
+  },
+  {
+   "name": "@piker.broadcast.service",
+   "folder": "",
+   "link": "https://www.tiktok.com/@piker.broadcast.service"
+  },
+  {
+   "name": "@piersmorganuncensored",
+   "folder": "",
+   "link": "https://www.tiktok.com/@piersmorganuncensored"
+  },
+  {
+   "name": "@pbsclips1",
+   "folder": "",
+   "link": "https://www.tiktok.com/@pbsclips1"
+  },
+  {
+   "name": "@nycmayor",
+   "folder": "",
+   "link": "https://www.tiktok.com/@nycmayor"
+  },
+  {
+   "name": "@nowtoronto",
+   "folder": "",
+   "link": "https://www.tiktok.com/@nowtoronto"
+  },
+  {
+   "name": "@kylekulinski",
+   "folder": "TWITTER",
+   "link": "https://x.com/kylekulinski"
+  },
+  {
+   "name": "@DropSiteNews",
+   "folder": "TWITTER",
+   "link": "https://x.com/DropSiteNews?s=20"
+  },
+  {
+   "name": "@ZohranKMamdani",
+   "folder": "TWITTER",
+   "link": "x.com/ZohranKMamdani"
+  },
+  {
+   "name": "@hasanthehun",
+   "folder": "TWITTER",
+   "link": "x.com/hasanthehun"
+  },
+  {
+   "name": "@cenkuygur",
+   "folder": "TWITTER",
+   "link": "x.com/cenkuygur"
+  },
+  {
+   "name": "@acyn",
+   "folder": "TWITTER",
+   "link": "x.com/acyn"
+  },
+  {
+   "name": "@KevOnStage",
+   "folder": "TWITTER",
+   "link": "x.com/@KevOnStage"
+  },
+  {
+   "name": "@culturecams",
+   "folder": "",
+   "link": "https://www.tiktok.com/@culturecams"
+  },
+  {
+   "name": "@crookedmedia",
+   "folder": "",
+   "link": "https://www.tiktok.com/@crookedmedia"
+  },
+  {
+   "name": "@cnn",
+   "folder": "",
+   "link": "https://www.tiktok.com/@cnn"
+  },
+  {
+   "name": "@citynewsto",
+   "folder": "",
+   "link": "https://www.tiktok.com/@citynewsto"
+  },
+  {
+   "name": "@chriswillx",
+   "folder": "",
+   "link": "https://www.tiktok.com/@chriswillx"
+  },
+  {
+   "name": "@cbcnews",
+   "folder": "",
+   "link": "https://www.tiktok.com/@cbcnews"
+  },
+  {
+   "name": "@candaceoshow",
+   "folder": "",
+   "link": "https://www.tiktok.com/@candaceoshow"
+  },
+  {
+   "name": "@andrewrousso",
+   "folder": "",
+   "link": "https://www.tiktok.com/@andrewrousso"
+  },
+  {
+   "name": "@ana_kasparian",
+   "folder": "",
+   "link": "https://www.tiktok.com/@ana_kasparian"
+  },
+  {
+   "name": "@pearlmania500",
+   "folder": "",
+   "link": "https://www.tiktok.com/@pearlmania500"
+  },
+  {
+   "name": "@boondockscore",
+   "folder": "",
+   "link": "https://www.tiktok.com/@boondockscore"
+  },
+  {
+   "name": "@beinsportsusa",
+   "folder": "",
+   "link": "https://www.tiktok.com/@beinsportsusa"
+  },
+  {
+   "name": "@bbcsport",
+   "folder": "",
+   "link": "https://www.tiktok.com/@bbcsport"
+  },
+  {
+   "name": "@bbcnews",
+   "folder": "",
+   "link": "https://www.tiktok.com/@bbcnews"
+  },
+  {
+   "name": "@bassem",
+   "folder": "",
+   "link": "https://www.tiktok.com/@bassem"
+  },
+  {
+   "name": "@aljazeeraenglish",
+   "folder": "",
+   "link": "https://www.tiktok.com/@aljazeeraenglish"
+  },
+  {
+   "name": "@adika.s.takes",
+   "folder": "",
+   "link": "https://www.tiktok.com/@adika.s.takes"
+  },
+  {
+   "name": "@adamcleryfc",
+   "folder": "",
+   "link": "https://www.tiktok.com/@adamcleryfc"
+  },
+  {
+   "name": "@abdulelsayed",
+   "folder": "",
+   "link": "https://www.tiktok.com/@abdulelsayed"
+  },
+  {
+   "name": "@aaronparnas1",
+   "folder": "",
+   "link": "https://www.tiktok.com/@aaronparnas1"
+  },
+  {
+   "name": "@aa9skillzclip",
+   "folder": "",
+   "link": "https://www.tiktok.com/@aa9skillzclip"
+  },
+  {
+   "name": "@_cookwithmi",
+   "folder": "",
+   "link": "https://www.tiktok.com/@_cookwithmi"
+  },
+  {
+   "name": "@9figureroofer",
+   "folder": "",
+   "link": "https://www.tiktok.com/@9figureroofer"
+  },
+  {
+   "name": "@60minutes",
+   "folder": "",
+   "link": "https://www.tiktok.com/@60minutes"
+  },
+  {
+   "name": "@48lawsofpower.book",
+   "folder": "",
+   "link": "https://www.tiktok.com/@48lawsofpower.book"
+  },
+  {
+   "name": "EXPIRED BROCCOLI",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@_expiredbroccoli"
+  },
+  {
+   "name": "TikTok · @adammockler",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@adammockler"
+  },
+  {
+   "name": "TikTok · @overlapdaily",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@overlapdaily"
+  },
+  {
+   "name": "TikTok · @thefootballboardcast",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@thefootballboardcast"
+  },
+  {
+   "name": "TikTok · @theathleticfc",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@theathleticfc"
+  },
+  {
+   "name": "PERSON OF INTEREST",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1411/1/1"
+  },
+  {
+   "name": "FF",
+   "folder": "X",
+   "link": "https://fikfap.com/"
+  },
+  {
+   "name": "CAM",
+   "folder": "X",
+   "link": "https://www.createaimilf.com/?filter=new&type=image&style=all"
+  },
+  {
+   "name": "CC",
+   "folder": "X",
+   "link": "https://camcaps.tv/"
+  },
+  {
+   "name": "XN",
+   "folder": "X",
+   "link": "https://www.xnalgas.com/most-recent/"
+  },
+  {
+   "name": "BO",
+   "folder": "X",
+   "link": "https://baddiesonly.tv/"
+  },
+  {
+   "name": "HS",
+   "folder": "X",
+   "link": "https://hoesfreaks.com/"
+  },
+  {
+   "name": "XF",
+   "folder": "X",
+   "link": "https://xfeed.com/"
+  },
+  {
+   "name": "XT",
+   "folder": "X",
+   "link": "https://xxthots.com/"
+  },
+  {
+   "name": "BH",
+   "folder": "X",
+   "link": "https://baddiehub.com/"
+  },
+  {
+   "name": "SXY",
+   "folder": "X",
+   "link": "https://sxyprn.com/"
+  },
+  {
+   "name": "SHETLAND",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/46923/1/1"
+  },
+  {
+   "name": "ENTERTAINMENT TONIGHT",
+   "folder": "ENTERTAINMENT",
+   "link": "https://enterbcef94b.airspace-cdn.cbsivideo.com/master.m3u8"
+  },
+  {
+   "name": "SCHITT'S CREEK CHANNEL",
+   "folder": "ENTERTAINMENT",
+   "link": "https://amagi-streams.akamaized.net/hls/live/2120484/schittscreek/master.m3u8"
+  },
+  {
+   "name": "CBC COMEDY",
+   "folder": "ENTERTAINMENT",
+   "link": "https://amagi-streams.akamaized.net/hls/live/2110963/cbccomedy/master.m3u8"
+  },
+  {
+   "name": "CBC NEWS TORONTO",
+   "folder": "NEWS",
+   "link": "https://amagi-streams.akamaized.net/hls/live/2110961/cbctoronto/master.m3u8"
+  },
+  {
+   "name": "SYFY",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/eymmdvm3-8392\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY WITNESS",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/bje2rae0-7272\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "BOOMERANG",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/riwrf6tw-7706\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "MASTERCHEF AUSTRALIA",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/16395/1/1"
+  },
+  {
+   "name": "RAMSAY'S KITCHEN NIGHTMARES",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/2178/1/1"
+  },
+  {
+   "name": "TO CATCH A SMUGGLER",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/101129/1/1"
+  },
+  {
+   "name": "NAKED AND AFRAID OF LOVE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/130385/1/1"
+  },
+  {
+   "name": "FEAR FACTOR",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/320/1/1"
+  },
+  {
+   "name": "TOP CHEF",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/41822/1/1"
+  },
+  {
+   "name": "PHYSICAL 100: MEXICO",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/332282/1/1"
+  },
+  {
+   "name": "THE PENDRAGON CYCLE: RISE OF THE MERLIN",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/235685/1/1"
+  },
+  {
+   "name": "RONALDINHO: THE ONE AND ONLY",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/316544/1/1"
+  },
+  {
+   "name": "LEGENDS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/262280/1/1"
+  },
+  {
+   "name": "CARRIE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/288673/1/1"
+  },
+  {
+   "name": "THE CHOSEN",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/85077/1/1"
+  },
+  {
+   "name": "VISIONQUEST",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/213375/1/1"
+  },
+  {
+   "name": "THE RINGS OF POWER",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/84773/1/1"
+  },
+  {
+   "name": "MOBLAND",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/247718/1/1"
+  },
+  {
+   "name": "ENTOURAGE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1940/1/1"
+  },
+  {
+   "name": "CURB YOUR ENTHUSIASM",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/4546/1/1"
+  },
+  {
+   "name": "DEXTER",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1405/1/1"
+  },
+  {
+   "name": "LAST WEEK TONIGHT",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/60694/1/1"
+  },
+  {
+   "name": "BAND OF BROTHERS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/4613/1/1"
+  },
+  {
+   "name": "LIONESS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/113962/1/1"
+  },
+  {
+   "name": "MODERN FAMILY",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1421/1/1"
+  },
+  {
+   "name": "YELLOWSTONE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/73586/1/1"
+  },
+  {
+   "name": "SPORTSNET",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/nba/2026-11-17/ny-tor\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "TBS",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/concacaf-nations-league/2026-11-18/usa-hai\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "PPV",
+   "folder": "STREAMING",
+   "link": "https://ppv.st/"
+  },
+  {
+   "name": "JOHN KIRIAKOU",
+   "folder": "YOUTUBE",
+   "link": "UCyFoulEppT3kYN_cSt11M8Q"
+  },
+  {
+   "name": "AE",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/mpmo2rq6-6555\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "MTV",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/m7dxbt6s-3921\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "ESPN NEWS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/mftslez4-140\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "BBC TWO",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/i1999ji2-8265\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "BBC ONE LONDON",
+   "folder": "NEWS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/evqaao47-8670\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS NEWS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/sawtuw4t-1541\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS FOOTBALL",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/a80q8j3i-3954\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS PREMIER LEAGUE",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/kzd3hrqz-7065\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY DOCUMENTARIES",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/9z4cqq8i-8077\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY ONE",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/0aegx40g-2640\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "RORY JENNINGS",
+   "folder": "YOUTUBE",
+   "link": "UCjz0jCqq6rclL06bSLuvQ6A"
+  },
+  {
+   "name": "SDS",
+   "folder": "YOUTUBE",
+   "link": "UCSDgFpNwhWvztkEHDaaSSSw"
+  },
+  {
+   "name": "ATLANTIC",
+   "folder": "STREAMING",
+   "link": "https://atlantic.bz/"
+  },
+  {
+   "name": "DAZN",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/uefa-nations-league/2026-11-17/den-nor\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "DAZN",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/uefa-nations-league/2026-11-17/wal-por\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "THE WALKING DEAD",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1402/1/1"
+  },
+  {
+   "name": "ITV 3 FHD UK",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://daddylive.app/player/embed.php?id=ITV-3-FHD-UK\" width=\"100%\" height=\"380px\" style=\"border:0;\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "ITV 1 FHD UK",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://daddylive.app/player/embed.php?id=ITV-1-FHD-UK\" width=\"100%\" height=\"380px\" style=\"border:0;\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/uefa-nations-league/2026-11-16/ger-ned\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "NBA LEAGUE PASS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/nyigj80x-6445\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "NFL GAME PASS ON DAZN",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/l56bfq5m-5116\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "NBA LEAGUE PASS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/0uhlhcdr-5706\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/n92tmdv8-3939\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/xib5o5fp-5169\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "NBA LEAGUE PASS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ztvuspjl-5862\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA 1",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/mxl00ncu-5267\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA 2",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/212qqwd3-9681\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA 3",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/yeh47r8n-9601\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA 4",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/lzykgt4x-9474\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN CANADA 5",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/fxummbzw-4561\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "VH1 USA",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/vh1-usa?radius=0&frame=0&title=0&brand=0&golive=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "NBC SPORTS PHILADELPHIA",
+   "folder": "SPORTS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/nba/2026-11-12/tor-phi\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "FOX NEWS",
+   "folder": "NEWS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/fox-news-31730\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "CNN",
+   "folder": "NEWS",
+   "link": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/cnn-31729\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>"
+  },
+  {
+   "name": "CNBC",
+   "folder": "NEWS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/575o95wh-4749\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "MONDRA LAJUAN",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@mondralajuan"
+  },
+  {
+   "name": "SHE MEANZ BIZZZ",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@she_meanz_bizzz"
+  },
+  {
+   "name": "THE TIME PODCAST",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@samicreater2"
+  },
+  {
+   "name": "KAYLA J SCHRADER",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@kaylajschrader"
+  },
+  {
+   "name": "THE NECESSARY CONVERSATION",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@thenecessaryconversation"
+  },
+  {
+   "name": "ROCKY",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@axrockyy"
+  },
+  {
+   "name": "BIG SWAVE",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@biggestswave"
+  },
+  {
+   "name": "HASAN CLIPS",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@hasanclipsenterprisefan"
+  },
+  {
+   "name": "BLAKELEY",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@iamblakeley"
+  },
+  {
+   "name": "VIC MENSA",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@vicmensa"
+  },
+  {
+   "name": "HASANABI AFTERDARK",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@hasanabi_afterdark"
+  },
+  {
+   "name": "NOWTHIS IMPACT",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@nowthisimpact"
+  },
+  {
+   "name": "NO FILTER SARAH",
+   "folder": "TIKTOK",
+   "link": "https://www.tiktok.com/@no_filter_sarah"
+  },
+  {
+   "name": "FUBO",
+   "folder": "YOUTUBE",
+   "link": "UCD2lJITnvzflNhOqQckMpQg"
+  },
+  {
+   "name": "MORE JAMES ALCOTT",
+   "folder": "YOUTUBE",
+   "link": "UCVP7slRu2oEZGKAgtFbblbw"
+  },
+  {
+   "name": "NBC SPORTS",
+   "folder": "YOUTUBE",
+   "link": "UCqZQlzSHbVJrwrn5XvzrzcA"
+  },
+  {
+   "name": "DR SPORTS",
+   "folder": "YOUTUBE",
+   "link": "UCZDi95PJ6VmWtQAScA9Rh-w"
+  },
+  {
+   "name": "NBA LEAGUE PASS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/w9wujgg8-8762\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TBS",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/auto-tbs?radius=0&frame=0&title=0&brand=0&fullscreen=0&quality=0&golive=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "PARAMOUNT+",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/qhf8w7f2-3023\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TELEMUNDO",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ha535kz3-3170\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "USA NETWORK",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/nloc37sc-5106\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "BEIN SPORTS 3",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/2e3uhhu1-6617\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DAZN",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/hs8jxjxx-7712\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS PREMIER LEAGUE",
+   "folder": "YOUTUBE",
+   "link": "UCNAf1k0yIjyGu3k9BwAg3lg"
+  },
+  {
+   "name": "MS NOW",
+   "folder": "YOUTUBE",
+   "link": "UCaXkIU1QidjPwiAYu6GcHjg"
+  },
+  {
+   "name": "ADIKASTAKES",
+   "folder": "YOUTUBE",
+   "link": "UCMCNDW3uarK9vwNBaqZ2NbQ"
+  },
+  {
+   "name": "JOSH JOHNSON",
+   "folder": "YOUTUBE",
+   "link": "UCLuYADJ6hESLHX87JnsGbjA"
+  },
+  {
+   "name": "PROPER SATURDAY",
+   "folder": "YOUTUBE",
+   "link": "UCRb2bShfMqtMJvBN39D5sIg"
+  },
+  {
+   "name": "DAZN CANADA 6",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ia3y1hnz-9163\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "ESPN 2",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/33jhpzfr-2037\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "STAN SPORT 2",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/r3og6leq-6965\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "STAN SPORT",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/9dllhbbv-7545\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "1FLEX",
+   "folder": "STREAMING",
+   "link": "https://www.1flex.org/"
+  },
+  {
+   "name": "ESPN+",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/0a84cfcr-5779\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS UHD1",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/t7qnwt79-7454\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SHOWTIME",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/lbf8b9qx-6563\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SHOWTIME 2",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/dutm6aqf-8707\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "ABC",
+   "folder": "NEWS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/nhmzkzez-3716\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "AMC",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/q4o68v8x-444\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY ATLANTIC",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/lkz8kkmu-4129\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "FOOD NETWORK",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/cnomxno0-9653\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "DISCOVERY CHANNEL",
+   "folder": "NEWS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/5hibihrx-1061\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "BBC AMERICA",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ha5xbugi-5832\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "POD SAVE AMERICA",
+   "folder": "YOUTUBE",
+   "link": "UCKRoXz3hHAu2XL_k3Ef4vJQ"
+  },
+  {
+   "name": "SLOW HORSES",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/95480/1/1"
+  },
+  {
+   "name": "THE WEST WING",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/688/1/1"
+  },
+  {
+   "name": "DRAGON BALL Z",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/12971/1/1"
+  },
+  {
+   "name": "DARK MATTER",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/196322/1/1"
+  },
+  {
+   "name": "30 ROCK",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/4608/1/1"
+  },
+  {
+   "name": "TOO HOT TO HANDLE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/102085/1/1"
+  },
+  {
+   "name": "HELL'S KITCHEN",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/2370/1/1"
+  },
+  {
+   "name": "KITCHEN NIGHTMARES",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/235884/1/1"
+  },
+  {
+   "name": "HOTEL HELL",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/44472/1/1"
+  },
+  {
+   "name": "DATING NAKED UK",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/262469/1/1"
+  },
+  {
+   "name": "BOSTON LEGAL",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/4598/1/1"
+  },
+  {
+   "name": "ARCHER",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/10283/1/1"
+  },
+  {
+   "name": "HOUSE OF CARDS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1425/1/1"
+  },
+  {
+   "name": "WEEDS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/186/1/1"
+  },
+  {
+   "name": "CALIFORNICATION",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1215/1/1"
+  },
+  {
+   "name": "SUCCESSION",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/76331/1/1"
+  },
+  {
+   "name": "VEEP",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/2947/1/1"
+  },
+  {
+   "name": "TULSA KING",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/153312/1/1"
+  },
+  {
+   "name": "SHAMELESS",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/34307/1/1"
+  },
+  {
+   "name": "NOCTURNE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/292741/1/1"
+  },
+  {
+   "name": "SEINFELD",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/1400/1/1"
+  },
+  {
+   "name": "THE OFFICE",
+   "folder": "SERIES",
+   "link": "https://atlantic.bz/watch/2316/1/1"
+  },
+  {
+   "name": "THE WEEKLY SHOW WITH JON STEWART",
+   "folder": "YOUTUBE",
+   "link": "UCQlJ7XpBtiMLKNSd4RAJmRQ"
+  },
+  {
+   "name": "FILTHY FELLAS",
+   "folder": "YOUTUBE",
+   "link": "UC1F_20FzlcnC38qMY4JjjDg"
+  },
+  {
+   "name": "ZETEO",
+   "folder": "YOUTUBE",
+   "link": "UCVG72F2Q5yCmLQfctNK6M2A"
+  },
+  {
+   "name": "JIMMY KIMMEL LIVE",
+   "folder": "YOUTUBE",
+   "link": "UCa6vGFO9ty8v5KZJXQxdhaw"
+  },
+  {
+   "name": "CW",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/auto-cw?radius=0&frame=0&title=0&brand=0&golive=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "BEIN SPORTS 1",
+   "folder": "SPORTS",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/beinsports2-au?radius=0&frame=0&title=0&brand=0&golive=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "ADULT SWIM USA",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/adult-swim-test?radius=0&frame=0&title=0&brand=0&golive=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "TSN 4",
+   "folder": "SPORTS",
+   "link": "<iframe\n  src=\"https://zlive.st/embed/TSN4?radius=0&frame=0&title=0&brand=0\"\n  width=\"960\"\n  height=\"540\"\n  frameborder=\"0\"\n  allow=\"autoplay; fullscreen; picture-in-picture\"\n  allowfullscreen\n  style=\"border:0\"\n></iframe>"
+  },
+  {
+   "name": "NBC SPORTS BAY AREA",
+   "folder": "SPORTS",
+   "link": "https://xyzstreams.st/embed?nba2h"
+  },
+  {
+   "name": "NBC",
+   "folder": "ENTERTAINMENT",
+   "link": "https://xyzstreams.st/embed?nbc"
+  },
+  {
+   "name": "THE TIM DILLON SHOW",
+   "folder": "YOUTUBE",
+   "link": "UC4woSp8ITBoYDmjkukhEhxg"
+  },
+  {
+   "name": "THE MAJORITY REPORT WITH SAM SEDER",
+   "folder": "YOUTUBE",
+   "link": "UC-3jIAlnQmbbVMV6gR7K8aQ"
+  },
+  {
+   "name": "THE DAILY SHOW",
+   "folder": "YOUTUBE",
+   "link": "UCwWhs_6x42TyRM4Wstoq8HA"
+  },
+  {
+   "name": "HELL'S KITCHEN",
+   "folder": "ENTERTAINMENT",
+   "link": "https://amg00654-itv-amg00654c1-samsung-au-1072.playouts.now.amagi.tv/itv-hellskitchen-samsung/playlist.m3u8"
+  },
+  {
+   "name": "FX",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/fn3pa1gb-7752\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "HBO",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ot03jqpb-3374\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "HBO COMEDY",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/g8rltva2-3731\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "HBO DRAMA",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/30owqrck-2454\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "NBA TV",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/8tl2ksef-6191\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SHOWTIME NEXT",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/1n90vg6y-358\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SHOWTIME EXTREME",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/5capzra0-4531\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "STARS COMEDY",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ps7hzjaz-6504\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "STARS CINEMA",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/7kshly84-9062\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "STARZ",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/mmuqk3b6-3260\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "THE YOUNG TURKS",
+   "folder": "YOUTUBE",
+   "link": "UC1yBKRuGpC1tSM73A0ZjYjQ"
+  },
+  {
+   "name": "HASANABI",
+   "folder": "YOUTUBE",
+   "link": "UCtoaZpBnrd0lhycxYJ4MNOQ"
+  },
+  {
+   "name": "VIC MENSA",
+   "folder": "YOUTUBE",
+   "link": "UCCkJuLH3pjjyDAuzbSky55g"
+  },
+  {
+   "name": "DAZN FOOTBALL",
+   "folder": "YOUTUBE",
+   "link": "UCSZ21xyG8w_33KriMM69IxQ"
+  },
+  {
+   "name": "MARC LAMONT HILL NETWORK",
+   "folder": "YOUTUBE",
+   "link": "UCvP5iwPBzl0Wn0-GBAzGryg"
+  },
+  {
+   "name": "BEYOND THE PITCH",
+   "folder": "YOUTUBE",
+   "link": "UCP04s3wlzIfHwhVpxgYuuvQ"
+  },
+  {
+   "name": "CULTURE CAMS",
+   "folder": "YOUTUBE",
+   "link": "UCHV5NPPN5-bqbdbyVWpNXYA"
+  },
+  {
+   "name": "THE OVERLAP",
+   "folder": "YOUTUBE",
+   "link": "UCjXIw1GlwaY1IzpW_jN9iCQ"
+  },
+  {
+   "name": "FOOTBALL RAMBLE",
+   "folder": "YOUTUBE",
+   "link": "UCDC5_m85KU8tM3b3cgH-NFQ"
+  },
+  {
+   "name": "NO QUESTION ABOUT THAT",
+   "folder": "YOUTUBE",
+   "link": "UCQ0uvhxm3j2_sx3ubtTm2Eg"
+  },
+  {
+   "name": "STRETFORD PADDOCK",
+   "folder": "YOUTUBE",
+   "link": "UC7w8GnTF2Sp3wldDMtCCtVw"
+  },
+  {
+   "name": "RIO FERDINAND PRESENTS",
+   "folder": "YOUTUBE",
+   "link": "UCPAiS32go3-GwTO0kmlVX7g"
+  },
+  {
+   "name": "STEPHEN HOWSON",
+   "folder": "YOUTUBE",
+   "link": "UCmX3073pl-9ASXYaWDrEAHw"
+  },
+  {
+   "name": "I'VE HAD IT",
+   "folder": "YOUTUBE",
+   "link": "https://www.youtube.com/playlist?list=UUZ5cvDR2HhVUcdVoTvvQKLw"
+  },
+  {
+   "name": "CBS SPORTS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/0sx1lkr8-9632\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TNT SPORTS ULTIMATE",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/d9db4gnt-8059\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "CBS SPORTS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/t83fywnd-8646\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "CBS SPORTS",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/0zmnh0n8-9745\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "PARAMOUNT+",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/3o6qgq8c-2071\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "USA NETWORK",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/nloc37sc-6644\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TNT SPORTS 4",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/3u2rfhmp-6401\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TNT SPORTS 3",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/bjarzxf9-6453\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TNT SPORTS 1",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/e0lyrkhr-8174\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TNT SPORTS 2",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/it7aytqh-6222\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY NEWS",
+   "folder": "NEWS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/ys99t6uq-6452\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS +",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/jwrj2d6p-6501\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS MAIN EVENT",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/n58ajgfx-8440\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "SKY SPORTS ACTION",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/3ym6q5iy-2318\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "ESPN",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/o9bl8cai-5299\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "COMEDY CENTRAL",
+   "folder": "ENTERTAINMENT",
+   "link": "<iframe src=\"https://ehgembxe.cfd/aoeb77xq-67\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "CBS SPORTS NETWORK",
+   "folder": "SPORTS",
+   "link": "<iframe src=\"https://ehgembxe.cfd/9c2jwr40-4344\" width=\"100%\" height=\"100%\" frameborder=\"0\" scrolling=\"no\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe>"
+  },
+  {
+   "name": "TYT",
+   "folder": "NEWS",
+   "link": "https://tyt-samsungus.amagi.tv/playlist.m3u8"
+  },
+  {
+   "name": "FEAR FACTOR",
+   "folder": "ENTERTAINMENT",
+   "link": "https://amg00627-banijaygroup-fearfactor-samsungau-9vdod.amagi.tv/playlist/amg00627-banijaygroup-fearfactor-samsungau/playlist.m3u8"
+  },
+  {
+   "name": "NBC NEWS NOW",
+   "folder": "NEWS",
+   "link": "https://livehub-voidnet.onrender.com/cluster/streamcore/us/NBC_REDIS.m3u8"
+  },
+  {
+   "name": "USA TODAY",
+   "folder": "NEWS",
+   "link": "https://a-cdn.klowdtv.com/live3/usatoday_720p/playlist.m3u8"
+  },
+  {
+   "name": "TODAY ALL DAY",
+   "folder": "NEWS",
+   "link": "https://aegis-cloudfront-1.tubi.video/cb7f305d-049a-4feb-bc6e-028c43ad3c3e/master.m3u8"
+  },
+  {
+   "name": "FS2",
+   "folder": "SPORTS",
+   "link": "https://tvsen7.aynascope.net/foxsports2/index.m3u8"
+  },
+  {
+   "name": "TALK SPORT",
+   "folder": "SPORTS",
+   "link": "https://tvsen6.aynaott.com/talkSPORT/index.m3u8"
+  },
+  {
+   "name": "BEIN SPORTS XTRA",
+   "folder": "SPORTS",
+   "link": "https://bein-xtra-bein.amagi.tv/playlist.m3u8"
+  },
+  {
+   "name": "MASTER CHEF",
+   "folder": "ENTERTAINMENT",
+   "link": "https://aegis-cloudfront-1.tubi.video/c8364f36-c60b-4a39-8d86-0b92db4611c0/index.m3u8"
+  },
+  {
+   "name": "FOX SPORTS 1",
+   "folder": "SPORTS",
+   "link": "https://tvsen7.aynascope.net/foxsports1/index.m3u8"
+  },
+  {
+   "name": "MUTV",
+   "folder": "SPORTS",
+   "link": "https://fastly.live.brightcove.com/6374054671112/eu-west-1/6058004203001/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJob3N0IjoiYXplMnp5LmVncmVzcy55ODN1ZWIiLCJhY2NvdW50X2lkIjoiNjA1ODAwNDIwMzAwMSIsImVobiI6ImZhc3RseS5saXZlLmJyaWdodGNvdmUuY29tIiwiaXNzIjoiYmxpdmUtcGxheWJhY2stc291cmNlLWFwaSIsInN1YiI6InBhdGhtYXB0b2tlbiIsImF1ZCI6WyI2MDU4MDA0MjAzMDAxIl0sImp0aSI6IjYzNzQwNTQ2NzExMTIifQ.3FmuTna3DAmY7xlhK5fk6LMrosrtrR5VsU2QOgYO5y4/playlist-hls.m3u8"
+  },
+  {
+   "name": "CITYNEWS",
+   "folder": "NEWS",
+   "link": "https://citynewsregional.akamaized.net/hls/live/1024052/Regional_Live_7/master.m3u8"
+  },
+  {
+   "name": "CP24",
+   "folder": "NEWS",
+   "link": "https://tvsen6.aynaott.com/cp24/index.m3u8"
+  },
+  {
+   "name": "BBC NEWS",
+   "folder": "NEWS",
+   "link": "https://vs-hls-push-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_news_channel_hd/mobile_wifi_main_hd_abr_v2.m3u8"
+  },
+  {
+   "name": "AL JAZEERA",
+   "folder": "NEWS",
+   "link": "https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8"
+  },
+  {
+   "name": "HASAN",
+   "folder": "NEWS",
+   "link": "https://www.twitch.tv/hasanabi"
+  }
+ ],
+ "savedLayouts": [
+  {
+   "name": "X",
+   "savedAt": 1794946817846,
+   "workspace": {
+    "v": 1,
+    "presetId": "duo",
+    "minSlots": 0,
+    "started": true,
+    "fit": true,
+    "cols": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "rows": [
+     3,
+     2
+    ],
+    "tiles": [
+     {
+      "input": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/uefa-nations-league/2026-11-17/den-nor\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 0,
+       "r": 0,
+       "cs": 3,
+       "rs": 1
+      }
+     },
+     {
+      "input": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/uefa-nations-league/2026-11-17/wal-por\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>",
+      "muted": false,
+      "volume": 60,
+      "place": {
+       "c": 3,
+       "r": 0,
+       "cs": 3,
+       "rs": 1
+      }
+     },
+     {
+      "input": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/cnn-31729\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 0,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     },
+     {
+      "input": "https://www.twitch.tv/hasanabi",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 2,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     },
+     {
+      "input": "https://tvsen6.aynaott.com/cp24/index.m3u8",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 4,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "NEWS",
+   "savedAt": 1794931867041,
+   "workspace": {
+    "v": 1,
+    "presetId": "duo",
+    "minSlots": 0,
+    "started": true,
+    "fit": true,
+    "cols": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "rows": [
+     3,
+     2
+    ],
+    "tiles": [
+     {
+      "input": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/cnn-31729\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>",
+      "muted": true,
+      "volume": 37,
+      "place": {
+       "c": 0,
+       "r": 0,
+       "cs": 3,
+       "rs": 1
+      }
+     },
+     {
+      "input": "<iframe id=\"player\" marginheight=\"0\" marginwidth=\"0\" src=\"https://taifood-blog.asia/embed/fox-news-31730\" scrolling=\"no\" allowfullscreen=\"yes\" allow=\"encrypted-media; picture-in-picture;\" width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"position:absolute;\"></iframe>",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 3,
+       "r": 0,
+       "cs": 3,
+       "rs": 1
+      }
+     },
+     {
+      "input": "https://vs-hls-push-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_news_channel_hd/mobile_wifi_main_hd_abr_v2.m3u8",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 0,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     },
+     {
+      "input": "https://tyt-samsungus.amagi.tv/playlist.m3u8",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 2,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     },
+     {
+      "input": "https://tvsen6.aynaott.com/cp24/index.m3u8",
+      "muted": true,
+      "volume": 100,
+      "place": {
+       "c": 4,
+       "r": 1,
+       "cs": 2,
+       "rs": 1
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "currentLayout": {
+  "v": 1,
+  "presetId": "overtwo",
+  "minSlots": 0,
+  "started": true,
+  "fit": true,
+  "cols": [
+   1,
+   1
+  ],
+  "rows": [
+   2,
+   1
+  ],
+  "tiles": [
+   {
+    "input": "https://atlantic.bz/watch/247718/1/1",
+    "muted": true,
+    "volume": 100,
+    "place": {
+     "c": 0,
+     "r": 0,
+     "cs": 2,
+     "rs": 1
+    }
+   },
+   {
+    "input": "https://www.twitch.tv/hasanabi",
+    "muted": false,
+    "volume": 43,
+    "place": {
+     "c": 0,
+     "r": 1,
+     "cs": 1,
+     "rs": 1
+    }
+   },
+   {
+    "input": null,
+    "muted": true,
+    "volume": 100,
+    "place": {
+     "c": 1,
+     "r": 1,
+     "cs": 1,
+     "rs": 1
+    },
+    "title": "NBA LEAGUE PASS"
+   }
+  ]
+ },
+ "continueWatching": {
+  "yt:ZhsmtMkxMSY": {
+   "at": 477,
+   "saved": 1794953094855
+  },
+  "yt:Z4iDDFI08jg": {
+   "at": 363,
+   "saved": 1794955740251
+  },
+  "embed:https://atlantic.bz/watch/10283/1/1": {
+   "at": 272,
+   "length": 1262,
+   "saved": 1795008735278,
+   "input": "https://atlantic.bz/watch/10283/1/1",
+   "name": "ARCHER",
+   "from": ""
+  },
+  "embed:https://atlantic.bz/watch/292741/1/1": {
+   "at": 119,
+   "length": 3749,
+   "saved": 1795035266970,
+   "input": "https://atlantic.bz/watch/292741/1/1",
+   "name": "NOCTURNE",
+   "from": ""
+  },
+  "audio:https://pscrb.fm/rss/p/traffic.megaphone.fm/COMG6502687401.mp3": {
+   "at": 1119,
+   "length": 2475,
+   "saved": 1795158089302,
+   "input": "audio:No%20Question%20About%20That%3A%20United%20Inc%3A%20First%20Quarter%20Results|https://pscrb.fm/rss/p/traffic.megaphone.fm/COMG6502687401.mp3",
+   "name": "No Question About That: United Inc: First Quarter Results",
+   "from": ""
+  },
+  "embed:https://atlantic.bz/watch/1411/1/1": {
+   "at": 1166,
+   "length": 2643,
+   "saved": 1795191914427,
+   "input": "https://atlantic.bz/watch/1411/1/1",
+   "name": "PERSON OF INTEREST",
+   "from": ""
+  },
+  "yt:0f5m4yTv7IY": {
+   "at": 378,
+   "length": 6852,
+   "saved": 1795198906784,
+   "input": "https://www.youtube.com/watch?v=0f5m4yTv7IY",
+   "name": "JJ Gabriel JOINS Real Madrid + Can Pochettino WIN At Anfield? | SDS Friday Club",
+   "from": "SDS"
+  },
+  "audio:https://sphinx.acast.com/p/open/s/67587e77c705e441797aff96/e/6aff1debc1a867006b449928/media.mp3": {
+   "at": 128,
+   "length": 1378,
+   "saved": 1795198657839,
+   "input": "audio:TED%20Talks%3A%20A%20letter%20to%20the%20end%20of%20time%20%7C%20Lau%20Noah|https://sphinx.acast.com/p/open/s/67587e77c705e441797aff96/e/6aff1debc1a867006b449928/media.mp3",
+   "name": "A letter to the end of time | Lau Noah",
+   "from": "TED Talks"
+  },
+  "audio:https://sphinx.acast.com/p/open/s/627a2e8f84f3d50012cf11fb/e/6aff2a5718a3c93bdb3d9cc1/media.mp3": {
+   "at": 1705,
+   "length": 2221,
+   "saved": 1795214133126,
+   "input": "audio:Second%20Captains%3A%20Gaming%20And%20Shaming%2C%20C'est%20Troy%20Bien%2C%20Poch%20Returns%2C%20Rassie%20Week|https://sphinx.acast.com/p/open/s/627a2e8f84f3d50012cf11fb/e/6aff2a5718a3c93bdb3d9cc1/media.mp3",
+   "name": "Gaming And Shaming, C'est Troy Bien, Poch Returns, Rassie Week",
+   "from": "Second Captains"
+  },
+  "embed:https://atlantic.bz/watch/247718/1/1": {
+   "at": 705,
+   "length": 3558,
+   "saved": 1795231026474,
+   "input": "https://atlantic.bz/watch/247718/1/1",
+   "name": "MOBLAND",
+   "from": ""
+  }
+ },
+ "tiktokFollowing": {
+  "at": 1795151005248,
+  "names": [
+   "161x1615",
+   "2000smemes_",
+   "365pushing",
+   "48lawsofpower.book",
+   "60minutes",
+   "60sectable",
+   "7amball",
+   "7man_daily",
+   "7pminbrooklyn",
+   "800xtt",
+   "9figureroofer",
+   "9inedegrees",
+   "_.sheilove",
+   "_cookwithmi",
+   "_expiredbroccoli",
+   "_joshuarosa",
+   "_thichtieutiendo",
+   "_zunnni_",
+   "a_man_like_shelby",
+   "aa9skillz_edits",
+   "aa9skillzclip",
+   "aamiravata",
+   "aaroncikaya",
+   "aaronparnas1",
+   "abdulelsayed",
+   "accuratethought",
+   "adamcarter_cep",
+   "adamcleryfc",
+   "adamdailyhabits",
+   "adamharper8193",
+   "adammockler",
+   "adika.s.takes",
+   "adriennunez",
+   "advancingman",
+   "afrohousedaily",
+   "afrosings",
+   "ahormozi",
+   "akaashsinghcomedy",
+   "akamztwenty20",
+   "aldurman",
+   "alec_thebarber_",
+   "alecwithpen",
+   "alex.oconnor.clip",
+   "alexbiron",
+   "ali_cutss",
+   "aliiikleit",
+   "aljazeeraenglish",
+   "allthingsafrica_",
+   "allthingsrdc",
+   "alma.arg",
+   "almostfriday.tv",
+   "alphanize",
+   "alphonsodavies",
+   "amazon",
+   "ampexclusionary",
+   "ana_kasparian",
+   "anatomy.of.motion",
+   "andr3w_wav3",
+   "andrewrousso",
+   "androidzxz",
+   "annazinenko.realtor",
+   "anthonykoz",
+   "aphaclipz",
+   "apnaj",
+   "appletv",
+   "arianaamore",
+   "ariathome",
+   "arijsavitsky",
+   "armoserg",
+   "artbydemarcusshawn",
+   "ashallaboutmoney",
+   "ashenbot",
+   "ashfinds88",
+   "ashtonhallofficial",
+   "aspyre___",
+   "athleticfcpod",
+   "austenalexander",
+   "austingeorgas",
+   "austinshow",
+   "avaraehirons",
+   "aysmirkk",
+   "babypodcastt7",
+   "backsippn",
+   "ballermindmedia",
+   "bananastory29",
+   "basedaustindunham",
+   "bassem",
+   "batholomew016",
+   "bbcnews",
+   "bbcsport",
+   "being_dreezy",
+   "beinsportsusa",
+   "believe.rise.succeed",
+   "benching.noor",
+   "bendadonnn",
+   "bestbuymilk",
+   "bigdawstv54",
+   "biggestswave",
+   "bigjohnnn17",
+   "billythegoatuk",
+   "binge",
+   "bisongainz",
+   "bitesbyheart",
+   "bizofsport",
+   "blakewhiten",
+   "bluesito_",
+   "boardroom",
+   "boondockscore",
+   "borisbeckertv",
+   "bouncer24hrs7",
+   "bradbernsteinlaw",
+   "brandongrogan",
+   "brazavilleeee",
+   "breadbasketofficial",
+   "brian_pruett",
+   "briansimpsoncomedy",
+   "briefed_",
+   "briefedhistory",
+   "brilliant.idiots",
+   "brock.mammoser",
+   "brunofernandes",
+   "brutamerica",
+   "bryanandrewsmusic",
+   "bryanlee.tiktok",
+   "bscott2hot",
+   "btecburn",
+   "budgeters_anonymous",
+   "buildingminds_",
+   "buildwkel",
+   "burnafterlaughing",
+   "burrito.plug",
+   "byadaora",
+   "bychvnge",
+   "bynasiraziz",
+   "bypreneurss",
+   "calcookz",
+   "calebpressley",
+   "calimar_whit3",
+   "calwillcookit",
+   "camerondavidson_",
+   "candaceoshow",
+   "canivibewithyall",
+   "canyouspellcaio",
+   "capitalxtra",
+   "carlabezanson",
+   "carlomalis",
+   "carterbrayshops",
+   "carwowclips.2",
+   "cbcnews",
+   "centralcee",
+   "chadandjt",
+   "channel4.0",
+   "charlesmcbryde",
+   "chefdwightsmith",
+   "chispamotivation",
+   "chrisallenhanna_",
+   "chrisdcomedy",
+   "chrisjjosephs",
+   "chriskohlernews",
+   "christopherclaflin",
+   "chriswillx",
+   "chunkzripz",
+   "ciaran_mcdonnell",
+   "citynewsto",
+   "ckdagenerall",
+   "claytonfarris4ever",
+   "clipstycoon",
+   "clipthecrisis",
+   "clive_edwin",
+   "cloutfarm_",
+   "cnn",
+   "coachdango",
+   "colbertlateshow",
+   "comedycentraluk",
+   "comedycored",
+   "comedydaily08",
+   "comejoshfan",
+   "conorsketches",
+   "cookingwithmrcooper",
+   "copsreald91",
+   "coreyjay.eyndhoven",
+   "cosmlosangeles",
+   "couldabeenrecords",
+   "couriernewsroom",
+   "couturefashion123",
+   "covert.history",
+   "craigdavid",
+   "craigxmitch",
+   "crashdummiespodcast",
+   "critdecision",
+   "crookedmedia",
+   "culturecams",
+   "curbyourfeeds",
+   "dabestrapperalive",
+   "dailyrepsguy",
+   "damondarlingtv",
+   "danielantoniefit",
+   "danielsdunia",
+   "darkorain",
+   "darrylcvega",
+   "davidmileshogg",
+   "ddo_shxtsngigs",
+   "deangelo1012",
+   "dearlatte.shop",
+   "defiance13",
+   "delamomanny",
+   "delaneysayshello",
+   "dembouz",
+   "demetriusharmon",
+   "desbishop5",
+   "devsfootballclub",
+   "diaryofaceoclip",
+   "diaryofaceohub",
+   "disciplinaofficial",
+   "doac.clips",
+   "donaldluxama153",
+   "donforohio",
+   "doss.discourse",
+   "download.temu_",
+   "dream.to.win54",
+   "dreamhomesbymalik",
+   "dreekylie",
+   "drgavingcook",
+   "drlivingood",
+   "dropsitenews",
+   "druski",
+   "dukedennis2x",
+   "dylan.page",
+   "dylanbanksyt",
+   "eaphiri",
+   "earned..not..given",
+   "echotoaster",
+   "elevatestart",
+   "elfanum",
+   "elfayz_",
+   "elitexvision",
+   "elycia33",
+   "emanrtm",
+   "emilywking",
+   "eminem",
+   "energygrowthhub",
+   "entourageclips",
+   "entouragevault",
+   "epicstory91",
+   "erling",
+   "erosbrousson",
+   "extragravypodcast",
+   "fafafitness11",
+   "faithisabelly",
+   "fanstribehq",
+   "farissimo",
+   "faultine.theory",
+   "fellasloaded",
+   "femi_sorry",
+   "fifaworldcup",
+   "filthy_fellas",
+   "filthyshorts",
+   "financeistherapy",
+   "financial.essentials",
+   "finestdistractions",
+   "fishereffect",
+   "fitnessflex5",
+   "fitzgerald_liam_",
+   "flametimer",
+   "flexplained101",
+   "fmlxtra",
+   "folight.co",
+   "fontvne",
+   "foodeanie",
+   "foodiligence",
+   "foodinfivemins",
+   "footasylum",
+   "framefable2",
+   "fueled_ambition",
+   "futureshiftt",
+   "gaby.rourke",
+   "garyseconomics",
+   "garyvee",
+   "gbrs_group",
+   "geena_davis1",
+   "generalclipps",
+   "geoglobetales",
+   "getithowyouliveitt",
+   "giannivpaolo",
+   "giaosuxoay.vn24",
+   "ginotheghost",
+   "glowgrindco",
+   "gmz_oliver",
+   "go.l.d.e.n.h.o.ur",
+   "godfreyfunny",
+   "goofyassguidelines",
+   "gordonramsayofficial",
+   "gret4880",
+   "gringoreactz",
+   "gwarnin.studio",
+   "h1ddenpsych",
+   "haleywestco",
+   "halfblooduniversity",
+   "hamzainvests",
+   "hanhot",
+   "harrydickens1312",
+   "harrypinero",
+   "hasanabi_afterdark",
+   "hasandpiker",
+   "hasanminhaj",
+   "hasblammo",
+   "hayterstv",
+   "hbo",
+   "hcpodclips",
+   "headintheoffice",
+   "headquarters",
+   "health.think",
+   "heartovermotivation",
+   "heemmentality",
+   "hellahansel",
+   "henriwilsonn",
+   "heyitskluh",
+   "heyitsmeagainguys",
+   "hisheofficial",
+   "hissgoescobra",
+   "historix_10",
+   "hoarders11",
+   "homesbyrealmedia",
+   "house.bangers.club",
+   "hq_kay",
+   "hto_mufc",
+   "hueuwxqbs5m",
+   "humantalk1",
+   "humorme",
+   "humphreytalks",
+   "hunt4shredz",
+   "iambeniam",
+   "iamfrankanayo",
+   "iammarkmanson",
+   "iamtresorr",
+   "ianmcconnellmusic",
+   "ice.karimcooks",
+   "idiotexplains",
+   "ignition.inspire",
+   "ikeslimster",
+   "ilovesza690",
+   "ilyas.abdulin",
+   "ima.kabil",
+   "imalltime",
+   "immanuelz1",
+   "infogeogrpahytv",
+   "inquisitionaire",
+   "investing.with.kris",
+   "iroaintnouncle",
+   "isaiah.zavion",
+   "isaiahrmartin",
+   "ishowspeed",
+   "itiswhatitis176",
+   "itsaljokes",
+   "itsbrianpark",
+   "itscarsoncox",
+   "itsdelive",
+   "itsjamesseo",
+   "itsollip",
+   "itsthebarbercat",
+   "itstundealao",
+   "itvsport",
+   "ivehaditpodcast",
+   "ja_emmanuel",
+   "jacklumbcomedy",
+   "james.funny.clips",
+   "james.funny.podcast",
+   "jamesgetspolitical",
+   "jarden_8",
+   "jarrah.contracting",
+   "jason.noire",
+   "jasoncheny",
+   "jasonleecreative",
+   "jasonrodelo",
+   "jasonshields_",
+   "javierr",
+   "jbpgirlies",
+   "jedandjade",
+   "jenelle_tremblett",
+   "jeremyaustiin",
+   "jermaine.richards",
+   "jesscraven101",
+   "jessicawhileman",
+   "jetbentlee",
+   "jim__motivation",
+   "jim_rohnn",
+   "jimbojamma",
+   "john.kiriakou",
+   "john.kiriakou69",
+   "john.kiriakou8",
+   "john.kiriakou888",
+   "john.kiriakou89",
+   "johncannonpeptide",
+   "johndotcom__",
+   "johnfan41",
+   "johnkiriakou0",
+   "johnkiriakou24",
+   "johnkiriakou69",
+   "jojoscarlotta",
+   "jonathannpark",
+   "joshharrisonfit",
+   "joshiugc",
+   "joshjohnson.fan",
+   "joshjohnsoncomedy",
+   "joshuadneal",
+   "jourdainfisher",
+   "journey4love",
+   "jrstit",
+   "jta.official0",
+   "jubilee",
+   "jumawastara",
+   "junonotagain",
+   "just4hustl3rs",
+   "justaskjefferson",
+   "justcamoinnit",
+   "justin.sagert",
+   "justyn.ai",
+   "jybrz",
+   "kaygunnerus",
+   "kaylajschrader",
+   "kelevinga",
+   "kevbuildsapps",
+   "kevherreracomedy",
+   "kevinleevlog",
+   "kevonstagetiktok",
+   "kimiversenshow",
+   "kimmimichiko",
+   "king68thegreat",
+   "kinghighlights",
+   "kiriakousbriefingroom",
+   "kngstoic",
+   "kungfukendall",
+   "kurteqbtiml",
+   "lagreatnessball",
+   "lala",
+   "lamboelegance",
+   "lamine.yamal",
+   "land_palestine",
+   "larryadigun",
+   "larrydavideveryday",
+   "lastswave",
+   "lastweektonighthbo",
+   "lawrencejohnson",
+   "lawrencejohnsonshow",
+   "lawrencesfreewill",
+   "lbc",
+   "leostaytrillglobal",
+   "leviacay",
+   "lewisjmfitzgerald",
+   "lhz0629",
+   "life_laps_official",
+   "lifemisfits",
+   "liliannawilde",
+   "lindseyfishman",
+   "lisa.wecker",
+   "llennoccmnai",
+   "lovixx_music",
+   "lthomasnews",
+   "lucaslopezvt",
+   "lucasrozmus.realtor",
+   "lundunrtw",
+   "lvl1fitness",
+   "lyesbouzidi10",
+   "lyricalemonade",
+   "m0tivate.themind",
+   "madebyblackburn",
+   "madisonn.rainn",
+   "mahfuztalukder",
+   "majority.fm",
+   "maktivity",
+   "malikbazille",
+   "manutd",
+   "marchanania_",
+   "marcqwuanreid",
+   "margsmt",
+   "marvinachi",
+   "marvinbrxxks",
+   "masondane",
+   "matt.minett",
+   "matt_beav",
+   "mattarchivee",
+   "mattbentley_",
+   "mattbooshell",
+   "matttralli5",
+   "max4cracks",
+   "maxeoox",
+   "mcmenor.jp",
+   "meetthethorpes",
+   "meltdownsandmacros",
+   "mental_resistance",
+   "mentalforger",
+   "mentalyrising",
+   "merewana",
+   "metalgearmememan",
+   "mewtish",
+   "mexcooks",
+   "micah.erfan2",
+   "michael.aldag",
+   "michele.avery8647fdt",
+   "mid.20s",
+   "middleeasteye",
+   "mikenovon2",
+   "milescrain",
+   "mileshampton",
+   "milliannacotterellx",
+   "mimikickass82",
+   "mind.observatory",
+   "mindfuel1110",
+   "mindscapewhispers",
+   "mindset.goated",
+   "mindset_artistry",
+   "mindsetxmillionaires",
+   "misterjules",
+   "mogilligan",
+   "mojobrookzz",
+   "mollyandjordy",
+   "monaco.world",
+   "moneypod",
+   "monicaumunna",
+   "morganjay",
+   "moschinodorito",
+   "motivate.yourself__",
+   "motiversity",
+   "mrcarlosroberto",
+   "mrrealestategroup",
+   "mrt_media_",
+   "msmaydaythefirst",
+   "mukendijosh",
+   "munnimerkzzclipped",
+   "n.sofic",
+   "nachombre",
+   "nameless.james",
+   "nate2trey_",
+   "navalwisdom_",
+   "naw_sir",
+   "nbcnews",
+   "nbcnewyork",
+   "nedwagner",
+   "nellarose",
+   "netflixisajoke",
+   "neuro.influence",
+   "never.back.down04",
+   "neversatisfied29x",
+   "newageceo",
+   "newmoneynate",
+   "newrorymal",
+   "newstories85",
+   "next_level_work",
+   "next_levelhealth",
+   "nguyensteadycutting",
+   "nickcheo",
+   "nigel_euro",
+   "nkhasi",
+   "nlel0ckd0wn",
+   "no_filter_sarah",
+   "noallou",
+   "noblestoic",
+   "nowthisimpact",
+   "nowtoronto",
+   "nueskiinueskii",
+   "nwm.martin.2009",
+   "nycmayor",
+   "off1cialdanzz",
+   "officialchrisrockk",
+   "officiallouistheroux",
+   "officiallucaz",
+   "officialreggiecouz",
+   "olima_omega",
+   "onairmyles",
+   "one_pectent",
+   "os99records",
+   "overlapdaily",
+   "owltingzmedia",
+   "paddybeatz1",
+   "palabradevida076",
+   "palmerspacket",
+   "parkerdixonnn",
+   "pathtogrowth01",
+   "paulpogba",
+   "pbsclips1",
+   "peakabooitsmejohn",
+   "peaky.found",
+   "peakyblinders",
+   "pearlmania500",
+   "philosophaire",
+   "philosophyminis",
+   "piersmorganuncensored",
+   "piker.broadcast.service",
+   "pikerbroadcastingpbs",
+   "pikerdailynews",
+   "podcastcpm",
+   "politicalunpacked0",
+   "politiconews",
+   "portal.of.humanity",
+   "pov0rizz",
+   "powerframe2",
+   "preice23",
+   "premierleague",
+   "premisterlin",
+   "princeofsaiyans__",
+   "protocolmd",
+   "psg",
+   "pyloneditz",
+   "pysche_decoded",
+   "quanbfit",
+   "queerpolybabe",
+   "quotetok465",
+   "r3lls_nw",
+   "ragingmoderates",
+   "ralphbarbosa03",
+   "randomordershow",
+   "rapheal__2",
+   "raptors",
+   "rayjlau",
+   "rbstickz",
+   "reactions95",
+   "readchoi",
+   "realaa9skillz",
+   "realestrap_",
+   "realfunnymarco",
+   "realpodsaveamerica",
+   "rebody",
+   "rebornthroughscars",
+   "redbullgmt",
+   "redinkmaps",
+   "reed_showalter",
+   "relentless__mentality",
+   "renevacacomedy",
+   "resolutemotiv",
+   "restisfootball",
+   "reverseinsulinresistance",
+   "rexroooow",
+   "richard_editxs",
+   "rioferdinandpresents",
+   "riseaboveathlete.com",
+   "roby14645",
+   "rodolphemanoukian_",
+   "romantrains",
+   "rubenonuha",
+   "russ",
+   "saberisixrealestate",
+   "sachka.w",
+   "sahibcantsingh",
+   "saintlamaar",
+   "sameer.jauhar",
+   "samicreater2",
+   "samkelly322",
+   "samlikelycomedy",
+   "sammyobeidthem",
+   "samuelonuha",
+   "scapehaven.tt",
+   "scheifferbates",
+   "scottygange",
+   "sebastiancomedy",
+   "sebonspurs",
+   "seekyng",
+   "sei.come.sei",
+   "sergiotalks.podcast",
+   "shadesofgreaves",
+   "shawarmahutlondon",
+   "shawnryanshow",
+   "shepshotit1",
+   "shewolfofuoft",
+   "shoesoffpod",
+   "shotta_john",
+   "shxts.n.clips_",
+   "shxts.n.gigs_clipper",
+   "shxtsngigs",
+   "shxtsngigz",
+   "siangyoo_",
+   "simonsquibb",
+   "sincerelyvalory",
+   "sixcore56",
+   "skeptatv",
+   "skirki_motivation",
+   "skizz_by_night",
+   "skynews",
+   "skysports",
+   "skysportsfootball",
+   "skysportsnews",
+   "speedygotclipped",
+   "speedymorman",
+   "speedyrewind",
+   "sport.talk",
+   "standout.tv",
+   "standupdeskshow",
+   "startupbroegy",
+   "startupbros",
+   "staybravy",
+   "stephandhollydavey",
+   "steven",
+   "stilleaworkinprogress",
+   "storiesbyronnie",
+   "street.challenge4",
+   "stretfordpaddck",
+   "subwaytakes",
+   "success.arc",
+   "successionscenes",
+   "sultanmuratii",
+   "summer._long",
+   "super_ginger_red",
+   "supersportofficial",
+   "surgeinc",
+   "surgemotions",
+   "swaggypondiiisland",
+   "sweetsoundxx",
+   "talkingforgood3",
+   "talksport",
+   "talksydetheofficial",
+   "talktogirls",
+   "taythevision",
+   "teamtalaricohq",
+   "teddy.plug",
+   "tfcdetg",
+   "th1prcnt",
+   "thatchapter9",
+   "thatsavagekitchen",
+   "thatwasepic_tok",
+   "the.1.quoting",
+   "the.bold.take",
+   "the.koerner.office",
+   "the.motivatedmentality",
+   "the_footballmeta",
+   "the_inner_game",
+   "the_real_chi_",
+   "the_under_report",
+   "theaisurfer",
+   "theandrewschulz",
+   "theathleticfc",
+   "thecianlinehan",
+   "theclublivetiktok",
+   "thecontrarianmoney",
+   "thecostcoman",
+   "thedailyshow",
+   "thedavidamborghini",
+   "thedisciplined_one",
+   "theegarvinsweenjr",
+   "theeuropeankid21",
+   "thefootballboardcast",
+   "thefootballworld098",
+   "thegoldenbalance",
+   "theinsidescoopclips",
+   "thelastmentor.io",
+   "theleftisthimothy",
+   "themattfriend",
+   "thembhpodcast",
+   "themotivememo",
+   "themotivio",
+   "thenecessaryconversation",
+   "thenickfowler",
+   "thenumbersgame1",
+   "theonion",
+   "theopheliaivy",
+   "theoshakes",
+   "theovon",
+   "theproblemdavesmith",
+   "therecount",
+   "therelentlessdiaries",
+   "thereluctantaccountant",
+   "therootnews",
+   "thesapor",
+   "thestomachdoc",
+   "thetalkingbook",
+   "thethinkforge",
+   "thetylilshow__",
+   "thewokebloke",
+   "theyoungturks",
+   "thezelginjackson",
+   "thomasshelbeynew",
+   "tiktoks_older_brother",
+   "timd",
+   "timmyfots",
+   "timothythatcherofficial",
+   "tizzykutz",
+   "tj.clipalot",
+   "tmz",
+   "tn7entertainment",
+   "tobblesv2",
+   "tommycolechef",
+   "tony.laws",
+   "tonystatovci",
+   "topnaijalife",
+   "torylanez",
+   "totoss_26",
+   "toytexx.warehouse",
+   "tpain",
+   "trackid2",
+   "tracktrender",
+   "trainbloom",
+   "trainwithmurph",
+   "trainwithseanharris",
+   "transferspodcast",
+   "trarags",
+   "trentevolaa",
+   "troll_doll_",
+   "trollinanrgyunc_",
+   "troyjfitness",
+   "troyjones18",
+   "truuuusssttmeee",
+   "tsn",
+   "tuckercarlson",
+   "tuckercarlsonnetwork",
+   "tyriquehyde",
+   "uefaeuro",
+   "ukrapps",
+   "unacceptablecanadianview",
+   "uncochoiso",
+   "underrated.footba",
+   "unexplained.casefiles",
+   "unheardvoices3",
+   "unitedroad99",
+   "usarofnews",
+   "user35740382611161",
+   "vanta6164",
+   "vegedreamgagnoa",
+   "verbaltovisual",
+   "veronicaobando9",
+   "vic_tattoo",
+   "vicmensa",
+   "victoriahjt",
+   "victoriahjtpriv",
+   "victoryjourneyhub",
+   "vireonmindofficial",
+   "virtueofceasar",
+   "vncaged",
+   "vralo.edits",
+   "we.saw.that",
+   "we.saw.that_extra",
+   "wearetheoverlap",
+   "weeklyshowpodcast",
+   "wellness__finds",
+   "wellnessfasting",
+   "werelockediz",
+   "whathappenedln",
+   "whatintheworldweekly",
+   "whoisjoshuamichael",
+   "williamcopeland00",
+   "winmentalities",
+   "wired",
+   "wisdm8",
+   "wisdm8.1",
+   "woahkenzyy",
+   "wockkingdaggerr",
+   "wolfofwestern",
+   "worldcup.anime",
+   "worldwidehassan",
+   "wrevortallace",
+   "xaviercalvera",
+   "xaviertojon",
+   "xclipnetwork",
+   "yaqub.78",
+   "yashixv",
+   "yeahitsak",
+   "yohanuja",
+   "you1stlondon",
+   "youare.unstoppable",
+   "youngyosa",
+   "yourtorontoagent",
+   "yuji_beleza",
+   "zac11181736",
+   "zacharyloft",
+   "zachs.foods",
+   "zachwoods",
+   "ze.seneca5",
+   "zenainn",
+   "zerbmusic",
+   "zeteonews",
+   "zoharejacobi",
+   "zuriakiworld"
+  ]
+ }
+}

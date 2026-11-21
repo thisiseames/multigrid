@@ -21,10 +21,11 @@ Written Nov 20 from the owner's Mac so cloud sessions don't have to ask. No secr
 
 ## How the app is set up for the owner (in the browser, not the repo)
 All of this is in the browser's localStorage under `multigrid.*` keys, per device.
-- **Favorites** (`multigrid.favorites.v1`): 342 in all. By folder: Sports 61, Series 48, Twitter 42, Entertainment 40, YouTube 34, News 20, TikTok 18, X 10, Streaming 4, and 65 with no folder. The links themselves are intentionally not listed here (this repo is public).
+- **Favorites** (`multigrid.favorites.v1`): 342 in all. By folder: Sports 61, Series 48, Twitter 42, Entertainment 40, YouTube 34, News 20, TikTok 18, X 10, Streaming 4, and 65 with no folder. The full list with links is in `notes/setup-data.json` (the owner chose to keep it in this public repo).
 - **Saved layouts** (`multigrid.workspaces.v1`): "X" and "NEWS".
 - **Current layout** (`multigrid.current.v1`): the "overtwo" preset with 3 tiles.
 - **Continue watching** (`multigrid.resume.v1`, plus `multigrid.played.v1` and `multigrid.places.v1`): mostly local video files (TV episodes) and links, with places to resume.
+- `notes/setup-data.json` holds favorites (name, folder, link), saved layouts, the current layout, Continue watching and the TikTok following list, as of Nov 20. It's a snapshot: the browser is the live source, so it goes stale as the owner changes things.
 - **Other per-device data:** TikTok accounts and following (`multigrid.tiktok.*`), X feeds (`multigrid.x.*`), Channel Finder caches (`multigrid.channels.v1.*`), posters, episodes, weather, trends, Polymarket, YouTube "seen" list, Reader read state, the remote pairing (`multigrid.remotehost.v1`), One sound / mixer / ticker switches.
 - Favorites can be moved between devices with the app's own transfer link (Send to phone / Send to computer in Add stream).
 
