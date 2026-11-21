@@ -4917,6 +4917,13 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
+// A phone held upright: what the Layout button held is here, at the bottom of Add stream.
+for (const [id, target] of [['source-saved', 'saved-button'], ['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
+  $(id).addEventListener('click', () => {
+    $('source-dialog').close();
+    setTimeout(() => $(target).click(), 0);
+  });
+}
 $('note-add').addEventListener('click', () => {
   const target = sourceTarget;
   $('source-dialog').close();
@@ -5306,6 +5313,8 @@ function renderFullscreenButton() {
 }
 
 $('fullscreen-button').hidden = !fullscreen.enabled();
+// A Home Screen app is already full screen, and some phones can't do it at all.
+$('source-fullscreen').hidden = !fullscreen.enabled() || window.matchMedia('(display-mode: standalone)').matches || Boolean(navigator.standalone);
 // The bar slides across the video on its way out, which is enough to stop Twitch.
 function coverDuringFullscreenChange() {
   coverage.add();

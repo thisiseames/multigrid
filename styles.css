@@ -1326,6 +1326,17 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 /* A phone's top bar holds every button, so the name steps aside to keep Add stream on screen. */
 @media (max-width: 480px) { .wordmark { display: none; } }
 
+/* A phone held upright: streams stack, so there are no layouts to pick. The name takes the
+   Layout button's corner, and what Layout held (Saved layouts, How it works, Fullscreen)
+   is at the bottom of Add stream. */
+.portrait-only { display: none !important; }
+@media (max-width: 640px) {
+  #layout-button { display: none !important; }
+  .wordmark { display: inline; margin: 0 auto 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .2em; color: var(--text); }
+  .portrait-only { display: flex !important; }
+  .portrait-only[hidden] { display: none !important; }
+}
+
 /* Add stream */
 .addp { width: min(1400px, calc(100vw - 40px)); height: min(860px, calc(100dvh - 40px)); max-height: calc(100dvh - 40px); padding: 0; background: radial-gradient(120% 50% at 50% 0%, #1b1b21 0%, #141416 60%); overflow: hidden; }
 .addp[open] { display: flex; }
