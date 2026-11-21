@@ -14,13 +14,13 @@ const COUNTRIES = [
   { code: 'au', name: 'Australia', url: 'https://iptv-org.github.io/iptv/countries/au.m3u' },
   { code: 'ie', name: 'Ireland', url: 'https://iptv-org.github.io/iptv/countries/ie.m3u' },
   { code: 'nz', name: 'New Zealand', url: 'https://iptv-org.github.io/iptv/countries/nz.m3u' },
-  { code: 'gb', name: 'UK', url: 'https://iptv-org.github.io/iptv/countries/gb.m3u' },
+  { code: 'uk', name: 'UK', url: 'https://iptv-org.github.io/iptv/countries/uk.m3u' },
 ];
 const OUT = new URL('../live-channels.json', import.meta.url);
 const COUNTRY_ORDER = ['US', 'Canada', 'Australia', 'Ireland', 'New Zealand', 'UK'];
 const CATEGORY_ORDER = ['News', 'Sports', 'Entertainment', 'Movies', 'Kids', 'Documentary', 'Music', 'General'];
-const CONCURRENCY = 14;
-const TIMEOUT = 8000;
+const CONCURRENCY = 24;
+const TIMEOUT = 12000;
 
 const NON_ENGLISH = /\b(french|fran[cç]ais|spanish|espa[nñ]ol|latino|arabic|عربي|chinese|mandarin|cantonese|korean|hindi|urdu|portuguese|portugu[eê]s|german|deutsch|italian|italiano|russian|turkish|persian|farsi|vietnamese|tagalog|filipino|polish|greek|hebrew|japanese|thai|indonesian|malay|bengali|punjabi|tamil|telugu|gujarati|marathi|somali|swahili|amharic|yoruba|igbo|hausa|zulu|afrikaans|dutch|swedish|norwegian|danish|finnish|czech|slovak|hungarian|romanian|bulgarian|serbian|croatian|bosnian|albanian|ukrainian|belarusian|lithuanian|latvian|estonian|armenian|georgian|azerbaijani|kazakh|uzbek|mongolian|khmer|lao|burmese|nepali|sinhala|pashto|kurdish)\b/i;
 
@@ -43,7 +43,8 @@ const abs = (base, value) => { try { return new URL(value, base).href; } catch {
 async function plays(url) {
   try {
     const headers = { Origin: 'https://thisiseames.github.io', Accept: 'application/vnd.apple.mpegurl,*/*' };
-    const first = await fetch(url, { headers, redirect: 'follow', signal: AbortSignal.timeout(TIMEOUT) });
+    const signal = AbortSignal.timeout(TIMEOUT);
+    const first = await fetch(url, { headers, redirect: 'follow', signal });
     if (!first.ok || !first.headers.get('access-control-allow-origin')) return false;
     let text = await first.text();
     if (!text.includes('#EXTM3U')) return false;
@@ -53,7 +54,7 @@ async function plays(url) {
       const variant = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
       if (!variant) return false;
       const variantUrl = abs(base, variant.trim());
-      const next = await fetch(variantUrl, { headers, redirect: 'follow', signal: AbortSignal.timeout(TIMEOUT) });
+      const next = await fetch(variantUrl, { headers, redirect: 'follow', signal });
       if (!next.ok || !next.headers.get('access-control-allow-origin')) return false;
       text = await next.text();
       base = next.url || variantUrl;
@@ -65,7 +66,7 @@ async function plays(url) {
     const media = await fetch(segmentUrl, {
       headers: { Origin: 'https://thisiseames.github.io', Range: 'bytes=0-1' },
       redirect: 'follow',
-      signal: AbortSignal.timeout(TIMEOUT),
+      signal,
     });
     return media.ok && Boolean(media.headers.get('access-control-allow-origin'));
   } catch {
