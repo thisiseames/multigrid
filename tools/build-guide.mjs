@@ -74,7 +74,8 @@ export function shortText(text) {
 /**
  * A listing row: [start, end, title], plus a description and flags when there are any.
  * Flags: L live, S a special that's live or new (awards, concerts), P a series or season
- * premiere, F a series or season finale. Today's "Events today" is built from S, P and F.
+ * premiere, F a series or season finale, M a film on a movie channel (not a new event).
+ * Today's "Events today" is built from S, P and F, never M.
  */
 function listing(start, end, title, description, live, marks = '') {
   const row = [start, end, title];
@@ -115,7 +116,7 @@ function tvpassportRows(html) {
     const live = field('live') === '1';
     // One-offs worth knowing about: a special that's live or new, and premieres and finales.
     const special = (field('showTypeID') === 'S' || /\bSpecials?\b|\bAwards\b/.test(field('showType'))) && (live || field('new_show') === '1');
-    const marks = `${special ? 'S' : ''}${field('seriesPremiere') || field('seasonPremiere') ? 'P' : ''}${field('seriesFinale') || field('seasonFinale') ? 'F' : ''}`;
+    const marks = `${movie ? 'M' : ''}${special ? 'S' : ''}${field('seriesPremiere') || field('seasonPremiere') ? 'P' : ''}${field('seriesFinale') || field('seasonFinale') ? 'F' : ''}`;
     if (title && Number.isFinite(start) && minutes > 0) rows.push(listing(start, start + minutes * 60, title, about, live, marks));
   }
   return rows;
