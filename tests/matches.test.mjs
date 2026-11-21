@@ -158,3 +158,23 @@ test('a team card keeps every game still to come, not just the next three, for T
   assert.equal(card.next.length, 3);
   assert.deepEqual(card.upcoming.map((game) => game.id), ['1', '2', '3', '4', '5']);
 });
+
+import { gameOrder, groupGames } from '../src/matches.js';
+
+test('Game mode: your teams first, then each league; live, then later today, then finished', () => {
+  const now = Date.parse('2026-11-22T17:00:00Z');
+  const s = (name) => ({ name, full: name, logo: '', color: '', score: '0' });
+  const g = (id, state, hour, home, away) => ({ id, state, start: Date.parse(`2026-11-22T${String(hour).padStart(2, '0')}:00:00Z`), home: s(home), away: s(away), tv: [] });
+  const groups = groupGames([
+    { name: 'Premier League', games: [g('a', 'post', 12, 'Arsenal', 'Spurs'), g('b', 'in', 16, 'Liverpool', 'Manchester United'), g('c', 'pre', 19, 'Chelsea', 'Everton'), g('d', 'in', 16, 'Leeds', 'Fulham')] },
+    { name: 'NFL', games: [g('e', 'pre', 18, 'Bears', 'Lions'), { ...g('old', 'post', 1, 'Old', 'Game'), start: Date.parse('2026-11-20T18:00:00Z') }] },
+    { name: 'NBA', games: [] },
+  ], now);
+  assert.deepEqual(groups.map((group) => [group.title, group.games.map((game) => game.id)]), [
+    ['Your teams', ['b']],
+    ['Premier League', ['d', 'c', 'a']],
+    ['NFL', ['e']],
+  ]);
+  // Finished games: the latest first.
+  assert.ok(gameOrder(g('x', 'post', 14, 'A', 'B'), g('y', 'post', 12, 'C', 'D')) < 0);
+});

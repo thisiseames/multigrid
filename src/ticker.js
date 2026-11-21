@@ -25,7 +25,7 @@ export async function tickerScores(now = Date.now()) {
   return { live, next };
 }
 
-export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches }) {
+export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches, loadScores = tickerScores }) {
   const box = el('button', { type: 'button', class: 'ticker-box', on: { click: onOpenMatches } });
   const track = el('div', { class: 'ticker-track' });
   const lane = el('div', { class: 'ticker-lane' }, track);
@@ -37,7 +37,9 @@ export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches
   let timers = [];
   let drawnHeadlines = '';
 
-  const scoreLine = (match) => `${match.home.name} ${match.home.score}–${match.away.score} ${match.away.name}`;
+  // A phone is too narrow for both full names, so it uses the short codes: AVL 0–0 SUN.
+  const team = (side) => (window.innerWidth <= 640 && side.abbr ? side.abbr : side.name);
+  const scoreLine = (match) => `${team(match.home)} ${match.home.score}–${match.away.score} ${team(match.away)}`;
 
   // Only a game that's on stays pinned on the left; the next game scrolls by with the headlines.
   function drawBox() {
@@ -86,7 +88,7 @@ export function createTicker(root, { clock, shortDay, onOpenStory, onOpenMatches
   }
 
   async function refreshScores() {
-    try { scores = await tickerScores(); } catch { /* keep the last scores */ }
+    try { scores = await loadScores(); } catch { /* keep the last scores */ }
     drawBox();
     drawHeadlines();
     return scores.live.length > 0;

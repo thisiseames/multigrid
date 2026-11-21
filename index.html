@@ -78,6 +78,7 @@
   <section id="podcast-dock" class="podcast-dock" aria-label="Podcast player" hidden></section>
   <section id="mixer" class="mixer" aria-label="Sound mixer" hidden></section>
 
+  <div class="stage-row">
   <main id="stage" class="stage">
     <div id="grid" class="grid"></div>
     <section id="welcome" class="welcome" hidden>
@@ -94,6 +95,8 @@
       <div id="starters" class="starters"></div>
     </section>
   </main>
+  <aside id="gamebar" class="gamebar" aria-label="Live scores" hidden></aside>
+  </div>
   <footer id="ticker" class="ticker" aria-label="Scores and headlines" hidden></footer>
   <section id="phone-bar" class="phone-bar" aria-label="Current stream" hidden>
     <button id="phone-bar-name" class="phone-bar-name" type="button" aria-haspopup="menu">
@@ -162,6 +165,7 @@
       <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
       <button id="note-add" class="addp-file" type="button"><span data-icon="pencil"></span><span>Add a note</span></button>
       <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
+      <button id="source-game" class="addp-file phone-game" type="button"><span data-icon="live"></span><span id="source-game-label">Game mode</span></button>
       <button id="source-help" class="addp-file portrait-only" type="button"><span data-icon="help"></span><span>How it works</span></button>
       <button id="source-fullscreen" class="addp-file portrait-only" type="button"><span data-icon="expand"></span><span>Fullscreen</span></button>
     </form>

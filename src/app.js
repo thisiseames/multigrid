@@ -15,10 +15,10 @@ import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeCode, episodeFor, isNewToday } from './episodes.js';
-import { createTicker, isTickerOn, setTickerOn } from './ticker.js';
+import { createTicker, isTickerOn, setTickerOn, tickerScores } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague, withConference } from './standings.js';
-import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome } from './matches.js';
+import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
@@ -936,11 +936,78 @@ function muteOthers(id) {
   mutePodcastForStream();
 }
 
-/* The ticker: shown while it's switched on and something is in the grid. */
+/* Game mode: live scores beside the grid, on the laptop in a column of its own (so it never
+   covers a stream) and on a phone in the bottom ticker. Only on when switched on. */
+const GAME_KEY = 'multigrid.gamemode.v1';
+const isGameOn = () => { try { return localStorage.getItem(GAME_KEY) === 'on'; } catch { return false; } };
+const onPhoneScreen = () => document.body.classList.contains('is-phone');
+let gameTimer = null;
+let gameGroups = null;
+
+function toggleGameMode() {
+  try { localStorage.setItem(GAME_KEY, isGameOn() ? 'off' : 'on'); } catch { /* not remembered */ }
+  toast(isGameOn() ? 'Game mode on: live scores for your leagues.' : 'Game mode off.');
+  syncGameMode();
+  commit();
+}
+
+/** The ticker's scores while Game mode is on: every live game, your teams first, and the next kick-off. */
+async function gameTickerScores() {
+  const groups = await todaysGames();
+  const games = groups.flatMap((group) => group.games);
+  const seen = new Set();
+  const live = games.filter((game) => game.state === 'in' && !seen.has(game.id) && seen.add(game.id));
+  const next = games.filter((game) => game.state === 'pre').sort((a, b) => a.start - b.start)[0] || null;
+  return { live, next };
+}
+
+function drawGamebar() {
+  const bar = $('gamebar');
+  const head = el('div', { class: 'gamebar-head' },
+    el('span', { class: 'gamebar-title', textContent: 'Game mode' }),
+    iconButton('close', 'Turn Game mode off', toggleGameMode));
+  if (!gameGroups) {
+    bar.replaceChildren(head, el('p', { class: 'match-quiet', textContent: 'Loading scores…' }));
+    return;
+  }
+  const scroll = bar.querySelector('.gamebar-body')?.scrollTop ?? 0;
+  const body = el('div', { class: 'gamebar-body' }, ...(gameGroups.length
+    ? gameGroups.map(({ title, games }) => el('section', { class: 'gamebar-group' },
+      el('h4', { class: 'match-day', textContent: title }),
+      el('ul', { class: 'mrow-list' }, ...games.map((game) => matchRow(game)))))
+    : [el('p', { class: 'match-quiet is-empty', textContent: 'No games today in your leagues.' })]));
+  bar.replaceChildren(head, body);
+  body.scrollTop = scroll;
+}
+
+async function refreshGames() {
+  try { gameGroups = await todaysGames(); } catch { /* keep the last scores */ }
+  if (!$('gamebar').hidden) drawGamebar();
+  // Every 30 seconds while a game is on, every five minutes otherwise.
+  const live = (gameGroups ?? []).some((group) => group.games.some((game) => game.state === 'in'));
+  clearTimeout(gameTimer);
+  if (isGameOn() && !onPhoneScreen()) gameTimer = setTimeout(refreshGames, live ? 30000 : 300000);
+}
+
+function syncGameMode() {
+  const column = isGameOn() && !onPhoneScreen();
+  const label = $('source-game-label');
+  if (label) label.textContent = isGameOn() ? 'Game mode: on' : 'Game mode: off';
+  if (column === !$('gamebar').hidden) return;
+  $('gamebar').hidden = !column;
+  clearTimeout(gameTimer);
+  if (column) {
+    drawGamebar();
+    refreshGames();
+  }
+}
+
+/* The ticker: shown while it's switched on (or Game mode is on, on a phone) and something is in the grid. */
 let ticker = null;
 let tickerShown = null;
 function syncTicker(hasStreams) {
-  const want = isTickerOn() && hasStreams;
+  syncGameMode();
+  const want = (isTickerOn() || (isGameOn() && onPhoneScreen())) && hasStreams;
   if (want === tickerShown) return;
   tickerShown = want;
   ticker ??= createTicker($('ticker'), {
@@ -948,6 +1015,7 @@ function syncTicker(hasStreams) {
     shortDay: (time) => shortDay(time),
     onOpenStory: (item) => openItem(item),
     onOpenMatches: () => $('matches-button').click(),
+    loadScores: () => (isGameOn() ? gameTickerScores() : tickerScores()),
   });
   ticker.show(want);
 }
@@ -4928,6 +4996,8 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
+// Game mode on a phone: the switch is at the bottom of Add stream.
+$('source-game').addEventListener('click', () => { $('source-dialog').close(); toggleGameMode(); });
 // A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
 for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
   $(id).addEventListener('click', () => {
@@ -5333,6 +5403,7 @@ function buildMoreMenu() {
     el('div', { class: 'more-sep' }),
     switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
+    switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
     row(audible ? 'Mute all' : 'Unmute all', audible ? 'muted' : 'sound', () => { muteAll(); buildMoreMenu(); }),
     canFullscreen ? el('div', { class: 'more-sep' }) : null,
     canFullscreen ? row(fullscreen.element() ? 'Exit fullscreen' : 'Fullscreen', 'expand', then(() => {

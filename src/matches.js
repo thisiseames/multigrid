@@ -335,3 +335,46 @@ export async function loadTab(tab, now = Date.now()) {
 }
 
 export const isMine = (side) => MY_TEAMS.some((name) => side.full.includes(name));
+
+/* Game mode: today's games in my teams' leagues, from ESPN's scoreboards. */
+export const GAME_LEAGUES = [
+  { name: 'Premier League', path: 'soccer/eng.1' },
+  { name: 'Champions League', path: 'soccer/uefa.champions' },
+  { name: 'NFL', path: 'football/nfl' },
+  { name: 'NBA', path: 'basketball/nba' },
+];
+
+const dayParam = (time) => {
+  const date = new Date(time);
+  return `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+};
+const sameDay = (a, b) => dayParam(a) === dayParam(b);
+const stateOrder = { in: 0, pre: 1, post: 2 };
+
+/** Live first, then by kick-off; finished games last, the latest first. */
+export function gameOrder(a, b) {
+  if (a.state !== b.state) return (stateOrder[a.state] ?? 1) - (stateOrder[b.state] ?? 1);
+  return a.state === 'post' ? b.start - a.start : a.start - b.start;
+}
+
+/**
+ * Today's games, grouped: my teams first, then each league. A league that doesn't answer is left
+ * out rather than shown as empty. [{ title, games }]
+ */
+export function groupGames(byLeague, now = Date.now()) {
+  const today = byLeague.map(({ name, games }) => ({ name, games: games.filter((game) => Number.isFinite(game.start) && sameDay(game.start, now)) }));
+  const mine = today.flatMap(({ games }) => games.filter((game) => isMine(game.home) || isMine(game.away))).sort(gameOrder);
+  const groups = mine.length ? [{ title: 'Your teams', games: mine }] : [];
+  for (const { name, games } of today) {
+    const rest = games.filter((game) => !mine.includes(game)).sort(gameOrder);
+    if (rest.length) groups.push({ title: name, games: rest });
+  }
+  return groups;
+}
+
+export async function todaysGames(now = Date.now()) {
+  const byLeague = await Promise.all(GAME_LEAGUES.map(({ name, path }) => getJSON(`${SITE}/${path}/scoreboard?dates=${dayParam(now)}`)
+    .then((answer) => ({ name, games: (answer.events ?? []).map((event) => toMatch(event, name, path.startsWith('soccer') ? 'soccer/all' : path)) }))
+    .catch(() => ({ name, games: [] }))));
+  return groupGames(byLeague, now);
+}
