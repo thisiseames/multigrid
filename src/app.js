@@ -10,7 +10,7 @@ import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
-import { CHANNEL_CATEGORIES, channelMatches, channelTitle, eventLabelFor, extraFeedFor, parseChannelList, webStreamSearch, withChannelExtras } from './channels.js';
+import { CHANNEL_CATEGORIES, channelMatches, channelTitle, eventLabelFor, extraFeedFor, parseChannelList, withChannelExtras } from './channels.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
 import { episodeCode, episodeFor, isNewToday } from './episodes.js';
@@ -320,8 +320,6 @@ async function switchToDirectFeed(id) {
   toast(`${title} now plays with MULTIGRID's own sound controls.`);
 }
 
-const WEB_TAB = { id: 'web', name: 'Your streams' };
-const FINDER_TABS = [WEB_TAB, ...CHANNEL_CATEGORIES];
 const MISSING_CHANNEL_NOTES = [
   { match: /\bespn\b/i, note: 'ESPN US is not in the free directory; it needs a cable or streaming login.' },
   { match: /\btsn\b|\bsportsnet\b/i, note: 'TSN and Sportsnet are not free public feeds; they need a Canadian TV login.' },
@@ -329,31 +327,13 @@ const MISSING_CHANNEL_NOTES = [
   { match: /\bprime video\b|\bprime\b/i, note: 'Prime Video needs a subscription; the free directory does not carry it.' },
 ];
 
-/** Saved website players. They are searchable, but their sound belongs to their site. */
-function savedWebStreams() {
-  return listFavorites()
-    .map((item) => ({ item, source: parseSource(item.input) }))
-    .filter(({ source }) => source.ok && source.kind === 'iframe')
-    .map(({ item }) => ({
-      name: item.name,
-      group: item.group || 'Website player',
-      url: item.input,
-      logo: item.logo,
-      event: eventLabelFor(item.input),
-      search: webStreamSearch(item),
-      web: true,
-    }));
-}
-
 function channelResultRow(item, target, folder, now) {
   const art = el('span', { class: 'ch-logo' });
   if (item.logo) art.append(el('img', { src: item.logo, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
   else art.append(icon('live', 16));
-  const sub = item.web
-    ? [item.event, 'site player'].filter(Boolean).join(' · ')
-    : now?.current ? `Now: ${now.current.title}`
-      : now?.next ? `Next: ${clock(now.next.start)} · ${now.next.title}`
-        : item.group || 'Live channel';
+  const sub = now?.current ? `Now: ${now.current.title}`
+    : now?.next ? `Next: ${clock(now.next.start)} · ${now.next.title}`
+      : item.group || 'Live channel';
   return el('button', {
     type: 'button',
     class: 'ch-row',
@@ -362,9 +342,9 @@ function channelResultRow(item, target, folder, now) {
       click() {
         $('channel-box').close();
         $('source-dialog').close();
-        const name = item.web ? item.name : channelTitle(item.name);
-        saveFavorite(item.url, name, item.web ? (item.group || 'Website players') : folder, item.logo);
-        addStream(item.url, target, item.web ? (item.event || item.name) : '');
+        const name = channelTitle(item.name);
+        saveFavorite(item.url, name, folder, item.logo);
+        addStream(item.url, target);
         toast(`Adding ${name}…`);
       },
     },
@@ -385,42 +365,41 @@ function openChannelFinder() {
   let allList = null;
   let allPromise = null;
   let searchAsked = 0;
-  const web = savedWebStreams();
   const nowCache = new Map();
   const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search all channels, teams or shows', autocomplete: 'off' });
   const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Channel kinds' } });
   const count = el('p', { class: 'ch-count', textContent: '' });
   const results = el('div', { class: 'ch-results' });
-  const folderFor = (item) => item.web ? (item.group || 'Website players') : item.category || FINDER_TABS.find((category) => category.id === tab)?.name || '';
+  const folderFor = (item) => item.category || CHANNEL_CATEGORIES.find((category) => category.id === tab)?.name || '';
   const nowFor = (item) => {
-    if (item.web) return null;
     if (!nowCache.has(item.name)) nowCache.set(item.name, nowAndNext(item.name, parseSource(item.url)));
     return nowCache.get(item.name);
   };
-  const searchText = (item) => [item.name, item.group, item.event, item.search,
+  const searchText = (item) => [item.name, item.group,
     nowFor(item)?.current?.title, nowFor(item)?.next?.title].filter(Boolean).join(' ').toLocaleLowerCase();
   const noteFor = (query) => MISSING_CHANNEL_NOTES.find((item) => item.match.test(query))?.note || '';
   const paintRows = (items, query = '') => {
     const shown = items.slice(0, 80);
     count.textContent = `${items.length} match${items.length === 1 ? '' : 'es'}`;
     const note = noteFor(query);
-    results.replaceChildren(...shown.map((item) => channelResultRow(item, target, folderFor(item), nowFor(item))),
-      note ? el('p', { class: 'ch-note', textContent: note }) : null);
-    if (!shown.length && !note) results.append(el('p', { class: 'ch-empty', textContent: query ? 'No channels match.' : 'No saved website players yet. Add one from Add stream.' }));
+    const children = shown.map((item) => channelResultRow(item, target, folderFor(item), nowFor(item)));
+    if (note) children.push(el('p', { class: 'ch-note', textContent: note }));
+    if (!children.length) children.push(el('p', { class: 'ch-empty', textContent: 'No channels match.' }));
+    results.replaceChildren(...children);
   };
   const paintList = (items) => {
     const shown = items.slice(0, 80);
     count.textContent = loading ? 'Loading…' : items.length ? `${items.length} channel${items.length === 1 ? '' : 's'}` : '';
     results.replaceChildren(...(shown.length
       ? shown.map((item) => channelResultRow(item, target, folderFor(item), nowFor(item)))
-      : [el('p', { class: 'ch-empty', textContent: loading ? 'Loading channels…' : tab === 'web' ? 'No saved website players yet. Add one from Add stream.' : 'No channels match.' })]));
+      : [el('p', { class: 'ch-empty', textContent: loading ? 'Loading channels…' : 'No channels match.' })]));
   };
   const paint = () => {
     const query = search.value.trim().toLowerCase();
     if (!query) { paintList(list); return; }
     const asked = ++searchAsked;
     count.textContent = 'Searching…';
-    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching all channels and your streams…' }));
+    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching all live channels…' }));
     const loadAll = async () => {
       if (allList) return allList;
       if (allPromise) return allPromise;
@@ -432,7 +411,7 @@ function openChannelFinder() {
     };
     loadAll().then((channels) => {
       if (asked !== searchAsked || search.value.trim().toLowerCase() !== query) return;
-      const matches = [...channels, ...web].filter((item) => searchText(item).includes(query));
+      const matches = channels.filter((item) => searchText(item).includes(query));
       paintRows(matches, query);
     }).catch(() => {
       if (asked === searchAsked) results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
@@ -444,20 +423,18 @@ function openChannelFinder() {
     list = [];
     paint();
     let found = [];
-    if (wanted !== 'web') {
-      try {
-        found = await loadChannelCategory(wanted);
-      } catch {
-        found = [];
-      }
+    try {
+      found = await loadChannelCategory(wanted);
+    } catch {
+      found = [];
     }
     // A slower earlier kind must not overwrite the one now showing.
     if (wanted !== tab) return;
-    list = wanted === 'web' ? web : found;
+    list = found;
     loading = false;
     if (box.open) paint();
   };
-  tabs.replaceChildren(...FINDER_TABS.map((category) => {
+  tabs.replaceChildren(...CHANNEL_CATEGORIES.map((category) => {
     const button = el('button', {
       type: 'button',
       class: `ch-tab${category.id === tab ? ' is-on' : ''}`,
@@ -488,7 +465,7 @@ function openChannelFinder() {
     tabs,
     count,
     results,
-    el('p', { class: 'ch-note', textContent: 'Free public channels only. Paid channels like ESPN US, TSN and Sportsnet need a TV login. Your saved website streams are under Your streams.' }));
+    el('p', { class: 'ch-note', textContent: 'Free public channels only. Paid channels like ESPN US, TSN and Sportsnet need a TV login.' }));
   openDialog(box);
   search.focus();
   load();

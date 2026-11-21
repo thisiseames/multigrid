@@ -127,9 +127,3 @@ export function eventLabelFor(raw) {
   const date = new Date(`${parts[at]}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   return `${league} · ${date} · ${team(away)} at ${team(home)}`;
 }
-
-/** Searchable text for a saved web stream: its name plus the event in its URL. */
-export function webStreamSearch(item) {
-  const event = eventLabelFor(item?.input);
-  return [item?.name, item?.group, event].filter(Boolean).join(' ').toLocaleLowerCase();
-}

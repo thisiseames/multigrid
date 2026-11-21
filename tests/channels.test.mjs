@@ -44,7 +44,7 @@ test('channels: a favourite title drops quality and notes, and is uppercase', ()
   assert.equal(channelTitle('Sky Sports  Action (720p)'), 'SKY SPORTS ACTION');
 });
 
-import { CHANNEL_EXTRAS, channelMatches, eventLabelFor, extraFeedFor, webStreamSearch, withChannelExtras } from '../src/channels.js';
+import { CHANNEL_EXTRAS, channelMatches, eventLabelFor, extraFeedFor, withChannelExtras } from '../src/channels.js';
 
 test('channels: hand-kept https feeds join their directory kind once', () => {
   const extra = CHANNEL_EXTRAS[0];
@@ -81,5 +81,4 @@ test('channels: an event URL becomes a searchable label', () => {
     'NHL · Dec 1 · TOR at MTL',
   );
   assert.equal(eventLabelFor('https://example.com/live/foo'), '');
-  assert.match(webStreamSearch({ input: 'https://example.com/embed/nba/2026-11-20/tor-det', name: 'PPV', group: 'Sports' }), /raptors/);
 });
