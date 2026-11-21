@@ -1322,6 +1322,10 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .ch-tab { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 550; }
 .ch-tab:hover { color: var(--text); }
 .ch-tab.is-on { background: var(--accent); color: var(--accent-ink); }
+.ch-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.ch-cat { height: 26px; padding: 0 9px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 11.5px; font-weight: 600; }
+.ch-cat:hover { color: var(--text); }
+.ch-cat.is-on { background: rgba(142, 166, 232, .2); color: var(--accent); }
 .ch-count { margin: 10px 2px 6px; font-size: 11.5px; color: var(--text-2); }
 .ch-results { min-height: 180px; max-height: 52dvh; overflow-y: auto; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .ch-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 2px; text-align: left; color: var(--text); }
@@ -1335,6 +1339,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 .ch-note { margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--text-2); }
 .ch-empty { margin: 18px 2px; color: var(--text-2); font-size: 13px; }
 body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
+body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 
 .x-list-box { width: min(560px, calc(100vw - 16px)); }
 .x-list-box form { display: flex; flex-direction: column; gap: 8px; }

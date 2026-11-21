@@ -338,23 +338,65 @@ const MISSING_CHANNEL_NOTES = [
   { match: /\bprime video\b|\bprime\b/i, note: 'Prime Video needs a subscription; the free directory does not carry it.' },
 ];
 
-function channelResultRow(item, target, folder, now) {
+const COUNTRY_ORDER = ['US', 'Canada', 'Australia', 'Ireland', 'New Zealand', 'UK'];
+const CATEGORY_ORDER = ['News', 'Sports', 'Entertainment', 'Movies', 'Kids', 'Documentary', 'Music', 'General'];
+
+/** A second, browser-side check before a catalog channel is allowed onto the wall. */
+async function channelPlays(url) {
+  try {
+    const headers = { Accept: 'application/vnd.apple.mpegurl,*/*' };
+    const response = await fetch(url, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
+    if (!response.ok) return false;
+    let text = await response.text();
+    if (!text.includes('#EXTM3U')) return false;
+    let base = response.url || url;
+    if (text.includes('#EXT-X-STREAM-INF')) {
+      const variant = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
+      if (!variant) return false;
+      const variantUrl = new URL(variant.trim(), base).href;
+      const next = await fetch(variantUrl, { cache: 'no-store', headers, signal: AbortSignal.timeout?.(7000) });
+      if (!next.ok) return false;
+      text = await next.text();
+      base = next.url || variantUrl;
+    }
+    const segment = text.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
+    if (!segment) return false;
+    const media = await fetch(new URL(segment.trim(), base).href, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout?.(7000),
+    });
+    return media.ok;
+  } catch {
+    return false;
+  }
+}
+
+function channelResultRow(item, now, onDead, target) {
   const art = el('span', { class: 'ch-logo' });
   if (item.logo) art.append(el('img', { src: item.logo, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
   else art.append(icon('live', 16));
   const sub = now?.current ? `Now: ${now.current.title}`
     : now?.next ? `Next: ${clock(now.next.start)} · ${now.next.title}`
-      : item.group || 'Live channel';
-  return el('button', {
+      : [item.category, item.country].filter(Boolean).join(' · ');
+  const add = el('span', { class: 'ch-add', textContent: 'Add' });
+  const row = el('button', {
     type: 'button',
     class: 'ch-row',
     title: `Add ${item.name}`,
     on: {
-      click() {
+      async click() {
+        row.disabled = true;
+        add.textContent = 'Checking…';
+        if (!(await channelPlays(item.url))) {
+          item.dead = true;
+          toast(`${item.name} isn't playing right now.`);
+          onDead();
+          return;
+        }
         $('channel-box').close();
         $('source-dialog').close();
         const name = channelTitle(item.name);
-        saveFavorite(item.url, name, folder, item.logo);
+        saveFavorite(item.url, name, item.country || '', item.logo);
         addStream(item.url, target);
         toast(`Adding ${name}…`);
       },
@@ -362,124 +404,117 @@ function channelResultRow(item, target, folder, now) {
   },
   art,
   el('span', { class: 'ch-text' }, el('b', { textContent: item.name }), el('small', { textContent: sub })),
-  el('span', { class: 'ch-add', textContent: 'Add' }));
+  add);
+  return row;
 }
 
-/** The directory inside Add stream: pick a kind, search, and add a channel. */
+/** The directory inside Add stream: English channels that passed the play test. */
 function openChannelFinder() {
   const box = $('channel-box');
   if (box.open) return;
   const target = sourceTarget;
-  let tab = CHANNEL_CATEGORIES[0].id;
-  let list = [];
-  let loading = false;
-  let allList = null;
-  let allPromise = null;
-  let searchAsked = 0;
+  let channels = [];
+  let countries = [];
+  let country = '';
+  let category = 'All';
+  let asked = 0;
   const nowCache = new Map();
-  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search all channels, teams or shows', autocomplete: 'off' });
-  const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Channel kinds' } });
+  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search English channels, teams or shows', autocomplete: 'off' });
+  const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Countries' } });
+  const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
   const count = el('p', { class: 'ch-count', textContent: '' });
   const results = el('div', { class: 'ch-results' });
-  const folderFor = (item) => item.category || CHANNEL_CATEGORIES.find((category) => category.id === tab)?.name || '';
   const nowFor = (item) => {
     if (!nowCache.has(item.name)) nowCache.set(item.name, nowAndNext(item.name, parseSource(item.url)));
     return nowCache.get(item.name);
   };
-  const searchText = (item) => [item.name, item.group,
+  const searchText = (item) => [item.name, item.group, item.category, item.country,
     nowFor(item)?.current?.title, nowFor(item)?.next?.title].filter(Boolean).join(' ').toLocaleLowerCase();
   const noteFor = (query) => MISSING_CHANNEL_NOTES.find((item) => item.match.test(query))?.note || '';
-  const paintRows = (items, query = '') => {
-    const shown = items.slice(0, 80);
-    count.textContent = `${items.length} match${items.length === 1 ? '' : 'es'}`;
-    const note = noteFor(query);
-    const children = shown.map((item) => channelResultRow(item, target, folderFor(item), nowFor(item)));
-    if (note) children.push(el('p', { class: 'ch-note', textContent: note }));
-    if (!children.length) children.push(el('p', { class: 'ch-empty', textContent: 'No channels match.' }));
-    results.replaceChildren(...children);
-  };
-  const paintList = (items) => {
-    const shown = items.slice(0, 80);
-    count.textContent = loading ? 'Loading…' : items.length ? `${items.length} channel${items.length === 1 ? '' : 's'}` : '';
-    results.replaceChildren(...(shown.length
-      ? shown.map((item) => channelResultRow(item, target, folderFor(item), nowFor(item)))
-      : [el('p', { class: 'ch-empty', textContent: loading ? 'Loading channels…' : 'No channels match.' })]));
-  };
-  const paint = () => {
-    const query = search.value.trim().toLowerCase();
-    if (!query) { paintList(list); return; }
-    const asked = ++searchAsked;
-    count.textContent = 'Searching…';
-    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching all live channels…' }));
-    const loadAll = async () => {
-      if (allList) return allList;
-      if (allPromise) return allPromise;
-      allPromise = Promise.all(CHANNEL_CATEGORIES.map(async (category) => {
-        const items = await loadChannelCategory(category.id).catch(() => []);
-        return items.map((item) => ({ ...item, category: category.name }));
-      })).then((groups) => { allList = groups.flat(); return allList; }).finally(() => { allPromise = null; });
-      return allPromise;
-    };
-    loadAll().then((channels) => {
-      if (asked !== searchAsked || search.value.trim().toLowerCase() !== query) return;
-      const matches = channels.filter((item) => searchText(item).includes(query));
-      paintRows(matches, query);
-    }).catch(() => {
-      if (asked === searchAsked) results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
-    });
-  };
-  const load = async () => {
-    const wanted = tab;
-    loading = true;
-    list = [];
-    paint();
-    let found = [];
-    try {
-      found = await loadChannelCategory(wanted);
-    } catch {
-      found = [];
-    }
-    // A slower earlier kind must not overwrite the one now showing.
-    if (wanted !== tab) return;
-    list = found;
-    loading = false;
-    if (box.open) paint();
-  };
-  tabs.replaceChildren(...CHANNEL_CATEGORIES.map((category) => {
-    const button = el('button', {
+  const drawCountries = () => {
+    tabs.replaceChildren(...countries.map((name) => el('button', {
       type: 'button',
-      class: `ch-tab${category.id === tab ? ' is-on' : ''}`,
       role: 'tab',
-      aria: { selected: String(category.id === tab) },
-      textContent: category.name,
+      class: `ch-tab${name === country ? ' is-on' : ''}`,
+      aria: { selected: String(name === country) },
+      textContent: name,
       on: {
         click() {
-          if (tab === category.id) return;
-          tab = category.id;
-          for (const other of tabs.children) {
-            const on = other.dataset.tab === category.id;
-            other.classList.toggle('is-on', on);
-            other.setAttribute('aria-selected', String(on));
-          }
-          search.value = '';
-          load();
+          country = name;
+          category = 'All';
+          drawCountries();
+          drawCategories();
+          paint();
         },
       },
-    });
-    button.dataset.tab = category.id;
-    return button;
-  }));
+    })));
+  };
+  const drawCategories = () => {
+    const present = CATEGORY_ORDER.filter((name) => channels.some((item) => item.category === name));
+    if (category !== 'All' && !present.includes(category)) category = 'All';
+    cats.replaceChildren(...['All', ...present].map((name) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `ch-cat${name === category ? ' is-on' : ''}`,
+      aria: { selected: String(name === category) },
+      textContent: name,
+      on: {
+        click() {
+          category = name;
+          drawCategories();
+          paint();
+        },
+      },
+    })));
+  };
+  const paint = () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    const live = channels.filter((item) => !item.dead);
+    const pool = query
+      ? live.filter((item) => (category === 'All' || item.category === category) && searchText(item).includes(query))
+      : live.filter((item) => item.country === country && (category === 'All' || item.category === category));
+    const shown = pool.slice(0, 80);
+    count.textContent = query ? `${pool.length} match${pool.length === 1 ? '' : 'es'}` : `${pool.length} channel${pool.length === 1 ? '' : 's'}`;
+    const children = shown.map((item) => channelResultRow(item, nowFor(item), () => paint(), target));
+    if (query) {
+      const note = noteFor(query);
+      if (note) children.push(el('p', { class: 'ch-note', textContent: note }));
+    }
+    if (!children.length) children.push(el('p', { class: 'ch-empty', textContent: query ? 'No working channels match.' : 'No channels here yet.' }));
+    results.replaceChildren(...children);
+  };
   search.addEventListener('input', paint);
   box.replaceChildren(
     el('div', { class: 'ch-head' }, el('h2', { textContent: 'Find a live channel' }), iconButton('close', 'Close', () => box.close())),
     search,
     tabs,
+    cats,
     count,
     results,
-    el('p', { class: 'ch-note', textContent: 'Free public channels only. Paid channels like ESPN US, TSN and Sportsnet need a TV login.' }));
+    el('p', { class: 'ch-note', textContent: 'English-language channels that passed a manifest, segment and CORS test. Paid feeds are not included.' }));
   openDialog(box);
   search.focus();
-  load();
+  count.textContent = 'Loading…';
+  results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading channels…' }));
+  loadJob('live-channels.json').then((data) => {
+    if (!box.open) return;
+    channels = (Array.isArray(data?.channels) ? data.channels : []).filter((item) => item && item.name && item.url && item.country);
+    if (!channels.length) {
+      count.textContent = '';
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'No working channel catalog yet.' }));
+      return;
+    }
+    countries = [...new Set(channels.map((item) => item.country))]
+      .sort((a, b) => (COUNTRY_ORDER.indexOf(a) + 1 || 99) - (COUNTRY_ORDER.indexOf(b) + 1 || 99));
+    country = countries[0] || '';
+    drawCountries();
+    drawCategories();
+    paint();
+  }).catch(() => {
+    if (!box.open) return;
+    count.textContent = '';
+    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
+  });
 }
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
