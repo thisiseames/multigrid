@@ -4443,10 +4443,10 @@ async function fillToday() {
     if (todayChrome) {
       todayChrome.title.textContent = week ? 'This week' : 'Today';
       todayChrome.date.textContent = week ? weekAheadLabel(now) : dayFormat.format(new Date(now));
-      if (week) todayChrome.line.hidden = true;
-      else todayChrome.drawWeather(todayChrome.weather);
-      todayChrome.drawWeek(todayChrome.weather);
+      todayChrome.drawWeather(todayChrome.weather);
+      // Switching views closes both, like Today's hours.
       todayChrome.hoursBox.hidden = true;
+      todayChrome.weekBox.hidden = true;
       todayChrome.line.classList.remove('is-open');
       todayChrome.line.setAttribute('aria-expanded', 'false');
     }
@@ -4484,12 +4484,35 @@ function weatherLine(holder, hoursBox, weather) {
 }
 
 /* This week's weather: the seven days the This week view covers, always open there. */
-function weekWeather(box, weather) {
-  // The same days as the rest of This week, by this device's calendar.
+/** This week's days, by this device's calendar, the same as the rest of This week. */
+const weekDays = (weather) => {
   const { from, end } = weekAheadKeys();
-  const days = daysBetween(weather?.days, from, end);
-  box.hidden = todayView !== 'week' || !days.length;
-  if (!days.length) return;
+  return daysBetween(weather?.days, from, end);
+};
+
+/* This week's line next to the dates: the week's high and low; tapping it shows each day. */
+function weekLine(holder, weather) {
+  const days = weekDays(weather);
+  if (!days.length) { holder.hidden = true; return; }
+  holder.hidden = false;
+  const high = Math.max(...days.map((day) => day.high));
+  const low = Math.min(...days.map((day) => day.low));
+  // The picture is the week's most common weather.
+  const counts = new Map();
+  for (const day of days) counts.set(weatherWords(day.code), [...(counts.get(weatherWords(day.code)) || []), day.code]);
+  const common = [...counts.values()].sort((a, b) => b.length - a.length)[0][0];
+  const text = `High ${high}° · Low ${low}°`;
+  holder.replaceChildren(...[
+    weather.fallback ? el('span', { class: 'wx-place', textContent: 'Toronto' }) : null,
+    weatherIcon(common, true, 15),
+    el('span', { textContent: text })].filter(Boolean));
+  holder.title = `This week${weather.fallback ? ' in Toronto' : ''}. Tap for each day.`;
+  holder.setAttribute('aria-label', `This week, ${text.replace(' · ', ', ')}${weather.fallback ? ', Toronto' : ''}. Show each day.`);
+}
+
+function weekWeather(box, weather) {
+  const days = weekDays(weather);
+  if (!days.length) { box.hidden = true; return; }
   box.setAttribute('aria-label', `This week's weather${weather.fallback ? ' in Toronto' : ''}`);
   box.replaceChildren(...[
     weather.fallback ? el('li', { class: 'wx-hour wx-week-place', textContent: 'Toronto' }) : null,
@@ -4519,9 +4542,11 @@ function buildToday() {
     aria: { expanded: 'false' },
     on: {
       click() {
-        hoursBox.hidden = !hoursBox.hidden;
-        line.setAttribute('aria-expanded', String(!hoursBox.hidden));
-        line.classList.toggle('is-open', !hoursBox.hidden);
+        // Today opens the next 12 hours; This week opens each day.
+        const box = todayView === 'week' ? weekBox : hoursBox;
+        box.hidden = !box.hidden;
+        line.setAttribute('aria-expanded', String(!box.hidden));
+        line.classList.toggle('is-open', !box.hidden);
       },
     },
   });
@@ -4531,13 +4556,10 @@ function buildToday() {
   const drawWeather = (weather) => {
     todayChrome.weather = weather;
     weatherLine(line, hoursBox, weather);
-    if (todayView === 'week') {
-      line.hidden = true;
-      hoursBox.hidden = true;
-    }
     weekWeather(weekBox, weather);
+    if (todayView === 'week') weekLine(line, weather);
   };
-  todayChrome = { title, date, line, hoursBox, weather: null, drawWeather, drawWeek: (weather) => weekWeather(weekBox, weather) };
+  todayChrome = { title, date, line, hoursBox, weekBox, weather: null, drawWeather };
   // The markets ticker runs along the bottom, above "Updated", like a TV ticker.
   const markets = el('div', { class: 'mk-bar', hidden: true });
   menu.replaceChildren(
