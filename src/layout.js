@@ -126,6 +126,11 @@ export const PRESETS = [
     rows: [2, 1],
     slots: [{ c: 0, r: 0, cs: 1, rs: 2 }, { c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
   }) },
+  // Like a TV: the main stream fills the screen and the second sits small in the bottom-right corner.
+  // Both share one cell; the grid draws the second one small (see grid-view.js).
+  { id: 'pip', name: 'Picture in picture', hint: 'A small screen in the corner of the big one', fixed: 2,
+    build: () => ({ cols: [1], rows: [1], slots: [{ c: 0, r: 0, cs: 1, rs: 1 }, { c: 0, r: 0, cs: 1, rs: 1 }] }),
+    diagram: { cols: [3, 1], rows: [3, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 2 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
@@ -173,7 +178,7 @@ export const presetById = (id) => PRESETS.find((preset) => preset.id === id);
 
 /** What to draw for a preset's little diagram. */
 export function presetDiagram(preset) {
-  return preset.build(preset.fixed ?? preset.sample ?? 1);
+  return preset.diagram ?? preset.build(preset.fixed ?? preset.sample ?? 1);
 }
 
 export const isStream = (tile) => Boolean(tile.input);

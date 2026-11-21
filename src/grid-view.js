@@ -440,7 +440,11 @@ class TileView {
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     this.primaryButton.hidden = isNote;
+    // In picture in picture, the small screen can swap places with the big one.
+    this.swapButton = iconButton('replace', 'Swap with the big screen', () => handlers.onPipSwap?.(this.id));
+    this.swapButton.classList.add('strip-pipswap');
     const actions = el('div', { class: 'strip-actions' },
+      this.swapButton,
       this.primaryButton,
       this.starButton,
       this.cinemaButton,
@@ -646,6 +650,23 @@ export class GridView {
     this.viewFor(id)?.note(text, sub);
   }
 
+  /* Picture in picture: the main stream (the primary, else the first) fills the screen and the
+     other sits small in the bottom-right corner. Twitch stops when anything covers it and
+     YouTube doesn't allow it, so with either as the main stream the small one sits beside it. */
+  markPictureInPicture(ws, placed) {
+    const pip = ws.presetId === 'pip' && !this.isStacked;
+    const shown = placed.filter((tile) => tile.place);
+    const main = pip ? (shown.find((tile) => tile.primary && isStream(tile)) ?? shown[0]) : null;
+    const inset = pip ? shown.find((tile) => tile !== main) : null;
+    const kind = main && isStream(main) ? parseSource(main.input).kind : '';
+    this.gridEl.classList.toggle('is-pip', pip);
+    this.gridEl.classList.toggle('is-pip-beside', pip && (kind === 'twitch' || kind === 'youtube'));
+    for (const view of this.views.values()) {
+      view.root.classList.toggle('is-pip-main', view.tile === main);
+      view.root.classList.toggle('is-pip-inset', view.tile === inset);
+    }
+  }
+
   render(ws) {
     if (!ws) return;
     this.ws = ws;
@@ -678,6 +699,7 @@ export class GridView {
       view.root.style.order = index;
       this.attachCorners(view);
     });
+    this.markPictureInPicture(ws, placed);
     this.renderDividers();
     this.fit();
   }

@@ -32,7 +32,8 @@ test('every preset covers the grid exactly, for 0 to 16 streams', () => {
   for (const preset of PRESETS) {
     for (let n = 0; n <= MAX_STREAMS; n++) {
       const ws = withStreams(n, preset.id);
-      assertTiled(ws, `${preset.id} n=${n}`);
+      // Picture in picture puts both screens in one cell on purpose; the grid draws the second small.
+      if (preset.id !== 'pip') assertTiled(ws, `${preset.id} n=${n}`);
       assert.equal(streamCount(ws), n, `${preset.id} n=${n} lost a stream`);
       const visible = ws.tiles.filter((tile) => tile.place).length;
       const hidden = hiddenTiles(ws).length;
@@ -254,4 +255,13 @@ test('phone layouts keep the primary stream in a video slot, not the phone colum
   assert.equal(poi.place.r, 0, 'primary should stay in the top video slot');
   assert.equal(poi.place.rs, 1, 'primary should not take the tall phone slot');
   assert.equal(feed.place.rs, 2, 'the feed should own the tall slot');
+});
+
+test('picture in picture: one big cell with both screens in it, and the rest waiting in Hidden', () => {
+  const ws = withStreams(3, 'pip');
+  assert.deepEqual([ws.cols, ws.rows], [[1], [1]]);
+  const shown = ws.tiles.filter((tile) => tile.place);
+  assert.equal(shown.length, 2);
+  assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
+  assert.equal(hiddenTiles(ws).length, 1);
 });

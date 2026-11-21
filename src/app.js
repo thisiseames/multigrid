@@ -105,6 +105,8 @@ const grid = new GridView($('grid'), $('stage'), env, {
     saveCurrent(ws);
   },
   onCast: (id) => castStream(id),
+  // Picture in picture: the small screen becomes the big one.
+  onPipSwap: (id) => swapPip(id),
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName,
@@ -204,6 +206,24 @@ async function castStream(id) {
 // The Cast buttons show and hide as TVs come and go on the Wi-Fi.
 onTvChange(() => { for (const tile of ws.tiles) grid.viewFor(tile.id)?.syncControls(); });
 
+/* Picture in picture: the other screen of the pair, and swapping the big and small ones. */
+function pipOther(id) {
+  if (ws.presetId !== 'pip') return null;
+  const views = ws.tiles.filter((tile) => tile.place && tile.input).map((tile) => grid.viewFor(tile.id)).filter(Boolean);
+  if (!views.some((view) => view.root.classList.contains('is-pip-main') || view.root.classList.contains('is-pip-inset'))) return null;
+  return views.find((view) => view.tile.id !== id)?.tile ?? null;
+}
+function swapPip(id) {
+  const tile = tileById(id);
+  const view = grid.viewFor(id);
+  if (!tile?.input || !view) return;
+  // The small one becomes the big one, whichever screen asked.
+  const small = view.root.classList.contains('is-pip-inset') ? tile : pipOther(id);
+  if (!small) return;
+  setPrimary(ws, small.id, true);
+  commit();
+}
+
 /** Everything you can do to one stream, as a sheet of big buttons. */
 function buildStreamMenu(id) {
   const tile = tileById(id);
@@ -225,6 +245,7 @@ function buildStreamMenu(id) {
     bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
     bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
     castWay(view.source, view.player?.el) ? bigButton('cast', castWay(view.source, view.player?.el) === 'airplay' ? 'AirPlay' : 'Cast to TV', then(() => castStream(id))) : null,
+    pipOther(id) ? bigButton('replace', 'Swap screens', then(() => swapPip(id))) : null,
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
