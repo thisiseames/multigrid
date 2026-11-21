@@ -40,7 +40,7 @@
       else if (node instanceof HTMLIFrameElement) frames.push(node);
       // Only plain HTML elements can be asked: an SVG icon would throw and stop everything.
       if (!(node instanceof HTMLElement)) return;
-      const shadow = chrome.dom?.openOrClosedShadowRoot(node) || node.shadowRoot;
+      const shadow = globalThis.chrome?.dom?.openOrClosedShadowRoot?.(node) || node.shadowRoot;
       if (shadow) collect(shadow, media, frames);
     });
   }

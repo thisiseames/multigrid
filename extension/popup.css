@@ -1,0 +1,121 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --surface: #161618;
+  --raised: #1f1f22;
+  --hover: #28282d;
+  --text: #ececee;
+  --text-2: #9e9ea7;
+  --accent: #8ea6e8;
+  --border: rgba(255, 255, 255, 0.09);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.35 -apple-system, "system-ui", "SF Pro Text", Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+#source {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+main {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 7px 8px 9px;
+}
+
+.note {
+  margin: 12px 7px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.candidate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.candidate:hover,
+.candidate:focus-visible {
+  background: var(--surface);
+  border-color: var(--border);
+  outline: none;
+}
+
+.kind {
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detail {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.status {
+  margin: 0;
+  padding: 8px 14px 11px;
+  border-top: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+
+.status.is-error { color: #ff9a9d; }
+
+body.is-busy .candidate {
+  opacity: 0.45;
+  pointer-events: none;
+}

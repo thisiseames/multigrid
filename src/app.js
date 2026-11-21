@@ -35,7 +35,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
-import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
+import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -5188,6 +5188,64 @@ async function receiveFavorites() {
   offerFavorites(code);
 }
 
+/* A page sent from the browser extension, or from a Safari bookmarklet. */
+const SEND_PREFIX = '#send=';
+
+function sendPayload(value) {
+  if (!value || typeof value !== 'object') return null;
+  const url = String(value.url || '').trim();
+  if (!/^https?:\/\//i.test(url)) return null;
+  return {
+    url,
+    name: String(value.name || '').trim().slice(0, 200),
+    kind: String(value.kind || '').trim(),
+    save: Boolean(value.save),
+  };
+}
+
+/** Re-adding a channel replaces its older @-name link instead of leaving a dead duplicate. */
+function forgetStaleChannel(name, input) {
+  const wanted = name.trim().toLocaleLowerCase();
+  if (!wanted) return;
+  for (const old of listFavorites()) {
+    if (old.input === input || old.group.toLocaleLowerCase() !== 'youtube') continue;
+    if (old.name.trim().toLocaleLowerCase() !== wanted) continue;
+    if (isYouTubeChannelPage(old.input)) removeFavorite(old.input);
+  }
+}
+
+function addIncoming(payload) {
+  const name = payload.name || favoriteName(payload.url) || '';
+  if (payload.kind === 'youtube-channel' || isYouTubeChannelPage(payload.url)) {
+    const input = channelFavoriteInput(payload.url);
+    forgetStaleChannel(name, input);
+    if (!saveFavorite(input, name || 'YouTube channel', 'YOUTUBE')) toast(STORAGE_FULL);
+    else toast(`${name || 'Channel'} saved in YOUTUBE.`);
+    refreshFavorites();
+    return;
+  }
+  const source = parseSource(payload.url);
+  const audio = payload.kind === 'audio' || source.kind === 'audio' || /\.(mp3|m4a|aac|ogg|opus|wav)(?:\?|#|$)/i.test(payload.url);
+  if (audio) {
+    openPodcast(audioInput(name || 'Podcast', payload.url), { title: name || 'Podcast', from: '' });
+    toast(`Opening ${name || 'podcast'}…`);
+    return;
+  }
+  if (addStream(payload.url, { mode: 'add' }, name)) toast(`Added ${name || 'stream'}.`);
+}
+
+function receiveSend() {
+  if (!location.hash.startsWith(SEND_PREFIX)) return;
+  let value = null;
+  try { value = JSON.parse(decodeURIComponent(location.hash.slice(SEND_PREFIX.length))); } catch { /* a bad link */ }
+  const clean = new URL(location.href);
+  clean.searchParams.delete('send');
+  clean.hash = '';
+  history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+  const payload = sendPayload(value);
+  if (payload) addIncoming(payload);
+}
+
 /** A favorites link pasted where a stream goes. Home Screen apps have no address bar, so this is how they take one. */
 function pastedFavorites(text) {
   const at = text.indexOf(TRANSFER_PREFIX);
@@ -6024,6 +6082,7 @@ prepareAutoplaySound();
 render();
 receiveReaderKey();
 receiveFavorites();
+receiveSend();
 startSync(syncStore, syncCameIn).catch(() => {});
 loadGuide().then(() => {
   syncGuideButton();
@@ -6032,6 +6091,13 @@ loadGuide().then(() => {
 });
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);
+window.addEventListener('hashchange', receiveSend);
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return;
+  const payload = sendPayload(event.data?.multigridSend);
+  if (payload) addIncoming(payload);
+});
+document.documentElement.dataset.multigridSend = '1';
 
 /* ---------- Phone remote: the laptop being controlled ---------- */
 
