@@ -5,6 +5,10 @@
 name: guide
 
 on:
+  push:
+    paths:
+      - 'tools/build-guide.mjs'
+      - '.github/workflows/guide.yml'
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
