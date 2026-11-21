@@ -12,6 +12,7 @@ const KIND = {
 const list = document.getElementById('list');
 const source = document.getElementById('source');
 const status = document.getElementById('status');
+let sourceTabId = null;
 
 function note(text) {
   list.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: text }));
@@ -43,7 +44,25 @@ function sendButton(candidate) {
 }
 
 async function send(candidate) {
-  const payload = { url: candidate.url, name: candidate.name, kind: candidate.kind, save: Boolean(candidate.save) };
+  let url = candidate.url;
+  // A channel link on a video page is often just @name. Read its real UC… ID before sending,
+  // so the saved channel cannot turn into a recommended channel by mistake.
+  if (candidate.needsChannelId) {
+    if (sourceTabId === null) {
+      busy(false, 'Reload the page, then try again.', true);
+      return;
+    }
+    busy(true, 'Reading channel…');
+    try {
+      const found = await chrome.tabs.sendMessage(sourceTabId, { multigrid: 'resolve-channel' }, { frameId: 0 });
+      if (!found?.url) throw new Error('no channel');
+      url = found.url;
+    } catch {
+      busy(false, 'Could not read this channel. Reload the page, then try again.', true);
+      return;
+    }
+  }
+  const payload = { url, name: candidate.name, kind: candidate.kind, save: Boolean(candidate.save) };
   busy(true, 'Sending…');
   // A different query forces a full document load. A hash-only change would not reload an
   // already-open app tab that predates this receiver, so its add would never run.
@@ -84,6 +103,7 @@ async function main() {
     note('This page can’t be sent.');
     return;
   }
+  sourceTabId = tab.id;
   source.textContent = tab.title || new URL(tab.url).hostname;
   let result;
   try {
