@@ -958,7 +958,9 @@ function commit() {
 /* ---------- Drawing the top bar ---------- */
 
 function render() {
-  const showWelcome = !ws.started && streamCount(ws) === 0;
+  // The old "Paste a stream to begin" page is retired: with nothing on screen, the MULTIGRID
+  // background shows instead (Add stream is always in the top bar).
+  const showWelcome = false;
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
   $('stage').classList.toggle('is-empty-wall', !showWelcome && streamCount(ws) === 0);
