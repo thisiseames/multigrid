@@ -513,39 +513,40 @@ function addPPV(event, target) {
   toast(`Adding ${event.name}…`);
 }
 
+/** One PPV event card, shared by the picker and Today. */
+function ppvCard(event, target, eager = false, before = null) {
+  const art = el('span', { class: 'ppv-art' }, icon('play', 24));
+  if (event.colors.length) art.style.background = `linear-gradient(135deg, ${event.colors[0]}, ${event.colors[1] || event.colors[0]})`;
+  if (event.poster) {
+    const img = el('img', { src: event.poster, alt: '', loading: eager ? 'eager' : 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+    img.addEventListener('error', () => img.remove(), { once: true });
+    art.append(img);
+  }
+  const badge = event.always ? '24/7' : event.live ? 'Live' : event.upcoming ? clock(event.starts) : '';
+  const sub = [event.tag || event.source, event.category].filter(Boolean).join(' · ');
+  return el('button', {
+    type: 'button',
+    class: 'ppv-card',
+    title: `Add ${event.name}`,
+    on: { click() { before?.(); addPPV(event, target); } },
+  },
+  el('span', { class: 'ppv-art-wrap' }, art,
+    badge ? el('span', { class: `ppv-badge${event.live && !event.always ? ' is-live' : ''}`, textContent: badge }) : null),
+  el('span', { class: 'ppv-text' },
+    el('b', { textContent: event.name }),
+    sub ? el('small', { textContent: sub }) : null));
+}
+
 /** PPV.st's live events, with their own posters. Fetched only while this dialog is open. */
-function openPPV() {
+function openPPV(target = sourceTarget) {
   const box = $('ppv-box');
   if (box.open) return;
-  const target = sourceTarget;
   let events = [];
   let category = 'All';
   const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search events, teams or shows', autocomplete: 'off' });
   const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
   const count = el('p', { class: 'ch-count' });
   const results = el('div', { class: 'ppv-results' });
-  const cardFor = (event, eager = false) => {
-    const art = el('span', { class: 'ppv-art' }, icon('play', 24));
-    if (event.colors.length) art.style.background = `linear-gradient(135deg, ${event.colors[0]}, ${event.colors[1] || event.colors[0]})`;
-    if (event.poster) {
-      const img = el('img', { src: event.poster, alt: '', loading: eager ? 'eager' : 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
-      img.addEventListener('error', () => img.remove(), { once: true });
-      art.append(img);
-    }
-    const badge = event.always ? '24/7' : event.live ? 'Live' : event.upcoming ? clock(event.starts) : '';
-    const sub = [event.tag || event.source, event.category].filter(Boolean).join(' · ');
-    return el('button', {
-      type: 'button',
-      class: 'ppv-card',
-      title: `Add ${event.name}`,
-      on: { click() { addPPV(event, target); } },
-    },
-    el('span', { class: 'ppv-art-wrap' }, art,
-      badge ? el('span', { class: `ppv-badge${event.live && !event.always ? ' is-live' : ''}`, textContent: badge }) : null),
-    el('span', { class: 'ppv-text' },
-      el('b', { textContent: event.name }),
-      sub ? el('small', { textContent: sub }) : null));
-  };
   const paint = () => {
     const query = search.value.trim().toLocaleLowerCase();
     const pool = events.filter((event) => (category === 'All' || event.category === category)
@@ -554,7 +555,7 @@ function openPPV() {
       ? `${pool.length} match${pool.length === 1 ? '' : 'es'}`
       : `${pool.length} event${pool.length === 1 ? '' : 's'}`;
     results.replaceChildren(...(pool.length
-      ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => cardFor(event, index < 8)))]
+      ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => ppvCard(event, target, index < 8)))]
       : [el('p', { class: 'ch-empty', textContent: query ? 'No events match.' : 'No PPV events right now.' })]));
   };
   const drawCategories = () => {
@@ -604,6 +605,110 @@ function openPPV() {
   openDialog(box);
   if (!document.body.classList.contains('is-phone')) search.focus();
   load();
+}
+
+/** One search box for favourites, layouts, PPV events and the main actions. */
+function openPalette() {
+  const box = $('palette');
+  if (box.open) { box.querySelector('.palette-input')?.focus(); return; }
+  const target = $('source-dialog').open ? sourceTarget : { mode: 'add' };
+  let ppv = [];
+  let items = [];
+  let active = 0;
+  const input = el('input', {
+    type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false',
+    placeholder: 'Find a favourite, layout, PPV event or action',
+  });
+  const results = el('div', { class: 'palette-results' });
+  const hint = el('p', { class: 'palette-hint', textContent: document.body.classList.contains('is-phone') ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close' });
+  const closeAnd = (run) => { box.close(); run(); };
+  const favoriteItem = (item) => {
+    const source = parseSource(item.input);
+    return {
+      group: 'Favorites',
+      label: item.name,
+      sub: item.group || KIND_NAMES[source.kind] || 'Stream',
+      icon: KIND_ICONS[source.kind] || 'play',
+      run: () => closeAnd(() => {
+        if ($('source-dialog').open) $('source-dialog').close();
+        addStream(item.input, target);
+      }),
+    };
+  };
+  const layoutItem = (item) => ({
+    group: 'Layouts',
+    label: item.name,
+    sub: `${item.workspace.tiles.filter((tile) => tile.input).length} streams`,
+    icon: 'saved',
+    run: () => closeAnd(() => restore(item)),
+  });
+  const ppvItem = (event) => ({
+    group: 'PPV events',
+    label: event.name,
+    sub: [event.live ? 'Live now' : clock(event.starts), event.category].filter(Boolean).join(' · '),
+    icon: 'calendar',
+    run: () => closeAnd(() => addPPV(event, target)),
+  });
+  const actions = [
+    { label: 'Add stream', sub: 'Paste a link, iframe or X account', icon: 'plus', run: () => openSourceDialog({ mode: 'add' }) },
+    { label: 'Find a live channel', sub: 'Free channel directory', icon: 'search', run: () => openChannelFinder() },
+    { label: 'Browse PPV events', sub: 'Live and upcoming', icon: 'calendar', run: () => openPPV({ mode: 'add' }) },
+    { label: 'Mute all', sub: 'Silence every stream', icon: 'muted', run: () => muteAll() },
+    { label: 'Fullscreen', sub: 'Hide the bars', icon: 'expand', run: () => $('fullscreen-button').click() },
+    { label: 'Today', sub: 'Headlines, teams and what’s next', icon: 'today', run: () => $('today-button').click() },
+    { label: 'Reader', sub: 'Saved articles', icon: 'reader', run: () => $('reader-button').click() },
+    { label: 'Sports', sub: 'Games and standings', icon: 'sports', run: () => $('sports-button').click() },
+    { label: 'TV guide', sub: 'What’s on now and next', icon: 'guide', run: () => $('guide-button').click() },
+    { label: 'Help', sub: 'How MULTIGRID works', icon: 'help', run: () => $('help-button').click() },
+  ].map((item) => ({ group: 'Actions', ...item, run: () => closeAnd(item.run) }));
+  const has = (text, query) => text.toLocaleLowerCase().includes(query);
+  const paint = () => {
+    const query = input.value.trim().toLocaleLowerCase();
+    const rank = (label) => (label.toLocaleLowerCase().startsWith(query) ? 0 : 1);
+    const favorites = (query
+      ? listFavorites().filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
+      : listFavorites().slice(0, 6)).map(favoriteItem);
+    const layouts = (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem);
+    const events = (query
+      ? ppv.filter((event) => has(event.name, query) || has(event.category, query) || has(event.tag, query) || has(event.source, query)).slice(0, 5)
+      : ppv.slice(0, 4)).map(ppvItem);
+    const found = (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6));
+    items = [...favorites, ...events, ...layouts, ...found];
+    const groups = new Map();
+    for (const item of items) groups.set(item.group, [...(groups.get(item.group) || []), item]);
+    results.replaceChildren(...(items.length
+      ? [...groups].flatMap(([group, list]) => [
+        el('p', { class: 'palette-group', textContent: group }),
+        ...list.map((item) => el('button', {
+          type: 'button',
+          class: 'palette-item',
+          on: { click: item.run },
+        },
+        el('span', { class: 'palette-icon' }, icon(item.icon, 16)),
+        el('span', { class: 'palette-text' },
+          el('b', { textContent: item.label }),
+          item.sub ? el('small', { textContent: item.sub }) : null))),
+      ])
+      : [el('p', { class: 'palette-empty', textContent: query ? 'Nothing matches.' : 'Type to find something.' })]));
+    active = Math.min(active, Math.max(0, items.length - 1));
+    mark();
+  };
+  const mark = () => {
+    const buttons = [...results.querySelectorAll('.palette-item')];
+    buttons.forEach((button, index) => button.classList.toggle('is-on', index === active));
+    buttons[active]?.scrollIntoView({ block: 'nearest' });
+  };
+  input.addEventListener('input', () => { active = 0; paint(); });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); active = Math.min(items.length - 1, active + 1); mark(); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); active = Math.max(0, active - 1); mark(); }
+    else if (event.key === 'Enter') { event.preventDefault(); items[active]?.run(); }
+  });
+  box.replaceChildren(input, results, hint);
+  openDialog(box);
+  paint();
+  input.focus();
+  loadPPV().then((events) => { if (!box.open) return; ppv = events ?? []; paint(); }).catch(() => {});
 }
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
@@ -4600,6 +4705,22 @@ function todayRow({ art, top, title, sub, live = false, onClick }) {
       sub ? el('span', { class: 'trow-sub', textContent: sub }) : null)));
 }
 
+/** PPV events that are live now or start in the next six hours; quiet if PPV is down. */
+function fillTodayPPV(holder, asked, now) {
+  loadPPV().then((events) => {
+    if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
+    const limit = now + 6 * 3600 * 1000;
+    const soon = (events ?? [])
+      .filter((event) => !event.always && (event.live || (event.upcoming && event.starts <= limit)))
+      .slice(0, 4);
+    if (!soon.length) return;
+    holder.replaceChildren(
+      el('h4', { class: 'match-day', textContent: 'PPV starting soon' }),
+      el('div', { class: 'ppv-today' }, ...soon.map((event) => ppvCard(event, { mode: 'add' }, true, closePopovers))));
+    holder.hidden = todayView === 'week';
+  }).catch(() => {});
+}
+
 async function fillToday() {
   const menu = $('today-menu');
   const asked = ++todayAsked;
@@ -4709,6 +4830,7 @@ async function fillToday() {
   const podcastList = todayPodcasts(news);
   const tubeList = tube.filter((item) => !item.opened);
   const trendHolder = el('section', { class: 'today-section', hidden: true });
+  const ppvHolder = el('section', { class: 'today-section', hidden: true });
   const headlinesSection = todaySection('Top headlines', newsList);
   const polySection = todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null);
   const continueSection = todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null);
@@ -4718,9 +4840,10 @@ async function fillToday() {
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
-  const todayOnlySections = [headlinesSection, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, flightSection, chartsSection].filter(Boolean);
+  const todayOnlySections = [headlinesSection, ppvHolder, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
+    ppvHolder,
     headlinesSection,
     trendHolder,
     polySection,
@@ -4761,6 +4884,7 @@ async function fillToday() {
   body.scrollTop = scroll;
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
   fillTodayTrends(trendHolder, asked);
+  fillTodayPPV(ppvHolder, asked, now);
 }
 
 /* Weather on Today's date line; tapping it shows the next 12 hours. */
@@ -5192,7 +5316,7 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box')]) {
+for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('palette')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
@@ -5202,8 +5326,14 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
-$('ppv-find').addEventListener('click', openPPV);
+$('ppv-find').addEventListener('click', () => openPPV(sourceTarget));
 $('source-dialog').addEventListener('close', () => { if ($('ppv-box').open) $('ppv-box').close(); });
+$('palette-button').addEventListener('click', openPalette);
+document.addEventListener('keydown', (event) => {
+  if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLocaleLowerCase() !== 'k') return;
+  event.preventDefault();
+  openPalette();
+});
 // A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
 for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
   $(id).addEventListener('click', () => {

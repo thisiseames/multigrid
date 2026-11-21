@@ -1404,6 +1404,24 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .ppv-box { width: min(720px, calc(100vw - 16px)); }
 .ppv-results { min-height: 200px; max-height: 56dvh; overflow-y: auto; margin-top: 8px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .ppv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ppv-today { display: flex; gap: 8px; padding: 2px 0 4px; overflow-x: auto; scrollbar-width: thin; }
+.ppv-today .ppv-card { flex: 0 0 200px; }
+.ppv-today .ppv-text b { font-size: 12.5px; }
+@media (max-width: 640px) { .ppv-today .ppv-card { flex-basis: 168px; } }
+/* Command palette */
+.palette { width: min(560px, calc(100vw - 16px)); max-height: min(72dvh, 620px); padding: 12px; margin-top: 10vh; margin-bottom: auto; }
+.palette-input { width: 100%; height: 46px; padding: 0 13px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+.palette-input:focus { outline: none; border-color: var(--accent); }
+.palette-results { margin-top: 8px; max-height: calc(72dvh - 100px); overflow-y: auto; overscroll-behavior: contain; }
+.palette-group { margin: 10px 4px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.palette-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; color: var(--text); }
+.palette-item:hover, .palette-item.is-on { background: var(--hover); }
+.palette-icon { flex: none; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+.palette-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.palette-text b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-text small { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-empty { margin: 16px 4px; font-size: 13px; color: var(--text-2); }
+.palette-hint { margin: 8px 4px 0; font-size: 11px; color: var(--text-2); }
 .ppv-card { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--text); border-radius: 12px; border: 1px solid rgba(255,255,255,.05); background: var(--surface); cursor: pointer; }
 .ppv-card:hover { background: #1d1d21; }
 .ppv-art-wrap { position: relative; display: block; aspect-ratio: 16 / 9; background: #1f1f23; }
