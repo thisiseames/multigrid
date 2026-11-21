@@ -33,7 +33,7 @@ import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendK
 import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
-import { loadPPV } from './ppv.js';
+import { loadPPV, todayPPV } from './ppv.js';
 import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -4729,20 +4729,31 @@ function todayRow({ art, top, title, sub, live = false, onClick }) {
       sub ? el('span', { class: 'trow-sub', textContent: sub }) : null)));
 }
 
+let ppvTodayTimer = null;
+
 /** PPV events that are live now or start in the next six hours; quiet if PPV is down. */
-function fillTodayPPV(holder, asked, now) {
-  loadPPV().then((events) => {
-    if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) return;
-    const limit = now + 6 * 3600 * 1000;
-    const soon = (events ?? [])
-      .filter((event) => !event.always && (event.live || (event.upcoming && event.starts <= limit)))
-      .slice(0, 4);
-    if (!soon.length) return;
-    holder.replaceChildren(
+function fillTodayPPV(holder, asked) {
+  clearInterval(ppvTodayTimer);
+  const draw = (events) => {
+    if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) {
+      clearInterval(ppvTodayTimer);
+      return;
+    }
+    const soon = todayPPV(events);
+    holder.hidden = !soon.length || todayView === 'week';
+    holder.replaceChildren(...(soon.length ? [
       el('h4', { class: 'match-day', textContent: 'PPV starting soon' }),
-      el('div', { class: 'ppv-today' }, ...soon.map((event) => ppvCard(event, { mode: 'add' }, true, closePopovers))));
-    holder.hidden = todayView === 'week';
-  }).catch(() => {});
+      el('div', { class: 'ppv-today' }, ...soon.map((event) => ppvCard(event, { mode: 'add' }, true, closePopovers))),
+    ] : []));
+  };
+  loadPPV().then((events) => { if (events) draw(events); }).catch(() => {});
+  ppvTodayTimer = setInterval(() => {
+    if (asked !== todayAsked || !holder.isConnected || $('today-menu').hidden) {
+      clearInterval(ppvTodayTimer);
+      return;
+    }
+    loadPPV(true).then((events) => { if (events) draw(events); }).catch(() => {});
+  }, 60_000);
 }
 
 async function fillToday() {
@@ -4908,7 +4919,7 @@ async function fillToday() {
   body.scrollTop = scroll;
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
   fillTodayTrends(trendHolder, asked);
-  fillTodayPPV(ppvHolder, asked, now);
+  fillTodayPPV(ppvHolder, asked);
 }
 
 /* Weather on Today's date line; tapping it shows the next 12 hours. */
