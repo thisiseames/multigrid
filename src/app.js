@@ -2563,7 +2563,7 @@ function renderGuide() {
     textContent: label,
     on: { click() { guideView = id; keep(GUIDE_VIEW_KEY, id); box.querySelector('.gbody')?.remove(); renderGuide(); } },
   })));
-  const pills = folders.length ? el('div', { class: 'matches-tabs gfolders' }, ...['', ...folders].map((folder) => el('button', {
+  const pills = folders.length ? el('div', { class: 'matches-tabs addp-pills gfolders' }, ...['', ...folders].map((folder) => el('button', {
     type: 'button',
     class: `matches-tab${guideFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
     textContent: folder || 'All',
