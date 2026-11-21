@@ -147,25 +147,31 @@
         <h2 id="source-title">Add stream</h2>
         <button id="source-close" class="icon-button" type="button" aria-label="Close"><span data-icon="close"></span></button>
       </div>
-      <div class="addp-paste">
-        <textarea id="source-input" rows="1" wrap="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
-        <button id="source-submit" class="add-button addp-pasteadd" type="submit">Add</button>
-      </div>
-      <div class="addp-x-row">
-        <div class="addp-x">
-          <span class="addp-x-prefix" aria-hidden="true">x.com/@</span>
-          <input id="source-x" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="account name" aria-label="X account name">
+      <div class="addp-top">
+        <div class="addp-paste">
+          <textarea id="source-input" rows="1" wrap="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Stream link or iframe code" placeholder="Paste a link or iframe code"></textarea>
+          <button id="source-submit" class="add-button addp-pasteadd" type="submit">Add</button>
         </div>
-        <button id="source-x-add" class="addp-x-add" type="button">Add</button>
+        <div class="addp-x-col">
+          <div class="addp-x-row">
+            <div class="addp-x">
+              <span class="addp-x-prefix" aria-hidden="true">x.com/@</span>
+              <input id="source-x" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="account name" aria-label="X account name">
+            </div>
+            <button id="source-x-add" class="addp-x-add" type="button">Add</button>
+          </div>
+          <button id="source-x-list" class="text-button addp-x-list" type="button">Import an X list</button>
+        </div>
       </div>
-      <button id="source-x-list" class="text-button addp-x-list" type="button">Import an X list</button>
       <div id="source-message" class="addp-preview" role="status" hidden></div>
+      <div class="addp-actions">
+        <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
+        <button id="ppv-find" class="addp-file" type="button"><span data-icon="calendar"></span><span>Browse PPV events</span></button>
+      </div>
       <div id="source-continue" class="addp-continue" hidden></div>
       <div id="source-favorites" class="addp-favs" hidden></div>
-      <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
       <button id="note-add" class="addp-file" type="button"><span data-icon="pencil"></span><span>Add a note</span></button>
       <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
-      <button id="ppv-find" class="addp-file" type="button"><span data-icon="calendar"></span><span>Browse PPV events</span></button>
       <button id="source-help" class="addp-file portrait-only" type="button"><span data-icon="help"></span><span>How it works</span></button>
       <button id="source-fullscreen" class="addp-file portrait-only" type="button"><span data-icon="expand"></span><span>Fullscreen</span></button>
     </form>

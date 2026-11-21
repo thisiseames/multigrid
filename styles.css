@@ -1362,6 +1362,15 @@ body:not(.is-phone) #add-button.add-button:hover { background: #28282d; filter: 
 .addp-x input:focus { outline: none; }
 .addp-x-add { flex: none; height: 36px; padding: 0 16px; border-radius: 12px; font-size: 15px; font-weight: 600; }
 .addp-x-list { flex: none; align-self: flex-start; margin: 4px 16px 0; font-size: 12.5px; font-weight: 500; }
+.addp-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 16px 0; align-items: start; }
+.addp-top .addp-paste,
+.addp-top .addp-x-row { margin: 0; }
+.addp-x-col { min-width: 0; display: flex; flex-direction: column; }
+.addp-top .addp-x-list { margin: 4px 0 0; }
+.addp-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 16px 0; }
+.addp-actions .addp-file { margin: 0; }
+@media (max-width: 640px) { .addp-top, .addp-actions { grid-template-columns: 1fr; } }
+@media (hover: none) and (max-height: 500px) { .addp-top, .addp-actions { grid-template-columns: 1fr; } }
 /* Channel Finder */
 .channel-box { width: min(640px, calc(100vw - 16px)); }
 .ch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -1483,7 +1492,7 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .fcard-ask { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .addp-file { flex: none; display: flex; align-items: center; gap: 8px; margin: 10px 16px 0; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--border-strong); color: var(--text-2); font-size: 13px; }
 .addp-file:hover, .addp-file.is-drop { border-color: var(--accent); color: var(--text); background: rgba(142, 166, 232, .06); }
-@media (pointer: coarse) { .addp-file { display: none; } }
+@media (pointer: coarse) { .addp-file { display: none; } .addp-actions .addp-file { display: flex; } }
 @media (max-width: 1100px) {
   .addp { width: min(980px, calc(100vw - 32px)); }
   .addp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
