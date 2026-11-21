@@ -2178,6 +2178,11 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .gamebar .mrow-main { gap: 8px; padding: 8px 8px 8px 10px; }
 /* No channel names in Game mode: just the games. */
 .gamebar .mrow-tv { display: none; }
-/* The phone's Game mode switch, at the bottom of Add stream. */
-.phone-game { display: none !important; }
-body.is-phone .phone-game { display: flex !important; }
+/* Game mode's switch in the MULTIGRID drop-down, under the saved layouts. */
+.sdrop-sep { height: 1px; margin: 6px 10px; background: var(--border); }
+.sdrop-switch { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 10px; border: 0; border-radius: 12px; background: none; color: var(--text); text-align: left; font-family: inherit; cursor: pointer; }
+.sdrop-switch:hover { background: var(--hover); }
+.sdrop-switch .sdrop-shape { width: 52px; height: 38px; justify-content: center; align-items: center; }
+.sdrop-switch .more-switch { width: 40px; height: 24px; border-radius: 12px; }
+.sdrop-switch .more-switch::after { top: 3px; left: 3px; width: 18px; height: 18px; }
+.sdrop-switch .more-switch.is-on::after { transform: translateX(16px); }

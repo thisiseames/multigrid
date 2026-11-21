@@ -991,8 +991,6 @@ async function refreshGames() {
 
 function syncGameMode() {
   const column = isGameOn() && !onPhoneScreen();
-  const label = $('source-game-label');
-  if (label) label.textContent = isGameOn() ? 'Game mode: on' : 'Game mode: off';
   if (column === !$('gamebar').hidden) return;
   $('gamebar').hidden = !column;
   clearTimeout(gameTimer);
@@ -5025,8 +5023,6 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
-// Game mode on a phone: the switch is at the bottom of Add stream.
-$('source-game').addEventListener('click', () => { $('source-dialog').close(); toggleGameMode(); });
 // A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
 for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
   $(id).addEventListener('click', () => {
@@ -5332,7 +5328,18 @@ function buildSavedDrop() {
       el('span', { class: 'sdrop-shape' }, layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, 40, 26)),
       el('span', { class: 'sdrop-text' }, el('b', { textContent: item.name }), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
-    })) : el('p', { class: 'sdrop-empty', textContent: `No saved layouts yet. Save the one on screen ${where}.` }));
+    })) : el('p', { class: 'sdrop-empty', textContent: `No saved layouts yet. Save the one on screen ${where}.` }),
+    // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
+    el('div', { class: 'sdrop-sep' }),
+    el('button', {
+      type: 'button',
+      class: 'sdrop-switch',
+      aria: { pressed: String(isGameOn()) },
+      on: { click() { toggleGameMode(); buildSavedDrop(); } },
+    },
+    el('span', { class: 'sdrop-shape' }, icon('live', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Game mode' }), el('small', { textContent: grid.isStacked || onPhoneScreen() ? 'Live scores in the ticker' : 'Live scores beside the streams' })),
+    el('span', { class: `more-switch${isGameOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })));
 }
 $('wordmark').addEventListener('click', () => togglePopover($('wordmark'), $('saved-drop'), buildSavedDrop));
 
