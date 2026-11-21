@@ -6,7 +6,7 @@ Each needs a full plan and your "go" before building.
 
 - [ ] **Playlist for video files**: pick Silo S3 E8, E9, E10 together; they play one after another in one tile, in episode order, with a Next button. (Today, picking several files makes one tile each: `addFiles` in src/app.js.)
 - [x] (done by OpenCode Nov 20) **Hell's Kitchen poster** (Entertainment folder): show TVmaze's wide picture. Plan already written for DeepSeek in OPENCODE-PLAN.md; test DeepSeek on it when Claude can fix anything that goes wrong.
-- [ ] **Chart numbers**: ▲3 / ▼2 / NEW / Back and weeks on chart in Today's Charts (Billboard's page already has LW and weeks).
+- [x] (done Nov 21) **Chart numbers**: ▲3 / ▼2 / – / NEW / RE-ENTRY under each position in Today's Charts (weeks on chart left out).
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **Captions (CC) button**: in the tile's top bar, for YouTube and video links.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.
