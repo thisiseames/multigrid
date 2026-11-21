@@ -18,7 +18,7 @@ import { episodeCode, episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn, tickerScores } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague, withConference } from './standings.js';
-import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, todaysGames } from './matches.js';
+import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
@@ -3588,7 +3588,7 @@ function crestOf(side, size) {
 }
 
 function liveBadge(match) {
-  return el('span', { class: 'live-badge' }, el('span', { class: 'live-dot' }), match.detail || 'Live');
+  return el('span', { class: 'live-badge' }, el('span', { class: 'live-dot' }), shortClock(match.detail) || 'Live');
 }
 
 function finalText(match) {

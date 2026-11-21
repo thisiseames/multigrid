@@ -378,3 +378,16 @@ export async function todaysGames(now = Date.now()) {
     .catch(() => ({ name, games: [] }))));
   return groupGames(byLeague, now);
 }
+
+/** A live game's clock, the short way: "4:12 - 3rd" → "Q3 4:12", "0.1 - 4th" → "Q4 0.1", "Halftime" → "HT". */
+export function shortClock(detail) {
+  const text = String(detail || '').trim();
+  let match = text.match(/^([\d:.]+)\s*-\s*(\d)(?:st|nd|rd|th)(?:\s+quarter)?$/i);
+  if (match) return `Q${match[2]} ${match[1]}`;
+  match = text.match(/^([\d:.]+)\s*-\s*(\d?\s*OT)$/i);
+  if (match) return `${match[2].replace(/\s+/g, '').toUpperCase()} ${match[1]}`;
+  match = text.match(/^end of (?:the )?(\d)(?:st|nd|rd|th)/i);
+  if (match) return `End Q${match[1]}`;
+  if (/^half\s*time$/i.test(text)) return 'HT';
+  return text;
+}

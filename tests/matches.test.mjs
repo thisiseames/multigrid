@@ -178,3 +178,16 @@ test('Game mode: your teams first, then each league; live, then later today, the
   // Finished games: the latest first.
   assert.ok(gameOrder(g('x', 'post', 14, 'A', 'B'), g('y', 'post', 12, 'C', 'D')) < 0);
 });
+
+import { shortClock } from '../src/matches.js';
+
+test('a live clock is written the short way, so it fits beside the logos', () => {
+  assert.equal(shortClock('0.1 - 4th'), 'Q4 0.1');
+  assert.equal(shortClock('4:12 - 3rd'), 'Q3 4:12');
+  assert.equal(shortClock('2:05 - OT'), 'OT 2:05');
+  assert.equal(shortClock('1:00 - 2OT'), '2OT 1:00');
+  assert.equal(shortClock('End of 3rd Quarter'), 'End Q3');
+  assert.equal(shortClock('Halftime'), 'HT');
+  assert.equal(shortClock("86'"), "86'");
+  assert.equal(shortClock(''), '');
+});

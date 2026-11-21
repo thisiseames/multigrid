@@ -87,13 +87,17 @@ export function parseBoxScore(summary, path) {
 }
 
 /** One team's tables. */
+// Columns that hold splits like 15-23 or 33/49 need more room than single numbers.
+const WIDE = new Set(['FG', '3PT', 'FT', 'C/ATT']);
+const cell = (tag, value, column) => el(tag, { class: WIDE.has(column) ? 'is-wide' : '', textContent: value });
+
 function teamTables(tables) {
   return tables.map((table) => el('div', { class: 'bx-table-wrap' },
     table.title ? el('h5', { class: 'bx-sub', textContent: table.title }) : null,
     el('table', { class: 'bx-table' },
-      el('thead', {}, el('tr', {}, el('th', { class: 'bx-name', textContent: '' }), ...table.columns.map((column) => el('th', { textContent: column })))),
-      el('tbody', {}, ...table.rows.map((row) => el('tr', {}, el('td', { class: 'bx-name', textContent: row.name }), ...row.stats.map((value) => el('td', { textContent: value })))),
-        ...(table.totals ? [el('tr', { class: 'bx-total' }, el('td', { class: 'bx-name', textContent: 'Team' }), ...table.totals.map((value) => el('td', { textContent: value })))] : [])))));
+      el('thead', {}, el('tr', {}, el('th', { class: 'bx-name', textContent: '' }), ...table.columns.map((column) => cell('th', column, column)))),
+      el('tbody', {}, ...table.rows.map((row) => el('tr', {}, el('td', { class: 'bx-name', textContent: row.name }), ...row.stats.map((value, i) => cell('td', value, table.columns[i])))),
+        ...(table.totals ? [el('tr', { class: 'bx-total' }, el('td', { class: 'bx-name', textContent: 'Team' }), ...table.totals.map((value, i) => cell('td', value, table.columns[i])))] : [])))));
 }
 
 /** Draws the box score into holder. tab is the team shown when the teams take turns (narrow tiles). */

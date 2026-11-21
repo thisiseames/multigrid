@@ -1101,7 +1101,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
 
 .mrow-list { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--surface); overflow: hidden; }
 .mrow + .mrow { border-top: 1px solid var(--border); }
-.mrow-main { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
+.mrow-main { display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px 8px 12px; text-align: left; color: var(--text); }
 .mrow-main:hover, .mrow-main:focus-visible { background: rgba(255, 255, 255, 0.04); }
 .mrow-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .mrow-time, .mrow-final { display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
@@ -2323,3 +2323,11 @@ body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 
 .bx-table th:not(.bx-name), .bx-table td:not(.bx-name) { width: 50px; min-width: 50px; max-width: 50px; }
 .bx-table { table-layout: fixed; }
 .bx-table .bx-name { width: auto; max-width: none; }
+
+/* Narrow box scores (a phone, a small tile): simple numbers get narrow columns and shooting
+   splits wide ones, the same in every table, so the names have room and columns still line up. */
+@container (max-width: 520px) {
+  .boxscore { font-size: 12.5px; }
+  .bx-table th:not(.bx-name), .bx-table td:not(.bx-name) { width: 30px; min-width: 30px; max-width: 30px; padding-left: 2px; padding-right: 2px; }
+  .bx-table th.is-wide, .bx-table td.is-wide { width: 42px; min-width: 42px; max-width: 42px; }
+}
