@@ -4,7 +4,8 @@
 
 import { holdOpenWhile } from './ui.js';
 
-const STORE = 'multigrid.weather.v1';
+// v2: the answer now holds 8 days for This week, so a kept 2-day answer isn't reused.
+const STORE = 'multigrid.weather.v2';
 const FRESH = 30 * 60 * 1000;
 const TORONTO = { lat: 43.65, lon: -79.38 };
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -35,8 +36,8 @@ async function ask({ lat, lon }) {
     + `?latitude=${lat}&longitude=${lon}`
     + '&current=temperature_2m,weather_code,is_day'
     + '&hourly=temperature_2m,weather_code,precipitation_probability,is_day'
-    + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max'
-    + '&forecast_days=2&timezone=auto';
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+    + '&forecast_days=8&timezone=auto';
   const response = await fetch(url, { signal: AbortSignal.timeout?.(8000) });
   if (!response.ok) throw new Error(`Open-Meteo answered ${response.status}`);
   return response.json();
@@ -57,8 +58,8 @@ export function loadWeather(onUpdate) {
   return kept ? shape(kept) : null;
 }
 
-/** What the line and the hours need, from Open-Meteo's answer. */
-function shape({ data, fallback }) {
+/** What the line, the hours and the week need, from Open-Meteo's answer. */
+export function shape({ data, fallback }) {
   const { current, daily, hourly } = data ?? {};
   if (!current || !daily || !hourly) return null;
   // Hours come in the place's own time ("2026-11-18T14:00"); the next 12 start at this hour.
@@ -82,7 +83,23 @@ function shape({ data, fallback }) {
     low: Math.round(daily.temperature_2m_min[0]),
     rain: daily.precipitation_probability_max[0] ?? 0,
     hours,
+    days: weekDays(daily, String(current.time).slice(0, 10)),
   };
+}
+
+/** This week's weather: the seven days after today, each with its day name, high, low and chance of rain. */
+function weekDays(daily, today) {
+  const names = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
+  return (daily.time ?? []).map((date, i) => ({ date, i })).filter(({ date }) => date > today).slice(0, 7)
+    .filter(({ i }) => daily.temperature_2m_max[i] != null && daily.temperature_2m_min[i] != null)
+    .map(({ date, i }) => ({
+      date,
+      name: names.format(new Date(`${date}T12:00:00Z`)),
+      code: daily.weather_code?.[i] ?? 3,
+      high: Math.round(daily.temperature_2m_max[i]),
+      low: Math.round(daily.temperature_2m_min[i]),
+      rain: daily.precipitation_probability_max[i] ?? 0,
+    }));
 }
 
 /** Open-Meteo's weather codes, in plain words. */

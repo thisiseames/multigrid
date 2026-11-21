@@ -4346,6 +4346,7 @@ async function fillToday() {
       todayChrome.date.textContent = week ? weekAheadLabel(now) : dayFormat.format(new Date(now));
       if (week) todayChrome.line.hidden = true;
       else todayChrome.drawWeather(todayChrome.weather);
+      todayChrome.drawWeek(todayChrome.weather);
       todayChrome.hoursBox.hidden = true;
       todayChrome.line.classList.remove('is-open');
       todayChrome.line.setAttribute('aria-expanded', 'false');
@@ -4383,6 +4384,26 @@ function weatherLine(holder, hoursBox, weather) {
     hour.rain >= 30 ? el('small', { textContent: `${hour.rain}%` }) : null)));
 }
 
+/* This week's weather: the seven days the This week view covers, always open there. */
+function weekWeather(box, weather) {
+  const days = weather?.days ?? [];
+  box.hidden = todayView !== 'week' || !days.length;
+  if (!days.length) return;
+  box.setAttribute('aria-label', `This week's weather${weather.fallback ? ' in Toronto' : ''}`);
+  box.replaceChildren(...[
+    weather.fallback ? el('li', { class: 'wx-hour wx-week-place', textContent: 'Toronto' }) : null,
+    ...days.map((day) => el('li', {
+      class: 'wx-hour',
+      title: `${weatherWords(day.code)}. High ${day.high}°, low ${day.low}°${day.rain >= 30 ? `, ${day.rain}% chance of rain` : ''}.`,
+    },
+    el('span', { class: 'wx-time', textContent: day.name }),
+    weatherIcon(day.code, true, 18),
+    el('b', { textContent: `${day.high}°` }),
+    el('span', { class: 'wx-low', textContent: `${day.low}°` }),
+    day.rain >= 30 ? el('small', { textContent: `${day.rain}%` }) : null)),
+  ].filter(Boolean));
+}
+
 function buildToday() {
   const menu = $('today-menu');
   chartTab = 0;
@@ -4403,6 +4424,7 @@ function buildToday() {
       },
     },
   });
+  const weekBox = el('ul', { class: 'wx-hours wx-week', hidden: true, aria: { label: "This week's weather" } });
   const title = el('h3', { textContent: 'Today' });
   const date = el('span', { class: 'today-date', textContent: dayFormat.format(new Date()) });
   const drawWeather = (weather) => {
@@ -4412,18 +4434,21 @@ function buildToday() {
       line.hidden = true;
       hoursBox.hidden = true;
     }
+    weekWeather(weekBox, weather);
   };
-  todayChrome = { title, date, line, hoursBox, weather: null, drawWeather };
+  todayChrome = { title, date, line, hoursBox, weather: null, drawWeather, drawWeek: (weather) => weekWeather(weekBox, weather) };
   // The markets ticker runs along the bottom, above "Updated", like a TV ticker.
   const markets = el('div', { class: 'mk-bar', hidden: true });
   menu.replaceChildren(
     el('div', { class: 'today-head' }, title, date, line),
     todayViewBar(),
     hoursBox,
+    weekBox,
     el('div', { class: 'matches-body' }),
     markets,
     el('p', { class: 'matches-updated', textContent: '' }));
-  loadWeather((fresh) => { if (line.isConnected) drawWeather(fresh); });
+  // The kept answer shows straight away; a fresher one replaces it when it arrives.
+  drawWeather(loadWeather((fresh) => { if (line.isConnected) drawWeather(fresh); }));
   const refreshMarkets = () => loadMarkets().then((data) => { if (markets.isConnected && !menu.hidden) showMarkets(markets, data, clock); });
   refreshMarkets();
   clearInterval(marketsTimer);
