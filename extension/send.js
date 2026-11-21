@@ -13,6 +13,33 @@
   };
   const host = () => location.hostname.replace(/^www\./, '');
 
+  /** The channel's real ID. YouTube plays a channel by its UC… ID, never by its @name. */
+  function channelId() {
+    const fromLink = (raw) => String(raw || '').match(/\/channel\/(UC[\w-]{22})(?:\/|$)/)?.[1] || '';
+    const links = [
+      document.querySelector('link[rel="canonical"]')?.href,
+      document.querySelector('link[itemprop="url"]')?.href,
+      document.querySelector('ytd-channel-name a')?.href,
+      document.querySelector('#owner a[href*="/channel/"]')?.href,
+      document.querySelector('#channel-name a[href*="/channel/"]')?.href,
+    ];
+    for (const link of links) {
+      const id = fromLink(link);
+      if (id) return id;
+    }
+    // Last resort for a video page whose header has not drawn yet.
+    const html = document.documentElement.innerHTML;
+    return html.match(/"videoOwnerRenderer"[\s\S]{0,4000}?"(?:channelId|externalId)":"(UC[\w-]{22})"/)?.[1]
+      || html.match(/"channelId":"(UC[\w-]{22})"/)?.[1]
+      || '';
+  }
+
+  /** The uploads feed: the channel's newest videos, ready to play inside MULTIGRID. */
+  const channelFeed = () => {
+    const id = channelId();
+    return id ? `https://www.youtube.com/channel/${id}/videos` : '';
+  };
+
   function youtube(page) {
     const path = location.pathname;
     const isChannel = /^\/(@|channel\/|c\/|user\/)/.test(path);
@@ -23,11 +50,17 @@
     const channelLink = document.querySelector('ytd-channel-name a')
       || document.querySelector('link[itemprop="url"][href*="/@"], link[itemprop="url"][href*="/channel/"], link[itemprop="url"][href*="/c/"], link[itemprop="url"][href*="/user/"]')
       || document.querySelector('a[href^="/@"], a[href^="/channel/"], a[href^="/c/"], a[href^="/user/"]');
-    const channelUrl = absolute(channelLink?.getAttribute('href') || channelLink?.href);
+    const channelUrl = channelFeed();
     const channelName = clean(channelLink?.textContent) || clean(document.title.replace(/\s*-\s*YouTube$/, '')) || 'YouTube channel';
     const title = clean(document.title.replace(/\s*-\s*YouTube$/, '')) || 'YouTube video';
     if (isChannel) {
-      return { page, candidates: [{ kind: 'youtube-channel', url: page.url, name: title || channelName, detail: 'YouTube channel · saved in YOUTUBE', save: true }] };
+      return {
+        page,
+        candidates: channelUrl
+          ? [{ kind: 'youtube-channel', url: channelUrl, name: title || channelName, detail: 'YouTube channel · saved in YOUTUBE', save: true }]
+          : [],
+        note: channelUrl ? '' : 'YouTube did not name this channel. Reload the channel page and try again.',
+      };
     }
     const candidates = [{ kind: 'youtube-video', url: page.url, name: title, detail: 'YouTube video' }];
     if (channelUrl) candidates.push({ kind: 'youtube-channel', url: channelUrl, name: channelName, detail: 'YouTube channel · saved in YOUTUBE', save: true });

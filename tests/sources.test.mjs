@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSource, buildEmbedUrl, extractIframeSrc, isBlockedMixedContent, localInput } from '../src/sources.js';
+import { parseSource, buildEmbedUrl, channelFavoriteInput, extractIframeSrc, isBlockedMixedContent, isYouTubeChannelPage, localInput } from '../src/sources.js';
 
 const env = { hostname: 'thisiseames.github.io', origin: 'https://thisiseames.github.io', protocol: 'https:' };
 const embed = (input, opts = { muted: true, autoplay: true }) => {
@@ -45,6 +45,19 @@ test('youtube: live channel id and playlists', () => {
   const list = embed('https://www.youtube.com/playlist?list=PLxyz').url;
   assert.equal(list.pathname, '/embed/videoseries');
   assert.equal(list.searchParams.get('list'), 'PLxyz');
+});
+
+test('youtube: a saved channel plays its uploads feed', () => {
+  const page = 'https://www.youtube.com/channel/UCkgsrOXWQNZRS_Cj8-_7sPw';
+  assert.equal(channelFavoriteInput(`${page}/live`), `${page}/videos`);
+  assert.equal(channelFavoriteInput('https://www.youtube.com/@TheRestIsFootball'), 'https://www.youtube.com/@TheRestIsFootball');
+  const { source, url } = embed(channelFavoriteInput(page));
+  assert.equal(source.kind, 'youtube');
+  assert.equal(url.pathname, '/embed/videoseries');
+  assert.equal(url.searchParams.get('list'), 'UUkgsrOXWQNZRS_Cj8-_7sPw');
+  assert.equal(isYouTubeChannelPage(page), true);
+  assert.equal(isYouTubeChannelPage('https://www.youtube.com/@TheRestIsFootball/videos'), true);
+  assert.equal(isYouTubeChannelPage('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), false);
 });
 
 test('youtube: privacy host stays private', () => {

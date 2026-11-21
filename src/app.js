@@ -35,7 +35,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
-import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
+import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -5203,11 +5203,29 @@ function sendPayload(value) {
   };
 }
 
+/** Re-adding a channel replaces its older @-name link instead of leaving a dead duplicate. */
+function forgetStaleChannel(name, input) {
+  const wanted = name.trim().toLocaleLowerCase();
+  if (!wanted) return;
+  for (const old of listFavorites()) {
+    if (old.input === input || old.group.toLocaleLowerCase() !== 'youtube') continue;
+    if (old.name.trim().toLocaleLowerCase() !== wanted) continue;
+    if (isYouTubeChannelPage(old.input)) removeFavorite(old.input);
+  }
+}
+
 function addIncoming(payload) {
-  const source = parseSource(payload.url);
   const name = payload.name || favoriteName(payload.url) || '';
+  if (payload.kind === 'youtube-channel' || isYouTubeChannelPage(payload.url)) {
+    const input = channelFavoriteInput(payload.url);
+    forgetStaleChannel(name, input);
+    if (!saveFavorite(input, name || 'YouTube channel', 'YOUTUBE')) toast(STORAGE_FULL);
+    else toast(`${name || 'Channel'} saved in YOUTUBE.`);
+    refreshFavorites();
+    return;
+  }
+  const source = parseSource(payload.url);
   const audio = payload.kind === 'audio' || source.kind === 'audio' || /\.(mp3|m4a|aac|ogg|opus|wav)(?:\?|#|$)/i.test(payload.url);
-  if (payload.save) saveFavorite(payload.url, name || 'YouTube channel', 'YOUTUBE');
   if (audio) {
     openPodcast(audioInput(name || 'Podcast', payload.url), { title: name || 'Podcast', from: '' });
     toast(`Opening ${name || 'podcast'}…`);

@@ -81,6 +81,24 @@ const toTwitchTime = (seconds) => {
   return `${h}h${m}m${seconds % 60}s`;
 };
 
+const YOUTUBE_CHANNEL_PATH = /^\/(?:@[^/]+|channel\/UC[\w-]{22}|c\/[^/]+|user\/[^/]+)(?:\/|$)/i;
+
+/** A channel page, not one of its videos. Old @-name links count; the ID is preferred below. */
+export function isYouTubeChannelPage(input) {
+  try {
+    const url = new URL(input);
+    return /(^|\.)youtube\.com$/i.test(url.hostname) && YOUTUBE_CHANNEL_PATH.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** A channel is saved as its uploads feed when the UC… ID is known, so clicking it plays. */
+export function channelFavoriteInput(input) {
+  const id = String(input || '').match(/^https?:\/\/(?:www\.|m\.)?youtube\.com\/channel\/(UC[\w-]{22})(?:\/|$)/i)?.[1];
+  return id ? `https://www.youtube.com/channel/${id}/videos` : input;
+}
+
 function parseYouTube(url, host, input) {
   const segments = url.pathname.split('/').filter(Boolean);
   const params = url.searchParams;
