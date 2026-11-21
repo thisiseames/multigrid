@@ -2195,3 +2195,4 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .sdrop-form .add-button { flex: none; width: auto; height: 44px; padding: 0 16px; margin: 0; }
 /* Every picture box in the drop-down is the same size, so all the names start in one line. */
 .saved-drop .sdrop-shape { box-sizing: border-box; width: 52px; height: 38px; justify-content: center; align-items: center; }
+.saved-drop .sdrop-row.is-danger .sdrop-shape { color: var(--danger); }

@@ -5368,6 +5368,26 @@ function saveHereRow() {
   return row;
 }
 
+/** "Clear all streams" in the MULTIGRID drop-down: everything off the screen at once, with Undo. */
+function clearAllRow() {
+  if (!streamCount(ws)) return null;
+  return el('button', {
+    type: 'button',
+    class: 'sdrop-row is-danger',
+    on: {
+      click() {
+        const previous = ws;
+        ws = emptyWorkspace();
+        closePopovers();
+        commit();
+        toast('All streams cleared.', { label: 'Undo', run() { ws = previous; commit(); } });
+      },
+    },
+  },
+  el('span', { class: 'sdrop-shape' }, icon('trash', 18)),
+  el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Clear all streams' }), el('small', { textContent: streamCount(ws) === 1 ? 'Removes the 1 stream' : `Removes all ${streamCount(ws)} streams` })));
+}
+
 function buildSavedDrop() {
   const saved = listSaved();
   $('saved-drop').replaceChildren(...[
@@ -5386,6 +5406,7 @@ function buildSavedDrop() {
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
     saveHereRow(),
+    clearAllRow(),
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
     el('div', { class: 'sdrop-sep' }),
     el('button', {
