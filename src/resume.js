@@ -104,8 +104,19 @@ export function listPlaces(limit = 10) {
 
 // Continue watching redraws when a place is saved or forgotten.
 const watchers = new Set();
-const changed = () => watchers.forEach((watch) => watch());
+// now: true when it should reach other devices straight away (a pause), not within the minute.
+const changed = (now = false) => watchers.forEach((watch) => watch(now));
 export function onPlacesChange(watch) { watchers.add(watch); }
+
+/* For sync: every place as it is, and putting in places from another device. Files on this
+   device stay on it, and "saved" is the time each place last changed, wherever that was. */
+export const allPlaces = () => readAll();
+export function replacePlaces(places) {
+  const all = readAll();
+  const kept = Object.fromEntries(Object.entries(all).filter(([key]) => key.startsWith('file:')));
+  writeAll({ ...places, ...kept });
+  changed();
+}
 
 export function forgetPlace(key) {
   const all = readAll();
@@ -174,7 +185,8 @@ export function rememberMedia(media, keyOf, holderOf, metaOf = () => null) {
     lastKept = Date.now();
     keep();
   });
-  media.addEventListener('pause', keep);
+  // A pause reaches other devices straight away.
+  media.addEventListener('pause', () => { keep(); changed(true); });
   media.addEventListener('ended', keep);
   // Where it is right now, for "Send to phone".
   keep.place = () => {

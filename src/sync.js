@@ -16,14 +16,23 @@ const FORGET_DELETED = 90 * 24 * 3600 * 1000;
 
 /* ---------- What syncs, and merging (no network, so it can be tested) ---------- */
 
-/** Every favorite and saved layout as keyed items. Files on this device stay here. */
-export function itemsOf({ favorites, layouts }) {
+// Continue watching: the newest places sync, and files on a device stay on it.
+const MAX_PLACES = 100;
+const PLACE_FIELDS = ['at', 'length', 'input', 'name', 'from', 'page'];
+
+/** Every favorite, saved layout and Continue watching place as keyed items. Files on this device stay here. */
+export function itemsOf({ favorites, layouts, places = {} }) {
   const items = {};
   for (const { input, name, group, logo } of favorites) {
     if (input.startsWith('local:')) continue;
     items[`f:${input}`] = { name, group: group || '', ...(logo ? { logo } : {}) };
   }
   for (const { name, savedAt, workspace } of layouts) items[`l:${name}`] = { savedAt: savedAt || 0, workspace };
+  const newest = Object.entries(places).filter(([key, point]) => !key.startsWith('file:') && point && Number.isFinite(point.at))
+    .sort(([, a], [, b]) => (b.saved || 0) - (a.saved || 0)).slice(0, MAX_PLACES);
+  for (const [key, point] of newest) {
+    items[`p:${key}`] = Object.fromEntries(PLACE_FIELDS.filter((field) => point[field] !== undefined && point[field] !== '').map((field) => [field, point[field]]));
+  }
   return items;
 }
 
@@ -64,7 +73,9 @@ export function listsOf(doc, { favorites, layouts }) {
   const added = [...favs].filter(([input]) => !have.has(input)).map(([input, value]) => ({ input, ...value }));
   const lays = live('l:').map(([key, entry]) => ({ name: key.slice(2), savedAt: entry.v.savedAt, workspace: entry.v.workspace }))
     .sort((x, y) => (y.savedAt || 0) - (x.savedAt || 0));
-  return { favorites: [...added, ...kept], layouts: lays };
+  // Places carry the time they last changed as "saved", so Continue watching keeps its order.
+  const places = Object.fromEntries(live('p:').map(([key, entry]) => [key.slice(2), { ...entry.v, saved: entry.t }]));
+  return { favorites: [...added, ...kept], layouts: lays, places };
 }
 
 /** A fresh pairing code like "K7Q2-M9XD". */
@@ -214,6 +225,7 @@ export async function startSync(store, onApplied) {
   let lastSent = '';
   let newest = 0;
   let timer = null;
+  let sentAt = 0;
 
   const save = (extra = {}) => writeState({ ...readState(), doc, seen: seenOf(doc), ...extra });
   const send = async () => {
@@ -223,6 +235,7 @@ export async function startSync(store, onApplied) {
     const content = await seal({ by: state.device, items: doc }, lock);
     const at = Math.max(Math.floor(Date.now() / 1000), newest + 1);
     newest = at;
+    sentAt = Date.now();
     const { finalizeEvent } = await nostr();
     relays.publish(finalizeEvent({ kind: KIND, created_at: at, tags: [['d', DOC_TAG]], content }, sign));
   };
@@ -257,10 +270,16 @@ export async function startSync(store, onApplied) {
     local();
     send();
   });
-  store.onChange(() => {
+  // Favorites and layouts go out within seconds, and so does a pause. A place that moves while
+  // something plays goes out at most once a minute, so the relays aren't asked every 10 seconds.
+  const soon = () => { clearTimeout(timer); timer = null; if (local()) send(); };
+  store.onChange((kind) => {
     clearTimeout(timer);
-    timer = setTimeout(() => { if (local()) send(); }, 1500);
+    const wait = kind === 'place' ? Math.max(1500, 60000 - (Date.now() - sentAt)) : 1500;
+    timer = setTimeout(soon, wait);
   });
+  // Leaving the page or switching away: whatever is waiting goes now.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && timer) soon(); });
   engine = { relays, sign, lock, stop: () => { relays.stop(); clearTimeout(timer); } };
 }
 

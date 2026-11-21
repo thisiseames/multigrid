@@ -24,7 +24,7 @@ import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
-import { embedPlace, forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
+import { allPlaces, embedPlace, forgetPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
@@ -4612,7 +4612,14 @@ $('today-button').addEventListener('click', () => togglePopover($('today-button'
 /* ---------- Favorites on another device ---------- */
 
 // Paired devices keep favorites and saved layouts the same. See sync.js.
-const syncStore = { read: syncedLists, write: replaceSynced, onChange: onSyncedChange };
+const syncStore = {
+  read: () => ({ ...syncedLists(), places: allPlaces() }),
+  write: (lists) => { replaceSynced(lists); replacePlaces(lists.places); },
+  onChange: (watch) => {
+    onSyncedChange(() => watch('list'));
+    onPlacesChange((now) => watch(now ? 'pause' : 'place'));
+  },
+};
 const syncCameIn = () => {
   refreshFavorites();
   if ($('sync-box').open) openSyncBox();

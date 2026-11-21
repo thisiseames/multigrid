@@ -65,3 +65,22 @@ test('what one device seals, only the same secret opens, and tampering fails', a
   assert.deepEqual(one.sign, two.sign);
   assert.deepEqual(await unseal(await seal({ secret: 's' }, one.lock), two.lock), { secret: 's' });
 });
+
+test('Continue watching places sync, newest 100, without files or the local save time', () => {
+  const places = {
+    'embed:https://s.test/watch/1/1/1': { at: 2072, length: 3600, saved: 50, input: 'https://s.test/watch/1/1/1', name: 'MOBLAND', from: '', page: 'https://s.test/watch/1/2/8' },
+    'yt:abc': { at: 300, length: 6000, saved: 40, input: 'https://www.youtube.com/watch?v=abc', name: 'Video', from: 'SDS' },
+    'file:Silo.mkv:123': { at: 900, length: 3000, saved: 60 },
+  };
+  const items = itemsOf({ favorites: [], layouts: [], places });
+  assert.deepEqual(Object.keys(items).sort(), ['p:embed:https://s.test/watch/1/1/1', 'p:yt:abc']);
+  assert.deepEqual(items['p:embed:https://s.test/watch/1/1/1'], { at: 2072, length: 3600, input: 'https://s.test/watch/1/1/1', name: 'MOBLAND', page: 'https://s.test/watch/1/2/8' });
+  // Back from a doc: "saved" is when it last changed, so Continue watching keeps its order.
+  const doc = stamp(items, {}, 777);
+  assert.deepEqual(listsOf(doc, { favorites: [], layouts: [] }).places['yt:abc'], { at: 300, length: 6000, input: 'https://www.youtube.com/watch?v=abc', name: 'Video', from: 'SDS', saved: 777 });
+  // Only the newest 100 travel.
+  const many = Object.fromEntries(Array.from({ length: 130 }, (_, i) => [`yt:${i}`, { at: 100, length: 1000, saved: i }]));
+  const kept = Object.keys(itemsOf({ favorites: [], layouts: [], places: many }));
+  assert.equal(kept.length, 100);
+  assert.ok(kept.includes('p:yt:129') && !kept.includes('p:yt:0'));
+});
