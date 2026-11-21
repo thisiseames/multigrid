@@ -1416,6 +1416,9 @@ function episodeRow(item) {
 
 /* Podcasts live in Favorites as their own tab: the shows as cards, then a show's episodes. */
 const PODCASTS = '\u0001podcasts';
+// On a phone held upright, saved layouts are a tab in Favorites, since there's no Layout button.
+const LAYOUTS = '\u0001layouts';
+const layoutsTab = () => grid.isStacked;
 let podEpisodes = [];
 
 /** Podcast episodes from the Reader's feeds, newest first. Favorites redraw once they arrive. */
@@ -2169,13 +2172,13 @@ function addSearchBox(holder) {
 function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
-    const tabs = ['', ...folders, ...(podEpisodes.length ? [PODCASTS] : [])];
+    const tabs = ['', ...folders, ...(podEpisodes.length ? [PODCASTS] : []), ...(layoutsTab() ? [LAYOUTS] : [])];
     row.replaceChildren(...tabs.map((folder) => el('button', {
       type: 'button',
       class: `matches-tab${addFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
-      textContent: folder === PODCASTS ? 'PODCASTS' : folder || 'All',
+      textContent: folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder || 'All',
       on: { click() { addFolder = folder; podShow = ''; fillAddFavorites(holder); } },
-    })), ...(addFolder && addFolder !== PODCASTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+    })), ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');
@@ -2218,23 +2221,25 @@ function fillAddFavorites(holder) {
   clear.hidden = !query;
   const all = listFavorites().sort(byName);
   const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
-  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
+  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
   const matches = (text) => text.toLocaleLowerCase().includes(query);
   const podcasts = addFolder === PODCASTS && !query;
+  const layouts = addFolder === LAYOUTS && !query;
   // Account feeds stay out of All; a folder such as Twitter can still show them.
   const inAll = (item) => !isAccountSource(parseSource(item.input));
   const shown = query
     ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
-    : podcasts ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
+    : podcasts || layouts ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
   // A search also finds podcast shows by name.
   const shows = query ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
   const grid = el('div', { class: 'addp-grid-wrap' },
     podcasts ? podcastsView(holder)
+      : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
       : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
         : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
-  const pills = (folders.length || podEpisodes.length) && !query ? addFolderPills(holder, folders) : null;
+  const pills = (folders.length || podEpisodes.length || layoutsTab()) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
   if (old) old.replaceWith(grid);
@@ -4917,8 +4922,8 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
-// A phone held upright: what the Layout button held is here, at the bottom of Add stream.
-for (const [id, target] of [['source-saved', 'saved-button'], ['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
+// A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
+for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
   $(id).addEventListener('click', () => {
     $('source-dialog').close();
     setTimeout(() => $(target).click(), 0);
@@ -5139,6 +5144,8 @@ function restore(item) {
   }
   ws = next;
   closePopovers();
+  // Opened from the Saved layouts tab in Add stream.
+  if ($('source-dialog').open) $('source-dialog').close();
   commit();
   toast(`Opened ${item.name}.`);
 }
@@ -5156,13 +5163,13 @@ function buildSavedRow(item) {
       el('span', { class: 'row-actions' },
         iconButton('update', 'Replace with what is on screen now', () => {
           saveNamed(item.name, ws);
-          buildSavedMenu();
+          refreshSaved();
           toast(`Updated ${item.name}.`);
         }),
         iconButton('pencil', 'Rename', showRename),
         iconButton('trash', 'Delete', () => {
           deleteSaved(item.name);
-          buildSavedMenu();
+          refreshSaved();
           toast(`Deleted ${item.name}.`, { label: 'Undo', run: () => restoreSavedItem(item) });
         })));
   };
@@ -5175,7 +5182,7 @@ function buildSavedRow(item) {
       const name = input.value.trim();
       if (commitName && name && name !== item.name) {
         renameSaved(item.name, name);
-        buildSavedMenu();
+        refreshSaved();
       } else {
         showNormal();
       }
@@ -5197,7 +5204,18 @@ function buildSavedRow(item) {
   return row;
 }
 
+/** Redraws saved layouts wherever they're showing: the menu, or the tab in Add stream. */
+function refreshSaved() {
+  if (!$('saved-menu').hidden) buildSavedMenu();
+  if ($('source-dialog').open && addFolder === LAYOUTS) fillAddFavorites($('source-favorites'));
+}
+
 function buildSavedMenu() {
+  $('saved-menu').replaceChildren(...savedParts());
+}
+
+/** Saving, the saved layouts with their actions, and clearing: the menu and the tab share them. */
+function savedParts() {
   const input = el('input', { type: 'text', placeholder: 'Name this layout', maxLength: 60, aria: { label: 'Layout name' } });
   const button = el('button', { type: 'submit', class: 'add-button', textContent: 'Save' });
   const message = el('p', { class: 'saved-form-message', hidden: true });
@@ -5222,7 +5240,7 @@ function buildSavedMenu() {
           message.hidden = false;
           return;
         }
-        buildSavedMenu();
+        refreshSaved();
         toast(`Saved ${name}.`);
       },
     },
@@ -5256,7 +5274,7 @@ function buildSavedMenu() {
       },
     }),
   ] : [];
-  $('saved-menu').replaceChildren(form, message, list, ...clear);
+  return [form, message, list, ...clear];
 }
 
 /** The overflow: the occasional switches and actions, out of the bar's way. */

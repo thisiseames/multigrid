@@ -2140,3 +2140,8 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 @media (max-width: 480px) { .week-games .mrow-tv { display: block; max-width: 74px; } }
 /* Add stream selects itself when it opens on a phone; the box shows no outline for that. */
 #source-dialog:focus, #source-dialog:focus-visible { outline: none; }
+/* Saved layouts as a Favorites tab, on a phone held upright: the menu's contents, full width. */
+.addp-saved { width: auto; max-width: none; padding: 4px 0 16px; }
+.addp-saved .saved-form input { height: 44px; font-size: 16px; }
+.addp-saved .saved-form .add-button { width: auto; height: 44px; padding: 0 18px; }
+.addp-saved .saved-open { min-height: 48px; }
