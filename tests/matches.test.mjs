@@ -146,3 +146,15 @@ test('lineups: wing-backs join the five in a 3-5-2', () => {
   assert.deepEqual(rows[1].map((player) => player.name), ['Left Centre', 'Centre', 'Right Centre']);
   assert.deepEqual(rows[2].map((player) => player.name), ['Left Wing Back', 'Mid One', 'Mid Two', 'Mid Three', 'Right Wing Back']);
 });
+
+import { teamCard } from '../src/matches.js';
+
+test('a team card keeps every game still to come, not just the next three, for This week', () => {
+  const now = Date.parse('2026-11-21T12:00:00Z');
+  const side = (name) => ({ name, full: name === 'TOR' ? 'Toronto Raptors' : name, logo: '', color: '', score: '' });
+  const games = [1, 2, 3, 4, 5].map((day) => ({ id: String(day), start: now + day * 86400000, state: 'pre', home: side('TOR'), away: side(`Team ${day}`), tv: [] }));
+  games.push({ id: 'old', start: now - 2 * 86400000, state: 'post', home: side('TOR'), away: side('Old'), tv: [] });
+  const card = teamCard('Raptors', games, now);
+  assert.equal(card.next.length, 3);
+  assert.deepEqual(card.upcoming.map((game) => game.id), ['1', '2', '3', '4', '5']);
+});

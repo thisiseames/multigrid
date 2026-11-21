@@ -4390,6 +4390,13 @@ async function fillToday() {
     onClick() { closePopovers(); addStream(item.input); },
   }))) : null;
 
+  // Your teams' games in the week ahead, in time order.
+  const week = weekAheadKeys(now);
+  const weekGames = (teams ?? []).flatMap(({ card }) => card.upcoming ?? [])
+    .filter((match) => dayKey(match.start) >= week.from && dayKey(match.start) < week.end)
+    .sort((a, b) => a.start - b.start);
+  const weekTeamsSection = todaySection('Your teams this week', weekGames.length ? el('ul', { class: 'mrow-list week-games' }, ...weekGames.map((match) => matchRow(match, { withDay: true }))) : null);
+
   const weekEvents = eventsThisWeek(now);
   const weekEventList = weekEvents.length ? el('ul', { class: 'rlist' }, ...weekEvents.map(({ item, show }) => todayRow({
     art: favoriteArt(item, parseSource(item.input)),
@@ -4458,7 +4465,7 @@ async function fillToday() {
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
   const todayOnlySections = [headlinesSection, polySection, continueSection, podcastSection, youtubeSection, teamSection, eventSection, flightSection, chartsSection].filter(Boolean);
-  const weekOnlySections = [weekEventsSection].filter(Boolean);
+  const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
     headlinesSection,
     trendHolder,
@@ -4469,6 +4476,7 @@ async function fillToday() {
     teamSection,
     eventSection,
     flightSection,
+    weekTeamsSection,
     weekEventsSection,
     moviesSection.section,
     episodesSection.section,

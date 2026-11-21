@@ -309,6 +309,8 @@ export function teamCard(title, matches, now = Date.now()) {
     last: done.at(-1) || null,
     live,
     next: ahead.slice(0, 3),
+    // Every game still to come, for This week.
+    upcoming: ahead,
   };
 }
 
