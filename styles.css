@@ -1637,7 +1637,22 @@ body.remote-open { overflow: hidden; }
   #layout-button { height: 44px; min-width: 56px; padding: 0 10px; border-radius: 12px; background: rgba(255,255,255,.06); }
   #mixer-button, #hidden-button { height: 44px; min-width: 44px; border-radius: 12px; }
   #mixer-button svg { width: 20px; height: 20px; }
-  .topbar .add-button { width: auto; height: 44px; padding: 0 16px 0 12px; border-radius: 12px; font-size: 15px; font-weight: 650; gap: 6px; }
+  .topbar .add-button {
+    position: relative;
+    width: auto;
+    height: 38px;
+    margin-left: 0;
+    padding: 0 12px 0 9px;
+    border-radius: 10px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 650;
+    gap: 4px;
+  }
+  /* Keep the 44pt tap target while the visible pill stays small. */
+  .topbar .add-button::after { content: ''; position: absolute; inset: -3px 0; border-radius: inherit; }
+  .topbar .add-button svg { width: 15px; height: 15px; }
 
   /* The tab bar sits under everything, so nothing ever covers a stream. */
   body.has-phonebar { --phonebar: var(--phonebar-h); }
