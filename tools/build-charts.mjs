@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { parseHTML } from 'linkedom';
 import { findOwnVideo, words } from './youtube-find.mjs';
+import { movementOf } from './chart-rows.mjs';
 
 const BROWSER = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
 const CHARTS = [
@@ -23,7 +24,7 @@ const OUT = new URL('../charts.json', import.meta.url);
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const clean = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
 
-/** One chart's top entries: { rank, title, artist, image } and the week it's for. */
+/** One chart's top entries: { rank, title, artist, image, last?, mark? } and the week it's for. */
 async function chartOf(chart) {
   const response = await fetch(`https://www.billboard.com/charts/${chart.id}/`, { headers: { 'User-Agent': BROWSER, 'Accept-Language': 'en-US' }, signal: AbortSignal.timeout(25000) });
   if (!response.ok) throw new Error(`${response.status}`);
@@ -42,7 +43,8 @@ async function chartOf(chart) {
     const img = row.querySelector('img.c-lazy-image__img');
     const image = img?.getAttribute('data-lazy-src') || img?.getAttribute('src') || '';
     if (!title) continue;
-    entries.push({ rank: entries.length + 1, title, artist, image: /^https:\/\/charts-static\.billboard\.com\//.test(image) ? image : '' });
+    // How it moved: last week's position, or a NEW / RE-ENTRY badge.
+    entries.push({ rank: entries.length + 1, title, artist, image: /^https:\/\/charts-static\.billboard\.com\//.test(image) ? image : '', ...movementOf(row) });
     if (entries.length >= TOP) break;
   }
   if (entries.length < TOP) throw new Error(`only ${entries.length} entries`);
@@ -63,7 +65,7 @@ for (const chart of CHARTS) {
       }
     }
     charts.push({ id: chart.id, name: chart.name, kind: chart.kind, week, entries });
-    console.log(`${chart.name} (${week}): ${entries.map((entry) => `${entry.rank}. ${entry.title} - ${entry.artist}${chart.kind === 'song' && !entry.video ? ' [no video]' : ''}`).join(' | ')}`);
+    console.log(`${chart.name} (${week}): ${entries.map((entry) => `${entry.rank}. ${entry.title} - ${entry.artist} (${entry.mark || `last ${entry.last ?? '?'}`})${chart.kind === 'song' && !entry.video ? ' [no video]' : ''}`).join(' | ')}`);
   } catch (error) {
     console.warn(`${chart.name}: ${error.message}; keeping the last one`);
     const kept = previous.charts.find((item) => item.id === chart.id);

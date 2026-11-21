@@ -3685,6 +3685,18 @@ let chartTab = 0;
 
 const openLink = (url) => window.open(url, '_blank', 'noopener');
 
+/** How an entry moved since last week, under its position: ▲3, ▼2, a dash, NEW or RE-ENTRY. */
+function chartMove(entry) {
+  const mark = (kind, text, label) => el('span', { class: `chart-move is-${kind}`, textContent: text, title: label, aria: { label } });
+  if (entry.mark === 'new') return mark('new', 'NEW', 'New this week');
+  if (entry.mark === 're-entry') return mark('back', 'RE-ENTRY', 'Back on the chart');
+  if (!Number.isInteger(entry.last) || entry.last < 1) return null;
+  const change = entry.last - entry.rank;
+  if (change > 0) return mark('up', `▲${change}`, `Up ${change} from ${entry.last}`);
+  if (change < 0) return mark('down', `▼${-change}`, `Down ${-change} from ${entry.last}`);
+  return mark('same', '–', `Same as last week`);
+}
+
 function chartRow(entry, chart, list) {
   const query = `${entry.artist} ${entry.title}`.trim();
   const video = chart.kind === 'song' && /^[\w-]{11}$/.test(entry.video || '') ? entry.video : '';
@@ -3709,7 +3721,7 @@ function chartRow(entry, chart, list) {
       },
     },
   },
-  el('span', { class: 'chart-rank', textContent: String(entry.rank) }),
+  el('span', { class: 'chart-rank' }, el('b', { textContent: String(entry.rank) }), chartMove(entry)),
   /^https:\/\/charts-static\.billboard\.com\//.test(entry.image || '')
     ? el('span', { class: 'fart is-picture chart-cover' }, el('img', { src: entry.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
     : el('span', { class: 'fart is-icon chart-cover' }, icon('music', 18)),
