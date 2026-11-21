@@ -23,14 +23,14 @@ import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
 import { createMixer } from './mixer.js';
 import './phone.js';
 import { getCinema } from './crop.js';
-import { forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
+import { embedPlace, forgetPlace, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
-import { audioInput, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
+import { audioInput, episodeOf, episodePage, isBlockedMixedContent, parseSource, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, packFavorites, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -1053,8 +1053,8 @@ function muteAll() {
 /* ---------- Adding, replacing, removing ---------- */
 
 function addStream(input, target = { mode: 'add' }, title = '', page = '') {
-  // A series from Continue watching opens the episode it's on, still as its favorite.
-  const moved = episodePage(input, page);
+  // A series opens the episode it's on, still as its favorite, from anywhere it's picked.
+  const moved = episodePage(input, page || embedPlace(input)?.page);
   const pageOf = () => (moved ? { for: input, href: moved } : undefined);
   const source = parseSource(input);
   // A podcast is audio, so it plays in the dock instead of taking a tile.
@@ -2072,6 +2072,15 @@ function renderContinue(force = true) {
 }
 onPlacesChange(() => { if ($('source-dialog').open) renderContinue(false); });
 
+/** "S2 E8 · 34 min in" for a series you've started, from its saved episode and place, or ''. */
+function seriesProgress(input) {
+  const place = embedPlace(input);
+  if (!place) return '';
+  const episode = episodeOf(episodePage(input, place.page) || parseSource(input).url || '');
+  const minutes = Math.floor(place.at / 60);
+  return [episode ? `S${episode.season} E${episode.episode}` : '', minutes >= 1 ? `${minutes} min in` : ''].filter(Boolean).join(' · ');
+}
+
 function favoriteCard(item, holder) {
   const source = parseSource(item.input);
   const card = el('li', { class: 'fcard' });
@@ -2144,6 +2153,9 @@ function favoriteCard(item, holder) {
     });
   }
   if (isSeriesFolder(item.group)) {
+    // Where you're up to: "S2 E8 · 34 min in".
+    const progress = seriesProgress(item.input);
+    if (progress) card.querySelector('.fcard-text')?.append(el('small', { class: 'fcard-progress', textContent: progress }));
     // When the next episode airs, and a badge on the day one comes out.
     episodeFor(item.name).then((info) => {
       if (!info || !card.isConnected && !card.parentNode) return;

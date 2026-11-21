@@ -1435,6 +1435,7 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .crop-tools button { height: calc(var(--strip) - 6px); min-height: 20px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text); background: rgba(255,255,255,.08); }
 .crop-tools .crop-done { background: var(--accent); color: var(--accent-ink); }
 
+.fcard-text small.fcard-progress { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fcard-text small.fcard-episode { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 500; -webkit-line-clamp: unset; }
 .fcard-new { flex: none; height: 16px; padding: 0 6px; display: inline-flex; align-items: center; border-radius: 4px; background: #e5484d; color: #fff; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; }
 .fcard-text small.fcard-twitch { display: flex; align-items: center; gap: 6px; min-width: 0; }

@@ -264,3 +264,17 @@ test("a website tile's next episode is kept only on the same site, over https, a
   assert.equal(episodePage('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://www.youtube.com/watch?v=abc'), null);
   assert.equal(episodePage('https://cdn.example/live.m3u8', 'https://cdn.example/other.m3u8'), null);
 });
+
+import { episodeOf } from '../src/sources.js';
+
+test('season and episode come from the common kinds of episode address', () => {
+  assert.deepEqual(episodeOf('https://atlantic.example/watch/247718/2/8'), { season: 2, episode: 8 });
+  assert.deepEqual(episodeOf('https://atlantic.example/watch/247718/1/1/'), { season: 1, episode: 1 });
+  assert.deepEqual(episodeOf('https://site.example/tv/mobland-s02e08'), { season: 2, episode: 8 });
+  assert.deepEqual(episodeOf('https://site.example/show/mobland/season-2-episode-8'), { season: 2, episode: 8 });
+  assert.deepEqual(episodeOf('https://site.example/play?id=9&season=3&episode=12'), { season: 3, episode: 12 });
+  // Not an episode: a year, a single id, or no address at all.
+  assert.equal(episodeOf('https://site.example/movie/2024/550'), null);
+  assert.equal(episodeOf('https://site.example/watch/247718'), null);
+  assert.equal(episodeOf(''), null);
+});

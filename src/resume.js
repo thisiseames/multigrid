@@ -86,6 +86,12 @@ export function placeOf(key) {
   return point && Number.isFinite(point.at) ? { at: point.at, length: point.length || 0 } : null;
 }
 
+/** A website tile's saved place (a series): { at, length, page }, or null. page is the episode it's on. */
+export function embedPlace(input) {
+  const point = readAll()[`embed:${input}`];
+  return point && Number.isFinite(point.at) ? { at: point.at, length: point.length || 0, page: point.page || '' } : null;
+}
+
 /** Continue watching: things part-watched that can be opened again, newest first. */
 export function listPlaces(limit = 10) {
   const all = readAll();

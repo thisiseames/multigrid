@@ -362,6 +362,27 @@ export function episodePage(input, href) {
   }
 }
 
+/** Season and episode from an episode's address: /watch/123/2/8, s02e08, season-2-episode-8 or ?season=2&episode=8. */
+export function episodeOf(href) {
+  let url;
+  try { url = new URL(href); } catch { return null; }
+  const path = decodeURIComponent(url.pathname);
+  const pick = (season, episode) => {
+    const s = Number(season);
+    const e = Number(episode);
+    return Number.isInteger(s) && Number.isInteger(e) && s >= 1 && s < 100 && e >= 1 && e < 1000 ? { season: s, episode: e } : null;
+  };
+  const query = pick(url.searchParams.get('season') ?? url.searchParams.get('s'), url.searchParams.get('episode') ?? url.searchParams.get('e'));
+  if (query) return query;
+  const code = path.match(/s(\d{1,2})[ ._-]?e(\d{1,3})(?!\d)/i);
+  if (code) return pick(code[1], code[2]);
+  const words = path.match(/season[-_ ]?(\d{1,2})[/_ -]+episode[-_ ]?(\d{1,3})/i);
+  if (words) return pick(words[1], words[2]);
+  // A show's id, then season and episode, at the end: /watch/247718/2/8
+  const tail = path.match(/\/\d+\/(\d{1,2})\/(\d{1,3})\/?$/);
+  return tail ? pick(tail[1], tail[2]) : null;
+}
+
 export function isBlockedMixedContent(source, env) {
   if (source.kind !== 'iframe' && source.kind !== 'hls') return false;
   return env.protocol === 'https:' && source.url.startsWith('http:');
