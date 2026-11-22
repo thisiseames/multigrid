@@ -2717,3 +2717,5 @@ body.is-phone .match-watch:hover { background: rgba(255,255,255,.2); }
 .hero-desc { -webkit-line-clamp: 2; }
 /* Splash and home screen showing (laptop): the top bar is the same black, with no line under it. */
 body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-shadow: none; transition: background .6s ease, border-color .6s ease; }
+/* The top bar is always black, the same as the splash and home screen. */
+.topbar { background: #000; }
