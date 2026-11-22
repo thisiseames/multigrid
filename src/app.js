@@ -62,8 +62,9 @@ import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { searchLiveSources } from './live-search.js';
 import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
-  gamesOnNow, mergeGames, resolveGameSources, sourceIdentity, sourcesForChannel,
+  gamesOnNow, mergeGames, resolveGameSources, sameGame, sourceIdentity, sourcesForChannel,
 } from './game-links.js';
+import { tileCard } from './tileinfo.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -102,6 +103,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onReplace: (id) => openSourceDialog({ mode: 'replace', id }),
   onFixStream: (id) => openPalette({ repair: { id } }),
   labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
+  tileInfo: (id, player) => tileInfoCard(id, player),
   onTileArt(id) {
     const tile = tileById(id);
     if (!tile) return null;
@@ -2893,6 +2895,53 @@ function tunedTile() {
   if (tuned && isVisible(tuned) && isStream(tuned)) return tuned;
   const primary = ws.tiles.find((tile) => tile.primary && isVisible(tile) && isStream(tile));
   return primary || ws.tiles.find((tile) => isVisible(tile) && isStream(tile)) || null;
+}
+
+/* The hover card over a tile (laptop): what's on, time left, the score. The scores come from
+   ESPN's scoreboard (the same one Sports uses), fetched only for a tile that knows its game. */
+let tileScores = [];
+let tileScoresAt = 0;
+
+function tileMatch(tile) {
+  if (!tile?.event?.label) return null;
+  if (Date.now() - tileScoresAt > 30_000) {
+    tileScoresAt = Date.now();
+    todaysGames().then((groups) => {
+      tileScores = (groups ?? []).flatMap((group) => group.games ?? []);
+      grid.refreshInfo?.();
+    }).catch(() => {});
+  }
+  const event = { label: tile.event.label, starts: tile.event.starts };
+  return tileScores.find((match) => sameGame(event, { home: { name: match.home.full || match.home.name }, away: { name: match.away.full || match.away.name }, starts: match.start })) ?? null;
+}
+
+function tileInfoCard(id, player) {
+  const tile = tileById(id);
+  if (!tile || onPhoneScreen()) return null;
+  const source = parseSource(tile.input);
+  if (!source.ok) return null;
+  const name = labelOf(tile);
+  const info = nowAndNext(name, source);
+  const match = tileMatch(tile);
+  const card = tileCard({
+    kind: source.kind,
+    name,
+    match: match ? { ...match, clock: match.state === 'in' ? shortClock(match.detail) : match.detail } : null,
+    guide: info?.current ? info : null,
+    series: seriesProgress(tile.input),
+    player,
+  });
+  if (!card) return null;
+  const favorite = listFavorites().find((item) => item.input === tile.input);
+  const art = card.score ? null : favoriteArt({ name, input: tile.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
+  const side = (team) => el('span', { class: 'ti-side' }, team.logo ? el('img', { class: 'ti-crest', src: crest(team.logo, 44), alt: '', referrerPolicy: 'no-referrer' }) : null, el('b', { textContent: team.name }), team.score !== '' ? el('span', { class: 'ti-goals', textContent: team.score }) : null);
+  return el('div', { class: 'ti-card' },
+    art ? el('span', { class: 'ti-art' }, art) : null,
+    el('div', { class: 'ti-text' },
+      card.live ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null,
+      card.score ? el('div', { class: 'ti-score' }, ...card.score.order.map((key) => side(card.score[key])), card.score.clock ? el('span', { class: 'ti-clock', textContent: card.score.clock }) : null) : null,
+      card.title ? el('b', { class: 'ti-title', textContent: card.title }) : null,
+      ...card.lines.map((line) => el('small', { textContent: line }))));
 }
 
 /** What's on and what follows on a channel, from the guide. */

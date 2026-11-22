@@ -33,6 +33,14 @@ class TileView {
     this.feedResetTimer = null;
     this.generation = 0;
     this.root = el('article', { class: 'tile' });
+    // The hover card: what's on, time left, the score. Drawn when the mouse arrives, kept current
+    // while it stays, and shown and hidden by the same hover rule as the strip's icons.
+    this.root.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse') return;
+      this.drawInfo();
+      clearInterval(this.infoTimer);
+      this.infoTimer = setInterval(() => (this.root.matches(':hover') ? this.drawInfo() : clearInterval(this.infoTimer)), 15000);
+    });
     this.root.dataset.id = tile.id;
     this.root.addEventListener('pointerdown', (event) => {
       if (event.button === 0) this.grid.handlers.onTune?.(this.id);
@@ -50,6 +58,13 @@ class TileView {
     this.root.append(note);
     clearTimeout(this.noteTimer);
     this.noteTimer = setTimeout(() => note.remove(), 5600);
+  }
+
+  drawInfo() {
+    this.root.querySelector(':scope > .tile-info')?.remove();
+    if (this.root.classList.contains('is-cropping')) return;
+    const card = this.grid.handlers.tileInfo?.(this.id, this.player?.info?.() ?? null);
+    if (card) this.root.append(el('div', { class: 'tile-info', aria: { hidden: 'true' } }, card));
   }
 
   /** Rebuilds the contents only when the tile's source has really changed. */
@@ -630,6 +645,8 @@ export class GridView {
     this.env = env;
     this.handlers = handlers;
     this.views = new Map();
+    // A hovered tile's card again, when fresh scores arrive.
+    this.refreshInfo = () => { for (const view of this.views.values()) if (view.root.matches(':hover')) view.drawInfo(); };
     this.ws = null;
     this.phone = window.matchMedia('(max-width: 640px)');
     this.editLayer = el('div', { class: 'edit-layer' });

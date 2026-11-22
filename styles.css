@@ -3133,3 +3133,22 @@ body.is-phone .transfer-story { min-height: 48px; padding: 10px 11px; }
 body.is-phone .transfer-story-title { font-size: 14px; }
 body.is-phone .transfer-squad-box { padding: 9px 10px; }
 body.is-phone .transfer-squad-count { font-size: 22px; }
+
+/* The hover card over a tile (laptop): shown and hidden with the strip's icons. Clicks go through to the player. */
+.tile-info { position: absolute; top: var(--strip); left: 0; right: 0; z-index: 5; padding: 12px 14px 30px; background: linear-gradient(#000 0, rgba(0, 0, 0, .96) 62%, transparent); pointer-events: none; opacity: 0; transition: opacity 0.12s; }
+.tile:hover > .tile-info { opacity: 1; }
+body.is-phone .tile-info { display: none; }
+.ti-card { display: flex; align-items: flex-start; gap: 12px; max-width: 520px; }
+.ti-art { flex: none; width: 64px; height: 36px; border-radius: 6px; overflow: hidden; background: #0b0b0d; }
+.ti-art .fart { width: 100%; height: 100%; border-radius: 0; }
+.ti-art .fart img { width: 100%; height: 100%; object-fit: cover; }
+.ti-art:has(.fart.is-icon) { display: none; }
+.ti-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.ti-live { padding: 2px 6px; border-radius: 4px; background: #f5f5f7; color: #0b0b0d; font: 800 10px/1.2 var(--font); letter-spacing: .06em; }
+.ti-title { max-width: 100%; font-size: 15px; font-weight: 700; color: #f5f5f7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
+.ti-text small { max-width: 100%; font-size: 12.5px; font-weight: 500; color: rgba(245, 245, 247, .78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ti-score { display: flex; align-items: center; gap: 14px; }
+.ti-side { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; color: #f5f5f7; }
+.ti-crest { width: 22px; height: 22px; object-fit: contain; }
+.ti-goals { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ti-clock { font-size: 13px; font-weight: 700; color: rgba(245, 245, 247, .8); }

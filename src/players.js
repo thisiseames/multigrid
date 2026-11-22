@@ -286,6 +286,12 @@ function youtubePlayer(source, options) {
       const data = api.getVideoData?.();
       return { key, at: Math.floor(api.getCurrentTime?.() || 0), length: Math.round(api.getDuration?.() || 0), input: `https://www.youtube.com/watch?v=${data.video_id}`, name: data.title || '' };
     },
+    // What the hover card shows: the video, where it is, and whether it's live.
+    info() {
+      const data = api?.getVideoData?.();
+      if (!data) return null;
+      return { title: data.title || '', author: data.author || '', live: Boolean(data.isLive), at: api.getCurrentTime?.() || 0, length: api.getDuration?.() || 0 };
+    },
     canPause: true,
     setPaused(next) {
       if (!api) return;
@@ -526,6 +532,7 @@ function hlsPlayer(source, options) {
     canMute: true,
     canVolume: levelWorks,
     place: () => keepPlace.place(),
+    info: () => ({ live: !Number.isFinite(video.duration), at: video.currentTime || 0, length: Number.isFinite(video.duration) ? video.duration : 0 }),
     start() {
       if (source.direct) {
         // A plain video file: the browser plays it itself.
@@ -1466,6 +1473,7 @@ function videoFilesPlayer(items, options, { playlist = false } = {}) {
     el: holder,
     // The video only goes into the tile once the file is opened, so it's named here for pausing.
     media: video,
+    info: () => ({ title: item()?.name || '', episode: playlist && items.length > 1 ? index + 1 : 0, episodes: items.length, at: video.currentTime || 0, length: Number.isFinite(video.duration) ? video.duration : 0 }),
     canMute: true,
     canVolume: levelWorks,
     ...(stripButtons ? { stripButtons, stripLabels: ['Previous episode', 'Next episode'] } : {}),
