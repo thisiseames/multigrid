@@ -56,6 +56,7 @@ function showSheet(menu) {
   // A stream's sheet is titled with the stream's name.
   $('sheet-title').textContent = menu.dataset.title || TITLES[menu.id];
   const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu' || menu.id === 'transfers-menu';
+  document.body.classList.toggle('sports-sheet', Boolean(sheet && sports));
   $('sheet-title').hidden = sports;
   $('sheet-switch').hidden = !sports;
   for (const button of $('sheet-switch').querySelectorAll('button')) {
