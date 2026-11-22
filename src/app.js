@@ -64,7 +64,7 @@ import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
   gamesOnNow, mergeGames, resolveGameSources, sameGame, sourceIdentity, sourcesForChannel,
 } from './game-links.js';
-import { tileCard } from './tileinfo.js';
+import { leftText, tileCard } from './tileinfo.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -1566,12 +1566,32 @@ function openPalette(options = {}) {
     } catch {}
     return KIND_NAMES[source.kind] || 'Stream';
   };
+  // Each result looks like what it is: its own picture, and for a channel what's on and how long
+  // is left; for a game both crests, and the score and clock while it's on.
+  const searchLook = (input, name, fallback) => {
+    const source = input ? parseSource(input) : null;
+    if (!source?.ok) return { sub: fallback };
+    const info = nowAndNext(name, source);
+    const art = () => favoriteArt({ name, input, group: '', logo: listFavorites().find((item) => item.input === input)?.logo ?? '' }, source);
+    if (info?.current) return { art, live: true, sub: `${info.current.title} · ${leftText((info.current.end - Date.now()) / 1000)}` };
+    return { art, sub: fallback };
+  };
+  const gameLook = (game, fallback, channel = '', known = null) => {
+    const match = known?.home ? known : espnMatchFor({ label: game.label, starts: game.starts ?? game.start });
+    if (!match) return { sub: fallback };
+    const order = match.sport && match.sport !== 'soccer/all' ? [match.away, match.home] : [match.home, match.away];
+    const crests = order.map((side) => side.logo).filter(Boolean);
+    const sideText = (side) => `${side.abbr || side.name} ${side.score ?? ''}`.trim();
+    if (match.state === 'in') return { crests, live: true, sub: [order.map(sideText).join(' · '), shortClock(match.detail), channel ? `on ${channel}` : ''].filter(Boolean).join(' · ') };
+    if (match.state === 'post') return { crests, sub: [`Final  ${order.map(sideText).join(' · ')}`, channel ? `on ${channel}` : ''].filter(Boolean).join(' · ') };
+    return { crests, sub: fallback };
+  };
   const favoriteItem = (item) => {
     const source = parseSource(item.input);
     return {
       group: 'Favorites',
       label: item.name,
-      sub: favoriteKind(item),
+      ...searchLook(item.input, item.name, favoriteKind(item)),
       icon: KIND_ICONS[source.kind] || 'play',
       run: () => closeAnd(() => {
         if ($('source-dialog').open) $('source-dialog').close();
@@ -1590,6 +1610,7 @@ function openPalette(options = {}) {
     group: 'PPV events',
     label: event.name,
     sub: [event.live ? 'Live now' : clock(event.starts), event.category].filter(Boolean).join(' · '),
+    ...gameLook({ label: event.name, starts: event.starts }, [event.live ? 'Live now' : clock(event.starts), event.category].filter(Boolean).join(' · ')),
     icon: 'calendar',
     run: () => closeAnd(() => addPPV(event, target)),
   });
@@ -1671,7 +1692,7 @@ function openPalette(options = {}) {
         return {
           group: 'Live channels',
           label: group.label,
-          sub: [...providers, feeds, group.sources[0]?.category].filter(Boolean).join(' · '),
+          ...searchLook(group.sources[0]?.input, group.label, [...providers, feeds, group.sources[0]?.category].filter(Boolean).join(' · ')),
           icon: 'live',
           run: () => closeAnd(() => {
             if (group.sources.length === 1) addSource(group.sources[0], target);
@@ -1683,6 +1704,7 @@ function openPalette(options = {}) {
         group: 'Live matches',
         label: match.label,
         sub: match.sub,
+        ...gameLook({ label: match.label, starts: match.event?.starts ?? match.starts }, match.sub),
         icon: match.live ? 'live' : 'calendar',
         run: () => closeAnd(() => {
           if (match.source === 'daddy') {
@@ -1697,17 +1719,17 @@ function openPalette(options = {}) {
       gameItems = (live.games ?? []).map((game) => ({
         group: 'Games',
         label: game.label,
-        sub: [
+        ...gameLook(game, [
           game.viaChannel?.name ? `on ${game.viaChannel.name}` : '',
           game.live ? 'Live now' : game.starts ? `${dayLabel(game.starts)} ${clock(game.starts)}` : '',
-        ].filter(Boolean).join(' · '),
+        ].filter(Boolean).join(' · '), game.viaChannel?.name),
         icon: 'calendar',
         run: () => closeAnd(() => chooseGameSources(game)),
       }));
       sportsItems = live.sports.map((game) => ({
         group: 'Sports',
         label: game.label,
-        sub: game.meta,
+        ...gameLook(game, game.meta, game.channel?.name, game.match),
         icon: 'sports',
         run: () => closeAnd(() => {
           if (game.channel) addStream(game.channel.input, target, game.channel.name);
@@ -1887,10 +1909,12 @@ function openPalette(options = {}) {
             class: 'palette-item',
             on: { click: item.run },
           },
-          el('span', { class: 'palette-icon' }, icon(item.icon, 16)),
+          item.crests ? el('span', { class: 'palette-art is-crests' }, ...item.crests.map((logo) => el('img', { src: crest(logo, 56), alt: '', referrerPolicy: 'no-referrer' })))
+            : item.art ? el('span', { class: 'palette-art' }, item.art())
+              : el('span', { class: 'palette-icon' }, icon(item.icon, 16)),
           el('span', { class: 'palette-text' },
             el('b', { textContent: item.label }),
-            item.sub ? el('small', { textContent: item.sub }) : null));
+            item.sub || item.live ? el('small', {}, item.live ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : '', item.sub || '') : null));
           return item.remove
             ? el('div', { class: 'palette-row' }, row, el('button', {
               type: 'button',
@@ -1923,6 +1947,9 @@ function openPalette(options = {}) {
   if (repair) ensureLive();
   paint();
   input.focus();
+  // Fresh scores redraw the results once they arrive, while the box is open.
+  const repaint = () => { if (box.open) paint(); else scoreWatchers.delete(repaint); };
+  scoreWatchers.add(repaint);
   if (repairTile && !repairTile.event) {
     detectTileGame(repairTile).then((game) => {
       if (!game) return;
@@ -2409,13 +2436,36 @@ function renderPhoneBar() {
   bar.hidden = !show;
   document.body.classList.toggle('has-phonebar', show);
   if (!show) return;
-  const source = parseSource(tile.input);
   const name = labelOf(tile);
-  const listing = nowAndNext(name, source);
   const media = view.player?.el instanceof HTMLMediaElement ? view.player.el : null;
   const paused = media ? media.paused : Boolean(view.paused);
-  $('phone-bar-title').textContent = name;
-  $('phone-bar-sub').textContent = paused ? 'Paused' : listing?.current?.title || 'Playing';
+  // What's on, from the same card as the laptop's hover: the logo, then the show or the score,
+  // then LIVE with the time left or the clock. Same height as ever: two lines beside the logo.
+  const data = streamCard({ input: tile.input, name, event: tile.event, player: view.player.info?.() ?? null, phone: true });
+  const card = data?.card;
+  const artSlot = $('phone-bar-art');
+  // The picture is drawn once per stream (redrawing it would flicker); a game shows no logo.
+  const wantArt = Boolean(data) && !card?.score;
+  if (artSlot.dataset.for !== tile.input || (wantArt && !artSlot.firstElementChild)) {
+    artSlot.dataset.for = tile.input;
+    artSlot.replaceChildren(...(wantArt ? [data.art()] : []));
+  }
+  if (!wantArt && artSlot.firstElementChild) artSlot.replaceChildren();
+  artSlot.hidden = !artSlot.firstElementChild;
+  let title = name;
+  let sub = 'Playing';
+  if (card?.score) {
+    title = card.score.order.map((key) => `${card.score[key].name}${card.score[key].score !== '' ? ` ${card.score[key].score}` : ''}`).join('   ');
+    sub = card.score.clock;
+  } else if (card?.title && card.title !== name) {
+    title = card.title;
+    sub = card.lines[0] || name;
+  } else if (card?.lines?.length) {
+    sub = card.lines[card.lines.length - 1];
+  }
+  if (paused) sub = 'Paused';
+  $('phone-bar-title').textContent = title;
+  $('phone-bar-sub').replaceChildren(...[card?.live && !paused ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null, sub].filter(Boolean));
   $('phone-bar-name').title = `Options for ${name}`;
   $('phone-bar-name').setAttribute('aria-label', `Options for ${name}`);
   const play = $('phone-bar-play');
@@ -2901,60 +2951,76 @@ function tunedTile() {
    ESPN's scoreboard (the same one Sports uses), fetched only for a tile that knows its game. */
 let tileScores = [];
 let tileScoresAt = 0;
+const scoreWatchers = new Set(); // redraw these when fresh scores arrive
+scoreWatchers.add(() => grid.refreshInfo?.());
+scoreWatchers.add(() => renderPhoneBar());
 
-function tileMatch(tile) {
-  if (!tile?.event?.label) return null;
+/** Today's ESPN games, fetched at most every 30 seconds and only when something asks. */
+function espnScores() {
   if (Date.now() - tileScoresAt > 30_000) {
     tileScoresAt = Date.now();
     todaysGames().then((groups) => {
       tileScores = (groups ?? []).flatMap((group) => group.games ?? []);
-      grid.refreshInfo?.();
+      for (const redraw of scoreWatchers) redraw();
     }).catch(() => {});
   }
-  const event = { label: tile.event.label, starts: tile.event.starts };
-  return tileScores.find((match) => sameGame(event, { home: { name: match.home.full || match.home.name }, away: { name: match.away.full || match.away.name }, starts: match.start })) ?? null;
+  return tileScores;
 }
 
-function tileInfoCard(id, player) {
-  const tile = tileById(id);
-  if (!tile || onPhoneScreen()) return null;
-  const source = parseSource(tile.input);
+/** The ESPN game for a game link or a listed game ({ label, starts }). */
+function espnMatchFor(event) {
+  if (!event?.label) return null;
+  const target = { label: event.label, starts: event.starts };
+  return espnScores().find((match) => sameGame(target, { home: { name: match.home.full || match.home.name }, away: { name: match.away.full || match.away.name }, starts: match.start })) ?? null;
+}
+
+const tileMatch = (tile) => espnMatchFor(tile?.event);
+const withClock = (match) => (match ? { ...match, clock: match.state === 'in' ? shortClock(match.detail) : match.detail } : null);
+
+/** What's known about a stream, as the card data (tileCard) plus its picture. */
+function streamCard({ input, name, event = null, player = null, phone = false }) {
+  const source = parseSource(input);
   if (!source.ok) return null;
-  const name = labelOf(tile);
   const info = nowAndNext(name, source);
-  const match = tileMatch(tile);
   const card = tileCard({
-    kind: source.kind,
+    // The phone can't hover, so YouTube's own title isn't on show there: its bar says it.
+    kind: phone && source.kind === 'youtube' ? 'video' : source.kind,
     name,
-    match: match ? { ...match, clock: match.state === 'in' ? shortClock(match.detail) : match.detail } : null,
+    match: withClock(espnMatchFor(event)),
     guide: info?.current ? info : null,
-    series: seriesProgress(tile.input),
+    series: seriesProgress(input),
     player,
   });
   if (!card) return null;
-  const favorite = listFavorites().find((item) => item.input === tile.input);
-  const art = card.score ? null : favoriteArt({ name, input: tile.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
+  const favorite = listFavorites().find((item) => item.input === input);
+  const art = () => favoriteArt({ name, input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
+  return { card, art };
+}
+
+/** The card itself: the logo with LIVE under it, then the score or the show, then the lines. */
+function cardElement({ card, art }, { first = '' } = {}) {
+  const picture = card.score ? null : art();
   const side = (team) => el('span', { class: 'ti-side' }, team.logo ? el('img', { class: 'ti-crest', src: crest(team.logo, 44), alt: '', referrerPolicy: 'no-referrer' }) : null, el('b', { textContent: team.name }), team.score !== '' ? el('span', { class: 'ti-goals', textContent: team.score }) : null);
   // LIVE sits under the logo; with no logo, at the end of the first line.
   const live = () => (card.live ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null);
   const head = card.score
     ? el('div', { class: 'ti-score' }, ...card.score.order.map((key) => side(card.score[key])), card.score.clock ? el('span', { class: 'ti-clock', textContent: card.score.clock }) : null, live())
-    : card.title ? el('div', { class: 'ti-head' }, el('b', { class: 'ti-title', textContent: card.title }), art ? null : live()) : null;
+    : card.title ? el('div', { class: 'ti-head' }, el('b', { class: 'ti-title', textContent: card.title }), picture ? null : live()) : null;
   return el('div', { class: 'ti-card' },
-    art ? el('span', { class: 'ti-side-col' }, el('span', { class: 'ti-art' }, art), live()) : null,
+    picture ? el('span', { class: 'ti-side-col' }, el('span', { class: 'ti-art' }, picture), live()) : null,
     el('div', { class: 'ti-text' },
+      first ? el('span', { class: 'ti-first', textContent: first }) : null,
       head,
       ...card.lines.map((line) => el('small', { textContent: line }))));
 }
 
-/** What's on and what follows on a channel, from the guide. */
-function guideLinesFor(input, name) {
-  const info = nowAndNext(name, parseSource(input));
-  const lines = [];
-  if (info?.current) lines.push(`Now: ${info.current.title} · until ${clock(info.current.end)}`);
-  if (info?.next) lines.push(`Next: ${info.next.title} · ${clock(info.next.start)}`);
-  return lines;
+function tileInfoCard(id, player) {
+  const tile = tileById(id);
+  if (!tile || onPhoneScreen()) return null;
+  const data = streamCard({ input: tile.input, name: labelOf(tile), event: tile.event, player });
+  return data ? cardElement(data) : null;
 }
+
 
 /** Steps one favorite along in the tuned tile, staying inside its folder when it has one. */
 function surfChannels(step, id = null) {
@@ -2994,7 +3060,10 @@ function surfChannels(step, id = null) {
   const target = pool[index];
   addStream(target.input, { mode: 'replace', id: tile.id });
   tunedId = tile.id;
-  grid.note(tile.id, `${index + 1} / ${pool.length} · ${target.name}`, guideLinesFor(target.input, target.name));
+  const position = `${index + 1} / ${pool.length}`;
+  const data = streamCard({ input: target.input, name: target.name });
+  grid.noteCard(tile.id, data ? cardElement(data, { first: `${position} · ${target.name}` })
+    : el('div', { class: 'ti-card' }, el('div', { class: 'ti-text' }, el('span', { class: 'ti-first', textContent: position }), el('b', { class: 'ti-title', textContent: target.name }))));
 }
 
 // Up and down are free on the bare grid; boxes, dialogs and menus keep their own keys.

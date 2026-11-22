@@ -365,8 +365,8 @@ body.is-phone #home-button { display: none; }
 .grid.stacked .tile-body:has(.frame-card) { aspect-ratio: auto; height: 490px; }
 .tile.maximized { position: fixed; inset: 0; margin: 0; z-index: 40; border-radius: 0; padding-top: env(safe-area-inset-top); }
 .tune-note { position: absolute; left: 10px; bottom: 10px; z-index: 6; max-width: calc(100% - 20px); padding: 5px 9px; border-radius: 7px; background: rgba(0, 0, 0, 0.76); color: var(--text); font-size: 11.5px; font-weight: 600; pointer-events: none; }
-.tune-note span, .tune-note small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tune-note small { margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-2); }
+.tune-note:not(.is-card) span, .tune-note:not(.is-card) small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tune-note:not(.is-card) small { margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--text-2); }
 
 /* A note tile: plain text kept with the layout */
 .note-tile { position: absolute; inset: 0; background: #151517; }
@@ -1562,7 +1562,7 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .palette-remove:hover { color: var(--text); background: var(--hover); }
 .palette-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; color: var(--text); }
 .palette-item:hover, .palette-item.is-on { background: var(--hover); }
-.palette-icon { flex: none; width: 26px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+.palette-icon { flex: none; width: 46px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
 .palette-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .palette-text b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .palette-text small { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3246,3 +3246,32 @@ body.is-phone .tile-info { display: none; }
 .ti-crest { width: 22px; height: 22px; object-fit: contain; }
 .ti-goals { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .ti-clock { font-size: 13px; font-weight: 700; color: rgba(245, 245, 247, .8); }
+
+/* Search results: each row's own picture (logo, poster, thumbnail, photo) or both crests. */
+.palette-art { flex: none; width: 46px; height: 30px; border-radius: 6px; overflow: hidden; background: #141416; display: flex; align-items: center; justify-content: center; }
+.palette-art .fart { width: 100%; height: 100%; border-radius: 0; }
+.palette-art .fart img { width: 100%; height: 100%; object-fit: cover; }
+.palette-art .fart.is-icon { display: flex; align-items: center; justify-content: center; background: #141416; color: var(--text-2); }
+.palette-art .fart.is-icon .fart-name { display: none; }
+.palette-art .fart.is-icon svg { width: 16px; height: 16px; }
+.palette-art.is-crests { gap: 2px; background: #0b0b0d; }
+.palette-art.is-crests img { width: 19px; height: 19px; object-fit: contain; }
+.palette-text small .ti-live { margin-right: 6px; padding: 1px 5px; font-size: 9px; vertical-align: 1px; }
+.palette-input:focus { border-color: rgba(245, 245, 247, .55); }
+
+/* The channel-flip card: the hover card's place and look, for a few seconds. */
+.tune-note.is-card { top: calc(var(--strip) + 10px); bottom: auto; left: 10px; max-width: calc(100% - 20px); padding: 9px 12px; border-radius: 10px; background: rgba(0, 0, 0, .72); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.tile.has-note > .tile-info { display: none; }
+.ti-first { font-size: 11.5px; font-weight: 600; color: rgba(245, 245, 247, .62); }
+
+/* The phone's stream bar: the logo beside two lines, same height as before. */
+.phone-bar-name { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 10px !important; }
+.phone-bar-art { flex: none; width: 54px; height: 34px; border-radius: 7px; overflow: hidden; background: #141416; }
+.phone-bar-art[hidden] { display: none; }
+.phone-bar-art .fart { width: 100%; height: 100%; border-radius: 0; }
+.phone-bar-art .fart img { width: 100%; height: 100%; object-fit: cover; }
+.phone-bar-art:has(.fart.is-icon) { display: none; }
+.phone-bar-text { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.phone-bar-text b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 650; line-height: 1.2; }
+.phone-bar-text small { max-width: 100%; display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.2; color: var(--text-2); }
+.phone-bar-text small .ti-live { flex: none; padding: 1px 5px; font-size: 9px; }

@@ -281,3 +281,9 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 
 - Nov 22 follow-up: owner asked "what is with the giant black bar?" The full-width band became a small rounded card sized to its text (top-left, dark glass). YouTube tiles no longer get one: YouTube shows its own title and time on hover, and covering that was what needed the band.
 - Nov 22: LIVE moved under the channel logo on the hover card (owner: on top of the text looked awkward). With no logo it ends the first line; on a game it follows the clock.
+
+## Nov 22 — Search, phone bar and channel flip get the card treatment
+- Search (⌘K): each favorite/live channel row shows its own picture (favorite card art) and, for TV channels, LIVE + what's on + time left; games, live matches, Sports and PPV rows show both crests and LIVE + score + clock (ESPN, via espnMatchFor); results redraw once when fresh scores arrive. Rows without a picture keep their icon at the same width so text lines up. Search box focus outline is white, not the old periwinkle.
+- Phone stream bar: logo beside two lines (show title; LIVE chip + time left), score on a game; same 52px height (owner: never taller). Logo drawn once per stream.
+- Channel flip (arrow keys): the hover card for ~5 s, with "2 / 3 · channel" on top; hides the hover card while showing.
+- Shared helpers in app.js: espnScores/espnMatchFor/streamCard/cardElement; scoreWatchers redraw hover, phone bar and Search.

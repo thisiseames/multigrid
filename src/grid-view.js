@@ -67,6 +67,15 @@ class TileView {
     if (card) this.root.append(el('div', { class: 'tile-info', aria: { hidden: 'true' } }, card));
   }
 
+  noteCard(card) {
+    this.root.querySelector('.tune-note')?.remove();
+    const note = el('div', { class: 'tune-note is-card' }, card);
+    this.root.append(note);
+    this.root.classList.add('has-note');
+    clearTimeout(this.noteTimer);
+    this.noteTimer = setTimeout(() => { note.remove(); this.root.classList.remove('has-note'); }, 5600);
+  }
+
   /** Rebuilds the contents only when the tile's source has really changed. */
   update(tile) {
     this.tile = tile;
@@ -685,6 +694,11 @@ export class GridView {
   /** A short note over the tile's picture, used when channel surfing. */
   note(id, text, sub = '') {
     this.viewFor(id)?.note(text, sub);
+  }
+
+  /** The channel-flip card: the same card as the hover, for a few seconds. */
+  noteCard(id, card) {
+    this.viewFor(id)?.noteCard(card);
   }
 
   /* Picture in picture: the main stream (the primary, else the first) fills the screen and the
