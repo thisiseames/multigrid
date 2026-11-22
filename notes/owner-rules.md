@@ -73,6 +73,7 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 
 ## Never suggest again
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
+- Podcast queues/auto-next of any kind. Owner, Nov 22: does not care about a podcast queue; never suggest one again.
 - Also turned down before: broken-link "Not working since …" labels; goal/score alerts and other small sports gimmicks.
 
 ## Never use periwinkle (or any blue-purple accent)
