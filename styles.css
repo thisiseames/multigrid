@@ -1590,9 +1590,9 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .addp-favs .favorites-search { flex: none; margin: 2px 16px 0; }
 .addp-favs .favorites-search input { height: 38px; border-radius: 10px; background: var(--surface); font-size: 15px; }
 .addp-pills { flex: none; gap: 18px; padding: 12px 16px 8px; border-bottom: 0; align-items: center; }
-.addp-pills .matches-tab { position: relative; height: 32px; min-width: 0; padding: 0 2px; border-radius: 0; background: transparent; color: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-.addp-pills .matches-tab:hover { background: transparent; color: var(--text); }
-.addp-pills .matches-tab.is-on { background: transparent; color: var(--text); }
+.addp-pills .matches-tab { position: relative; height: 32px; min-width: 0; padding: 0 2px; border-radius: 0; background: transparent; color: #f5f5f7; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.addp-pills .matches-tab:hover { background: transparent; color: #fff; }
+.addp-pills .matches-tab.is-on { background: transparent; color: #fff; }
 .addp-pills .matches-tab.is-on::after { content: ''; position: absolute; left: 0; right: 0; bottom: 4px; height: 2px; border-radius: 1px; background: var(--text); }
 .addp-pills .icon-button, .addp-pills > button:not(.matches-tab) { flex: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-2); }
 .addp-pills > button:not(.matches-tab):hover { background: var(--hover); color: var(--text); }
