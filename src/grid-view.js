@@ -456,6 +456,7 @@ class TileView {
       this.popButton,
       this.castButton,
       this.sendButton,
+      this.source.ok && !isNote ? iconButton('search', 'Fix stream: find another source for this game', () => handlers.onFixStream?.(this.id)) : null,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
       this.source.ok && this.source.openUrl ? el('a', {
         href: this.source.openUrl,
