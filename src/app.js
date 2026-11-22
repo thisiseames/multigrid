@@ -42,7 +42,6 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
-import { chooseScreen, forgetScreen, newScreenId, rememberScreen, screenInput, screenSupported } from './screen.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -2042,7 +2041,7 @@ const layoutsTab = () => grid.isStacked;
 const RECENT = '\u0001recent';
 const RECENT_KEY = 'multigrid.recent.v1';
 const RECENT_MAX = 10;
-const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore', 'podcastshow', 'screen']);
+const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore', 'podcastshow']);
 function listRecent() {
   try {
     const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
@@ -3373,12 +3372,12 @@ let addFolder = '';
 const KIND_NAMES = {
   youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
-  podcastshow: 'Podcast', screen: 'Shared screen',
+  podcastshow: 'Podcast',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound', screen: 'screen' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow', 'screen']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -4793,7 +4792,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow', 'screen']);
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {
@@ -6613,25 +6612,6 @@ function addFiles(chosen, target = { mode: 'add' }) {
   else toast(`Playlist of ${items.length} episodes added.`);
 }
 
-async function pickScreenFor(target) {
-  if (!screenSupported()) {
-    toast('Screen sharing is not available in this browser.');
-    return;
-  }
-  let picked;
-  try {
-    picked = await chooseScreen();
-  } catch {
-    return;
-  }
-  if ($('source-dialog').open) $('source-dialog').close();
-  const id = newScreenId();
-  rememberScreen(id, picked.stream);
-  if (!addStream(screenInput(id, picked.label), target, picked.label)) {
-    forgetScreen(id);
-  }
-}
-
 async function pickFilesFor(target) {
   const chosen = await chooseFiles({ multiple: target.mode !== 'replace' });
   if (!chosen.length) return;
@@ -6661,7 +6641,7 @@ function openSourceDialog(target) {
   $('source-title').textContent = replacing ? 'Replace stream' : 'Add stream';
   $('source-submit').textContent = replacing ? 'Replace' : 'Add';
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
-  $('source-input').value = current.startsWith('local:') || current.startsWith('screen:') ? '' : current;
+  $('source-input').value = current.startsWith('local:') ? '' : current;
   $('source-x').value = '';
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
@@ -6790,8 +6770,6 @@ for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('pod
 $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }));
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
-$('screen-zone').addEventListener('click', () => pickScreenFor(sourceTarget));
-if (!screenSupported() || onPhone()) $('screen-zone').hidden = true;
 $('channel-find').addEventListener('click', openChannelFinder);
 $('ppv-find').addEventListener('click', () => openPPV(sourceTarget));
 $('source-dialog').addEventListener('close', () => {

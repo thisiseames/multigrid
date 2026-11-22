@@ -2,8 +2,6 @@
 // Pure logic with no DOM, so it can be tested on its own. Pasted HTML is only ever
 // read as text here; it is never rendered.
 
-import { parseScreenInput } from './screen.js';
-
 const YOUTUBE_HOSTS = new Set([
   'youtube.com', 'm.youtube.com', 'music.youtube.com', 'gaming.youtube.com',
   'youtube-nocookie.com', 'youtu.be',
@@ -376,7 +374,6 @@ export function parseSource(raw) {
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);
   if (input.startsWith('podcastshow:')) return parsePodcastShow(input);
-  if (input.startsWith('screen:')) return parseScreenInput(input);
   if (input.startsWith('note:')) return parseNote(input);
   if (input.startsWith('boxscore:')) return parseBoxScoreInput(input);
 

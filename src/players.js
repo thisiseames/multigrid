@@ -12,7 +12,6 @@
 // used: nothing pasted by the user reaches the page as HTML.
 
 import { chooseAgain, findFile, reopen } from './local-files.js';
-import { chooseScreen, forgetScreen, rememberScreen, screenStream, screenSupported } from './screen.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, icon, iconButton } from './ui.js';
@@ -1527,97 +1526,6 @@ function notePlayer(source, options) {
   };
 }
 
-/* A live screen/tab share: the stream lives in this page; a layout stores only its name. */
-function screenPlayer(source, options) {
-  const video = el('video', { class: 'screen-video', autoplay: true, playsInline: true });
-  const overlayText = el('p', { textContent: 'Share a screen or tab.' });
-  const again = el('button', { type: 'button', class: 'screen-again' }, icon('screen', 16), el('span', { textContent: 'Share screen' }));
-  const overlay = el('div', { class: 'screen-overlay' }, overlayText, again);
-  const holder = el('div', { class: 'screen-tile' }, video, overlay);
-  let current = null;
-  let track = null;
-  let onEnded = null;
-
-  video.muted = Boolean(options.muted);
-  video.volume = Math.min(1, Math.max(0, Number(options.volume ?? 100) / 100));
-
-  const unhook = () => {
-    if (track && onEnded) track.removeEventListener('ended', onEnded);
-    track = null;
-    onEnded = null;
-  };
-  const showAgain = (message) => {
-    overlayText.textContent = message;
-    again.lastElementChild.textContent = 'Share again';
-    overlay.hidden = false;
-  };
-  const attach = (stream) => {
-    unhook();
-    current = stream;
-    video.srcObject = stream;
-    video.play().catch(() => {});
-    overlay.hidden = true;
-    track = stream.getVideoTracks()[0] || null;
-    onEnded = () => {
-      if (video.srcObject !== stream) return;
-      forgetScreen(source.screenId);
-      showAgain('Screen sharing stopped.');
-    };
-    track?.addEventListener('ended', onEnded, { once: true });
-  };
-
-  const saved = screenStream(source.screenId);
-  if (!screenSupported()) {
-    showAgain('Screen sharing works on the computer.');
-    again.hidden = true;
-  } else if (saved) {
-    attach(saved);
-  } else {
-    showAgain('Share a screen or tab.');
-  }
-
-  again.addEventListener('click', async (event) => {
-    event.stopPropagation();
-    try {
-      const picked = await chooseScreen();
-      rememberScreen(source.screenId, picked.stream);
-      attach(picked.stream);
-    } catch {
-      // Cancelling the picker changes nothing.
-    }
-  });
-  video.addEventListener('play', () => options.onPlayState?.(false));
-  video.addEventListener('pause', () => options.onPlayState?.(true));
-
-  return {
-    el: holder,
-    canMute: true,
-    canVolume: true,
-    canPause: true,
-    canSeek: false,
-    start() {
-      if (current) video.play().catch(() => {});
-    },
-    focus() {
-      if (overlay.hidden) video.focus();
-      else again.focus();
-    },
-    setMuted(next) { video.muted = Boolean(next); },
-    setVolume(next) { video.volume = Math.min(1, Math.max(0, Number(next) / 100)); },
-    setPaused(next) {
-      if (next) video.pause();
-      else video.play().catch(() => {});
-    },
-    seekBy() {},
-    destroy() {
-      unhook();
-      video.pause();
-      video.srcObject = null;
-      forgetScreen(source.screenId);
-    },
-  };
-}
-
 const PLAYERS = {
   youtube: youtubePlayer,
   note: notePlayer,
@@ -1632,7 +1540,6 @@ const PLAYERS = {
   reader: readerPlayer,
   audio: audioPlayer,
   boxscore: boxScorePlayer,
-  screen: screenPlayer,
 };
 
 /* A game's box score in a tile: no sound, it just keeps itself up to date. */

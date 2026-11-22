@@ -20,7 +20,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 - **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams.
 - **X account** field (fixed `x.com/@` prefix, 1–15 characters) with Add; it auto-saves to the Twitter folder.
-- **Action row** is Play a video file from this computer/phone, Share a screen or tab (desktop Chrome), Browse PPV events, and Import a list — four across on a wide desktop, 2×2 under 980px, one column on phone (screen action hidden).
+- **Action row** is Play a video file from this computer/phone, Browse PPV events, and Import a list — three across on desktop, one column on phone.
 - **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The old stacked links are gone.
 - **Files:** one file becomes one tile; several files become one episode playlist in filename order (100-file cap), with auto-advance, Previous/Next, per-episode resume, one Continue watching card. Chrome keeps file handles; Safari asks again after reload.
 - **On touch phones** Add a note and Find a live channel are hidden in Add stream; Channel Finder is still reachable from Search actions.
@@ -41,7 +41,6 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **TikTok:** 22 built-in feeds plus any public account via r.jina.ai; account switcher; Following import from the export file; vertical 9:16 tile/phone column; feed Back/Next and auto-advance. TikTok live cannot be embedded, so `/@name/live` opens the profile feed. Account favorites are kept out of All.
 - **X/Twitter:** single posts and per-profile video feeds with account switcher and HTML fallback; “Import an X list” creates individual Twitter-folder profile favorites, **not** one combined list timeline. No scrollable X browser, X-list feed, or single-post pause/seek.
 - **Kick:** live channel embeds only; no live status, preview art, schedule, resume or native VOD/clip support (those links become website tiles).
-- **Screen/tab sharing:** Add stream → Share a screen or tab (Chrome desktop) mirrors a tab, window or screen as a live tile with sound/mute/volume/One sound; no favourite, pop-out or Send to phone. It stops when the source closes, reload shows Share again, and protected content may be black. Placeholder is saved in layouts; the actual stream is never stored.
 - **HLS and direct links:** only a `*.m3u8` link gets the native/hls.js player with mute, volume, pause, ±10 s, fullscreen, crop/Cinema and casting. A plain `.mp4`/`.webm` link is a website iframe, not the native player. Live HLS never resumes; recordings over 10 minutes do.
 - **Iframe websites:** any other http(s) URL or pasted iframe becomes an unsandboxed website tile. Sound/pause/seek need the extension; a series' current page and in-frame resume also need it. Refusals cannot be detected, so there is no “may be blocked” label.
 - **HLS backup feeds:** when a live HLS channel fails, MULTIGRID maps it to other iptv-org feeds for the same channel, tests up to six in the browser, and uses the first that plays. Channel Finder also test-plays a channel before adding it. The backup is not saved into the tile.
@@ -76,7 +75,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 222 tests as of Nov 22.
+`node --test tests/*.test.mjs` — 219 tests as of Nov 22.
 
 ## Not built yet — do not describe as existing
 
@@ -105,6 +104,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Do not propose X-list timelines, TikTok live, or a cross-source queue as existing.** X imports are per-profile favorites; TikTok live falls back to the profile; only YouTube and local-file playlists auto-advance.
 - **Do not propose a separate Podcasts section.** The dock and PODCASTS folder tab already exist; the owner rejected another space-eating section. The Apple directory is inside PODCASTS, with full episodes, not song previews. Podcast charts (Top Shows/Trending Episodes) already exist too.
 - **Do not propose a podcast queue of any kind.** The owner does not care about one.
+- **Do not propose screen/tab capture.** It is a one-way mirror: the owner cannot click or control the captured tab/window. He rejected it after trying it. Only iframe tiles can be interactive.
 - **Do not propose an M3U/IPTV playlist importer without a confirmed playlist source.** The owner has no M3U; Channel Finder already imports free channels. Never propose a tool whose only input is a follow-up the owner must do.
 - **Do not propose iTunes/Deezer song previews for Charts.** The podcast directory uses `media=podcast`/`podcastEpisode`; it does not add 30-second music clips or touch chart actions.
 - **Do not add duplicate top-bar buttons for Fullscreen, Help, Saved layouts or Remote.** They already have hidden proxy buttons plus More-menu/phone entry points; replace those, don't add alongside.
@@ -125,5 +125,4 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - GitHub Pages is HTTPS: HTTP media/embeds are blocked as mixed content. Prefer HTTPS.
 - The repo is public. Secrets live in GitHub secrets/local files and are never committed.
 - Apple's podcast directory is free/keyless and CORS-open, but Apple limits it to about 20 calls a minute; the app caches searches for 10 minutes, a show's episodes for 30, and calls only on search/open. The Canada store misses some shows; premium/region-locked episodes have no playable `episodeUrl` and are hidden. Apple's chart feed has **no CORS**, so `podcasts.yml` caches it hourly; a chart older than 48 hours is hidden.
-- Screen/tab capture needs Chrome desktop and a fresh permission each time; it is not available on the phone or Safari. DRM/protected video can be blocked. The source tab/window must stay open.
 - Every outside service is free and keyless; paid services, accounts and keys need the owner's explicit yes.

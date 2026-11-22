@@ -318,13 +318,3 @@ test('a followed podcast show is recognised as a show, not a website', () => {
   assert.equal(source.showId, '1439621628');
   assert.equal(parseSource('podcastshow:').ok, false);
 });
-
-
-test('a screen-share placeholder is recognised as a screen, not a website', () => {
-  const source = parseSource('screen:abc-123:Chrome%20%E2%80%94%20Entire%20screen');
-  assert.equal(source.ok, true);
-  assert.equal(source.kind, 'screen');
-  assert.equal(source.screenId, 'abc-123');
-  assert.equal(source.label, 'Chrome — Entire screen');
-  assert.equal(parseSource('screen:').ok, false);
-});
