@@ -1747,6 +1747,7 @@ body.is-phone .resume-note button { height: 44px; padding: 0 16px; font-size: 14
 .trow-main { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; text-align: left; color: var(--text); }
 .trow-main:hover { background: rgba(255,255,255,.04); }
 .trow-main .fart { width: 64px; height: 40px; }
+.trow-main .fart.is-podcast { width: 44px; height: 44px; border-radius: 8px; }
 .trow-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .trow-top { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .trow-title { font-size: 14px; font-weight: 700; line-height: 1.3; overflow-wrap: break-word; }
@@ -2118,6 +2119,9 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 .fcard.movie-card .fart { aspect-ratio: 2 / 3; background: #0b0b0c; }
 .fcard.movie-card .fart img { object-fit: contain; }
 .fcard.movie-card .fcard-text { padding-right: 10px; }
+/* Apple sends podcast show art as a square, not the 16:9 TV/favourite card shape. */
+.fcard.podcast-card .fart { aspect-ratio: 1 / 1; }
+.fcard.podcast-card .fart img { object-fit: cover; }
 @media (max-width: 1000px) { .addp-grid.movie-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .addp-grid.movie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .lib-head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
