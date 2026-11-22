@@ -59,6 +59,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Today:** date/weather (Open-Meteo), headlines (Reader), your teams, events today, movies this week, new episodes, premieres, charts, flight deals from Toronto, prediction markets (Polymarket), trending on X, newest YouTube uploads, Continue watching, recent podcasts, markets ticker (CNBC). It opens fresh every time on the Today view and the Hot 100 chart.
 - **Today / This week switch:** “This week” means tomorrow through the next seven days, not Monday–Sunday. It swaps today's teams/events for “Your teams this week” and “Events this week”, and hides headlines, trends, Continue watching, podcasts, YouTube uploads, PPV, prediction markets, flight deals and charts. Do not treat those sections as all-week features.
 - **Charts:** Billboard charts (Hot 100, Billboard 200, R&B/Hip-Hop, Latin, Afrobeats), movement markers. Row actions already: **Watch here** (YouTube video), **Spotify**, **Amazon Music**, **YouTube Music** when no video. There is no 30-second preview; do not propose one as new.
+- **Top 10 in Canada:** its own Today section above Charts, with **Netflix** (Canada Top 10) and **Trending in Canada** tabs, ten each; the same rows are on the laptop home after On now. Title rows and the home billboard offer **Open in Atlantic** when an exact-title Atlantic favourite exists, otherwise **Search in Atlantic** (`https://atlantic.bz/search?q=<title>`).
 - **Guide:** TV listings for favorite TV channels with Now and Timeline views, folder pills, search over title/description, show details, Watch here; Twitch live strip; Channel Finder. The Guide button/tab hides when there are no TV listings and no Twitch favorites. The guide job covers roughly now−30 min to now+30 h and refuses to run unless the guide is at least 165 minutes old.
 - **Sports:** Games and Standings, plus Game mode as a separate 330 px laptop column (never over a stream) with Scores/Odds; on a phone Game mode becomes the bottom ticker. Leagues in `src/leagues.js` (PL, LaLiga, Bundesliga, Ligue 1, UCL, Nations League, NFL, NBA) feed Sports, Standings, Game mode, odds and the ticker. Highlights for finished games (official channels), lineups board, Polymarket odds, PPV picker. Game rows already have Watch on a favorite, box score as a tile, and highlight buttons.
 - **Reader:** feed tabs (All, News, Sport, Man United, Entertainment, Tech, Travel, Podcasts & Video), unread counts, Mark all as read, read dimming, story view. There is **no Reader search**; the ⌘K palette does not search stories. Full article text is encrypted with a private reader key, with an unlock link; a story opens as a Reader tile, YouTube tile or podcast dock. Podcast/YouTube feeds feed the audio shelf/Today.
@@ -75,7 +76,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 235 tests as of Nov 22.
+`node --test tests/*.test.mjs` — 236 tests as of Nov 22.
 
 ## Not built yet — do not describe as existing
 
