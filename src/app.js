@@ -3888,12 +3888,13 @@ function showHero(item, { hold = false } = {}) {
   requestAnimationFrame(() => requestAnimationFrame(() => layer.classList.add('is-on')));
   // Older layers fade out under the new one, then go.
   [...layers.children].slice(0, -1).forEach((old) => setTimeout(() => old.remove(), 900));
-  hero.querySelector('.hero-info').replaceChildren(
+  hero.querySelector('.hero-info').replaceChildren(...[
     el('span', { class: 'hero-label', textContent: item.label }),
     el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
     item.meta ? el('p', { class: 'hero-meta', textContent: item.meta }) : null,
     item.desc ? el('p', { class: 'hero-desc', textContent: item.desc }) : null,
-    el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon('play', 16), el('span', { textContent: item.playLabel || 'Play' })));
+    el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon('play', 16), el('span', { textContent: item.playLabel || 'Play' })),
+  ].filter(Boolean));
 }
 
 function rotateHero() {
