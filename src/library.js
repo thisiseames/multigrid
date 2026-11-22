@@ -12,9 +12,10 @@ const GENERIC_FOLDERS = new Set([
   'animation', 'anime', 'documentary', 'family', 'romance', 'crime', 'mystery', 'war',
   'western', 'fantasy', 'adventure', 'classics', 'new',
 ]);
-const POSTER_KEY = 'multigrid.moviePosters.v2';
+const POSTER_KEY = 'multigrid.moviePosters.v3';
 const POSTER_TTL = 30 * 24 * 60 * 60 * 1000;
 const POSTER_EMPTY_TTL = 60 * 60 * 1000;
+const LIBRARY_VERSION = 3;
 
 export const librarySupported = () => typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
 
@@ -101,6 +102,17 @@ export function cleanShowName(value) {
     .replace(/\s*[-–—]\s*$/g, '')
     .replace(/\s+/g, ' ')
     .trim() || 'Other videos';
+}
+
+/** A movie title without release tags, but keeping a year that belongs in the title (1917). */
+export function cleanMovieTitle(value) {
+  return String(value || '')
+    .replace(/[._]+/g, ' ')
+    .replace(/\((?:19|20)\d{2}\)/g, ' ')
+    .replace(/\b(?:2160p|1080p|720p|576p|480p|10bit|8bit|web[- ]?dl|webrip|bluray|blu[- ]ray|brrip|hdtv|x264|x265|h\.?264|h\.?265|hevc|aac|ac3|ddp5[ .]?1|dts|remux|proper|repack|extended|uncut|remastered|hindi|english|esubs?|msubs?|amzn|nf|moviesmod|moviesheist|moviezverse|kyogo|4khdhub)\b/gi, ' ')
+    .replace(/[\s._\-–—(]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Season/episode and show name from a path such as Show/Season 3/Show S03E08.mp4. */
@@ -228,21 +240,21 @@ const parentOf = (path) => {
   return parts.join('/');
 };
 const stemOf = (name) => String(name || '').replace(/\.[^.]+$/, '');
-const yearOf = (value) => {
-  const found = String(value || '').match(/(?:^|[^\d])((?:19|20)\d{2})(?:[^\d]|$)/);
-  return found ? Number(found[1]) : 0;
-};
+const pageReleaseYear = (value) => Number(
+  String(value || '').match(/\((\d{4})(?:\s+(?:film|movie))?\)/i)?.[1] || 0,
+);
 
-/** A movie title and year from a folder/file name. */
+/** A movie title and year from a folder/file name. The last year before the release tags wins. */
 export function parseMovieFile(file, titleSource = '') {
   const parts = String(file.path || file.name || '').split('/').filter(Boolean);
   const name = parts.pop() || file.name || '';
   const raw = titleSource || stemOf(name);
-  const year = yearOf(raw);
-  let title = cleanShowName(raw);
-  if (!title || title === 'Other videos') {
-    title = stemOf(raw).replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Movie';
-  }
+  const years = [...raw.matchAll(/\b(?:19|20)\d{2}\b/g)];
+  const release = years.length > 1 ? years[years.length - 1] : (years[0]?.index > 2 ? years[0] : null);
+  const titlePart = release ? raw.slice(0, release.index) : raw;
+  const year = release ? Number(release[0]) : 0;
+  let title = cleanMovieTitle(titlePart);
+  if (!title) title = cleanMovieTitle(raw) || 'Movie';
   return {
     path: file.path,
     name,
@@ -302,7 +314,7 @@ async function scan(root, kind) {
   const files = [];
   await walk(root, '', files, normalKind(kind));
   const data = {
-    version: 2,
+    version: LIBRARY_VERSION,
     kind: normalKind(kind),
     rootName: root.name || '',
     scannedAt: Date.now(),
@@ -333,8 +345,13 @@ export async function loadLibrary(kind = 'tv') {
   const [root, index] = await Promise.all([readState(rootKey(mode)), readState(indexKey(mode))]);
   if (!root) return null;
   const permission = await permissionOf(root);
+  if (permission === 'granted' && (!index || Number(index.version) < LIBRARY_VERSION)) {
+    const data = await scan(root, mode);
+    await writeState(indexKey(mode), data);
+    return { ...data, needsPermission: false };
+  }
   return {
-    ...(index || { version: 2, kind: mode, rootName: root.name || '', scannedAt: 0, ...(mode === 'movies' ? { movies: [] } : { shows: [] }) }),
+    ...(index || { version: LIBRARY_VERSION, kind: mode, rootName: root.name || '', scannedAt: 0, ...(mode === 'movies' ? { movies: [] } : { shows: [] }) }),
     kind: mode,
     rootName: root.name || index?.rootName || '',
     needsPermission: permission !== 'granted',
@@ -423,7 +440,7 @@ function pageMatches(item, title, year) {
   if (!wanted || !page) return false;
   const titleMatches = page === wanted || page.includes(wanted) || wanted.includes(page);
   if (!titleMatches) return false;
-  const pageYear = yearOf(item.title);
+  const pageYear = pageReleaseYear(item.title);
   return !year || !pageYear || Math.abs(pageYear - year) <= 1;
 }
 
@@ -468,8 +485,7 @@ async function wikipediaPoster(title, year) {
     const pages = await wikipediaQuery(params);
     return pages.find((item) => pageMatches(item, title, year))?.thumbnail?.source || '';
   };
-  return await exact(title)
-    || await search([title, year, 'film'].filter(Boolean).join(' '))
+  return await search([title, year, 'film'].filter(Boolean).join(' '))
     || await search([title, 'film'].filter(Boolean).join(' '))
     || await exact(year ? `${title} (${year} film)` : title)
     || '';
