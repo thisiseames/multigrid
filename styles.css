@@ -255,7 +255,7 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
 .pod-speed { width: 44px; font-size: 11.5px; font-weight: 700; color: var(--text-2); }
 .pod-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; display: block; cursor: pointer; touch-action: none; }
 .pod-progress::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.08); }
-.pod-progress-fill { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); pointer-events: none; }
+.pod-progress-fill { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: #f5f5f7; pointer-events: none; }
 .pod-progress-thumb { position: absolute; left: 0; bottom: -3px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 2px #131315; opacity: 0; transform: scale(.7); transition: opacity .12s, transform .12s; pointer-events: none; }
 .pod-progress:hover::before, .pod-progress:hover .pod-progress-fill, .pod-progress.is-scrubbing::before, .pod-progress.is-scrubbing .pod-progress-fill { height: 4px; }
 .pod-progress:hover .pod-progress-thumb, .pod-progress:focus-visible .pod-progress-thumb, .pod-progress.is-scrubbing .pod-progress-thumb { opacity: 1; transform: scale(1); }
@@ -1462,8 +1462,8 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .podcast-box .ch-results { max-height: 56dvh; }
 .pod-results { padding: 4px 0; }
 .pod-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px; }
-.pod-find { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(142, 166, 232, .14); color: var(--accent); font-size: 12px; font-weight: 700; }
-.pod-find:hover { background: rgba(142, 166, 232, .24); }
+.pod-find { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: #f5f5f7; color: #0b0b0d; font-size: 12px; font-weight: 700; }
+.pod-find:hover { background: #fff; }
 .pod-find svg { width: 15px; height: 15px; }
 .pod-row { align-items: center; }
 .pod-row-actions { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
@@ -1481,7 +1481,18 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .pod-show-text b { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pod-show-text small { font-size: 11.5px; color: var(--text-2); }
 .pod-show-actions { flex: none; display: flex; align-items: center; gap: 8px; }
-.pod-open { font-size: 11.5px; color: var(--accent); white-space: nowrap; }
+.pod-open { font-size: 11.5px; color: #f5f5f7; white-space: nowrap; }
+/* Podcast controls are white / near-white; no periwinkle. */
+.podcast-box .ch-tab.is-on { background: #f5f5f7; color: #0b0b0d; }
+.podcast-box .ch-search:focus { border-color: #f5f5f7; }
+.podcast-box .ch-add, .podcast-box .pod-follow, .podcast-box .pod-open, .podcast-box .text-button,
+.pod-view .pod-follow, .pod-view .pod-open, .pod-view .text-button { color: #f5f5f7; }
+.podcast-box .pod-follow.is-following, .pod-view .pod-follow.is-following { color: var(--text-2); }
+.podcast-box .ch-add:hover { background: rgba(255, 255, 255, .08); }
+.podcast-box .ch-note a { color: #f5f5f7; }
+.podcast-box :focus-visible, .pod-view :focus-visible, .pod-find:focus-visible,
+.fcard.podcast-card :focus-visible, .podcast-dock :focus-visible { outline-color: #f5f5f7; }
+.pod-progress-fill { background: #f5f5f7; }
 @media (max-width: 640px), (hover: none) and (max-height: 500px) {
   .podcast-box { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; margin: 0; padding: calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom)); border-radius: 0; }
   .podcast-box .ch-results { flex: 1; min-height: 0; max-height: none; }
@@ -2144,17 +2155,17 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 .pod-list { list-style: none; margin: 6px 0 0; padding: 0; }
 .pod-list li + li { border-top: 1px solid var(--border); }
 .pod-ep { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 2px; text-align: left; color: var(--text); background: none; }
-.pod-ep:hover .pod-title { color: var(--accent); }
+.pod-ep:hover .pod-title { color: #f5f5f7; }
 .pod-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pod-title { font-size: 13.5px; font-weight: 650; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pod-meta { font-size: 12px; color: var(--text-2); }
 .pod-state { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
-.pod-ep.is-new .pod-state { background: rgba(142, 166, 232, .16); color: var(--accent); }
+.pod-ep.is-new .pod-state { background: #f5f5f7; color: #0b0b0d; }
 .pod-ep.is-partway .pod-state { background: rgba(255,255,255,.08); color: var(--text); }
 .pod-ep.is-played .pod-state { color: var(--text-2); }
 .pod-ep.is-played .pod-title { color: var(--text-2); }
 .pod-bar { position: absolute; left: 2px; right: 2px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
-.pod-bar span { display: block; height: 100%; background: var(--accent); }
+.pod-bar span { display: block; height: 100%; background: #f5f5f7; }
 body.is-phone .pod-ep { min-height: 56px; }
 body.is-phone .pod-back { height: 44px; padding: 0 16px 0 12px; font-size: 14px; }
 
