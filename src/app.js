@@ -1150,6 +1150,7 @@ function render() {
   // The laptop's empty screen plays MULTIGRID's opening sound as the wordmark draws together.
   if (wallNow && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
   $('stage').classList.toggle('is-empty-wall', wallNow);
+  syncHome(wallNow);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
@@ -3684,6 +3685,123 @@ function continueCard(item) {
       aria: { label: `Remove ${item.name} from Continue watching` },
       on: { click() { forgetPlace(item.key); } },
     }, el('span', { class: 'cw-x' }, icon('close', 14))));
+}
+
+/* Up Next: the laptop's home screen while nothing is playing. The MULTIGRID wordmark draws together
+   (with its sound), glides up into a header, and rows fade in: Continue watching, your teams' games
+   (tonight's, live, and last night's with highlights), new episodes today, and what's on now on your
+   channels. Every row comes from data MULTIGRID already has; an empty row isn't shown. */
+let homeAsked = 0;
+let homeTimer = null;
+let homeShownAt = 0;
+
+function homeCard({ art, name, sub, left, percent, live = false, onClick }) {
+  return el('li', { class: 'cwcard hcard' },
+    el('button', { type: 'button', class: 'cw-main', title: name, on: { click: onClick } },
+      el('span', { class: 'cw-art' }, art,
+        live ? el('span', { class: 'hcard-live', textContent: 'LIVE' }) : null,
+        Number.isFinite(percent) ? el('span', { class: 'cw-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, percent)).toFixed(1)}%` })) : null),
+      el('span', { class: 'cw-text' },
+        el('b', { class: 'cw-name', textContent: name }),
+        sub ? el('small', { class: 'cw-sub', textContent: sub }) : null,
+        left ? el('small', { class: 'cw-left', textContent: left }) : null)));
+}
+
+const homeRow = (title, items) => (items.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: title }), el('ul', { class: 'cw-row' }, ...items)) : null);
+
+function playFromHome(input, page = '') {
+  addStream(input, { mode: 'add' }, '', page);
+}
+
+async function drawHome() {
+  const home = $('home');
+  const asked = ++homeAsked;
+  const now = Date.now();
+  // Continue watching: newest first, as in Add stream.
+  const places = listPlaces(12).map((item) => {
+    const favorite = listFavorites().find((fav) => fav.input === item.input);
+    const source = parseSource(item.input);
+    return homeCard({
+      art: favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source),
+      name: item.name,
+      sub: seriesProgress(item.input) || item.from || '',
+      left: timeLeft(item.length - item.at),
+      percent: (item.at / item.length) * 100,
+      onClick: () => (source.kind === 'audio' ? openPodcast(item.input, { title: item.name, from: item.from }) : playFromHome(item.input, item.page)),
+    });
+  });
+  // Draw what's ready at once; the rest arrives in a moment.
+  const paint = (teams = [], fresh = [], onNow = []) => {
+    if (asked !== homeAsked) return;
+    home.replaceChildren(...[
+      homeRow('Continue watching', places),
+      teams.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: 'Your teams' }), el('ul', { class: 'mrow-list home-games' }, ...teams)) : null,
+      homeRow('New today', fresh),
+      homeRow('On now', onNow),
+    ].filter(Boolean));
+  };
+  paint();
+  const [sections, , episodes] = await Promise.all([
+    loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
+    loadGuide().catch(() => false),
+    episodesForFavorites().catch(() => []),
+    loadHighlights().catch(() => null),
+  ]);
+  // Your teams: live now, still to come today, and results from the last day and a half.
+  const games = [];
+  for (const { card } of sections ?? []) {
+    for (const match of [card.last, card.live, ...(card.upcoming ?? [])]) {
+      if (!match || games.some((game) => game.id === match.id)) continue;
+      const today = dayKey(match.start) === dayKey(now);
+      if (match.state === 'in' || (match.state === 'pre' && today) || (match.state === 'post' && now - match.start < 36 * 3600000)) games.push(match);
+    }
+  }
+  games.sort((a, b) => ({ in: 0, pre: 1, post: 2 }[a.state] - { in: 0, pre: 1, post: 2 }[b.state]) || a.start - b.start);
+  const teams = games.map((match) => matchRow(match, { withDay: match.state === 'post' && dayKey(match.start) !== dayKey(now) }));
+  // New today: series of yours with an episode out today.
+  const fresh = episodes.filter(({ info }) => isNewToday(info, now)).map(({ item, info }) => {
+    const nextToday = info.next && dayKey(info.next.at) === dayKey(now);
+    const episode = nextToday ? info.next : info.last;
+    return homeCard({ art: favoriteArt(item, parseSource(item.input)), name: item.name, sub: [episodeCode(episode), episode?.name].filter(Boolean).join(' · '), left: nextToday ? `New today · ${clock(info.next.at)}` : 'Aired today', onClick: () => playFromHome(item.input) });
+  });
+  // On now: your channels with a show on right now.
+  const onNow = listFavorites().map((item) => ({ item, listing: nowAndNext(item.name, parseSource(item.input)) }))
+    .filter(({ listing }) => listing?.current)
+    .slice(0, 16)
+    .map(({ item, listing }) => homeCard({
+      art: favoriteArt(item, parseSource(item.input)),
+      name: listing.current.title,
+      sub: item.name,
+      left: `${durationText(minutesLeft(listing.current))} left`,
+      percent: progressOf(listing.current) * 100,
+      live: Boolean(listing.current.live),
+      onClick: () => playFromHome(item.input),
+    }));
+  paint(teams, fresh, onNow);
+}
+
+/** Shows or hides the home screen with the empty wall (laptop only). */
+function syncHome(wall) {
+  const home = $('home');
+  const show = wall && !onPhoneScreen();
+  clearTimeout(homeTimer);
+  if (!show) {
+    home.hidden = true;
+    $('stage').classList.remove('has-home');
+    homeAsked++;
+    return;
+  }
+  const fresh = home.hidden;
+  home.hidden = false;
+  if (fresh) {
+    homeShownAt = Date.now();
+    home.replaceChildren();
+    // The rows come in as the wordmark settles (its animation runs 1.6 s).
+    homeTimer = setTimeout(() => { $('stage').classList.add('has-home'); drawHome(); }, 1500);
+  }
+  // Kept current while it's open: the On now bars, a game going live.
+  const tick = () => { homeTimer = setTimeout(() => { if (!home.hidden) { drawHome(); tick(); } }, 60000); };
+  if (!fresh) tick(); else setTimeout(tick, 1600);
 }
 
 /** The row at the top of Add stream with everything part-watched, newest first. */
