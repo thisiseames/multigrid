@@ -1,228 +1,236 @@
 {
- "updated": 1795311646692,
+ "updated": 1795312174419,
  "games": {
   "401876396": {
    "league": "Ligue 1",
    "title": "Strasbourg 0–1 Brest",
    "start": 1795290300000,
-   "videos": [
-    {
-     "id": "ABCa8soI9fw",
-     "channel": "beIN SPORTS USA",
-     "title": "Strasbourg vs Brest | HIGHLIGHTS Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401876398": {
    "league": "Ligue 1",
    "title": "Nice 2–3 PSG",
    "start": 1795277700000,
-   "videos": [
-    {
-     "id": "M8vjjAINQ2w",
-     "channel": "beIN SPORTS USA",
-     "title": "Nice vs Paris Saint-Germain | EXTENDED HIGHLIGHTS Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    },
-    {
-     "id": "3zbo5ghRLkU",
-     "channel": "beIN SPORTS USA",
-     "title": "Nice vs Paris Saint-Germain | HIGHLIGHTS Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401876399": {
    "league": "Ligue 1",
    "title": "Monaco 1–1 Auxerre",
    "start": 1795290300000,
-   "videos": [
-    {
-     "id": "0ERyyjvlF7k",
-     "channel": "beIN SPORTS USA",
-     "title": "Monaco vs Auxerre | HIGHLIGHTS | Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401876402": {
    "league": "Ligue 1",
    "title": "Lille 0–1 Lyon",
    "start": 1795290300000,
-   "videos": [
-    {
-     "id": "3FG_zx-obus",
-     "channel": "beIN SPORTS USA",
-     "title": "Lille vs Lyon | HIGHLIGHTS Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401876403": {
    "league": "Ligue 1",
    "title": "Lens 1–1 Toulouse",
    "start": 1795290300000,
-   "videos": [
-    {
-     "id": "cAGvTeG_S68",
-     "channel": "beIN SPORTS USA",
-     "title": "Lens vs Toulouse | HIGHLIGHTS | Ligue 1 | 11/21/2026 | beIN SPORTS USA"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
+  },
+  "401878754": {
+   "league": "Premier League",
+   "title": "Spurs 2–0 Ipswich",
+   "start": 1795273200000,
+   "checked": "CA",
+   "videos": []
   },
   "401878756": {
    "league": "Premier League",
    "title": "Aston Villa 0–0 Sunderland",
    "start": 1795273200000,
-   "videos": [
-    {
-     "id": "22n9oyWtQSM",
-     "channel": "NBC Sports",
-     "title": "Aston Villa v. Sunderland | PREMIER LEAGUE HIGHLIGHTS | 11/21/2026"
-    },
-    {
-     "id": "vwjhCaMIiMc",
-     "channel": "Aston Villa Football Club",
-     "title": "Villa 0-0 Sunderland | Premier League Highlights"
-    },
-    {
-     "id": "lcMsRsDOLlM",
-     "channel": "Sunderland AFC",
-     "title": "A Hard-Fought Point at Villa Park | Aston Villa 0-0 Sunderland AFC | Premier League Highlights"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401879232": {
    "league": "Premier League",
    "title": "Newcastle 2–2 Arsenal",
    "start": 1795282200000,
-   "videos": [
-    {
-     "id": "G8yraMfEpi0",
-     "channel": "NBC Sports",
-     "title": "Newcastle United v. Arsenal | PREMIER LEAGUE HIGHLIGHTS | 11/21/2026"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
+  },
+  "401879233": {
+   "league": "Premier League",
+   "title": "Man City 1–1 Fulham",
+   "start": 1795264200000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401879235": {
+   "league": "Premier League",
+   "title": "Coventry 3–2 C Palace",
+   "start": 1795273200000,
+   "checked": "CA",
+   "videos": []
   },
   "401879236": {
    "league": "Premier League",
    "title": "Chelsea 1–4 Leeds",
    "start": 1795273200000,
-   "videos": [
-    {
-     "id": "NCk_eUqcgEE",
-     "channel": "NBC Sports",
-     "title": "Chelsea v. Leeds United | PREMIER LEAGUE HIGHLIGHTS | 11/21/2026"
-    },
-    {
-     "id": "7FO9vPbudn4",
-     "channel": "Chelsea Football Club",
-     "title": "Chelsea 1-4 Leeds Utd | HIGHLIGHTS - Extended | Premier League 2026/27"
-    },
-    {
-     "id": "yD6SLduQ1PA",
-     "channel": "Chelsea Football Club",
-     "title": "Chelsea 1-4 Leeds United | HIGHLIGHTS | Premier League 2026/27"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401879238": {
    "league": "Premier League",
    "title": "Bournemouth 2–0 Nottm Forest",
    "start": 1795273200000,
-   "videos": [
-    {
-     "id": "cacYEeP4tFU",
-     "channel": "NBC Sports",
-     "title": "Bournemouth v. Nottingham Forest | PREMIER LEAGUE HIGHLIGHTS | 11/21/2026"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401882797": {
    "league": "LaLiga",
    "title": "Sevilla 1–1 Betis",
    "start": 1795282200000,
-   "videos": [
-    {
-     "id": "x7tdG5LUP0E",
-     "channel": "ESPN FC",
-     "title": "Sevilla vs. Real Betis | LALIGA Highlights | ESPN FC"
-    },
-    {
-     "id": "dQkp9JOW2WU",
-     "channel": "LALIGA EA SPORTS",
-     "title": "SEVILLA FC 1 - 1 REAL BETIS | HIGHLIGHTS LALIGA EA SPORTS"
-    },
-    {
-     "id": "0MnF16chXqg",
-     "channel": "Sevilla FC",
-     "title": "Sevilla FC - Real Betis (1-1) LALIGA | Resumen"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401882798": {
    "league": "LaLiga",
    "title": "Real Madrid 2–1 Celta Vigo",
    "start": 1795291200000,
-   "videos": [
-    {
-     "id": "m2pGF0F7HhE",
-     "channel": "ESPN FC",
-     "title": "LATE WINNER 👀 Real Madrid vs. Celta Vigo | LALIGA Highlights | ESPN FC"
-    },
-    {
-     "id": "pmjOx-ItOz4",
-     "channel": "LALIGA EA SPORTS",
-     "title": "REAL MADRID 2 - 1 CELTA | HIGHLIGHTS LALIGA EA SPORTS"
-    },
-    {
-     "id": "W8InB9bFuNE",
-     "channel": "Real Madrid",
-     "title": "HIGHLIGHTS | Real Madrid 2-1 Celta | LaLiga"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   },
   "401882799": {
    "league": "LaLiga",
    "title": "Rayo 0–1 Valencia",
    "start": 1795274100000,
-   "videos": [
-    {
-     "id": "AFtt31mdI68",
-     "channel": "LALIGA EA SPORTS",
-     "title": "RAYO VALLECANO 0 - 1 VALENCIA CF | HIGHLIGHTS LALIGA EA SPORTS"
-    },
-    {
-     "id": "zvPOAIQqhKQ",
-     "channel": "Valencia CF",
-     "title": "RAYO VALLECANO 0 - 1 VALENCIA CF | MATCH HIGHLIGHTS - MATCHDAY 13 OF LALIGA EA SPORTS 2026-27"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
+  },
+  "401882805": {
+   "league": "LaLiga",
+   "title": "Athletic 0–1 Espanyol",
+   "start": 1795204800000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401882806": {
+   "league": "LaLiga",
+   "title": "Alavés 3–1 Deportivo",
+   "start": 1795266000000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401884728": {
+   "league": "Bundesliga",
+   "title": "Elversberg 0–1 Freiburg",
+   "start": 1795271400000,
+   "checked": "CA",
+   "videos": []
   },
   "401884729": {
    "league": "Bundesliga",
    "title": "Schalke 0–0 Stuttgart",
    "start": 1795282200000,
-   "videos": [
-    {
-     "id": "OH2RDPHmdBA",
-     "channel": "Bundesliga",
-     "title": "SCHALKE 04 - VFB STUTTGART | Highlights | Matchday 10 – Bundesliga 2026/27"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
+  },
+  "401884731": {
+   "league": "Bundesliga",
+   "title": "Gladbach 0–1 Dortmund",
+   "start": 1795271400000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401884732": {
+   "league": "Bundesliga",
+   "title": "Union Berlin 1–5 RB Leipzig",
+   "start": 1795271400000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401884734": {
+   "league": "Bundesliga",
+   "title": "Frankfurt 1–0 Hoffenheim",
+   "start": 1795271400000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401884735": {
+   "league": "Bundesliga",
+   "title": "Leverkusen 4–0 Paderborn",
+   "start": 1795271400000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909305": {
+   "league": "NBA",
+   "title": "Hawks 111–97 Hornets",
+   "start": 1795219200000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909306": {
+   "league": "NBA",
+   "title": "Nets 111–113 Magic",
+   "start": 1795221000000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909307": {
+   "league": "NBA",
+   "title": "Cavaliers 128–119 Pacers",
+   "start": 1795221000000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909308": {
+   "league": "NBA",
+   "title": "Pistons 102–105 Raptors",
+   "start": 1795221000000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909309": {
+   "league": "NBA",
+   "title": "Bulls 94–98 Wizards",
+   "start": 1795222800000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909310": {
+   "league": "NBA",
+   "title": "Thunder 126–120 Pelicans",
+   "start": 1795222800000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909311": {
+   "league": "NBA",
+   "title": "Jazz 101–111 Suns",
+   "start": 1795228200000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909312": {
+   "league": "NBA",
+   "title": "Nuggets 133–124 Rockets",
+   "start": 1795230000000,
+   "checked": "CA",
+   "videos": []
+  },
+  "401909313": {
+   "league": "NBA",
+   "title": "Lakers 106–104 Kings",
+   "start": 1795230000000,
+   "checked": "CA",
+   "videos": []
   },
   "401910023": {
    "league": "NBA",
    "title": "76ers 132–129 Bucks",
    "start": 1795284000000,
-   "videos": [
-    {
-     "id": "Kyw8c2ComZ0",
-     "channel": "NBA",
-     "title": "BUCKS at 76ERS | FULL GAME HIGHLIGHTS | November 21, 2026"
-    },
-    {
-     "id": "sPwEBq08K5U",
-     "channel": "Philadelphia 76ers",
-     "title": "Game Highlights: Sixers Hold Off the Bucks at Home"
-    }
-   ]
+   "checked": "CA",
+   "videos": []
   }
  }
 }
