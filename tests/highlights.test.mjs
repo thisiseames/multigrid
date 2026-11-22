@@ -30,7 +30,9 @@ test('a video counts only when its page says it plays in Canada and on other sit
   assert.equal(canadaFromPage(page('"availableCountries":["US","CA","GB"]')), 'yes');
   assert.equal(canadaFromPage(page('"availableCountries":["US","PR"]')), 'no');
   assert.equal(canadaFromPage('{"playabilityStatus":{"status":"OK","playableInEmbed":false},"availableCountries":["CA"]}'), 'no');
-  assert.equal(canadaFromPage('{"playabilityStatus":{"status":"UNPLAYABLE"},"availableCountries":["CA"]}'), 'no');
+  assert.equal(canadaFromPage('{"playabilityStatus":{"status":"UNPLAYABLE","reason":"The uploader has not made this video available in your country"}}'), 'no');
+  // YouTube's bot check is not an answer about the video.
+  assert.equal(canadaFromPage('{"playabilityStatus":{"status":"LOGIN_REQUIRED","reason":"Sign in to confirm you’re not a bot"},"availableCountries":[]}'), 'unknown');
   assert.equal(canadaFromPage('<html>Sign in to confirm you’re not a bot</html>'), 'unknown');
   assert.equal(canadaFromPage(page('"other":1')), 'unknown');
 });

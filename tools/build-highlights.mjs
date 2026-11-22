@@ -136,22 +136,30 @@ const COUNTRY = 'CA';
  * 'unknown' when YouTube didn't show the page (its bot check), so nothing is decided.
  */
 export function canadaFromPage(html) {
+  return checkPage(html).answer;
+}
+
+/** The same, with what the page said, for the job's log. */
+export function checkPage(html) {
   const text = String(html || '');
-  if (!text.includes('playabilityStatus')) return 'unknown';
-  if (/"playableInEmbed":false/.test(text)) return 'no';
-  const status = text.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/)?.[1];
-  if (status && status !== 'OK') return 'no';
+  const status = text.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/)?.[1] || '';
+  const reason = text.match(/"playabilityStatus":\{"status":"[A-Z_]+","reason":"([^"]*)"/)?.[1] || '';
   const list = text.match(/"availableCountries":\[([^\]]*)\]/)?.[1];
-  if (list == null) return 'unknown';
-  return list.includes(`"${COUNTRY}"`) ? 'yes' : 'no';
+  const said = `${status || 'no status'}${reason ? ` (${reason})` : ''}${list == null ? ', no country list' : ''}`;
+  // A sign-in or bot check says nothing about the video itself.
+  if (!status || status === 'LOGIN_REQUIRED' || /sign in|bot/i.test(reason)) return { answer: 'unknown', said };
+  if (/"playableInEmbed":false/.test(text)) return { answer: 'no', said: `${said}, not on other sites` };
+  if (list != null) return { answer: list.includes(`"${COUNTRY}"`) ? 'yes' : 'no', said };
+  if (status !== 'OK' && /country|region/i.test(reason)) return { answer: 'no', said };
+  return { answer: 'unknown', said };
 }
 
 async function playsInCanada(id) {
   const response = await fetch(`https://www.youtube.com/watch?v=${id}&hl=en`, {
     headers: { 'User-Agent': BROWSER, 'Accept-Language': 'en-US' }, redirect: 'manual', signal: AbortSignal.timeout(15000),
   }).catch(() => null);
-  if (!response || response.status !== 200) return 'unknown';
-  return canadaFromPage(await response.text());
+  if (!response || response.status !== 200) return { answer: 'unknown', said: `page answered ${response?.status ?? 'nothing'}` };
+  return checkPage(await response.text());
 }
 
 /** 200: other sites may play it. 401: its owner said no. */
@@ -184,9 +192,10 @@ async function main() {
       if (videos.length >= 3) break;
       await pause(1500);
       if (!(await embeddable(pick.id))) { turnedDown.push(`${pick.channel} (not on other sites)`); continue; }
-      const canada = await playsInCanada(pick.id);
-      if (canada === 'unknown') { unsure = true; break; }
-      if (canada === 'no') { turnedDown.push(`${pick.channel} (not in Canada)`); continue; }
+      const { answer: canada, said } = await playsInCanada(pick.id);
+      if (process.env.HIGHLIGHT_DEBUG) console.log(`    ${pick.id} ${pick.channel}: ${canada} — ${said}`);
+      if (canada === 'unknown') { unsure = true; console.log(`    ${pick.channel}: YouTube's page said ${said}`); break; }
+      if (canada === 'no') { turnedDown.push(`${pick.channel} (not in Canada: ${said})`); continue; }
       videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
     }
     if (unsure) {
