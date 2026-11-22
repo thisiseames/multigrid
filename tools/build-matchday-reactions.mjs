@@ -13,12 +13,17 @@ const DAY = 86400000;
 const WINDOW_BEFORE = 2 * 3600000;
 const WINDOW_AFTER = 8 * 3600000;
 
-const uploadsOf = (channelId) => fetch(`https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${channelId.slice(2)}`, {
-  signal: AbortSignal.timeout(12000),
-})
-  .then((response) => (response.ok ? response.text() : ''))
-  .then(parseFeed)
-  .catch(() => []);
+const uploadsOf = async (channelId) => {
+  const url = `https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${channelId.slice(2)}`;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      if (response.ok) return parseFeed(await response.text());
+    } catch { /* try once more */ }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return null;
+};
 
 /** Only run near a Man Utd game; the workflow can be scheduled often without hammering YouTube. */
 async function nearMatch(now) {
@@ -36,24 +41,38 @@ async function main() {
   const now = Date.now();
   if (!(await nearMatch(now))) return;
   const manUtd = /\bman(chester)?\.?\s*(utd|united)\b|\bunited\b|\bold trafford\b|\bpochettino\b|\bred devils\b|\bcarrick\b|\bINEOS\b|\bglazers?\b/i;
+  let previous = {};
+  try { previous = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch { /* first run */ }
+  const previousBySource = new Map();
+  for (const video of previous.videos ?? []) {
+    if (!previousBySource.has(video.source)) previousBySource.set(video.source, []);
+    previousBySource.get(video.source).push(video);
+  }
   const videos = [];
+  const failed = [];
   for (const [channel, source] of Object.entries(MATCHDAY_FANS)) {
-    for (const upload of (await uploadsOf(channel)).filter((item) => now - item.published < 2 * DAY && manUtd.test(item.title))) {
+    const uploads = await uploadsOf(channel);
+    if (!uploads) { failed.push(source); continue; }
+    const fresh = uploads.filter((item) => now - item.published < 2 * DAY && manUtd.test(item.title));
+    console.log(`${source}: ${uploads.length} uploads, ${fresh.length} Man Utd`);
+    for (const upload of fresh) {
       if (videos.some((video) => video.id === upload.id)) continue;
       videos.push({ id: upload.id, title: upload.title, published: upload.published, source });
     }
   }
+  // A channel's feed failing must not make that channel vanish from the row.
+  for (const source of failed) {
+    const kept = (previousBySource.get(source) ?? []).filter((video) => now - video.published < 2 * DAY);
+    console.log(`${source}: feed unavailable, keeping ${kept.length} previous`);
+    for (const video of kept) {
+      if (!videos.some((item) => item.id === video.id)) videos.push(video);
+    }
+  }
   videos.sort((a, b) => b.published - a.published);
-  // A YouTube hiccup must not wipe the last good reaction list.
   if (!videos.length) return;
-  let previous = '';
-  try { previous = fs.readFileSync(OUT, 'utf8'); } catch { /* first run */ }
   const next = `${JSON.stringify({ updated: now, videos }, null, 1)}\n`;
   // Don't create a commit every five minutes when nothing changed.
-  try {
-    const old = JSON.parse(previous || '{}');
-    if (JSON.stringify(old.videos ?? []) === JSON.stringify(videos)) return;
-  } catch { /* write a fresh file */ }
+  if (JSON.stringify(previous.videos ?? []) === JSON.stringify(videos)) return;
   fs.writeFileSync(OUT, next);
   console.log(`Matchday reactions: ${videos.length} videos from ${new Set(videos.map((video) => video.source)).size} channels.`);
 }
