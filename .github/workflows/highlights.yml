@@ -24,6 +24,7 @@ jobs:
         env:
           HIGHLIGHT_SEARCHES: '40'
           HIGHLIGHT_MINUTES: '15'
+          HIGHLIGHT_DEBUG: '1'
       - name: Save the highlights
         run: |
           git config user.name "multigrid-reader"

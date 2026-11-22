@@ -170,6 +170,7 @@ async function main() {
       if (index) { await pause(GAP); searches++; }
       const results = await search(query);
       if (!results) { blocked = true; break; }
+      if (process.env.HIGHLIGHT_DEBUG) console.log(`    [${query}] ${results.slice(0, 8).map((result) => `${result.channel} (${result.ago})`).join(' | ')}`);
       for (const pick of pickHighlights(results, game, OFFICIAL[game.league.id] ?? [])) {
         if (videos.length >= 3) break;
         if (videos.some((video) => video.id === pick.id)) continue;
