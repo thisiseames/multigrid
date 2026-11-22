@@ -42,6 +42,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
+import { loadDaddyLive } from './daddylive.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
@@ -726,31 +727,137 @@ function ppvCard(event, target, eager = false, before = null) {
     sub ? el('small', { textContent: sub }) : null));
 }
 
-/** PPV.st's live events, with their own posters. Fetched only while this dialog is open. */
+function addDaddyLive(event, channel, target) {
+  $('ppv-box').close();
+  $('source-dialog').close();
+  const name = event.channels.length > 1 ? `${event.name} · ${channel.name}` : event.name;
+  if (!addStream(channel.url, target, name)) return;
+  saveFavorite(channel.url, name, 'Daddy Live');
+  toast(`Adding ${name}…`);
+}
+
+/** One Daddy Live event card. The API has no posters, so it uses the neutral play art. */
+function daddyCard(event, target, eager = false, before = null) {
+  const links = event.channels.length;
+  const sub = [event.category, event.source || 'Daddy Live', links > 1 ? `${links} links` : '']
+    .filter(Boolean).join(' · ');
+  const title = links > 1 ? `Choose a link for ${event.name}` : `Add ${event.name}`;
+  return el('button', {
+    type: 'button',
+    class: 'ppv-card',
+    title,
+    on: {
+      click() {
+        before?.();
+        if (links > 1) chooseDaddyLink(event, target);
+        else addDaddyLive(event, event.channels[0], target);
+      },
+    },
+  },
+  el('span', { class: 'ppv-art-wrap' },
+    el('span', { class: 'ppv-art' }, icon('play', 24)),
+    el('span', { class: 'ppv-badge is-live', textContent: 'LIVE' })),
+  el('span', { class: 'ppv-text' },
+    el('b', { textContent: event.name }),
+    sub ? el('small', { textContent: sub }) : null));
+}
+
+/** A small picker for an event with more than one Daddy Live link. */
+function chooseDaddyLink(event, target) {
+  const box = el('dialog', {
+    class: 'dialog dl-links',
+    aria: { label: `Links for ${event.name}` },
+  });
+  const links = event.channels.map((channel) => el('button', {
+    type: 'button',
+    class: 'dl-link',
+    on: {
+      click() {
+        box.close();
+        addDaddyLive(event, channel, target);
+      },
+    },
+  },
+  el('b', { textContent: channel.name }),
+  el('small', { textContent: channel.source || event.source || 'Daddy Live' })));
+  box.append(
+    el('div', { class: 'ch-head' },
+      el('h2', { textContent: 'Choose a link' }),
+      iconButton('close', 'Close', () => box.close())),
+    el('p', { class: 'dl-event', textContent: event.name }),
+    el('div', { class: 'dl-link-list' }, ...links),
+    el('p', { class: 'ch-note', textContent: 'Links can stop working; choose another if the player says the channel is unavailable.' }));
+  box.addEventListener('close', () => box.remove(), { once: true });
+  document.body.append(box);
+  openDialog(box);
+  box.tabIndex = -1;
+  box.focus({ preventScroll: true });
+}
+
+/** PPV.st and Daddy Live's live events. Fetched only while this dialog is open. */
 function openPPV(target = sourceTarget) {
   const box = $('ppv-box');
   if (box.open) return;
-  let events = [];
+  let provider = 'ppv';
+  let ppvEvents = [];
+  let daddyEvents = [];
+  const loaded = { ppv: false, daddy: false };
   let category = 'All';
+  let refreshTimer = null;
   const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search events, teams or shows', autocomplete: 'off' });
+  const sources = el('div', { class: 'gviews ppv-sources', role: 'tablist', aria: { label: 'Event sources' } });
   const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
   const count = el('p', { class: 'ch-count' });
   const results = el('div', { class: 'ppv-results' });
+  const note = el('p', { class: 'ch-note' });
+  const currentEvents = () => (provider === 'daddy' ? daddyEvents : ppvEvents);
+  const eventText = (event) => [
+    event.name,
+    event.category,
+    ...(event.categories ?? []),
+    event.tag,
+    event.source,
+    ...(event.channels ?? []).map((channel) => channel.name),
+  ].filter(Boolean).join(' ').toLocaleLowerCase();
   const paint = () => {
     const query = search.value.trim().toLocaleLowerCase();
-    const pool = events.filter((event) => (category === 'All' || event.category === category)
-      && (!query || `${event.name} ${event.tag} ${event.source} ${event.category}`.toLocaleLowerCase().includes(query)));
+    const categoryKey = category.toLocaleLowerCase();
+    const pool = currentEvents().filter((event) => {
+      const eventCategories = event.categories?.length ? event.categories : [event.category];
+      const inCategory = category === 'All'
+        || eventCategories.some((name) => name.toLocaleLowerCase() === categoryKey);
+      return inCategory && (!query || eventText(event).includes(query));
+    });
+    const noun = provider === 'daddy' ? 'live event' : 'event';
     count.textContent = query
       ? `${pool.length} match${pool.length === 1 ? '' : 'es'}`
-      : `${pool.length} event${pool.length === 1 ? '' : 's'}`;
+      : `${pool.length} ${noun}${pool.length === 1 ? '' : 's'}`;
     results.replaceChildren(...(pool.length
-      ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => ppvCard(event, target, index < 8)))]
-      : [el('p', { class: 'ch-empty', textContent: query ? 'No events match.' : 'No PPV events right now.' })]));
+      ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => (
+        provider === 'daddy'
+          ? daddyCard(event, target, index < 8)
+          : ppvCard(event, target, index < 8)
+      )))]
+      : [el('p', {
+        class: 'ch-empty',
+        textContent: query
+          ? 'No events match.'
+          : provider === 'daddy' ? 'No Daddy Live events are live right now.' : 'No PPV events right now.',
+      })]));
   };
   const drawCategories = () => {
-    const present = [...new Set(events.map((event) => event.category).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b));
-    if (category !== 'All' && !present.includes(category)) category = 'All';
+    const byKey = new Map();
+    for (const event of currentEvents()) {
+      const names = provider === 'daddy' && event.categories?.length ? event.categories : [event.category];
+      for (const name of names) {
+        const key = String(name || '').toLocaleLowerCase();
+        if (name && !byKey.has(key)) byKey.set(key, name);
+      }
+    }
+    const present = [...byKey.values()]
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const categoryKey = category.toLocaleLowerCase();
+    if (category !== 'All') category = byKey.get(categoryKey) || 'All';
     cats.replaceChildren(...['All', ...present].map((name) => el('button', {
       type: 'button',
       role: 'tab',
@@ -766,19 +873,61 @@ function openPPV(target = sourceTarget) {
       },
     })));
   };
-  const load = (force = false) => {
-    count.textContent = 'Loading…';
-    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading PPV events…' }));
-    loadPPV(force).then((list) => {
-      if (!box.open) return;
+  const sourceNote = () => (provider === 'daddy'
+    ? 'Live events from Daddy Live. Links can stop working; try another link from the same event.'
+    : 'Live and upcoming events and posters from PPV.st.');
+  const drawSources = () => {
+    sources.replaceChildren(...[
+      ['ppv', 'PPV.st'],
+      ['daddy', 'Daddy Live'],
+    ].map(([value, label]) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `gview${provider === value ? ' is-on' : ''}`,
+      aria: { selected: String(provider === value) },
+      textContent: label,
+      on: {
+        click() {
+          if (provider === value) return;
+          provider = value;
+          category = 'All';
+          search.value = '';
+          search.placeholder = value === 'daddy' ? 'Search Daddy Live events or teams' : 'Search events, teams or shows';
+          drawSources();
+          drawCategories();
+          paint();
+          if (!loaded[value]) load();
+        },
+      },
+    })));
+    note.textContent = sourceNote();
+  };
+  const load = (force = false, quiet = false) => {
+    const wanted = provider;
+    if (!quiet) {
+      count.textContent = 'Loading…';
+      results.replaceChildren(el('p', {
+        class: 'ch-empty',
+        textContent: `Loading ${wanted === 'daddy' ? 'Daddy Live' : 'PPV'} events…`,
+      }));
+    }
+    const ask = wanted === 'daddy' ? loadDaddyLive(force) : loadPPV(force);
+    ask.then((list) => {
+      if (!box.open || provider !== wanted) return;
       if (!list) {
+        if (quiet) return;
         count.textContent = '';
         results.replaceChildren(
-          el('p', { class: 'ch-empty', textContent: "PPV.st isn't answering right now." }),
+          el('p', {
+            class: 'ch-empty',
+            textContent: wanted === 'daddy' ? "Daddy Live isn't answering right now." : "PPV.st isn't answering right now.",
+          }),
           el('button', { type: 'button', class: 'text-button', textContent: 'Try again', on: { click: () => load(true) } }));
         return;
       }
-      events = list;
+      loaded[wanted] = true;
+      if (wanted === 'daddy') daddyEvents = list;
+      else ppvEvents = list;
       drawCategories();
       paint();
     });
@@ -786,14 +935,20 @@ function openPPV(target = sourceTarget) {
   search.addEventListener('input', paint);
   box.replaceChildren(
     el('div', { class: 'ch-head' }, el('h2', { textContent: 'PPV events' }), iconButton('close', 'Close', () => box.close())),
+    sources,
     search,
     cats,
     count,
     results,
-    el('p', { class: 'ch-note', textContent: 'Live and upcoming events and posters from PPV.st.' }));
+    note);
+  drawSources();
   openDialog(box);
   if (!document.body.classList.contains('is-phone')) search.focus();
   load();
+  refreshTimer = setInterval(() => {
+    if (box.open && provider === 'daddy') load(true, true);
+  }, 60_000);
+  box.addEventListener('close', () => clearInterval(refreshTimer), { once: true });
 }
 
 /** One search box for favourites, layouts, PPV events and the main actions. */
