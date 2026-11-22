@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
   --bg: #000;
-  --chrome: #0d0d10;
+  --chrome: #000;
   --surface: #161618;
   --raised: #1f1f22;
   --hover: rgba(255, 255, 255, 0.07);
