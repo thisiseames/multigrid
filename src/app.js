@@ -5834,7 +5834,7 @@ function renderGuide() {
       ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
       : el('p', { class: 'match-quiet is-empty', textContent: `No shows on your channels match “${guideQuery}” in the guide, which runs about a day ahead.` }));
   } else if (guideView === 'timeline') {
-    body = el('div', { class: 'gbody is-timeline' }, timelineView(manUtd ? manUtdList.map(({ item }) => item) : rows, manUtd ? isManUtdShow : null));
+    body = el('div', { class: 'gbody is-timeline' }, timelineView(manUtd ? manUtdList.map(({ item }) => ({ item })) : rows, manUtd ? isManUtdShow : null));
   } else {
     const shown = guideSections().sections.reduce((sum, section) => sum + section.rows.length, 0);
     const withoutSchedule = Math.max(0, total - shown - twitchRows.length);
