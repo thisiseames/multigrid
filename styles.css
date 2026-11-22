@@ -2719,3 +2719,5 @@ body.is-phone .match-watch:hover { background: rgba(255,255,255,.2); }
 body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-shadow: none; transition: background .6s ease, border-color .6s ease; }
 /* The top bar is always black, the same as the splash and home screen. */
 .topbar { background: #000; }
+/* The sound row and each tile's top bar are black too, matching the top bar. */
+.mixer, .strip, body.is-phone .strip { background: #000; }
