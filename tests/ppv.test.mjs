@@ -89,3 +89,13 @@ test('the PPV list skips entries with no name or no playable address', () => {
   assert.ok(!names.includes('No stream'));
   assert.ok(!names.includes(''));
 });
+
+test('darts is spotted in any source: a PPV.st category, a Daddy Live category list, a Matchora sport or a name', async () => {
+  const { isDarts } = await import('../src/ppv.js');
+  assert.ok(isDarts({ category: 'Darts', name: 'Grand Slam' }));
+  assert.ok(isDarts({ categories: ['Live Events', 'Darts'], name: 'PDC' }));
+  assert.ok(isDarts({ sport: 'darts', name: 'Final' }));
+  assert.ok(isDarts({ name: 'Grand Slam of Darts | Final' }));
+  assert.ok(!isDarts({ category: 'Football', name: 'Dartford vs. Maidstone' }));
+  assert.ok(!isDarts(null));
+});

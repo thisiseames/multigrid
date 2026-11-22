@@ -43,7 +43,7 @@ import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendK
 import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
-import { loadPPV, todayPPV } from './ppv.js';
+import { isDarts, loadPPV, todayPPV } from './ppv.js';
 import { loadDaddyLive } from './daddylive.js';
 import { loadMatchora } from './matchora.js';
 import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './zlive.js';
@@ -1202,6 +1202,8 @@ function openPPV(target = sourceTarget) {
         return;
       }
       loaded[wanted] = true;
+      // No darts from any source.
+      list = list.filter((event) => !isDarts(event));
       if (wanted === 'daddy') daddyEvents = list;
       else if (wanted === 'matchora') { matchoraEvents = list; matchoraAt = Date.now(); }
       else ppvEvents = list;

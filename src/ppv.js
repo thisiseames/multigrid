@@ -61,8 +61,10 @@ export function normalizePPV(data, now = Date.now()) {
   });
 }
 
-const skipToday = (event) => event.category === 'Ice Hockey' || event.category === 'Darts'
-  || /\bdarts\b/i.test(event.name || '')
+/** Darts, from any source (PPV.st, Daddy Live, Matchora): the owner doesn't want it anywhere. */
+export const isDarts = (event) => /\bdarts?\b/i.test([event?.category, event?.sport, event?.league, event?.tag, event?.name, ...(event?.categories ?? [])].filter(Boolean).join(' '));
+
+const skipToday = (event) => event.category === 'Ice Hockey' || isDarts(event)
   || /\b(college|ncaa)\b/i.test(`${event.tag} ${event.source}`);
 
 /** The six events Today shows: live or starting in the next six hours, without college sports, hockey or darts. */
