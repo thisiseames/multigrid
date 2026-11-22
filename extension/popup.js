@@ -1,4 +1,4 @@
-const APP = 'https://thisiseames.github.io/multigrid/';
+const APP = 'https://multigrid.club/';
 // multigrid.club is MULTIGRID's own address; the GitHub one forwards there once it's switched on.
 const APP_TABS = ['https://multigrid.club/*', 'https://www.multigrid.club/*', 'https://thisiseames.github.io/multigrid/*', 'http://localhost:5190/*'];
 const KIND = {
