@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MULTIGRID Sound",
-  "version": "1.12",
+  "version": "1.13",
   "description": "Lets MULTIGRID's sound mixer reach players inside embedded streams, and sends the page you are on to MULTIGRID as a stream or favorite.",
   "icons": {
     "16": "icon-16.png",
@@ -18,6 +18,20 @@
     }
   },
   "content_scripts": [
+    {
+      "matches": [
+        "https://thisiseames.github.io/multigrid/*",
+        "https://multigrid.club/*",
+        "https://www.multigrid.club/*",
+        "http://localhost:5190/*",
+        "http://127.0.0.1:5190/*"
+      ],
+      "all_frames": false,
+      "run_at": "document_start",
+      "js": [
+        "carry.js"
+      ]
+    },
     {
       "matches": [
         "<all_urls>"
@@ -43,7 +57,8 @@
   ],
   "permissions": [
     "declarativeNetRequest",
-    "webNavigation"
+    "webNavigation",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
