@@ -527,6 +527,12 @@ function hlsPlayer(source, options) {
     canVolume: levelWorks,
     place: () => keepPlace.place(),
     start() {
+      if (source.direct) {
+        // A plain video file: the browser plays it itself.
+        video.addEventListener('error', () => { if (!destroyed) onError("This video didn't load. It may have been moved or taken down."); }, { once: true });
+        video.src = source.url;
+        return;
+      }
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         // Native playback gives no reason when it fails, so hls.js is asked as a second
         // opinion: it may play the stream, and if not, it can say what went wrong.

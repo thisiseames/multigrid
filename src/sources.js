@@ -410,6 +410,10 @@ export function parseSource(raw) {
     || host === 'platform.twitter.com' || host === 't.co') {
     return parseX(url, host, input);
   }
+  // A plain video file (ESPN's match videos, say) plays in the same video player as a stream.
+  if (/\.(mp4|m4v|webm)$/i.test(url.pathname)) {
+    return { ok: true, input, kind: 'hls', direct: true, label: `Video · ${host}`, openUrl: url.href, url: url.href };
+  }
   if (/\.m3u8$/i.test(url.pathname)) {
     return { ok: true, input, kind: 'hls', label: `HLS · ${host}`, openUrl: url.href, url: url.href };
   }

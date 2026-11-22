@@ -1,4 +1,4 @@
-# Man Utd Matchday: plan (Nov 22, waiting for the owner's "go")
+# Man Utd Matchday: plan (Nov 22; owner said go; built Nov 22)
 
 ## 1. Running cost
 $0 a month. ESPN match data, Polymarket odds, Man Utd's YouTube feed and the TV guide are free, keyless, fetched by the browser. Only meter: internet data. While the match centre is open it re-checks ESPN every 30 s (live file ~400 KB uncompressed, ~40–60 KB as sent) → roughly 5–10 MB per match, plus ~1 MB Polymarket. Phone checks only while the match centre is open.
