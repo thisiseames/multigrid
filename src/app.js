@@ -51,7 +51,7 @@ import {
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
-import { openLabel, topCharts, topLine } from './top10.js';
+import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -4053,7 +4053,8 @@ function showHero(item, { hold = false } = {}) {
     item.desc ? el('p', { class: 'hero-desc', textContent: item.desc }) : null,
     el('div', { class: 'hero-buttons' },
       el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(item.playLabel?.startsWith('Open on') ? 'open' : 'play', 16), el('span', { textContent: item.playLabel || 'Play' })),
-      item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null),
+      item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null,
+      item.atlantic ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.atlantic.url) } }, icon('open', 16), el('span', { textContent: item.atlantic.label })) : null),
   ].filter(Boolean));
 }
 
@@ -4225,6 +4226,7 @@ async function drawHome() {
   // What Canada is watching: Netflix's Top 10, and the most popular titles on every service.
   const charts = topCharts(top);
   const chartRow = (id, label) => (charts.find((chart) => chart.id === id)?.entries ?? []).map((entry) => {
+    const atlantic = atlanticTarget(entry.title, favorites);
     const item = {
       key: `t:${id}:${entry.rank}:${entry.title}`, label: `#${entry.rank} · ${label}`, title: entry.title, rank: entry.rank,
       meta: topLine(entry),
@@ -4234,6 +4236,7 @@ async function drawHome() {
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
       playLabel: entry.trailer ? 'Play trailer' : openLabel(entry),
       link: entry.trailer && entry.url ? { label: openLabel(entry), url: entry.url } : null,
+      atlantic,
       play: () => (entry.trailer ? playFromHome(`https://www.youtube.com/watch?v=${entry.trailer}`) : entry.url && openLink(entry.url)),
     };
     return withArt(item, entry.title);
@@ -6098,9 +6101,11 @@ function chartRow(entry, chart, list) {
 /** One title in the Netflix or Trending tab: tap it for its trailer and where it streams. */
 function topRow(entry, list) {
   const act = (name, label, onClick) => el('button', { type: 'button', class: 'chart-act', on: { click: onClick } }, icon(name, 14), label);
+  const atlantic = atlanticTarget(entry.title, listFavorites());
   const actions = el('div', { class: 'chart-actions', hidden: true },
     entry.trailer ? act('play', 'Watch trailer', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${entry.trailer}`); }) : null,
-    entry.url ? act('open', openLabel(entry), () => openLink(entry.url)) : null);
+    entry.url ? act('open', openLabel(entry), () => openLink(entry.url)) : null,
+    atlantic ? act('open', atlantic.label, () => openLink(atlantic.url)) : null);
   const main = el('button', {
     type: 'button',
     class: 'trow-main',

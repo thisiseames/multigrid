@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { justWatchTitles, netflixMatch, netflixWeek, serviceName } from '../tools/top10-rows.mjs';
-import { openLabel, topCharts, topLine } from '../src/top10.js';
+import { atlanticTarget, openLabel, topCharts, topLine } from '../src/top10.js';
 
 const HEAD = 'country_name\tcountry_iso2\tweek\tcategory\tweekly_rank\tshow_title\tseason_title\tcumulative_weeks_in_top_10';
 const row = (...cells) => cells.join('\t');
@@ -88,6 +88,19 @@ test('the line under a title, and the button that opens it', () => {
   assert.equal(topLine({ service: '', season: '', weeks: 0 }), 'Buy or rent');
   assert.equal(openLabel({ service: 'Crave' }), 'Open on Crave');
   assert.equal(openLabel({ service: '' }), 'Open on JustWatch');
+});
+
+test('Atlantic opens an exact saved title, otherwise searches by title', () => {
+  const favorites = [
+    { name: 'THE BODY', input: 'https://atlantic.bz/watch/123/1/1' },
+    { name: 'The Body', input: 'https://example.com/title/123' },
+    { name: 'Black Doves', input: 'https://atlantic.bz/watch/456/1/1' },
+  ];
+  assert.deepEqual(atlanticTarget('The Body', favorites), { label: 'Open in Atlantic', url: 'https://atlantic.bz/watch/123/1/1' });
+  assert.deepEqual(atlanticTarget('Black Doves', favorites), { label: 'Open in Atlantic', url: 'https://atlantic.bz/watch/456/1/1' });
+  assert.deepEqual(atlanticTarget('Unknown Title', favorites), { label: 'Search in Atlantic', url: 'https://atlantic.bz/search?q=Unknown%20Title' });
+  assert.deepEqual(atlanticTarget('The Body', [{ name: 'The Body', input: 'https://atlantic.bz/' }]), { label: 'Search in Atlantic', url: 'https://atlantic.bz/search?q=The%20Body' });
+  assert.equal(atlanticTarget('', favorites), null);
 });
 
 test("a Netflix title in JustWatch's search: the same name first, else one that holds every word", () => {

@@ -44,3 +44,28 @@ export function topLine(entry, { withService = true } = {}) {
 
 /** The button that opens a title where it streams: "Open on Crave", "Open on JustWatch". */
 export const openLabel = (entry) => `Open on ${entry.service || 'JustWatch'}`;
+
+const titleKey = (value) => String(value || '')
+  .toLocaleLowerCase()
+  .normalize('NFKD')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ')
+  .replace(/^(?:the|a|an)\s+/, '')
+  .trim();
+
+/** An exact saved Atlantic title, otherwise its search page. Null for an empty title. */
+export function atlanticTarget(title, favorites = []) {
+  const key = titleKey(title);
+  if (!key) return null;
+  const saved = (Array.isArray(favorites) ? favorites : []).find((item) => {
+    if (!item || typeof item.input !== 'string' || typeof item.name !== 'string') return false;
+    try {
+      const url = new URL(item.input);
+      if (!/(^|\.)atlantic\.bz$/i.test(url.hostname) || url.pathname === '/') return false;
+      return titleKey(item.name) === key;
+    } catch {
+      return false;
+    }
+  });
+  if (saved) return { label: 'Open in Atlantic', url: saved.input };
+  return { label: 'Search in Atlantic', url: `https://atlantic.bz/search?q=${encodeURIComponent(title)}` };
+}
