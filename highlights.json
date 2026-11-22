@@ -1,5 +1,5 @@
 {
- "updated": 1795318866997,
+ "updated": 1795320451801,
  "games": {
   "401876396": {
    "league": "Ligue 1",
@@ -511,7 +511,13 @@
    "title": "Mavericks 110–100 Clippers",
    "start": 1795309200000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "K6rwrBbq2C0",
+     "title": "CLIPPERS at MAVERICKS | FULL GAME HIGHLIGHTS | November 21, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401910026": {
    "league": "NBA",
@@ -519,6 +525,11 @@
    "start": 1795309200000,
    "sources": "feeds",
    "videos": [
+    {
+     "id": "p6sCv2RIrwQ",
+     "title": "GRIZZLIES at TIMBERWOLVES | FULL GAME HIGHLIGHTS | November 21, 2026",
+     "rank": 3.5
+    },
     {
      "id": "h-d1ldEnZRg",
      "title": "Isaiah Stewart Highlights vs Minnesota Timberwolves",
@@ -528,11 +539,6 @@
      "id": "pe09QoL5jog",
      "title": "Ty Jerome Highlights vs Minnesota Timberwolves",
      "rank": 0.5
-    },
-    {
-     "id": "urxeTeETCbY",
-     "title": "Cedric Coward Highlights vs Minnesota Timberwolves",
-     "rank": 0.5
     }
    ]
   },
@@ -541,7 +547,23 @@
    "title": "Spurs 114–91 Pelicans",
    "start": 1795309200000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "7Zl2RWGcoqs",
+     "title": "PELICANS at SPURS | FULL GAME HIGHLIGHTS | November 21, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "rPT-JxFzbBA",
+     "title": "HIGHLIGHTS: WEMBY DROPS 50 POINTS IN SPURS WIN OVER PELICANS",
+     "rank": 1
+    },
+    {
+     "id": "0Iz25PGAQ6Y",
+     "title": "Jeremiah Fears Highlights vs. San Antonio Spurs 11/21/26",
+     "rank": 0.5
+    }
+   ]
   }
  },
  "clubs": {
