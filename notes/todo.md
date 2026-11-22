@@ -25,3 +25,4 @@ Each needs a full plan and your "go" before building.
 - [x] (done by OpenCode Nov 20) **TikTok: any account works when pasted** (e.g. @dropsitenews): no hand-edited list (today feeds/tiktok.json + guide job). Research first: TikTok blocks pages from fetching an account's videos directly. Likely route: a small fetch-on-request server like SociableKit's (e.g. a Cloudflare Worker, free tier 100,000 requests/day), reusing tools/build-feeds.mjs's fetching. Replaces the SociableKit widget, whose tiny popup can't be watched.
 - [x] (done by OpenCode Nov 20) **TikTok: vertical player**: TikTok tiles get a tall 9:16 shape so the video fills the tile.
 - [ ] Parked: size-matched quality for video links (needs a "Full quality" switch per tile).
+- [x] (done Nov 22) **Zlive purple frame**: all Zlive embeds are normalized on play (including manually pasted links and older favorites), removing the purple frame and applying white controls. 235 tests.

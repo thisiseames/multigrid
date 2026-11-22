@@ -13,6 +13,7 @@
 
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
+import { zliveEmbed } from './zlive.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, icon, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
@@ -1496,7 +1497,9 @@ function playlistPlayer(source, options) {
 function genericPlayer(source, options) {
   // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
   // page from another site out of MULTIGRID and its saved layouts.
-  const frame = makeFrame(source.url);
+  // Zlive's default player has a purple frame; its embed options remove it. Apply them
+  // when playing too, so Zlive links pasted before the channel finder are fixed as well.
+  const frame = makeFrame(zliveEmbed(source.url) || source.url);
   if (daddyLivePlayer(source.url)) frame.classList.add('frame-daddy');
   return closedPlayer(frame, options);
 }
