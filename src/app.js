@@ -2338,7 +2338,7 @@ function libraryMoviesView(query = '') {
   const movies = libraryData?.movies || [];
   const matching = query ? movies.filter((movie) => movie.title.toLocaleLowerCase().includes(query)) : movies;
   return matching.length
-    ? el('ul', { class: 'addp-grid' }, ...matching.map(libraryMovieCard))
+    ? el('ul', { class: 'addp-grid movie-grid' }, ...matching.map(libraryMovieCard))
     : el('p', { class: 'favorites-empty', textContent: query ? 'No movies match' : 'No movie files found in this folder.' });
 }
 
