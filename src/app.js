@@ -471,6 +471,34 @@ function openYouTubeImport() {
   openDialog(box);
 }
 
+/** One Import action, with the two list importers behind it. */
+function openImportChooser() {
+  const box = $('import-box');
+  if (box.open) return;
+  const choice = (iconName, title, note, run) => el('button', {
+    type: 'button',
+    class: 'import-choice',
+    on: {
+      click() {
+        box.close();
+        setTimeout(run, 0);
+      },
+    },
+  },
+  el('span', { class: 'import-icon' }, icon(iconName, 18)),
+  el('span', { class: 'import-text' }, el('b', { textContent: title }), el('small', { textContent: note })),
+  el('span', { class: 'import-chevron' }, icon('next', 14)));
+  box.replaceChildren(
+    el('h2', { textContent: 'Import' }),
+    el('p', { class: 'x-list-note', textContent: 'Choose what to bring into Favorites.' }),
+    el('div', { class: 'import-choices' },
+      choice('chat', 'Import an X list', 'Paste or choose a list of X accounts', openXListBox),
+      choice('play', 'Import YouTube subscriptions', 'From a Google Takeout zip or CSV', openYouTubeImport)),
+    el('div', { class: 'dialog-actions' },
+      el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel')));
+  openDialog(box);
+}
+
 /* ---------- Channel Finder ---------- */
 
 /** The one verified catalog channel whose name means exactly this channel. */
@@ -6068,8 +6096,7 @@ function submitXName() {
   addStream(`https://x.com/${name}`, target);
 }
 $('source-x-add').addEventListener('click', submitXName);
-$('source-x-list').addEventListener('click', openXListBox);
-$('source-yt-subs').addEventListener('click', openYouTubeImport);
+$('source-import').addEventListener('click', openImportChooser);
 $('source-x').addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
@@ -6089,7 +6116,7 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('palette')]) {
+for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('palette'), $('import-box')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
