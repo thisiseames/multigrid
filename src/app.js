@@ -21,6 +21,7 @@ import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
+import { chooseLibrary, fileForEpisode, forgetLibrary, librarySupported, loadLibrary, refreshLibrary } from './library.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
@@ -28,7 +29,7 @@ import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
-import { allPlaces, embedPlace, forgetPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, placeOf as listenedTo, resumePoint } from './resume.js';
+import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint } from './resume.js';
 import { isPoppedOut } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
@@ -1884,7 +1885,7 @@ function lengthText(total) {
 function episodeState(item) {
   const key = `audio:${item.audio}`;
   if (isPlayed(key)) return { text: 'Played', cls: 'is-played' };
-  const place = listenedTo(key);
+  const place = savedPlace(key);
   const length = place?.length || item.length;
   if (place && length) return { text: timeLeft(length - place.at), cls: 'is-partway', percent: (place.at / length) * 100 };
   return { text: 'New', cls: 'is-new' };
@@ -1912,6 +1913,19 @@ function episodeRow(item) {
     el('span', { textContent: state.text })),
   state.percent ? el('span', { class: 'pod-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, state.percent)).toFixed(1)}%` })) : null));
 }
+
+/* A folder of your own video files, shown as its own tab inside Favorites. */
+const LIBRARY = '\u0001library';
+const libraryAvailable = () => librarySupported() && !onPhone();
+let libraryData = null;
+let libraryLoading = false;
+let libraryScanning = false;
+let libraryNeedsPermission = false;
+let libraryError = '';
+let libraryShow = '';
+let librarySeason = 0;
+let libraryOpenChecked = false;
+let libraryTimer = 0;
 
 /* Podcasts live in Favorites as their own tab: the shows as cards, then a show's episodes. */
 const PODCASTS = '\u0001podcasts';
@@ -1981,6 +1995,281 @@ function podcastsView(holder) {
     : el('p', { class: 'favorites-empty', textContent: 'No podcast episodes yet' });
 }
 onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fillAddFavorites($('source-favorites')); });
+
+/* ---------- Favorites: the local library tab ---------- */
+
+const libraryFileKey = (episode) => `file:${episode.name}:${episode.size || 0}`;
+const libraryRedraw = () => {
+  if ($('source-dialog').open && addFolder === LIBRARY) fillAddFavorites($('source-favorites'));
+};
+
+/** The first episode not played; if every one is played, the first. */
+function nextUpForShow(show) {
+  for (const season of show.seasons || []) {
+    for (const [index, episode] of season.episodes.entries()) {
+      if (!isPlayed(libraryFileKey(episode))) return { season, episode, index };
+    }
+  }
+  const season = show.seasons?.[0];
+  return season?.episodes?.length ? { season, episode: season.episodes[0], index: 0 } : null;
+}
+
+function startLibraryTimer() {
+  if (libraryTimer) return;
+  libraryTimer = setInterval(() => {
+    if (!$('source-dialog').open || addFolder !== LIBRARY || !libraryData || libraryScanning || libraryNeedsPermission) return;
+    refreshLibraryNow(false);
+  }, 5 * 60 * 1000);
+}
+
+function ensureLibrary() {
+  if (!libraryAvailable() || libraryLoading) return;
+  if (!libraryData) {
+    if (libraryOpenChecked) return;
+    libraryLoading = true;
+    loadLibrary().then((data) => {
+      libraryLoading = false;
+      libraryData = data;
+      libraryNeedsPermission = Boolean(data?.needsPermission);
+      libraryOpenChecked = true;
+      libraryRedraw();
+    }).catch(() => {
+      libraryLoading = false;
+      libraryOpenChecked = true;
+      libraryError = 'The library could not be read.';
+      libraryRedraw();
+    });
+    return;
+  }
+  if (libraryOpenChecked) return;
+  libraryOpenChecked = true;
+  if (!libraryNeedsPermission && Date.now() - (libraryData.scannedAt || 0) > 5 * 60 * 1000) refreshLibraryNow(false);
+}
+
+function refreshLibraryNow(request = false) {
+  if (libraryScanning) return;
+  libraryScanning = true;
+  libraryError = '';
+  libraryRedraw();
+  refreshLibrary({ request }).then((data) => {
+    libraryScanning = false;
+    if (data?.missing) {
+      libraryData = null;
+      libraryNeedsPermission = false;
+    } else if (data?.needsPermission) {
+      libraryNeedsPermission = true;
+    } else if (data?.shows) {
+      libraryData = data;
+      libraryNeedsPermission = false;
+      libraryError = '';
+    }
+    libraryOpenChecked = true;
+    libraryRedraw();
+  }).catch(() => {
+    libraryScanning = false;
+    libraryError = "The library folder couldn't be read.";
+    libraryRedraw();
+  });
+}
+
+function chooseLibraryNow() {
+  if (!libraryAvailable() || libraryLoading) return;
+  libraryLoading = true;
+  libraryError = '';
+  libraryRedraw();
+  chooseLibrary().then((data) => {
+    libraryLoading = false;
+    libraryData = data;
+    libraryNeedsPermission = false;
+    libraryOpenChecked = true;
+    libraryShow = '';
+    librarySeason = 0;
+    libraryRedraw();
+  }).catch((error) => {
+    libraryLoading = false;
+    if (error?.name !== 'AbortError') libraryError = "That folder couldn't be opened.";
+    libraryRedraw();
+  });
+}
+
+function forgetLibraryNow() {
+  forgetLibrary().then(() => {
+    libraryData = null;
+    libraryShow = '';
+    librarySeason = 0;
+    libraryNeedsPermission = false;
+    libraryError = '';
+    libraryOpenChecked = true;
+    libraryRedraw();
+  });
+}
+
+function libraryIntro() {
+  return el('div', { class: 'lib-intro' },
+    el('p', { textContent: 'Choose the TV folder on this computer. MULTIGRID lists the shows and episodes without copying or uploading anything.' }),
+    el('button', { type: 'button', class: 'addp-file', on: { click: chooseLibraryNow } },
+      icon('upload', 16), el('span', { textContent: 'Choose your TV folder' })),
+    el('p', { class: 'lib-note', textContent: 'Chrome on this computer only. Files stay where they are.' }));
+}
+
+function libraryReconnect() {
+  return el('div', { class: 'lib-intro' },
+    el('p', { textContent: 'The TV folder needs permission again. Nothing was moved; Chrome just wants one click.' }),
+    el('button', { type: 'button', class: 'addp-file', on: { click: () => refreshLibraryNow(true) } },
+      icon('upload', 16), el('span', { textContent: 'Reconnect folder' })),
+    el('button', { type: 'button', class: 'text-button', on: { click: chooseLibraryNow } }, 'Choose another folder'));
+}
+
+function libraryShowCard(show) {
+  const art = el('span', { class: 'fart is-icon' }, icon('film', 20));
+  posterFor(show.name).then((found) => {
+    if (!found || (!found.wide && !found.poster)) return;
+    const url = found.wide ? shrunk(found.wide, 640, 360) : found.poster;
+    if (!url) return;
+    art.className = 'fart is-picture';
+    artPicture(art, url, () => {
+      art.className = 'fart is-icon';
+      art.replaceChildren(icon('film', 20));
+    }, true);
+  });
+  const next = nextUpForShow(show);
+  const seasons = show.seasons.length;
+  return el('li', { class: 'fcard' }, el('button', {
+    type: 'button',
+    class: 'fcard-main',
+    title: `Open ${show.name}`,
+    on: {
+      click() {
+        libraryShow = show.name;
+        librarySeason = next?.season.number || show.seasons[0]?.number || 1;
+        fillAddFavorites($('source-favorites'));
+      },
+    },
+  },
+  art,
+  el('span', { class: 'fcard-text' },
+    el('b', { textContent: show.name, title: show.name }),
+    el('small', {},
+      el('span', { class: 'fcard-kind', textContent: `${seasons} season${seasons === 1 ? '' : 's'}` }),
+      el('span', {
+        class: 'fcard-now',
+        textContent: next ? `Next: ${next.episode.label || next.episode.title}` : 'All played',
+        title: next ? next.episode.title : 'All played',
+      })))));
+}
+
+function libraryEpisodeRow(show, season, episode, index) {
+  const key = libraryFileKey(episode);
+  const place = savedPlace(key);
+  const played = isPlayed(key);
+  const state = played
+    ? { text: 'Played', cls: 'is-played' }
+    : place
+      ? { text: place.length ? timeLeft(place.length - place.at) : 'In progress', cls: 'is-partway', percent: place.length ? (place.at / place.length) * 100 : 0 }
+      : { text: 'New', cls: 'is-new' };
+  const meta = [episode.label && episode.label !== episode.title ? episode.label : '', episode.modified ? dayLabel(episode.modified) : ''].filter(Boolean).join(' · ');
+  return el('li', {}, el('button', {
+    type: 'button',
+    class: `pod-ep ${state.cls}`,
+    title: episode.title,
+    on: { click: () => libraryPlay(show, season, index) },
+  },
+  el('span', { class: 'pod-text' },
+    el('b', { class: 'pod-title', textContent: episode.title }),
+    el('small', { class: 'pod-meta', textContent: meta })),
+  el('span', { class: 'pod-state' },
+    played ? icon('check', 14) : null,
+    el('span', { textContent: state.text })),
+  state.percent ? el('span', { class: 'pod-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, state.percent)).toFixed(1)}%` })) : null));
+}
+
+async function libraryPlay(show, season, startIndex) {
+  const target = sourceTarget || { mode: 'add' };
+  const chosen = [];
+  let skipped = 0;
+  for (const episode of season.episodes.slice(startIndex)) {
+    const entry = await fileForEpisode(episode);
+    if (entry?.needsPermission) {
+      libraryNeedsPermission = true;
+      toast('Reconnect the library folder first.');
+      libraryRedraw();
+      return;
+    }
+    if (entry?.file) chosen.push(entry);
+    else skipped += 1;
+  }
+  if (!chosen.length) {
+    toast("Couldn't open those episodes. Refresh the library.");
+    return;
+  }
+  if ($('source-dialog').open) $('source-dialog').close();
+  const items = registerFiles(chosen);
+  addStream(playlistInput(items), target, items[0]?.name);
+  if (skipped) toast(`${skipped} episode${skipped === 1 ? '' : 's'} couldn't be opened and ${skipped === 1 ? 'was' : 'were'} skipped.`);
+}
+
+function libraryHead() {
+  return el('div', { class: 'lib-head' },
+    el('h3', { class: 'addp-label', textContent: 'Library' }),
+    el('button', {
+      type: 'button',
+      class: 'text-button lib-refresh',
+      disabled: libraryScanning,
+      on: { click: () => refreshLibraryNow(true) },
+    }, libraryScanning ? 'Scanning…' : 'Refresh'),
+    el('button', { type: 'button', class: 'text-button', on: { click: chooseLibraryNow } }, 'Change folder'),
+    el('button', { type: 'button', class: 'text-button', on: { click: forgetLibraryNow } }, 'Forget'));
+}
+
+function libraryView(holder, query = '') {
+  ensureLibrary();
+  startLibraryTimer();
+  if (libraryLoading && !libraryData) return el('p', { class: 'favorites-empty', textContent: 'Reading your folder…' });
+  if (libraryError) {
+    return el('div', { class: 'lib-intro' },
+      el('p', { textContent: libraryError }),
+      el('button', { type: 'button', class: 'addp-file', on: { click: () => refreshLibraryNow(true) } },
+        icon('refresh', 16), el('span', { textContent: 'Try again' })));
+  }
+  if (!libraryData) return libraryIntro();
+  if (libraryNeedsPermission) return libraryReconnect();
+  const shows = libraryData.shows || [];
+  if (libraryShow) {
+    const show = shows.find((item) => item.name === libraryShow);
+    if (show) {
+      const next = nextUpForShow(show);
+      let season = show.seasons.find((item) => item.number === librarySeason)
+        || show.seasons.find((item) => item.number === next?.season.number)
+        || show.seasons[0];
+      if (!season) season = { number: 1, episodes: [] };
+      return el('div', {},
+        libraryHead(),
+        el('button', { type: 'button', class: 'pod-back', on: { click: () => { libraryShow = ''; fillAddFavorites($('source-favorites')); } } },
+          icon('back', 14), el('span', { textContent: 'Library' }), el('b', { textContent: show.name })),
+        el('div', { class: 'matches-tabs lib-seasons' }, ...show.seasons.map((item) => el('button', {
+          type: 'button',
+          class: `matches-tab${item.number === season.number ? ' is-on' : ''}`,
+          textContent: `S${item.number}`,
+          on: { click: () => { librarySeason = item.number; fillAddFavorites($('source-favorites')); } },
+        }))),
+        next ? el('button', {
+          type: 'button',
+          class: 'addp-file lib-next',
+          on: { click: () => libraryPlay(show, next.season, next.index) },
+        }, icon('play', 16), el('span', { textContent: `Next up · ${next.episode.label || next.episode.title}` })) : null,
+        season.episodes.length
+          ? el('ul', { class: 'pod-list' }, ...season.episodes.map((episode, index) => libraryEpisodeRow(show, season, episode, index)))
+          : el('p', { class: 'favorites-empty', textContent: 'No episodes in this season.' }));
+    }
+    libraryShow = '';
+  }
+  const matching = query ? shows.filter((show) => show.name.toLocaleLowerCase().includes(query)) : shows;
+  return el('div', {},
+    libraryHead(),
+    matching.length
+      ? el('ul', { class: 'addp-grid' }, ...matching.map(libraryShowCard))
+      : el('p', { class: 'favorites-empty', textContent: query ? 'No shows match' : 'No video files found in this folder.' }));
+}
 
 /* ---------- Podcast dock ---------- */
 
@@ -2726,19 +3015,29 @@ function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
     // Folders and Podcasts in A to Z order; Saved layouts last, after a small bar, as it's not a folder.
-    const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder === RECENT ? 'RECENT' : folder || 'All');
-    const sorted = [...folders, ...(podEpisodes.length ? [PODCASTS] : [])]
+    const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder === RECENT ? 'RECENT' : folder === LIBRARY ? 'LIBRARY' : folder || 'All');
+    const sorted = [...folders, ...(podEpisodes.length ? [PODCASTS] : []), ...(libraryAvailable() ? [LIBRARY] : [])]
       .sort((a, b) => label(a).localeCompare(label(b), undefined, { sensitivity: 'base' }));
     const tab = (folder) => el('button', {
       type: 'button',
       class: `matches-tab${addFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
       textContent: label(folder),
-      on: { click() { addFolder = folder; podShow = ''; fillAddFavorites(holder); } },
+      on: {
+        click() {
+          addFolder = folder;
+          podShow = '';
+          if (folder === LIBRARY) {
+            libraryOpenChecked = false;
+            libraryShow = '';
+          }
+          fillAddFavorites(holder);
+        },
+      },
     });
     // Recent comes straight after All: it's the quickest way back to a stream.
     row.replaceChildren(...['', ...(listRecent().length ? [RECENT] : []), ...sorted].map(tab),
       ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []),
-      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT && addFolder !== LIBRARY ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');
@@ -2781,7 +3080,15 @@ function fillAddFavorites(holder) {
   clear.hidden = !query;
   const all = listFavorites().sort(byName);
   const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
-  if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) addFolder = '';
+  if (addFolder === LIBRARY) {
+    if (!libraryAvailable()) addFolder = '';
+  } else if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) {
+    addFolder = '';
+  }
+  const libraryMode = addFolder === LIBRARY;
+  if (libraryMode && query) libraryShow = '';
+  input.placeholder = libraryMode ? 'Search library' : 'Search favorites';
+  input.setAttribute('aria-label', libraryMode ? 'Search library' : 'Search favorites');
   const matches = (text) => text.toLocaleLowerCase().includes(query);
   const podcasts = addFolder === PODCASTS && !query;
   const layouts = addFolder === LAYOUTS && !query;
@@ -2790,22 +3097,23 @@ function fillAddFavorites(holder) {
   const inAll = (item) => !isAccountSource(parseSource(item.input));
   const shown = query
     ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
-    : podcasts || layouts || recent ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
-  // A search also finds podcast shows by name.
-  const shows = query ? podShows().filter(matches) : [];
+    : podcasts || layouts || recent || libraryMode ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
+  // A search also finds podcast shows by name, but not while the library tab is open.
+  const shows = query && !libraryMode ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
   const grid = el('div', { class: 'addp-grid-wrap' },
-    podcasts ? podcastsView(holder)
-      : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
-      : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
-        // A favorite shows as its favorite card; anything else by the name it had, without the favorite's menu.
-        const favorite = all.find((item) => item.input === seen.input);
-        return favoriteCard(favorite ?? { input: seen.input, name: seen.name, group: '' }, holder, { plain: !favorite });
-      }))
-      : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
-        : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
-  const pills = (folders.length || podEpisodes.length || layoutsTab() || listRecent().length) && !query ? addFolderPills(holder, folders) : null;
+    libraryMode ? libraryView(holder, query)
+      : podcasts ? podcastsView(holder)
+        : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
+          : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
+            // A favorite shows as its favorite card; anything else by the name it had, without the favorite's menu.
+            const favorite = all.find((item) => item.input === seen.input);
+            return favoriteCard(favorite ?? { input: seen.input, name: seen.name, group: '' }, holder, { plain: !favorite });
+          }))
+            : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
+              : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
+  const pills = (folders.length || podEpisodes.length || layoutsTab() || listRecent().length || libraryAvailable()) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
   if (old) old.replaceWith(grid);
@@ -2814,7 +3122,7 @@ function fillAddFavorites(holder) {
 }
 
 function renderAddFavorites(holder, getTarget) {
-  holder.hidden = listFavorites().length === 0;
+  holder.hidden = listFavorites().length === 0 && !libraryAvailable();
   holder.getTarget = getTarget;
   loadPodcasts(holder);
   const { wrap } = addSearchBox(holder);
@@ -5514,6 +5822,7 @@ function showSourceMessage(node, text, error) {
 }
 
 function openSourceDialog(target) {
+  libraryOpenChecked = false;
   sourceTarget = target;
   const replacing = target.mode === 'replace';
   $('source-title').textContent = replacing ? 'Replace stream' : 'Add stream';
