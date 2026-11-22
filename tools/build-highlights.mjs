@@ -31,14 +31,18 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const CANADA = ['TSN', 'Sportsnet', 'DAZN Canada', 'Fubo Canada', 'fuboTV Canada', 'Fubo Sports Canada', 'OneSoccer', 'TVA Sports', 'RDS', 'CBC Sports'];
 const OFFICIAL = {
   pl: ['Premier League', ...CANADA],
-  laliga: ['LALIGA EA SPORTS', 'LaLiga', ...CANADA],
-  bundesliga: ['Bundesliga', ...CANADA],
-  ligue1: ["Ligue 1 McDonald's", 'Ligue 1', ...CANADA],
+  laliga: ['LALIGA EA SPORTS', 'LaLiga', 'LALIGA', 'LaLiga Hypermotion', ...CANADA],
+  bundesliga: ['Bundesliga', 'Bundesliga Official', ...CANADA],
+  ligue1: ["Ligue 1 McDonald's", 'Ligue 1', 'Ligue 1 Uber Eats', 'LIGUE 1+', ...CANADA],
   ucl: ['UEFA', 'UEFA Champions League', ...CANADA],
   unl: ['UEFA', ...CANADA],
   nfl: ['NFL', ...CANADA],
   nba: ['NBA', ...CANADA],
 };
+
+// The word each league's own channel uses for highlights, and the start of its channel's name.
+const LOCAL = { laliga: 'resumen', bundesliga: 'Zusammenfassung', ligue1: 'résumé' };
+const LEAGUE_CHANNEL = { pl: 'Premier League', laliga: 'LALIGA', bundesliga: 'Bundesliga', ligue1: 'Ligue 1', ucl: 'UEFA', unl: 'UEFA', nfl: 'NFL', nba: 'NBA' };
 
 const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and']);
 export const words = (text) => String(text || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -112,7 +116,8 @@ export function pickHighlights(results, game, official = []) {
     const mentions = (set) => [...set].some((word) => title.has(word));
     const club = (team) => names(team).some((name) => name && (channel === name || channel.startsWith(name) || (name.length > 5 && name.startsWith(channel) && channel.length > 4)));
     let score = 0;
-    if (officialNames.includes(channel)) score = mentions(home) && mentions(away) ? 3 : 0;
+    const leagueChannel = officialNames.includes(channel);
+    if (leagueChannel) score = mentions(home) && mentions(away) ? 3 : 0;
     else if (club(game.home)) score = mentions(away) ? 2 : 0;
     else if (club(game.away)) score = mentions(home) ? 1.5 : 0;
     if (!score) continue;
@@ -153,16 +158,27 @@ async function main() {
     if (searches >= MAX_SEARCHES || Date.now() > BUDGET) break;
     if (searches) await pause(GAP);
     searches++;
-    const results = await search(`${game.home.full} vs ${game.away.full} highlights`);
-    if (!results) { blocked = true; break; }
+    const queries = [
+      `${game.home.full} vs ${game.away.full} highlights`,
+      LOCAL[game.league.id] ? `${game.home.full} ${game.away.full} ${LOCAL[game.league.id]}` : '',
+      `${LEAGUE_CHANNEL[game.league.id] || game.league.name} ${game.home.full} ${game.away.full} highlights`,
+    ].filter(Boolean);
     const videos = [];
     const turnedDown = [];
-    for (const pick of pickHighlights(results, game, OFFICIAL[game.league.id] ?? [])) {
-      if (videos.length >= 3) break;
-      await pause(300);
-      if (!(await embeddable(pick.id))) { turnedDown.push(`${pick.channel} (not on other sites)`); continue; }
-      videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
+    for (const [index, query] of queries.entries()) {
+      if (videos.length || searches >= MAX_SEARCHES + 10) break;
+      if (index) { await pause(GAP); searches++; }
+      const results = await search(query);
+      if (!results) { blocked = true; break; }
+      for (const pick of pickHighlights(results, game, OFFICIAL[game.league.id] ?? [])) {
+        if (videos.length >= 3) break;
+        if (videos.some((video) => video.id === pick.id)) continue;
+        await pause(300);
+        if (!(await embeddable(pick.id))) { turnedDown.push(`${pick.channel} (not on other sites)`); continue; }
+        videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
+      }
     }
+    if (blocked) break;
     games[game.id] = {
       league: game.league.name,
       title: `${game.home.name} ${game.home.score}–${game.away.score} ${game.away.name}`,
