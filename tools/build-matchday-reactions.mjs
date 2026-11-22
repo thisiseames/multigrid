@@ -13,12 +13,8 @@ const DAY = 86400000;
 const WINDOW_BEFORE = 2 * 3600000;
 const WINDOW_AFTER = 8 * 3600000;
 
-// Rio posts match clips as Shorts, which the uploads playlist leaves out.
-const CHANNEL_FEEDS = new Set(['UCPAiS32go3-GwTO0kmlVX7g']);
 const uploadsOf = async (channelId) => {
-  const url = CHANNEL_FEEDS.has(channelId)
-    ? `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
-    : `https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${channelId.slice(2)}`;
+  const url = `https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${channelId.slice(2)}`;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
