@@ -2950,3 +2950,5 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
   .md-art .md-xi { width: min(300px, 30vw); right: 3%; }
   .md-facts { gap: 20px; }
 }
+/* The Matchday picture is already black: only a thin fade at the bottom, so the XI isn't dimmed. */
+.home-hero.is-matchday .hero-shade { background: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0) 16%), linear-gradient(to right, rgba(0, 0, 0, .6) 0%, rgba(0, 0, 0, 0) 45%); }
