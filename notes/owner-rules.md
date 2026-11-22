@@ -74,3 +74,10 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 ## Never suggest again
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
 - Also turned down before: broken-link "Not working since …" labels; goal/score alerts and other small sports gimmicks.
+
+## Never use periwinkle (or any blue-purple accent)
+Nov 22: the owner hates periwinkle, the pale blue-purple MULTIGRID has used as its accent (`--accent: #8ea6e8`, also its tinted backgrounds). "No one else uses this color." Never use it, or anything close to it, for anything new, in MULTIGRID or in any other project.
+
+**Instead:** white / near-white for controls and highlights (#f5f5f7 with dark text #0b0b0d on buttons; white fills on dim grey tracks), the way Apple TV, Netflix, HBO Max and Disney+ draw their players. Brand colours only inside logos.
+
+**Existing periwinkle:** the owner is replacing it one screen at a time, by request ("everywhere is too big of a commit"). Don't sweep the whole app unasked; when a screen is touched for this, change only that screen and check it at both widths. Done so far: the guide's show card (time bar, Watch button).
