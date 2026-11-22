@@ -20,17 +20,17 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 - **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams. The paste Add and X account Add are the normal dark raised buttons; tabs/chips and focus use white/near-white, never periwinkle.
 - **X account** field (fixed `x.com/@` prefix, 1–15 characters) with Add; it auto-saves to the Twitter folder.
-- **Action row** is Play a video file from this computer/phone, Browse PPV events, and Import a list — three across on desktop, one column on phone.
+- **Action row** is Find a live channel, Play a video file from this computer/phone, Browse PPV events, and Import a list — four across on a wide laptop, 2×2 under 980px, one column on phone.
 - **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The old stacked links are gone.
 - **Files:** one file becomes one tile; several files become one episode playlist in filename order (100-file cap), with auto-advance, Previous/Next, per-episode resume, one Continue watching card. Chrome keeps file handles; Safari asks again after reload.
-- **On touch phones** Add a note and Find a live channel are hidden in Add stream; Channel Finder is still reachable from Search actions.
+- **On touch phones** Add a note is hidden in Add stream; Find a live channel stays in the top action row. Channel Finder is also reachable from Search actions.
+- **Find a live channel:** the dialog has two sources: **Catalog** (the job-built verified IPTV list; 566 channels in the current file) and **Zlive** (277 live channels from `zlive.st/embed/manifest.json`, CORS-open, no key). Zlive rows show flag, region, category and quality; search and region/category chips; adding uses its clean player with white controls, the app background and no Zlive title/branding. Links can stop working.
 - **PPV events:** Browse PPV events opens a two-tab picker: **PPV.st** (live/upcoming events with posters; saves in the PPV folder) and **Daddy Live** (live-only, keyless `daddylive.app/api/events`, 60-second cache). Daddy Live shows one card per event; one link adds directly, multiple links open a **Choose a link** dialog. Adding saves it in the Daddy Live folder. Daddy Live's wrapper is cropped to hide its 47-player bar; the clean matchora player and its Channels button remain. Links can die or be geo-blocked; their player shows Channel unavailable.
 - **Local Library:** one LIBRARY tab inside Favorites with TV / MOVIES switch. TV folder groups shows/seasons/episodes, TVmaze posters, TVmaze episode titles/air dates/synopses, Next up, episode playback, refresh/new downloads, Change/Forget TV. Movie folder has flat movie cards, year, 2:3 portrait cards six across on desktop, local `poster.jpg`/`folder.jpg`/`cover.jpg` → Wikipedia theatrical poster → frame → film icon, single-file playback and resume, a Details pill with Wikipedia/Wikidata plot, cast and runtime, Change/Forget movies. Chrome laptop only; hidden on phone/Safari. Refresh rescans (and it auto-refreshes every 5 minutes while open); old index upgrades automatically; a TV episode playlist is a snapshot, so new downloads appear after Refresh.
 - **Podcast directory:** PODCASTS tab → **Find a podcast**. Before typing, it shows Apple's **Top Shows** (25) and **Trending Episodes** (10) for Canada from the job-built `podcast-charts.json`; tap a top show for its latest episodes and Follow, or a trending episode to play it in the dock. Typing searches Apple's public podcast directory by show or topic; clearing returns the charts. Followed shows are hidden favourites (only in PODCASTS, not All or Recent) and sync. Podcast show art is square 1:1 (Apple sends 600×600/3000×3000), not the 16:9 TV/favourite shape. Podcast controls use white/near-white, never periwinkle. A show already in the six Reader feeds appears once and uses its Reader episodes. No new section.
 - **Continue watching:** part-watched streams/podcasts/files, newest first; playlist places dedupe to one card. Progress bars are white/near-white, including YouTube, never periwinkle.
 - **Favorites:** 342 in the owner's current setup across Sports, Series, Twitter, Entertainment, YouTube, News, TikTok, X, Streaming and unfiled. Folder tabs are All, Recent (last 10), user folders A–Z, Podcasts, Library (Chrome desktop) and Saved layouts on phone. Search covers favorites, podcast shows and the library. Cards have add, ••• Edit/Remove with a second confirm, folder rename with merge. Favorites and Library show cards are five across on a wide laptop, three at 1100px, two at 820px and two on the phone; movie cards stay six across. TikTok/X account feeds are kept out of All. Sync/Synced button; no CSV/JSON export button (Sync is the path), though legacy `#fav1=` transfer links are still accepted.
 - **Notes:** text tile that saves with the layout.
-- **Find a live channel:** Channel Finder directory from iptv-org, categories, search, HTTPS/embeddable only, logos. Saves into a folder.
 - **Sync favorites:** pairing code, encrypted favorites/layouts/places via Nostr relays.
 
 ## Sources and players
@@ -69,13 +69,13 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 ## Data, jobs and the extension
 
 - **Jobs:** `.github/workflows/guide.yml` (guide, feeds, movies, charts, shows; about every 30 min but skips until the guide is 165 min old), `reader.yml` (Reader self-chaining every 25 min with a 45-min stale backup; also highlights), `flights.yml` (daily), `channels.yml` (daily), `podcasts.yml` (Apple Top Shows/Trending Episodes, hourly), `highlights.yml` (manual). Job-owned JSON: `guide.json`, `feeds.json`, `charts.json`, `shows.json`, `movies.json`, `flights.json`, `live-channels.json`, `highlights.json`, `podcast-charts.json`, `reader/index.json`, `reader/a/*`. Never hand-edit or commit these; run the job and discard the output when testing.
-- **Outside services:** Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed/search, ESPN, Twitch previews/api.ivr.fi, r.jina.ai, Polymarket Gamma, iptv-org, Google Flights, PPV.st, Daddy Live (`daddylive.app/api/events`), Apple Podcasts (iTunes Search API) and Apple podcast charts (Marketing Tools RSS, read by the hourly job). All free/keyless. No paid service.
+- **Outside services:** Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed/search, ESPN, Twitch previews/api.ivr.fi, r.jina.ai, Polymarket Gamma, iptv-org, Google Flights, PPV.st, Daddy Live (`daddylive.app/api/events`), Zlive (`zlive.st/embed/manifest.json`), Apple Podcasts (iTunes Search API) and Apple podcast charts (Marketing Tools RSS, read by the hourly job). All free/keyless. No paid service.
 - **Storage/sync:** localStorage for favorites, workspaces, resume/played/places, settings; IndexedDB for local file handles and the local library; sync encrypted on free Nostr relays; favorites transfer links.
 - **Extension MULTIGRID Sound:** background content script in all frames for sound, pause/play, seek, in-frame resume, page tracking, and progress; toolbar popup Send this tab (v1.11) scans the page for YouTube video/channel, direct video/audio/player/page, resolves real UC… channel IDs, and sends to MULTIGRID. Owner reloads the extension after a version bump.
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 226 tests as of Nov 22.
+`node --test tests/*.test.mjs` — 229 tests as of Nov 22.
 
 ## Not built yet — do not describe as existing
 
@@ -99,7 +99,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 ## Duplicate traps from real mistakes
 
 - **Do not propose song previews for Charts.** Chart rows already open Watch here (YouTube), Spotify, Amazon Music and YouTube Music. This exact lesser duplicate was pitched and rejected.
-- **Do not propose PPV event discovery or another live-event picker.** The Browse PPV events dialog already has PPV.st and Daddy Live tabs.
+- **Do not propose PPV event discovery or another live-event picker.** The Browse PPV events dialog already has PPV.st and Daddy Live tabs. Do not propose another channel directory; Find a live channel already has Catalog and Zlive.
 - **Do not propose a local TV/movie library; it exists.**
 - **Do not propose X-list timelines, TikTok live, or a cross-source queue as existing.** X imports are per-profile favorites; TikTok live falls back to the profile; only YouTube and local-file playlists auto-advance.
 - **Do not propose a separate Podcasts section.** The dock and PODCASTS folder tab already exist; the owner rejected another space-eating section. The Apple directory is inside PODCASTS, with full episodes, not song previews. Podcast charts (Top Shows/Trending Episodes) already exist too.

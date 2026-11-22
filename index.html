@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-iXnDS0eRyTucMKDjl8Y9zi4YSt2wBm4fmcTHTCZ5luY=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-VIlla66lPRQqpE9+1PYDwuXGS6nMpthQK3SR+wQfGEo=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -170,6 +170,7 @@
       </div>
       <div id="source-message" class="addp-preview" role="status" hidden></div>
       <div class="addp-actions">
+        <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
         <button id="file-zone" class="addp-file" type="button"><span data-icon="upload"></span><span>Play a video file from this <span class="device-word">computer</span></span></button>
         <button id="ppv-find" class="addp-file" type="button"><span data-icon="calendar"></span><span>Browse PPV events</span></button>
         <button id="source-import" class="addp-file" type="button" title="Import an X list or YouTube subscriptions"><span data-icon="upload"></span><span>Import a list</span></button>
@@ -177,7 +178,6 @@
       <div id="source-continue" class="addp-continue" hidden></div>
       <div id="source-favorites" class="addp-favs" hidden></div>
       <button id="note-add" class="addp-file" type="button"><span data-icon="pencil"></span><span>Add a note</span></button>
-      <button id="channel-find" class="addp-file" type="button"><span data-icon="search"></span><span>Find a live channel</span></button>
       <button id="source-help" class="addp-file portrait-only" type="button"><span data-icon="help"></span><span>How it works</span></button>
       <button id="source-fullscreen" class="addp-file portrait-only" type="button"><span data-icon="expand"></span><span>Fullscreen</span></button>
     </form>
@@ -241,7 +241,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/artwork.js', 'src/avatars.js', 'src/boxscore.js', 'src/backups.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/daddylive.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/leagues.js', 'src/library.js', 'src/library-meta.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/move.js', 'src/odds.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/ppv.js', 'src/podcasts.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/sting.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js', 'src/yt-subs.js'];
+    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/artwork.js', 'src/avatars.js', 'src/boxscore.js', 'src/backups.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/daddylive.js', 'src/episodes.js', 'src/favorite-box.js', 'src/grid-view.js', 'src/guide.js', 'src/layout.js', 'src/leagues.js', 'src/library.js', 'src/library-meta.js', 'src/local-files.js', 'src/markets.js', 'src/matches.js', 'src/mixer.js', 'src/move.js', 'src/odds.js', 'src/phone.js', 'src/players.js', 'src/pop.js', 'src/popout.js', 'src/ppv.js', 'src/podcasts.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/sting.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tiktok-list.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js', 'src/yt-subs.js', 'src/zlive.js'];
     // Ask the CSS for its current ETag, so a new version gets a new URL instead of a cached one.
     const styleVersion = fetch('styles.css', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.headers.get('etag') || response.headers.get('last-modified') || String(Date.now()))
