@@ -321,6 +321,7 @@ body.is-phone #stage.is-empty-wall {
   background-repeat: no-repeat;
 }
 body.is-phone #stage.is-empty-wall::after { content: none; }
+body.is-phone #home-button { display: none; }
 @media (orientation: portrait) {
   body.is-phone #stage.is-empty-wall {
     background-color: var(--bg);

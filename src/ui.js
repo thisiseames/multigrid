@@ -44,6 +44,7 @@ const ICON_PATHS = {
   crop: '<path d="M4.5 1.5v10h10M1.5 4.5h10v10"/>',
   today: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>',
   remote: '<rect x="5" y="1.8" width="6" height="12.4" rx="1.6"/><circle cx="8" cy="5.2" r="1.2"/><path d="M7 8.6h2M7 10.6h2"/>',
+  home: '<path d="M2.5 7.3 8 2.7l5.5 4.6v6.2h-4V9.8h-3v3.7h-4z"/>',
   tiles: '<rect x="2.3" y="2.3" width="5" height="5" rx="1.2"/><rect x="8.7" y="2.3" width="5" height="5" rx="1.2"/><rect x="2.3" y="8.7" width="5" height="5" rx="1.2"/><rect x="8.7" y="8.7" width="5" height="5" rx="1.2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
   pip: '<rect x="2" y="2.5" width="8.5" height="6.5" rx="1.2"/><rect x="5.5" y="7" width="8.5" height="6.5" rx="1.2" fill="var(--chrome, #0d0d10)"/>',

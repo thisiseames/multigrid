@@ -1,0 +1,33 @@
+# Keeps the Man Utd post-match fan reactions fresh while a game is on and for four hours after.
+# The full Reader/highlights job is about every 25 minutes; this small feed is every five.
+name: matchday-reactions
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: reader-build
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-matchday-reactions.mjs
+      - name: Save the reactions
+        run: |
+          git config user.name "multigrid-reader"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f matchday-reactions.json ]; then git add matchday-reactions.json; fi
+          git diff --cached --quiet && exit 0
+          git commit -m "Update Matchday reactions"
+          for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  BUILDUP_LEAD, addChance, chancePath, clubVideos, countdownText, findBroadcast, isCalledOff, listingNames,
-  ordinal, parseSummary, phaseOf, pickMatches, resultFor, tableMove, teamNames,
+  BUILDUP_LEAD, addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeAt, fulltimeHoldUntil,
+  isCalledOff, isFulltimeHold, listingNames, markFulltime, ordinal, parseSummary, phaseOf, pickMatches, resultFor, tableMove, teamNames,
 } from '../src/matchday.js';
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
@@ -179,4 +179,24 @@ test('a line-up with only G/D/M/F: sides and lines from the formation places', a
   const rows = formationRows('4-2-3-1', starters).map((row) => row.map((one) => one.name));
   // Each row left to right, from the team's own view.
   assert.deepEqual(rows, [['Lammens'], ['Dalot', 'Martinez', 'de Ligt', 'Yoro'], ['Mainoo', 'Tielemans'], ['Cunha', 'Fernandes', 'Dorgu'], ['Mbeumo']]);
+});
+
+test('the full-time card holds for two hours, then rejoins the rotation', () => {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+  };
+  const id = '401878755';
+  const start = kickoff;
+  const seen = at('2026-11-22T18:25:00Z');
+  assert.equal(fulltimeAt(id), 0);
+  assert.equal(fulltimeHoldUntil(id, start), start + 4 * HOUR, 'fallback: kick-off + 2 h, then 2 h hold');
+  assert.equal(isFulltimeHold(id, start, at('2026-11-22T19:30:00Z')), true);
+  assert.equal(isFulltimeHold(id, start, at('2026-11-22T20:31:00Z')), false);
+  assert.equal(markFulltime(id, seen), seen);
+  assert.equal(fulltimeAt(id), seen);
+  assert.equal(fulltimeHoldUntil(id, start), seen + 2 * HOUR);
+  assert.equal(isFulltimeHold(id, start, at('2026-11-22T20:20:00Z')), true);
+  assert.equal(isFulltimeHold(id, start, at('2026-11-22T20:26:00Z')), false);
 });

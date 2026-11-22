@@ -27,7 +27,7 @@ import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds, oddsFor, oddsUrl, parseOdds } from './odds.js';
 import { MY_LEAGUES } from './leagues.js';
-import { addChance, chancePath, clubVideos, countdownText, findBroadcast, isCalledOff, loadChances, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
+import { addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeHoldUntil, isCalledOff, isFulltimeHold, loadChances, markFulltime, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { artFor } from './artwork.js';
 import { isStingOn, playSting, setStingOn } from './sting.js';
@@ -90,6 +90,7 @@ const STARTERS = [
 ];
 
 let ws = loadCurrent();
+let homeOpen = false;
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
 const pendingSound = new Set(); // tiles saved with sound, held until the first real click
@@ -2299,13 +2300,14 @@ function render() {
   const showWelcome = false;
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
-  const wallNow = !showWelcome && streamCount(ws) === 0;
+  const emptyWall = !showWelcome && streamCount(ws) === 0;
+  const showHome = !showWelcome && !onPhoneScreen() && (homeOpen || emptyWall);
   // The laptop's empty screen plays MULTIGRID's opening sound as the wordmark draws together.
-  if (wallNow && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
-  $('stage').classList.toggle('is-empty-wall', wallNow);
+  if (emptyWall && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
+  $('stage').classList.toggle('is-empty-wall', emptyWall);
   // The top bar goes the same black as the splash and home screen, so it's one black screen.
-  document.body.classList.toggle('is-wall', wallNow && !onPhoneScreen());
-  syncHome(wallNow);
+  document.body.classList.toggle('is-wall', showHome);
+  syncHome(showHome);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
@@ -2317,6 +2319,14 @@ function render() {
   $('layout-icon').replaceChildren(layoutDiagram(grid.isStacked ? PHONE_STACK : current, 18, 13));
   $('layout-button').title = 'Choose a layout';
 
+  const homeButton = $('home-button');
+  const hasStreams = streamCount(ws) > 0;
+  homeButton.hidden = !hasStreams || onPhoneScreen();
+  homeButton.title = homeOpen ? 'Back to streams' : 'Home';
+  homeButton.setAttribute('aria-label', homeButton.title);
+  homeButton.querySelector('.home-icon').hidden = homeOpen;
+  homeButton.querySelector('.streams-icon').hidden = !homeOpen;
+  homeButton.querySelector('.bar-button-text').textContent = homeOpen ? 'Streams' : 'Home';
   const full = streamCount(ws) >= MAX_STREAMS;
   $('add-button').disabled = full;
   $('add-button').title = full ? `${MAX_STREAMS} streams is the most a workspace can hold` : 'Add stream';
@@ -2627,7 +2637,7 @@ function drawGamebar() {
   const matchday = mdPhase() !== 'off';
   // The Matchday tab is kept while its match loads; until then (or on other days) Scores shows.
   const shown = gameTab === 'matchday' && !matchday ? 'scores' : gameTab;
-  const tabs = el('div', { class: 'gamebar-tabs addp-pills', role: 'tablist' }, ...[...(matchday ? [['matchday', md.team.short]] : []), ['scores', 'Scores'], ['odds', 'Odds']].map(([key, label]) => el('button', {
+  const tabs = el('div', { class: 'gamebar-tabs addp-pills', role: 'tablist' }, ...[...(matchday ? [['matchday', mdPhase() === 'fulltime' ? 'Post-match' : md.team.short]] : []), ['scores', 'Scores'], ['odds', 'Odds']].map(([key, label]) => el('button', {
     type: 'button', role: 'tab', class: `matches-tab${shown === key ? ' is-on' : ''}`, aria: { selected: String(shown === key) }, textContent: label,
     on: { click: () => chooseGameTab(key) },
   })));
@@ -2771,6 +2781,7 @@ function muteAll() {
 /* ---------- Adding, replacing, removing ---------- */
 
 function addStream(input, target = { mode: 'add' }, title = '', page = '', event = null) {
+  homeOpen = false;
   // A series opens the episode it's on, still as its favorite, from anywhere it's picked.
   const moved = episodePage(input, page || embedPlace(input)?.page);
   const eventLink = tileEventFrom(event);
@@ -4947,6 +4958,9 @@ function showHero(item, { hold = false } = {}) {
 
 function rotateHero() {
   clearTimeout(heroTimer);
+  // While a card is being previewed, wake up when its hold ends instead of waiting for the
+  // next eight-second slot, so the held Matchday card comes back promptly.
+  const until = heroHoldUntil > Date.now() ? heroHoldUntil - Date.now() : HERO_EVERY;
   heroTimer = setTimeout(() => {
     if ($('home').hidden) return;
     if (Date.now() > heroHoldUntil && heroItems.length > 1) {
@@ -4958,7 +4972,7 @@ function rotateHero() {
       showHero(heroItems[0]);
     }
     rotateHero();
-  }, HERO_EVERY);
+  }, Math.max(250, Math.min(HERO_EVERY, until)));
 }
 
 /** One card in a row. Hovering it makes it the billboard. */
@@ -5004,6 +5018,7 @@ function withArt(item, name) {
 }
 
 function playFromHome(input, page = '') {
+  homeOpen = false;
   addStream(input, { mode: 'add' }, '', page);
 }
 
@@ -5054,11 +5069,12 @@ async function drawHome() {
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
-  const [sections, , episodes, , top] = await Promise.all([
+  const [sections, , episodes, , , top] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
     loadHighlights().catch(() => null),
+    loadMatchdayReactions().catch(() => null),
     loadJob('top10.json'),
   ]);
   if (asked !== homeAsked) return;
@@ -5152,15 +5168,14 @@ async function drawHome() {
   // from the build-up until full time it holds it.
   let rotation = [...teams.filter((game) => game.match.state !== 'post'), ...cont.slice(0, 3), ...fresh.slice(0, 2), ...teams.filter((game) => game.match.state === 'post'), ...onNow.slice(0, 3)];
   if (matchday.hero) rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
-  heroItems = matchday.phase === 'buildup' || matchday.phase === 'live' ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
+  heroItems = matchday.hold ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
   if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
   rotateHero();
 }
 
 /** Shows or hides the home screen with the empty wall (laptop only). */
-function syncHome(wall) {
+function syncHome(show) {
   const home = $('home');
-  const show = wall && !onPhoneScreen();
   clearTimeout(homeTimer);
   if (!show) {
     home.hidden = true;
@@ -5515,6 +5530,8 @@ let guideFolder = '';
 // Earlier versions remembered the last folder, Games tab and Standings league. Tidy those away.
 try { ['multigrid.guidefolder.v1', 'multigrid.matches.v1', 'multigrid.standings.v1'].forEach((key) => localStorage.removeItem(key)); } catch { /* nothing to tidy */ }
 let guideTimer = null;
+const MAN_UTD_FOLDER = 'Man Utd';
+const sameGuideFolder = (a, b) => String(a).toLocaleLowerCase() === String(b).toLocaleLowerCase();
 
 // Shows about my teams get the team's colour.
 const GUIDE_TEAMS = [
@@ -5535,12 +5552,37 @@ function liveTag() {
 /** The channels the guide shows right now: favorites with listings, in the chosen folder. */
 function guideChannels() {
   const { sections } = guideSections();
-  const folders = sections.map((section) => section.folder).filter(Boolean);
-  if (guideFolder && !folders.some((folder) => folder.toLocaleLowerCase() === guideFolder.toLocaleLowerCase())) guideFolder = '';
-  const rows = sections
-    .filter((section) => !guideFolder || section.folder.toLocaleLowerCase() === guideFolder.toLocaleLowerCase())
-    .flatMap((section) => section.rows);
-  return { rows, folders };
+  const all = sections.flatMap((section) => section.rows);
+  const real = sections.map((section) => section.folder).filter(Boolean);
+  const hasManUtd = all.some(({ item }) => nowAndNext(item.name, parseSource(item.input))?.current
+    || showsBetween(item.name, parseSource(item.input), Date.now(), Infinity).some((show) => GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`)));
+  const folders = [...real];
+  if (hasManUtd && !folders.some((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER))) folders.push(MAN_UTD_FOLDER);
+  if (guideFolder && !folders.some((folder) => sameGuideFolder(folder, guideFolder))) guideFolder = '';
+  const special = sameGuideFolder(guideFolder, MAN_UTD_FOLDER);
+  const rows = special
+    ? all
+    : sections
+      .filter((section) => !guideFolder || sameGuideFolder(section.folder, guideFolder))
+      .flatMap((section) => section.rows);
+  // Sports first, then the Man Utd folder, then the rest A–Z.
+  const sports = folders.find((folder) => sameGuideFolder(folder, 'Sports'));
+  const united = folders.find((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER));
+  const rest = folders.filter((folder) => folder !== sports && folder !== united).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  return { rows, folders: [sports, united, ...rest].filter(Boolean) };
+}
+
+/** Shows about Man Utd across every favourite TV channel, in time order. */
+function manUtdResults() {
+  const now = Date.now();
+  const found = [];
+  for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
+    for (const show of showsBetween(item.name, parseSource(item.input), now, Infinity)) {
+      if (GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`)) found.push({ item, show });
+    }
+  }
+  return found.sort((a, b) => (a.show.start <= now && now < a.show.end ? 0 : 1) - (b.show.start <= now && now < b.show.end ? 0 : 1)
+    || a.show.start - b.show.start).slice(0, 100);
 }
 
 function watchChannel(item) {
@@ -5748,7 +5790,8 @@ function renderGuide() {
   const keepLeft = oldScroll?.scrollLeft ?? null;
   const detail = box.querySelector('.gdetail');
 
-  const views = el('div', { class: 'gviews', role: 'tablist' }, ...[['now', 'Now'], ['timeline', 'Timeline']].map(([id, label]) => el('button', {
+  const manUtd = sameGuideFolder(guideFolder, MAN_UTD_FOLDER);
+  const views = manUtd ? null : el('div', { class: 'gviews', role: 'tablist' }, ...[['now', 'Now'], ['timeline', 'Timeline']].map(([id, label]) => el('button', {
     type: 'button',
     role: 'tab',
     class: `gview${guideView === id ? ' is-on' : ''}`,
@@ -5758,7 +5801,7 @@ function renderGuide() {
   })));
   const pills = folders.length ? el('div', { class: 'matches-tabs addp-pills gfolders' }, ...['', ...folders].map((folder) => el('button', {
     type: 'button',
-    class: `matches-tab${guideFolder.toLocaleLowerCase() === folder.toLocaleLowerCase() ? ' is-on' : ''}`,
+    class: `matches-tab${sameGuideFolder(guideFolder, folder) ? ' is-on' : ''}`,
     textContent: folder || 'All',
     on: { click() { guideFolder = folder; box.querySelector('.gbody')?.remove(); renderGuide(); } },
   }))) : null;
@@ -5771,6 +5814,11 @@ function renderGuide() {
     body = el('div', { class: 'gbody' }, found.length
       ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
       : el('p', { class: 'match-quiet is-empty', textContent: `No shows on your channels match “${guideQuery}” in the guide, which runs about a day ahead.` }));
+  } else if (manUtd) {
+    const found = manUtdResults();
+    body = el('div', { class: 'gbody' }, found.length
+      ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
+      : el('p', { class: 'match-quiet is-empty', textContent: 'No Man Utd shows in the guide.' }));
   } else if (guideView === 'timeline') {
     body = el('div', { class: 'gbody is-timeline' }, timelineView(rows));
   } else {
@@ -6624,11 +6672,21 @@ function fillDetails(match, holder, refresh = false) {
    (tools/build-highlights.mjs) and kept in highlights.json, up to three per game, best first. */
 let highlightsData = null;
 let highlightsAt = 0;
+let reactionsData = null;
+let reactionsAt = 0;
 async function loadHighlights() {
-  if (highlightsData && Date.now() - highlightsAt < 10 * 60000) return highlightsData;
+  if (highlightsData && Date.now() - highlightsAt < 5 * 60000) return highlightsData;
   const data = await loadJob('highlights.json');
   if (data?.games) { highlightsData = data; highlightsAt = Date.now(); }
   return highlightsData;
+}
+
+/** The five-minute fan reaction feed, separate from the slower Reader/highlights job. */
+async function loadMatchdayReactions() {
+  if (reactionsData && Date.now() - reactionsAt < 2 * 60000) return reactionsData;
+  const data = await loadJob('matchday-reactions.json');
+  if (data?.videos) { reactionsData = data; reactionsAt = Date.now(); }
+  return reactionsData;
 }
 const highlightsOf = (match) => highlightsData?.games?.[match.id]?.videos ?? [];
 const highlightsInput = (video) => `https://www.youtube.com/watch?v=${video.id}`;
@@ -6743,7 +6801,7 @@ async function matchdayTick(force = false) {
     }
     const match = mdMatch();
     if (match && phaseOf(match, now) !== 'off') {
-      await Promise.all([loadGuide().catch(() => false), loadHighlights().catch(() => null), loadMatchdayStories()]);
+      await Promise.all([loadGuide().catch(() => false), loadHighlights().catch(() => null), loadMatchdayReactions().catch(() => null), loadMatchdayStories()]);
       md.broadcast = findMatchdayBroadcast() ?? md.broadcast;
       const phase = mdPhase(now);
       // The match file: every 30 s live, every minute around the line-ups, otherwise every 10 min;
@@ -6773,6 +6831,10 @@ async function matchdayTick(force = false) {
       }
     }
   } finally {
+    if (mdPhase() === 'fulltime') {
+      const match = mdMatch();
+      if (match) markFulltime(match.id, Date.now(), match.start);
+    }
     drawMatchdayViews();
     const phase = mdPhase();
     mdTimer = setTimeout(matchdayTick, phase === 'live' ? 30000 : phase === 'off' ? 15 * 60000 : 60000);
@@ -6932,7 +6994,14 @@ function mdMediaItems(phase) {
   }
   // YouTube: the club's own uploads and the broadcasters' (Sky Sports, NBC, TNT, the league...).
   const youtube = [];
-  for (const video of clubVideos(highlightsData?.club?.[md.team.id]).filter((item) => item.published > after).slice(0, 10)) {
+  const fanTitle = /\bman(chester)?\.?\s*(utd|united)\b|\bunited\b|\bold trafford\b|\bpochettino\b|\bred devils\b|\bcarrick\b|\bINEOS\b|\bglazers?\b/i;
+  const fanSources = new Set(['Stretford Paddock', 'Stephen Howson', 'Lyes', 'Culture Cams', 'Adikastakes', 'MinaFootball', 'No Question About That']);
+  const fan = phase === 'fulltime' ? (reactionsData?.videos ?? []).filter((video) => fanTitle.test(video.title)) : [];
+  const club = clubVideos(highlightsData?.club?.[md.team.id]).filter((video) => !fanSources.has(video.source) || fanTitle.test(video.title));
+  const seenVideos = new Set();
+  for (const video of [...fan, ...club].filter((item) => item.published > after).sort((a, b) => b.published - a.published)) {
+    if (seenVideos.has(video.id)) continue;
+    seenVideos.add(video.id);
     const source = video.source || md.team.short;
     youtube.push({ key: `mdc:${video.id}`, label: source, title: video.title, cardMeta: `${source} · ${ago(video.published)}`, backdrop: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, playLabel: 'Watch', play: () => playFromHome(`https://www.youtube.com/watch?v=${video.id}`) });
   }
@@ -6999,6 +7068,7 @@ function matchdayHeroItem(phase) {
         highlights ? mdButton('Highlights', 'play', () => playHighlights(match), true) : null,
         reaction ? mdButton('Reaction', 'play', () => document.querySelector('.home-row.is-matchday')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), !highlights) : null,
         mdButton('Match centre', 'live', openMatchday, !highlights && !reaction)));
+      if (md.next) parts.push(el('p', { class: 'hero-meta md-next-line', textContent: `Next: ${md.next.home.name} v ${md.next.away.name} · ${dayLabel(md.next.start)} ${clock(md.next.start)}` }));
     }
     return parts.filter(Boolean);
   };
@@ -7038,7 +7108,11 @@ function refreshMatchdayHero() {
 /** What Matchday adds to the home screen: { hero, row, strip } for the phase it is. */
 function matchdayHome(now = Date.now()) {
   const phase = mdPhase(now);
-  const out = { phase, hero: null, row: null, strip: null };
+  const out = { phase, hero: null, row: null, strip: null, hold: phase === 'buildup' || phase === 'live' };
+  if (phase === 'fulltime') {
+    const match = mdMatch();
+    out.hold = Boolean(match && isFulltimeHold(match.id, match.start, now));
+  }
   if (phase !== 'off') {
     out.hero = matchdayHeroItem(phase);
     const items = mdMediaItems(phase);
@@ -7076,17 +7150,40 @@ function matchCentre() {
     parts.push(section('Line-ups', mdLineup(match, data) || el('p', { class: 'md-quiet', textContent: 'ESPN usually posts the line-ups about an hour before kick-off.' })));
     const build = mdMediaItems(phase).slice(0, 12);
     if (build.length) parts.push(section('Build-up', el('ul', { class: 'md-media' }, ...build.map(mdMediaRow))));
+  } else if (phase === 'fulltime') {
+    // After the whistle the story is the reaction, then the analysis. The live feed is gone.
+    const reaction = mdMediaItems(phase);
+    if (reaction.length) parts.push(section('Reaction', el('ul', { class: 'md-media' }, ...reaction.map(mdMediaRow))));
+    const analysis = [];
+    const goals = mdScorers(match, data);
+    if (goals) analysis.push(section('Goals', goals));
+    const chance = mdChanceGraph(match) || mdChances(match, md.odds);
+    if (chance) analysis.push(section('Win chance', chance));
+    const timeline = mdTimeline(match, data);
+    if (timeline) analysis.push(section('Timeline', timeline));
+    const stats = mdStats(match, data);
+    if (stats) analysis.push(section('Stats', stats));
+    const place = data?.positions?.[mdSide(match)];
+    if (place?.rank && !isCalledOff(match)) {
+      analysis.push(section('Table', el('p', { class: 'md-quiet', textContent: `${match[mdSide(match)].name}: ${tableMove(positionBefore(match.id), place.rank)} · ${place.points} pts` })));
+    }
+    if (analysis.length) parts.push(section('Analysis', el('div', { class: 'md-post-analysis' }, ...analysis)));
+    if ((data?.lineups ?? []).length) parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, icon('pitch', 14), 'Line-ups and subs'));
+    if (md.next) {
+      parts.push(section('Next match', el('p', { class: 'md-quiet', textContent: `${md.next.home.name} v ${md.next.away.name} · ${dayLabel(md.next.start)} ${clock(md.next.start)}` })));
+    }
+    const lines = data?.commentary ?? [];
+    if (lines.length) {
+      const list = el('ol', { class: 'md-commentary' });
+      const show = (count) => list.replaceChildren(...lines.slice(0, count).map((line) => el('li', {}, el('span', { class: 'md-minute', textContent: line.minute }), el('span', { textContent: line.text }))));
+      show(12);
+      const more = lines.length > 12 ? el('button', { type: 'button', class: 'md-link', on: { click() { show(lines.length); more.remove(); } } }, `All ${lines.length} updates`) : null;
+      parts.push(section('Commentary', el('div', {}, list, more)));
+    }
   } else {
-    parts.push(phase === 'fulltime' ? section('Goals', mdScorers(match, data)) : null);
     parts.push(section('Win chance', mdChanceGraph(match) || mdChances(match, md.odds)));
     parts.push(section('Timeline', mdTimeline(match, data)));
     parts.push(section('Stats', mdStats(match, data)));
-    if (phase === 'fulltime') {
-      const place = data?.positions?.[mdSide(match)];
-      if (place?.rank && !isCalledOff(match)) parts.push(section('Table', el('p', { class: 'md-quiet', textContent: `${match[mdSide(match)].name}: ${tableMove(positionBefore(match.id), place.rank)} · ${place.points} pts` })));
-      const reaction = mdMediaItems(phase).slice(0, 12);
-      if (reaction.length) parts.push(section('Reaction', el('ul', { class: 'md-media' }, ...reaction.map(mdMediaRow))));
-    }
     if ((data?.lineups ?? []).length) parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, icon('pitch', 14), 'Line-ups and subs'));
     const lines = data?.commentary ?? [];
     if (lines.length) {
@@ -7139,7 +7236,7 @@ function fillMatchdaySheet() {
   if (!box) return;
   const scroll = box.querySelector('.matchday-body')?.scrollTop ?? 0;
   const body = el('div', { class: 'matchday-body' }, matchCentre());
-  box.replaceChildren(el('div', { class: 'ch-head' }, el('h2', { textContent: 'Matchday' }), iconButton('close', 'Close', () => box.close())), body);
+  box.replaceChildren(el('div', { class: 'ch-head' }, el('h2', { textContent: mdPhase() === 'fulltime' ? 'Post-match' : 'Matchday' }), iconButton('close', 'Close', () => box.close())), body);
   body.scrollTop = scroll;
 }
 
@@ -7175,7 +7272,7 @@ function matchdayEntry() {
   const when = phase === 'live' ? `Live · ${shortClock(match.detail) || match.detail}` : phase === 'fulltime' ? 'Full time' : `Today ${clock(match.start)}`;
   const line = match.state === 'pre' ? `${match.home.name} v ${match.away.name}` : `${match.home.name} ${match.home.score}–${match.away.score} ${match.away.name}`;
   return el('button', { type: 'button', class: `md-entry${phase === 'live' ? ' is-live' : ''}`, on: { click: openMatchday } },
-    el('span', { class: 'md-entry-tag', textContent: 'Matchday' }),
+    el('span', { class: 'md-entry-tag', textContent: phase === 'fulltime' ? 'Post-match' : 'Matchday' }),
     el('span', { class: 'md-entry-text' }, el('b', { textContent: line }), el('small', { textContent: when })),
     icon('next', 16));
 }
@@ -8933,6 +9030,10 @@ $('source-dialog').addEventListener('close', () => {
   if ($('ppv-box').open) $('ppv-box').close();
   if ($('podcast-box').open) $('podcast-box').close();
   if ($('library-detail').open) $('library-detail').close();
+});
+$('home-button').addEventListener('click', () => {
+  homeOpen = !homeOpen;
+  render();
 });
 $('palette-button').addEventListener('click', () => openPalette());
 document.addEventListener('keydown', (event) => {

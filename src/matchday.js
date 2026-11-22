@@ -23,6 +23,38 @@ const MINUTE = 60000;
 const HOUR = 60 * MINUTE;
 /** The build-up takes over the banner this long before kick-off (or when the TV coverage starts, if earlier). */
 export const BUILDUP_LEAD = 2 * HOUR;
+/** After the whistle the full-time card holds the banner for the same two hours. */
+export const POST_MATCH_HOLD = 2 * HOUR;
+const FULLTIME_KEY = 'multigrid.matchday.fulltime.v1';
+
+/** Remember when this match first reached full time, so the hold survives a reload. */
+export function markFulltime(matchId, now = Date.now(), start = 0) {
+  if (!matchId) return 0;
+  try {
+    const all = JSON.parse(localStorage.getItem(FULLTIME_KEY) || '{}');
+    if (!all[matchId]) {
+      // If the page wasn't open at the whistle, don't extend the hold from when it was opened.
+      all[matchId] = Number(start) > 0 ? Math.min(now, Number(start) + 2 * HOUR) : now;
+      const keep = Object.entries(all).sort((a, b) => b[1] - a[1]).slice(0, 4);
+      localStorage.setItem(FULLTIME_KEY, JSON.stringify(Object.fromEntries(keep)));
+    }
+    return Number(all[matchId]) || now;
+  } catch {
+    return now;
+  }
+}
+
+export function fulltimeAt(matchId) {
+  try { return Number(JSON.parse(localStorage.getItem(FULLTIME_KEY) || '{}')[matchId]) || 0; } catch { return 0; }
+}
+
+/** 2 h after full time; if the app wasn't open at the whistle, kick-off + 2 h is the fallback. */
+export function fulltimeHoldUntil(matchId, start = 0) {
+  const at = fulltimeAt(matchId) || (Number(start) > 0 ? Number(start) + 2 * HOUR : 0);
+  return at ? at + POST_MATCH_HOLD : 0;
+}
+
+export const isFulltimeHold = (matchId, start, now = Date.now()) => now < fulltimeHoldUntil(matchId, start);
 
 export const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
 

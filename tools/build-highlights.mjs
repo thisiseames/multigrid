@@ -55,6 +55,17 @@ export const MATCHDAY_SOURCES = {
   UC4i_9WvfPRTuRWEaWyfKuFw: 'TNT Sports',
   UCD2lJITnvzflNhOqQckMpQg: 'Fubo Canada',
 };
+// Man Utd fan channels. They are already about the club, so their uploads are not filtered
+// by title; every recent one is a reaction candidate.
+export const MATCHDAY_FANS = {
+  UC7w8GnTF2Sp3wldDMtCCtVw: 'Stretford Paddock',
+  'UCmX3073pl-9ASXYaWDrEAHw': 'Stephen Howson',
+  UCOyooZR35UMNW4OZH64Obbw: 'Lyes',
+  UChgYF4LZR7lWP4OkQSGYcqQ: 'Culture Cams',
+  UCMCNDW3uarK9vwNBaqZ2NbQ: 'Adikastakes',
+  'UC_6IdIzLIduJCczV3KnlLaw': 'MinaFootball',
+  UCQ0uvhxm3j2_sx3ubtTm2Eg: 'No Question About That',
+};
 
 const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and', 'vs']);
 export const words = (text) => String(text || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -253,9 +264,12 @@ async function main() {
     for (const [id, source] of Object.entries(MATCHDAY_SOURCES)) {
       pool.push(...(await uploadsOf(id)).filter((upload) => about.test(upload.title)).map((upload) => ({ ...upload, source })));
     }
+    for (const [id, source] of Object.entries(MATCHDAY_FANS)) {
+      pool.push(...(await uploadsOf(id)).map((upload) => ({ ...upload, source })));
+    }
     const list = [];
     for (const upload of pool.filter((item) => now - item.published < FORGET).sort((a, b) => b.published - a.published)) {
-      if (list.length >= 24 || list.some((video) => video.id === upload.id)) continue;
+      if (list.some((video) => video.id === upload.id)) continue;
       if (!known.has(upload.id)) { await pause(200); if (!(await embeddable(upload.id))) continue; }
       list.push({ id: upload.id, title: upload.title, published: upload.published, source: upload.source });
     }
