@@ -1,5 +1,5 @@
 {
- "updated": 1795364323940,
+ "updated": 1795365901652,
  "games": {
   "401876396": {
    "league": "Ligue 1",
@@ -120,7 +120,13 @@
    "title": "Hull 2–0 Brighton",
    "start": 1795356000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "C0wduXuEpow",
+     "title": "Hull City vs. Brighton | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
+     "rank": 3.5
+    }
+   ]
   },
   "401879235": {
    "league": "Premier League",
@@ -303,6 +309,13 @@
    "league": "Bundesliga",
    "title": "Union Berlin 1–5 RB Leipzig",
    "start": 1795271400000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401884733": {
+   "league": "Bundesliga",
+   "title": "Augsburg 3–1 Mainz",
+   "start": 1795357800000,
    "sources": "feeds",
    "videos": []
   },
@@ -705,7 +718,9 @@
   "pl:306": "",
   "pl:331": "",
   "ligue1:6851": "UCYh5fX_dsAbmpoh5Ihee45A",
-  "ligue1:7868": ""
+  "ligue1:7868": "",
+  "bundesliga:3841": "UCMH-8bjKSpk1eNVwN2U8VLA",
+  "bundesliga:2950": ""
  },
  "club": {
   "360": [
