@@ -3,7 +3,7 @@
 // saving in storage.js and drawing in grid-view.js.
 
 import {
-  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
+  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, fitToStreams, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
   phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
@@ -6384,7 +6384,8 @@ function restore(item) {
     toast("This saved layout couldn't be read.");
     return;
   }
-  ws = next;
+  // A layout saved with empty boxes (before saving fitted it) opens with just its streams.
+  ws = fitToStreams(next);
   closePopovers();
   // Opened from the Saved layouts tab in Add stream.
   if ($('source-dialog').open) $('source-dialog').close();
@@ -6404,7 +6405,7 @@ function buildSavedRow(item) {
       }, el('b', { textContent: item.name }), el('small', { textContent: savedSummary(item) })),
       el('span', { class: 'row-actions' },
         iconButton('update', 'Replace with what is on screen now', () => {
-          saveNamed(item.name, ws);
+          saveNamed(item.name, fitToStreams(ws));
           refreshSaved();
           toast(`Updated ${item.name}.`);
         }),
@@ -6449,7 +6450,7 @@ function buildSavedRow(item) {
 /* The MULTIGRID name opens the saved layouts: tap one to open it. */
 function sameAsScreen(item) {
   const inputs = (tiles) => tiles.filter((tile) => tile.input && tile.place).map((tile) => tile.input).sort().join('\n');
-  return item.workspace.presetId === ws.presetId && inputs(item.workspace.tiles) === inputs(ws.tiles) && Boolean(inputs(ws.tiles));
+  return fitToStreams(item.workspace).presetId === fitToStreams(ws).presetId && inputs(item.workspace.tiles) === inputs(ws.tiles) && Boolean(inputs(ws.tiles));
 }
 
 /** "Save this layout" in the MULTIGRID drop-down: a row that becomes a name box and a Save button. */
@@ -6474,7 +6475,7 @@ function saveHereRow() {
           event.preventDefault();
           const name = input.value.trim();
           if (!name) { input.focus(); return; }
-          if (!saveNamed(name, ws)) { toast(STORAGE_FULL); return; }
+          if (!saveNamed(name, fitToStreams(ws))) { toast(STORAGE_FULL); return; }
           toast(`Saved ${name}.`);
           buildSavedDrop();
         },
@@ -6511,7 +6512,7 @@ function buildSavedDrop() {
   $('saved-drop').replaceChildren(...[
     el('p', { class: 'sdrop-head', textContent: 'Saved layouts' }),
     saved.length ? el('ul', { class: 'sdrop-list' }, ...saved.map((item) => {
-      const { cols = [1], rows = [1], tiles = [] } = item.workspace;
+      const { cols = [1], rows = [1], tiles = [] } = fitToStreams(item.workspace);
       const slots = tiles.filter((tile) => tile.place).map((tile) => tile.place);
       const here = sameAsScreen(item);
       return el('li', {}, el('button', {
@@ -6572,7 +6573,7 @@ function savedParts() {
           input.focus();
           return;
         }
-        if (!saveNamed(name, ws)) {
+        if (!saveNamed(name, fitToStreams(ws))) {
           message.textContent = "Couldn't save. This browser's storage may be full or turned off.";
           message.hidden = false;
           return;

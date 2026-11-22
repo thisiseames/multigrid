@@ -274,3 +274,19 @@ test('picture in picture ×2: one big cell with all three screens in it, the res
   assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
   assert.equal(hiddenTiles(ws).length, 1);
 });
+
+import { fitToStreams } from '../src/layout.js';
+
+test('saving 2 streams from a 5-box layout keeps just the 2, side by side, and leaves the screen alone', () => {
+  const ws = withStreams(2, 'duo');
+  assert.equal(ws.tiles.filter((tile) => tile.place).length, 5, 'the screen has 5 boxes');
+  const saved = fitToStreams(ws);
+  assert.equal(saved.tiles.length, 2);
+  assert.ok(saved.tiles.every((tile) => tile.input && tile.place));
+  assert.equal(saved.presetId, 'equal');
+  assertTiled(saved, 'fitted');
+  assert.equal(ws.tiles.length, 5, 'the screen itself is unchanged');
+  // A layout the streams fill stays exactly as it was.
+  const full = withStreams(5, 'duo');
+  assert.deepEqual(fitToStreams(full), full);
+});

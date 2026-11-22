@@ -282,9 +282,32 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
   justify-content: center;
   overflow: hidden;
 }
-/* The empty wall: the MULTIGRID background sits behind the grid until the first stream arrives,
-   on every screen. */
+/* The empty wall, with no streams on screen. On a computer: black, with MULTIGRID in the middle,
+   fading in like a streaming service's opening screen. On a phone: the MULTIGRID background. */
 #stage.is-empty-wall {
+  position: relative;
+  background: #000 radial-gradient(ellipse 60% 45% at 50% 50%, #0c0c0f 0%, #000 70%);
+}
+#stage.is-empty-wall::after {
+  content: 'MULTIGRID';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding-left: 0.42em; /* balances the letter spacing after the last letter */
+  font: 600 clamp(26px, 3.2vw, 44px)/1 var(--font);
+  letter-spacing: 0.42em;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: wall-in 1.6s ease-out both;
+}
+@keyframes wall-in {
+  from { opacity: 0; letter-spacing: 0.5em; }
+  to { opacity: 1; letter-spacing: 0.42em; }
+}
+@media (prefers-reduced-motion: reduce) { #stage.is-empty-wall::after { animation: none; } }
+body.is-phone #stage.is-empty-wall {
   background-color: var(--bg);
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)),
@@ -294,6 +317,7 @@ body.is-fullscreen:not(.is-phone) .podcast-dock { height: calc(56px + var(--bar)
   background-size: cover;
   background-repeat: no-repeat;
 }
+body.is-phone #stage.is-empty-wall::after { content: none; }
 @media (orientation: portrait) {
   body.is-phone #stage.is-empty-wall {
     background-color: var(--bg);

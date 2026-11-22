@@ -597,6 +597,20 @@ export function makeRoom(ws) {
   return free();
 }
 
+/**
+ * The same streams with no empty boxes, for saving a layout: 2 streams saved in a 5-box layout
+ * become 2 side by side, not 2 and three empty boxes. A layout the streams fill is kept as it is.
+ * Returns a copy; the screen itself isn't changed.
+ */
+export function fitToStreams(source) {
+  const ws = JSON.parse(JSON.stringify(source));
+  const streams = ws.tiles.filter(isStream);
+  if (!streams.length || !ws.tiles.some((tile) => tile.place && !tile.input)) return ws;
+  ws.tiles = streams;
+  const preset = ws.presetId === 'custom' ? null : presetById(ws.presetId);
+  return applyPreset(ws, !preset || preset.fixed ? 'equal' : ws.presetId, 0);
+}
+
 /** Takes a stream off the grid. Layouts that fit themselves to the streams close up. */
 export function removeTile(ws, id) {
   const tile = ws.tiles.find((candidate) => candidate.id === id);
