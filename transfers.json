@@ -1,0 +1,416 @@
+{
+ "updated": 1795385614828,
+ "window": {
+  "name": "Summer 2026",
+  "playlist": "4658365"
+ },
+ "next": {
+  "name": "Winter 2027",
+  "opens": 1798761600000,
+  "closes": 1801522800000
+ },
+ "united": [
+  {
+   "player": "Dan Gore",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Luton",
+   "date": 1788202860000,
+   "link": "https://www.manutd.com/en/news/luton-loan-for-dan-gore-31-august-2026"
+  },
+  {
+   "player": "Gabriele Biancheri",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Wacker Innsbruck",
+   "date": 1788202860000,
+   "link": "https://www.manutd.com/en/news/biancheri-joins-fc-wacker-innsbruck-september-2026?t=y&utm_source=twitter&utm_medium=story&utm_campaign=club_news"
+  },
+  {
+   "player": "James Overy",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Sydney",
+   "date": 1788202860000,
+   "link": "https://www.manutd.com/en/news/james-overy-departs-for-sydney-fc"
+  },
+  {
+   "player": "James Scanlon",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Arsenal",
+   "date": 1788010800000,
+   "link": "https://www.manutd.com/en/news/james-scanlon-joins-arsenal-transfer-news"
+  },
+  {
+   "player": "Carlos Baleba",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "Brighton",
+   "date": 1787672160000,
+   "link": "https://www.manutd.com/en/news/carlos-baleba-joins-united"
+  },
+  {
+   "player": "Ethan Ennis",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Stockport",
+   "date": 1786990380000,
+   "link": "https://www.manutd.com/en/news/ethan-ennis-departs-for-efl-club-august-2026?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Ethan Williams",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Peterborough",
+   "date": 1786610820000,
+   "link": "https://www.manutd.com/en/news/ethan-williams-departs-for-efl-club-peterborough-united?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Cristian Orozco",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "Fortaleza",
+   "date": 1786043940000,
+   "link": "https://www.manutd.com/en/news/cristian-orozco-signs-for-united-v1?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Tyler Fredricson",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Lausanne-Sport",
+   "date": 1785411600000,
+   "link": "https://www.manutd.com/en/news/tyler-fredricson-leaves-man-united-for-a-new-chapter?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Elyh Harrison",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Greenock Morton",
+   "date": 1785249000000,
+   "link": "https://www.manutd.com/en/news/loan-news-harrison-joins-greenock-morton?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Sekou Kone",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Lausanne-Sport",
+   "date": 1784902020000,
+   "link": "https://www.manutd.com/en/news/loan-news-kone-joins-lausanne-sport-for-202627?t=y&utm_source=twitter&utm_medium=story&utm_campaign=club_news?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Karl Darlow",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "",
+   "date": 1784027340000,
+   "link": "https://www.manutd.com/en/news/karl-darlow-signs-for-manchester-united?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Jadon Sancho",
+   "direction": "out",
+   "kind": "Released",
+   "club": "",
+   "date": 1781283600000,
+   "link": "https://www.manutd.com/en/news/uniteds-retained-list-and-released-players?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Youri Tielemans",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "Aston Villa",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/manchester-united-announce-signing-of-youri-tielemans?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Andrey Santos",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "Chelsea",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/andrey-santos-signs-for-manchester-united/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Tynan Thompson",
+   "direction": "in",
+   "kind": "Signed",
+   "club": "Spurs",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/tynan-thompson-signs-for-united-july-2026?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Radek Vitek",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Middlesbrough",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/radek-vitek-seals-efl-move-to-middlesbrough?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Altay Bayindir",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Celta Vigo",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/altay-bayindir-joins-celta-vigo-on-loan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Rasmus Hojlund",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Napoli",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/transfer-news-hojlund-signs-for-napoli-on-permanent-deal?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Andre Onana",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Trabzonspor",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/andre-onana-rejoins-trabzonspor-on-loan-2026?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Toby Collyer",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "West Brom",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/transfer-news-collyer-signs-for-west-brom?t=y&utm_source=twitter&utm_medium=story&utm_campaign=club_news"
+  },
+  {
+   "player": "Chido Obi",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Willem II",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/loan-news-chido-obi-set-for-eredivisie-move"
+  },
+  {
+   "player": "Jayce Fitzgerald",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Rotherham",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/jayce-fitzgerald-joins-rotherham-on-loan-aug-2026"
+  },
+  {
+   "player": "Louis Jackson",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "St Mirren",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/jackson-completes-scottish-move-to-st-mirren"
+  },
+  {
+   "player": "Habeeb Ogunneye",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Arsenal",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/transfer-news-ogunneye-signs-for-arsenal"
+  },
+  {
+   "player": "Louie Bradbury",
+   "direction": "out",
+   "kind": "Sold",
+   "club": "Stoke",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/transfer-news-bradbury-joins-stoke"
+  },
+  {
+   "player": "Jack Moorhouse",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Dundee",
+   "date": 1780483140000,
+   "link": "https://www.manutd.com/en/news/loan-news-moorhouse-joins-dundee-fc"
+  },
+  {
+   "player": "Casemiro",
+   "direction": "out",
+   "kind": "Released",
+   "club": "",
+   "date": 1770732420000,
+   "link": "https://www.manutd.com/en/news/casemiro-to-leave-man-utd-at-the-end-of-the-2025-26-season?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Tyrell Malacia",
+   "direction": "out",
+   "kind": "Released",
+   "club": "",
+   "date": 1770732420000,
+   "link": "https://www.manutd.com/en/news/tyrell-malacia-to-leave-united-in-the-summer-2026?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "player": "Ethan Wheatley",
+   "direction": "out",
+   "kind": "Loan out",
+   "club": "Lincoln",
+   "date": 1768407360000,
+   "link": "https://www.manutd.com/en/news/ethan-wheatley-heads-out-on-loan"
+  }
+ ],
+ "league": [
+  {
+   "club": "Nottingham Forest",
+   "player": "Cherif Yaya",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1788799560000,
+   "link": "https://www.nottinghamforest.co.uk/news/2026/september/07/cherif-yaya-joins-ilkeston-on-loan/"
+  },
+  {
+   "club": "Crystal Palace",
+   "player": "Quinten Timber",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1788306060000,
+   "link": "https://www.cpfc.co.uk/news/announcement/palace-sign-netherlands-international-quinten-timber/"
+  },
+  {
+   "club": "Man City",
+   "player": "Enzo Fernandez",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1788301980000,
+   "link": "https://www.mancity.com/news/mens/enzo-fernandez-signs-for-city-63923893"
+  },
+  {
+   "club": "Chelsea",
+   "player": "Dario Essugo",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1788287880000,
+   "link": "https://www.chelseafc.com/en/news/article/dario-essugo-completes-loan-switch"
+  },
+  {
+   "club": "Everton",
+   "player": "Adam Aznou",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1788202320000,
+   "link": "https://www.evertonfc.com/news/2026/august/31/aznou-seals-malaga-loan-switch/"
+  },
+  {
+   "club": "Man Utd",
+   "player": "Carlos Baleba",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1787672160000,
+   "link": "https://www.manutd.com/en/news/carlos-baleba-joins-united"
+  },
+  {
+   "club": "Tottenham Hotspur",
+   "player": "Ashley Phillips",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1786527240000,
+   "link": "https://www.tottenhamhotspur.com/news/1085616/phillips-joins-middlesbrough?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Sunderland",
+   "player": "Anthony Patterson",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1786460700000,
+   "link": "https://www.safc.com/news/2026/august/11/patterson-pens-wrexham-deal/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Brentford",
+   "player": "Julian Eyestone",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1786460340000,
+   "link": "https://www.brentfordfc.com/en/news/article/first-team-julian-eyestone-joins-rotherham-united-on-loan-transfer?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Brighton & Hove Albion",
+   "player": "Tommy Watson",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1785605580000,
+   "link": "https://www.brightonandhovealbion.com/media-article/watson-joins-leicester-city-on-loan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Aston Villa",
+   "player": "Joe Gauci",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1785249360000,
+   "link": "https://www.avfc.co.uk/news/2026/july/28/news-gauci-in-lincoln-loan-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Liverpool",
+   "player": "Calum Scanlon",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1784821800000,
+   "link": "https://www.liverpoolfc.com/news/calum-scanlon-signs-new-lfc-contract-and-rejoins-cardiff-city-loan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Arsenal",
+   "player": "Elijah Upson",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1784720280000,
+   "link": "https://www.arsenal.com/news/elijah-upson-signs-for-arsenal-aXZMS1u0ggbY?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Ipswich",
+   "player": "Daizen Maeda",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1784648880000,
+   "link": "https://www.itfc.co.uk/news/2026/july/25/Japan-international-Daizen-Maeda-joins-Ipswich-Town/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "AFC Bournemouth",
+   "player": "Michele Di Gregorio",
+   "direction": "in",
+   "kind": "Loan in",
+   "date": 1784041560000,
+   "link": "https://www.afcb.co.uk/news/2026/august/25/michele-di-gregorio-joins-afc-bournemouth-on-loan/"
+  },
+  {
+   "club": "Leeds United",
+   "player": "Largie Ramazani",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1781545140000,
+   "link": "https://www.leedsunited.com/en/news/largie-ramazani-joins-burnley-on-loan"
+  },
+  {
+   "club": "Fulham",
+   "player": "Aaron Loupalo-Bi",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1780923060000,
+   "link": "https://www.fulhamfc.com/news/2026/august/14/loupalo-bi-heads-to-fleetwood-town-on-loan/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Hull City",
+   "player": "Kasey Palmer",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1770732420000,
+   "link": "https://www.wearehullcity.co.uk/news/2026/july/04/palmer-signs-for-luton-permanently/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Coventry City",
+   "player": "Jamie Allen",
+   "direction": "out",
+   "kind": "Released",
+   "date": 1770077640000,
+   "link": "https://www.ccfc.co.uk/news/2026/may/15/jamie-allen-to-leave-coventry-city-upon-expiry-of-his-contract/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Newcastle",
+   "player": "Joe White",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1766753460000,
+   "link": "https://www.newcastleunited.com/en/news/joe-white-joins-crewe-alexandra?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  }
+ ]
+}

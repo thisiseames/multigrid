@@ -3057,3 +3057,60 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .eh-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #f5f5f7; transition: transform .15s, background .15s; }
 .eh-switch.is-on .eh-knob { transform: translateX(16px); background: #0b0b0d; }
 .eh-foot { padding-top: 12px; }
+
+/* ---------- Transfer desk ---------- */
+.transferp { width: min(560px, calc(100vw - 16px)); }
+body.is-phone .transferp { width: 100%; }
+.transfer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 12px 2px 6px; }
+.transfer-head-main { min-width: 0; }
+.transfer-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.transfer-sub { margin: 2px 0 0; font-size: 12px; color: var(--text-2); }
+.transfer-state { flex: none; padding: 5px 8px; border-radius: 7px; background: var(--surface); color: var(--text-2); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.transfer-state.is-open { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text); }
+.transfer-sec { margin-top: 10px; }
+.transfer-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 2px 5px; }
+.transfer-label { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.transfer-note { font-size: 11px; color: var(--text-2); }
+.transfer-fees { margin: 7px 2px 0; }
+.transfer-squad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.transfer-squad-box { display: flex; flex-direction: column; gap: 1px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.transfer-squad-box.is-thin { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.transfer-squad-short { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text-2); }
+.transfer-squad-count { font-size: 20px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.transfer-squad-age { font-size: 10.5px; color: var(--text-2); }
+.transfer-sublabel { margin: 8px 2px 3px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.transfer-list { border-radius: 9px; background: var(--surface); overflow: hidden; }
+.transfer-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; color: var(--text); text-decoration: none; }
+.transfer-row + .transfer-row { border-top: 1px solid var(--border); }
+.transfer-row:hover { background: rgba(255, 255, 255, .04); }
+.transfer-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.transfer-player { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13.5px; font-weight: 600; }
+.transfer-meta { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11.5px; color: var(--text-2); }
+.transfer-date { flex: none; font-size: 10.5px; color: var(--text-2); }
+.transfer-more { margin: 7px 2px 0; font-size: 12px; color: var(--text-2); }
+.transfer-more:hover { color: var(--text); }
+.transfer-stories { display: flex; flex-direction: column; gap: 1px; border-radius: 9px; background: var(--surface); overflow: hidden; }
+.transfer-story { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 9px 10px; border: 0; background: none; text-align: left; color: var(--text); font: inherit; cursor: pointer; }
+.transfer-story + .transfer-story { border-top: 1px solid var(--border); }
+.transfer-story:hover { background: rgba(255, 255, 255, .04); }
+.transfer-story-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.transfer-story-source { font-size: 10.5px; font-weight: 600; color: var(--text-2); }
+.transfer-tier { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+.transfer-tier.is-1 { color: var(--accent); }
+.transfer-story-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.transfer-story-time { font-size: 10.5px; color: var(--text-2); }
+.transfer-empty { margin: 0; padding: 10px; font-size: 12px; color: var(--text-2); }
+.transfer-league { margin: 12px 0 4px; border-top: 1px solid var(--border); }
+.transfer-league-summary { padding: 9px 2px; font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; }
+.transfer-league-list { padding-bottom: 4px; }
+.transfer-league-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 2px; border-top: 1px solid var(--border); font-size: 12px; }
+.transfer-league-row b { flex: none; font-weight: 600; }
+.transfer-league-row span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-2); }
+
+body.is-phone .transfer-head { flex-wrap: wrap; }
+body.is-phone .transfer-title { font-size: 22px; }
+body.is-phone .transfer-row { min-height: 48px; padding: 9px 11px; }
+body.is-phone .transfer-story { min-height: 48px; padding: 10px 11px; }
+body.is-phone .transfer-story-title { font-size: 14px; }
+body.is-phone .transfer-squad-box { padding: 9px 10px; }
+body.is-phone .transfer-squad-count { font-size: 22px; }

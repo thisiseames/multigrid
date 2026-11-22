@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-QiT9Q9kcR9Bz5eMsoOcBnhB0TQy2o0ZEX5F2OfIxRjY=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3qFMbYrJpP3w5XCvSChfhoSceWlqPdDEUt30hPrzdWk=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#000000">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -59,6 +59,9 @@
     <button id="standings-button" class="bar-button" type="button" title="Standings" aria-label="Standings" aria-haspopup="true" aria-expanded="false">
       <span data-icon="table" class="narrow-only"></span>
       <span class="bar-button-text wide-only">Standings</span>
+    </button>
+    <button id="transfers-button" class="bar-button" type="button" title="Transfers" aria-label="Transfers" aria-haspopup="true" aria-expanded="false" hidden>
+      <span data-icon="sports"></span>
     </button>
     <button id="guide-button" class="bar-button" type="button" title="TV guide" aria-label="TV guide" hidden>
       <span data-icon="guide"></span>
@@ -134,6 +137,7 @@
       <div id="sheet-switch" class="sheet-switch" role="group" aria-label="Sports" hidden>
         <button type="button" data-panel="matches-menu">Games</button>
         <button type="button" data-panel="standings-menu">Standings</button>
+        <button type="button" data-panel="transfers-menu">Transfers</button>
       </div>
       <button id="sheet-close" class="sheet-close" type="button" aria-label="Close"><span data-icon="close"></span></button>
     </div>
@@ -147,6 +151,7 @@
   <div id="saved-menu" class="popover saved-menu" hidden></div>
   <div id="saved-drop" class="popover saved-drop" hidden></div>
   <div id="standings-menu" class="popover matches stand" hidden></div>
+  <div id="transfers-menu" class="popover matches transferp" hidden></div>
   <div id="matches-menu" class="popover matches" hidden></div>
   <div id="today-menu" class="popover matches todayp" hidden></div>
   <div id="reader-menu" class="popover matches readerp" hidden></div>
@@ -246,7 +251,7 @@
   <script type="module">
     // GitHub lets browsers reuse its files for 10 minutes without asking. So ask first, which
     // also updates the browser's copy. If a check fails, what the browser already has is used.
-    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/artwork.js', 'src/avatars.js', 'src/backups.js', 'src/boxscore.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/daddylive.js', 'src/episodes.js', 'src/favorite-box.js', 'src/game-links.js', 'src/grid-view.js', 'src/guide.js', 'src/homelayout.js', 'src/layout.js', 'src/leagues.js', 'src/library-meta.js', 'src/library.js', 'src/live-search.js', 'src/local-files.js', 'src/markets.js', 'src/matchday.js', 'src/matches.js', 'src/matchora.js', 'src/mixer.js', 'src/move.js', 'src/odds.js', 'src/phone.js', 'src/players.js', 'src/podcasts.js', 'src/pop.js', 'src/popout.js', 'src/ppv.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/sting.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tidy.js', 'src/tiktok-list.js', 'src/top10.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js', 'src/yt-subs.js', 'src/zlive.js'];
+    const files = ['index.html', 'pop.html', 'styles.css', 'src/app.js', 'src/artwork.js', 'src/avatars.js', 'src/backups.js', 'src/boxscore.js', 'src/cast.js', 'src/channels.js', 'src/crop.js', 'src/daddylive.js', 'src/episodes.js', 'src/favorite-box.js', 'src/game-links.js', 'src/grid-view.js', 'src/guide.js', 'src/homelayout.js', 'src/layout.js', 'src/leagues.js', 'src/library-meta.js', 'src/library.js', 'src/live-search.js', 'src/local-files.js', 'src/markets.js', 'src/matchday.js', 'src/matches.js', 'src/matchora.js', 'src/mixer.js', 'src/move.js', 'src/odds.js', 'src/phone.js', 'src/players.js', 'src/podcasts.js', 'src/pop.js', 'src/popout.js', 'src/ppv.js', 'src/predictions.js', 'src/reader.js', 'src/remote.js', 'src/resume.js', 'src/sources.js', 'src/standings.js', 'src/sting.js', 'src/storage.js', 'src/sync.js', 'src/ticker.js', 'src/tidy.js', 'src/tiktok-list.js', 'src/top10.js', 'src/transfers.js', 'src/trends.js', 'src/twitch.js', 'src/ui.js', 'src/weather.js', 'src/x-feed.js', 'src/yt-subs.js', 'src/zlive.js'];
     // Ask the CSS for its current ETag, so a new version gets a new URL instead of a cached one.
     const styleVersion = fetch('styles.css', { method: 'HEAD', cache: 'no-cache', signal: AbortSignal.timeout?.(3000) })
       .then((response) => response.headers.get('etag') || response.headers.get('last-modified') || String(Date.now()))

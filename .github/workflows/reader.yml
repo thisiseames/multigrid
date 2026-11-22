@@ -64,6 +64,11 @@ jobs:
         if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
         timeout-minutes: 7
+      # The transfer desk's done deals, one latest deal per club, and the next window dates.
+      - run: node tools/build-transfers.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
+        timeout-minutes: 3
       - name: Save the new headlines
         if: steps.fresh.outputs.skip != 'true'
         run: |
@@ -71,6 +76,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A reader
           if [ -f highlights.json ]; then git add highlights.json; fi
+          if [ -f transfers.json ]; then git add transfers.json; fi
           git diff --cached --quiet && exit 0
           git commit -m "Update Reader"
           for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

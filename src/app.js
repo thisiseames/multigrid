@@ -20,6 +20,7 @@ import { connect, controllerPairing, forgetController, forgetHost, hostPairing, 
 import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
+import { sourceTier, squadGroups, transferNews, windowState } from './transfers.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
 import { episodeMeta, loadMovieMeta, loadShowMeta } from './library-meta.js';
@@ -6198,6 +6199,154 @@ function buildStandings() {
   }, 5 * 60 * 1000);
 }
 
+/* ---------- Transfer desk ---------- */
+
+let transfersTimer = null;
+let transfersAsked = 0;
+let transferShowAll = false;
+let transfersCache = null;
+let transfersAt = 0;
+let squadCache = null;
+let squadAt = 0;
+
+async function loadTransfers(force = false) {
+  if (!force && transfersCache && Date.now() - transfersAt < 5 * 60_000) return transfersCache;
+  const response = await fetch('transfers.json', { cache: 'no-cache' });
+  if (!response.ok) throw new Error('transfers');
+  transfersCache = await response.json();
+  transfersAt = Date.now();
+  return transfersCache;
+}
+
+async function loadSquad(force = false) {
+  if (!force && squadCache && Date.now() - squadAt < 30 * 60_000) return squadCache;
+  const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/teams/360/roster', { cache: 'no-cache' });
+  if (!response.ok) throw new Error('squad');
+  const data = await response.json();
+  squadCache = data.athletes ?? [];
+  squadAt = Date.now();
+  return squadCache;
+}
+
+function transferDealRow(deal) {
+  const main = el('span', { class: 'transfer-main' },
+    el('span', { class: 'transfer-player', textContent: deal.player }),
+    el('span', { class: 'transfer-meta', textContent: `${deal.kind}${deal.club ? ` · ${deal.direction === 'in' ? 'from' : 'to'} ${deal.club}` : ''}` }));
+  const date = el('span', { class: 'transfer-date', textContent: deal.date ? dayLabel(deal.date) : '' });
+  return deal.link
+    ? el('a', { class: 'transfer-row', href: deal.link, target: '_blank', rel: 'noopener' }, main, date)
+    : el('div', { class: 'transfer-row' }, main, date);
+}
+
+function transferStoryRow(item) {
+  const tier = sourceTier(item.source);
+  return el('button', {
+    type: 'button',
+    class: 'transfer-story',
+    on: { click: () => openItem(item) },
+  },
+  el('span', { class: 'transfer-story-top' },
+    el('span', { class: 'transfer-story-source', textContent: item.source }),
+    el('span', { class: `transfer-tier is-${tier}`, textContent: tier === 1 ? 'Tier 1' : 'Tier 2' })),
+  el('span', { class: 'transfer-story-title', textContent: item.title }),
+  el('span', { class: 'transfer-story-time', textContent: ago(item.time) }));
+}
+
+function transferSection(label, note, ...children) {
+  return el('section', { class: 'transfer-sec' },
+    el('div', { class: 'transfer-sec-head' },
+      el('h4', { class: 'transfer-label', textContent: label }),
+      note ? el('span', { class: 'transfer-note', textContent: note }) : null),
+    ...children);
+}
+
+function renderTransferDesk(body, desk, squad, readerItems) {
+  const state = windowState(Date.now(), desk.next);
+  const ins = desk.united.filter((deal) => deal.direction === 'in');
+  const outs = desk.united.filter((deal) => deal.direction === 'out');
+  const shownIn = transferShowAll ? ins : ins.slice(0, 5);
+  const shownOut = transferShowAll ? outs : outs.slice(0, 5);
+  const groups = squadGroups(squad);
+  const ages = squad.map((player) => Number(player.age)).filter(Number.isFinite);
+  const avg = ages.length ? Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length) : 0;
+  const stories = transferNews(readerItems, { limit: 5 });
+  const seen = new Set(stories.map((item) => String(item.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()));
+  const elsewhere = transferNews(readerItems, { united: false, limit: 4, exclude: seen });
+  const doneCount = ins.length + outs.length;
+  const windowDay = (time) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(time));
+  const status = state.open
+    ? `Closes ${windowDay(state.closes)}`
+    : `Opens ${windowDay(state.opens)} · ${state.days} day${state.days === 1 ? '' : 's'}`;
+
+  body.replaceChildren(
+    el('div', { class: 'transfer-head' },
+      el('div', { class: 'transfer-head-main' },
+        el('h3', { class: 'transfer-title', textContent: 'Transfer desk' }),
+        el('p', { class: 'transfer-sub', textContent: `${desk.window.name} window · ${state.open ? 'open' : 'closed'}` })),
+      el('span', { class: `transfer-state${state.open ? ' is-open' : ''}`, textContent: status })),
+
+    transferSection('Squad', `${squad.length} players · avg age ${avg}`,
+      el('div', { class: 'transfer-squad' }, ...groups.map((group) => el('div', { class: `transfer-squad-box${group.count < 3 ? ' is-thin' : ''}` },
+        el('span', { class: 'transfer-squad-short', textContent: group.short }),
+        el('b', { class: 'transfer-squad-count', textContent: String(group.count) }),
+        el('span', { class: 'transfer-squad-age', textContent: group.avgAge ? `avg ${group.avgAge}` : '' }))))),
+
+    transferSection('Done', `${ins.length} in · ${outs.length} out`,
+      el('h5', { class: 'transfer-sublabel', textContent: 'In' }),
+      el('div', { class: 'transfer-list' }, ...(shownIn.length ? shownIn.map(transferDealRow) : [el('p', { class: 'transfer-empty', textContent: 'No confirmed arrivals.' })])),
+      el('h5', { class: 'transfer-sublabel', textContent: 'Out' }),
+      el('div', { class: 'transfer-list' }, ...(shownOut.length ? shownOut.map(transferDealRow) : [el('p', { class: 'transfer-empty', textContent: 'No confirmed departures.' })])),
+      doneCount > shownIn.length + shownOut.length
+        ? el('button', { type: 'button', class: 'transfer-more', textContent: transferShowAll ? 'Show latest' : `Show all ${doneCount}`, on: { click() { transferShowAll = !transferShowAll; fillTransfers(); } } })
+        : null,
+      el('p', { class: 'transfer-note transfer-fees', textContent: 'Fees are not in the official feed.' })),
+
+    transferSection('United links', 'Reader',
+      el('div', { class: 'transfer-stories' }, ...(stories.length
+        ? stories.map(transferStoryRow)
+        : [el('p', { class: 'transfer-empty', textContent: 'No fresh United transfer stories.' })]))),
+
+    elsewhere.length
+      ? transferSection('Elsewhere', 'Reader', el('div', { class: 'transfer-stories' }, ...elsewhere.map(transferStoryRow)))
+      : null,
+
+    el('details', { class: 'transfer-league' },
+      el('summary', { class: 'transfer-league-summary', textContent: `Around the league · ${desk.league.length} clubs` }),
+      el('div', { class: 'transfer-league-list' }, ...desk.league.map((deal) => el('div', { class: 'transfer-league-row' },
+        el('b', { textContent: deal.club }),
+        el('span', { textContent: `${deal.player} · ${deal.kind}` }))))));
+}
+
+async function fillTransfers() {
+  const menu = $('transfers-menu');
+  const body = menu.querySelector('.transfer-body');
+  if (!body) return;
+  const asked = ++transfersAsked;
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton is-thin' }))));
+  try {
+    const [desk, squad, reader] = await Promise.all([loadTransfers(), loadSquad(), loadIndex()]);
+    if (asked !== transfersAsked || menu.hidden) return;
+    renderTransferDesk(body, desk, squad, reader?.items ?? []);
+    const updated = menu.querySelector('.matches-updated');
+    if (updated) updated.textContent = `Updated ${clock(desk.updated)} · Premier League, ESPN and the Reader`;
+  } catch {
+    if (asked !== transfersAsked || menu.hidden) return;
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'The transfer desk could not load. Try again in a minute.' }));
+  }
+}
+
+function buildTransfers() {
+  const menu = $('transfers-menu');
+  transferShowAll = false;
+  menu.replaceChildren(sportsSwitch('transfers'), el('div', { class: 'matches-body transfer-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  fillTransfers();
+  clearInterval(transfersTimer);
+  transfersTimer = setInterval(() => {
+    if (menu.hidden) return clearInterval(transfersTimer);
+    fillTransfers();
+  }, 10 * 60 * 1000);
+}
+
 /** Games and Standings are one Sports button; this is the switch inside its panel. */
 function sportsSwitch(current) {
   const tab = (label, panel) => el('button', {
@@ -6207,20 +6356,21 @@ function sportsSwitch(current) {
     textContent: label,
     on: { click: () => openSports(panel) },
   });
-  return el('div', { class: 'sports-switch', role: 'tablist', aria: { label: 'Sports' } }, tab('Games', 'games'), tab('Standings', 'standings'));
+  return el('div', { class: 'sports-switch', role: 'tablist', aria: { label: 'Sports' } }, tab('Games', 'games'), tab('Standings', 'standings'), tab('Transfers', 'transfers'));
 }
 
 function openSports(panel) {
   if (document.body.classList.contains('is-phone')) {
-    $(panel === 'standings' ? 'standings-button' : 'matches-button').click();
+    $(panel === 'standings' ? 'standings-button' : panel === 'transfers' ? 'transfers-button' : 'matches-button').click();
     return;
   }
-  const menu = panel === 'standings' ? $('standings-menu') : $('matches-menu');
-  togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : buildMatches);
+  const menu = panel === 'standings' ? $('standings-menu') : panel === 'transfers' ? $('transfers-menu') : $('matches-menu');
+  togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : panel === 'transfers' ? buildTransfers : buildMatches);
 }
 
 $('sports-button').addEventListener('click', () => openSports('games'));
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
+$('transfers-button').addEventListener('click', () => togglePopover($('sports-button'), $('transfers-menu'), buildTransfers));
 
 /* ---------- Reader ---------- */
 

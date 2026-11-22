@@ -269,3 +269,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 
 ## Nov 22 — Home screen your way
 - "Edit home" at the bottom of the laptop home screen: move rows up or down, hide them, and choose what the banner cycles through (Top 10 and Trending can join it; off to begin with). Undo and Reset in the panel. Matchday always leads. Saved in this browser (multigrid.homelayout.v1). src/homelayout.js, tests/homelayout.test.mjs.
+
+## Nov 22 — Transfer desk
+- A third Sports tab — **Games / Standings / Transfers** — on the laptop and in the phone's Sports sheet. `tools/build-transfers.mjs` writes `transfers.json` from the Premier League's own transfer-centre playlists (hourly, no-op when unchanged): the 30 United deals in the summer 2026 window with player, direction, club, date and a details link, one latest deal per club, and the Winter 2027 dates. The Reader workflow runs it and commits the file.
+- The desk shows the ESPN squad by position (GK/DEF/MID/FWD counts and average ages), **Done** in/out, **United links** from the Reader with Tier 1/2 source labels, and an **Around the league** list. The official feed has no fees, so the desk says so rather than inventing them. The next window reads **Fri, Jan 1** (UTC), 40 days away. The "Elsewhere" filter only accepts football stories from the Sport/Man United groups after climate and hotel stories slipped in on the first pass.
+- Verified locally at 1280 and 390: header, squad, 5 in/5 out with Show all 30, four United transfer stories, 20 clubs, no horizontal overflow, no console errors; 291 tests.
