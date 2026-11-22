@@ -2,6 +2,7 @@
 # The full Reader/highlights job is about every 25 minutes; this small feed is every five.
 # GitHub barely runs scheduled jobs for this project, so each run starts the next one and the
 # next one waits five minutes before refreshing. The schedule is only a backup.
+# A channel whose feed fails keeps its last good videos instead of vanishing.
 name: matchday-reactions
 
 on:
