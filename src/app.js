@@ -52,8 +52,9 @@ import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixe
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
-  saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
+  saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceFavorites, replaceSynced, syncedLists,
 } from './storage.js';
+import { linkLabel, nextName, tidyIssues } from './tidy.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { searchLiveSources } from './live-search.js';
 import {
@@ -5317,7 +5318,7 @@ function renderAddFavorites(holder, getTarget) {
   const { wrap } = addSearchBox(holder);
   const send = syncButton();
   holder.replaceChildren(
-    el('div', { class: 'favorites-head' }, el('h3', { class: 'addp-label', textContent: 'Favorites' }), send),
+    el('div', { class: 'favorites-head' }, el('h3', { class: 'addp-label', textContent: 'Favorites' }), el('span', { class: 'favorites-head-actions' }, tidyButton(), send)),
     wrap,
     el('div', { class: 'addp-pills', hidden: true }),
     el('div', { class: 'addp-grid-wrap' }));
@@ -8330,6 +8331,111 @@ const syncCameIn = () => {
   refreshFavorites();
   if ($('sync-box').open) openSyncBox();
 };
+
+/* Tidy up favorites (src/tidy.js): folderless favorites, two folders for one thing, the same
+   link twice, the same name on different links. Every fix is the owner's tap, with Undo. */
+function tidyButton() {
+  const { count } = tidyIssues(listFavorites());
+  if (!count) return null;
+  return el('button', { type: 'button', class: 'text-button favorites-tidy', on: { click: openTidyBox } }, 'Tidy up', el('span', { class: 'tidy-count', textContent: String(count) }));
+}
+
+/** Does a change, then offers Undo (the whole list as it was) at the top of the box, where it can be reached. */
+let tidyUndo = null;
+function tidyChange(note, change) {
+  const before = listFavorites();
+  if (!change()) { toast(STORAGE_FULL); return; }
+  tidyUndo = { note, before };
+  refreshFavorites();
+  drawTidyBox();
+}
+
+function openTidyBox() {
+  let box = document.getElementById('tidy-box');
+  if (!box) {
+    box = el('dialog', { id: 'tidy-box', class: 'dialog tidy-box', aria: { label: 'Tidy up favorites' } });
+    box.addEventListener('click', (event) => { if (event.target === box) box.close(); });
+    document.body.append(box);
+  }
+  tidyUndo = null;
+  drawTidyBox();
+  openDialog(box);
+}
+
+function drawTidyBox() {
+  const box = document.getElementById('tidy-box');
+  if (!box) return;
+  const favorites = listFavorites();
+  const { unfiled, merges, sameLink, sameName, count } = tidyIssues(favorites);
+  const folders = listFolders();
+  const scroll = box.querySelector('.tidy-body')?.scrollTop ?? 0;
+  const section = (title, note, ...body) => el('section', { class: 'tidy-section' }, el('h3', { class: 'tidy-title', textContent: title }), note ? el('p', { class: 'tidy-note', textContent: note }) : null, ...body);
+  const kindOf = (item) => { const source = parseSource(item.input); return source.ok ? (KIND_NAMES[source.kind] || source.label || 'Link') : 'Link'; };
+  const sections = [];
+
+  for (const merge of merges) {
+    sections.push(section('Two folders for the same thing', `${merge.from} (${merge.fromCount}) and ${merge.to} (${merge.toCount}).`,
+      el('button', { type: 'button', class: 'tidy-main', on: { click: () => tidyChange(`${merge.from} merged into ${merge.to}.`, () => renameFolder(merge.from, merge.to)) } }, `Merge into ${merge.to}`)));
+  }
+
+  if (sameLink.length) {
+    sections.push(section('Saved twice', 'The same link saved more than once. Keep one; the copy in a folder stays.',
+      el('ul', { class: 'tidy-list' }, ...sameLink.map((items) => el('li', { class: 'tidy-row' },
+        el('span', { class: 'tidy-name' }, el('b', { textContent: [...new Set(items.map((item) => item.name))].join(' · ') }), el('small', { textContent: `${items.length} copies · ${linkLabel(items[0].input)}` })),
+        el('button', { type: 'button', class: 'tidy-act', on: { click() {
+          // The one in a folder stays (else the first); the other copies go.
+          const keep = items.find((item) => item.group) ?? items[0];
+          const drop = new Set(items.filter((item) => item !== keep).map((item) => item.input));
+          tidyChange(`Kept one ${keep.name}.`, () => replaceFavorites(listFavorites().filter((item) => !drop.has(item.input))));
+        } } }, 'Keep one'))))));
+  }
+
+  if (unfiled.length) {
+    const choices = new Map();
+    const options = (picked) => ['', ...new Set([...folders, picked].filter(Boolean))].map((folder) => el('option', { value: folder, textContent: folder || 'No folder', selected: folder === picked }));
+    const rows = unfiled.map(({ item, suggest }) => {
+      choices.set(item.input, suggest);
+      const select = el('select', { class: 'tidy-select', aria: { label: `Folder for ${item.name}` }, on: { change(event) { choices.set(item.input, event.target.value); } } }, ...options(suggest));
+      return el('li', { class: 'tidy-row' }, el('span', { class: 'tidy-name' }, el('b', { textContent: item.name }), el('small', { textContent: kindOf(item) })), select);
+    });
+    const suggested = unfiled.filter(({ suggest }) => suggest).length;
+    sections.push(section(`No folder (${unfiled.length})`, suggested === unfiled.length ? 'Each has a suggested folder from what it is. Change any, then move them.' : suggested ? `${suggested} have a suggested folder from what they are; choose one for the rest.` : 'Choose a folder for each, then move them.',
+      el('button', { type: 'button', class: 'tidy-main', on: { click() {
+        const moves = [...choices].filter(([, folder]) => folder);
+        if (!moves.length) { toast('Choose a folder for at least one first.'); return; }
+        tidyChange(`${moves.length} moved into folders.`, () => {
+          const to = new Map(moves);
+          return replaceFavorites(listFavorites().map((item) => (to.has(item.input) && !item.group ? { ...item, group: listFolders().find((folder) => folder.toLocaleLowerCase() === to.get(item.input).toLocaleLowerCase()) ?? to.get(item.input) } : item)));
+        });
+      } } }, 'Move into these folders'),
+      el('ul', { class: 'tidy-list' }, ...rows)));
+  }
+
+  if (sameName.length) {
+    sections.push(section(`Same name, different links (${sameName.length})`, 'Not duplicates: each is a different link. Rename one so you can tell them apart, or remove the one you don’t need.',
+      ...sameName.map((items) => el('ul', { class: 'tidy-list tidy-group' }, ...items.map((item) => {
+        return el('li', { class: 'tidy-row' },
+          el('span', { class: 'tidy-name' }, el('b', { textContent: item.name }), el('small', { textContent: [item.group || 'No folder', linkLabel(item.input)].join(' · ') })),
+          el('button', { type: 'button', class: 'tidy-act', on: { click() {
+            const others = listFavorites().filter((other) => other.input !== item.input).map((other) => other.name);
+            const name = nextName(item.name, others);
+            tidyChange(`Renamed to ${name}.`, () => saveFavorite(item.input, name, item.group));
+          } } }, 'Rename'),
+          el('button', { type: 'button', class: 'tidy-act is-quiet', on: { click: () => tidyChange(`Removed ${item.name}.`, () => removeFavorite(item.input)) } }, 'Remove'));
+      })))));
+  }
+
+  const body = el('div', { class: 'tidy-body' }, ...(count ? sections : [el('p', { class: 'tidy-done', textContent: 'All tidy. Nothing left to sort.' })]));
+  const undo = tidyUndo ? el('div', { class: 'tidy-undo' }, el('span', { textContent: tidyUndo.note }), el('button', { type: 'button', class: 'tidy-act', on: { click() {
+    const { before } = tidyUndo;
+    tidyUndo = null;
+    replaceFavorites(before);
+    refreshFavorites();
+    drawTidyBox();
+  } } }, 'Undo')) : null;
+  box.replaceChildren(...[el('div', { class: 'ch-head' }, el('h2', { textContent: 'Tidy up favorites' }), iconButton('close', 'Close', () => box.close())), undo, body].filter(Boolean));
+  body.scrollTop = scroll;
+}
 
 function syncButton() {
   return el('button', { type: 'button', class: 'text-button favorites-send', textContent: isSyncing() ? 'Synced' : 'Sync', on: { click: openSyncBox } });

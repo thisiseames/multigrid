@@ -236,6 +236,9 @@ export function removeFavorite(input) {
   return write(FAVORITES_KEY, listFavorites().filter((item) => item.input !== input));
 }
 
+/** Puts the whole list back as it was (Tidy up's Undo). */
+export const replaceFavorites = (list) => write(FAVORITES_KEY, Array.isArray(list) ? list : []);
+
 export const favoriteSources = (input) => listFavorites().find((item) => item.input === input)?.sources ?? [];
 
 /** The old link becomes a backup when a favorite is repaired to another of the same channel. */
