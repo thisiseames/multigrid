@@ -95,6 +95,7 @@ const pendingSound = new Set(); // tiles saved with sound, held until the first 
 const grid = new GridView($('grid'), $('stage'), env, {
   onFill: (id) => openSourceDialog({ mode: 'fill', id }),
   onReplace: (id) => openSourceDialog({ mode: 'replace', id }),
+  onFixStream: (id) => openPalette({ repair: { id } }),
   onRemove: removeStream,
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
