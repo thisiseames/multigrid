@@ -101,12 +101,13 @@ body.is-phone .surf-pill { display: none; }
   margin-left: 4px;
   flex: none;
   border-radius: 6px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
   font-weight: 550;
   white-space: nowrap;
 }
-.add-button:hover { filter: brightness(1.08); }
+.add-button:hover { background: #28282d; filter: none; border-color: var(--border); }
 .add-button:disabled { background: var(--raised); color: var(--text-2); cursor: default; filter: none; }
 
 /* The primary Add buttons use the same dark raised surface with a thin border. */
@@ -2560,8 +2561,6 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 
 /* Controls and sound controls: white / near-white, never the old periwinkle. */
 :focus-visible { outline-color: #f5f5f7; }
-.add-button { background: #f5f5f7; color: #0b0b0d; }
-.add-button:hover { background: #fff; filter: none; }
 .text-button, .toast button { color: #f5f5f7; }
 .more-switch.is-on { background: #f5f5f7; }
 .more-switch.is-on::after { background: #0b0b0d; }

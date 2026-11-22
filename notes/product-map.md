@@ -18,7 +18,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Add stream
 
-- **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams. Add stream controls use white/near-white, never periwinkle.
+- **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams. The paste Add and X account Add are the normal dark raised buttons; tabs/chips and focus use white/near-white, never periwinkle.
 - **X account** field (fixed `x.com/@` prefix, 1–15 characters) with Add; it auto-saves to the Twitter folder.
 - **Action row** is Play a video file from this computer/phone, Browse PPV events, and Import a list — three across on desktop, one column on phone.
 - **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The old stacked links are gone.

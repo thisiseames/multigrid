@@ -11,7 +11,7 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 21) **Podcast directory**: PODCASTS → Find a podcast searches Apple's keyless directory, plays full episodes in the dock, and follows shows as synced hidden favorites. 209 tests; verified laptop, phone, error/retry, Continue and real two-profile sync.
 - [x] (done Nov 21) **Podcast charts**: Find a podcast opens on Apple's Top Shows (25) and Trending Episodes (10) for Canada, built hourly by `podcasts.yml` into `podcast-charts.json`; trending episodes play in the dock. 213 tests.
 - [x] (done Nov 22) **Local library details**: TVmaze episode titles/air dates/synopses; Wikipedia/Wikidata movie plot/cast/runtime in a Details dialog. 219 tests.
-- [x] (done Nov 22) **White controls**: Add stream dialog and sound controls (desktop mixer, phone Sound sheet) no longer use periwinkle; active tabs, buttons, switches, sliders and focus are white/near-white. 219 tests.
+- [x] (done Nov 22) **White controls**: Add stream dialog and sound controls (desktop mixer, phone Sound sheet) no longer use periwinkle; active tabs/chips, switches, sliders and focus are white/near-white; the paste and X Add buttons stay the normal dark raised button. 219 tests.
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.
 - [ ] **Modern top bar (laptop)**: icon + label buttons with the open panel highlighted; Remote/Saved/help/fullscreen behind the layout button; sound row as small per-stream cards (picture, name, Play/Pause, Mute, slider); clean file names ("Silo · S3 E8 · Gray Goo", no .mkv) in the sound row and tile labels.
