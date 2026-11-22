@@ -86,7 +86,7 @@ Nov 22: the owner hates periwinkle, the pale blue-purple MULTIGRID has used as i
 
 **Instead:** white / near-white for controls and highlights (#f5f5f7 with dark text #0b0b0d on buttons; white fills on dim grey tracks), the way Apple TV, Netflix, HBO Max and Disney+ draw their players. Brand colours only inside logos.
 
-**Existing periwinkle:** the owner is replacing it one screen at a time, by request ("everywhere is too big of a commit"). Don't sweep the whole app unasked; when a screen is touched for this, change only that screen and check it at both widths. Done so far: the guide's show card (time bar, Watch button); the shared control styles (Add stream, desktop mixer, phone Sound sheet and equivalent buttons/tabs/sliders).
+**Existing periwinkle:** the owner is replacing it one screen at a time, by request ("everywhere is too big of a commit"). Don't sweep the whole app unasked; when a screen is touched for this, change only that screen and check it at both widths. Done so far: the guide's show card (time bar, Watch button); the shared control styles (Add stream, desktop mixer, phone Sound sheet and equivalent buttons/tabs/sliders); Continue watching progress bars.
 
 ## He uses Chrome, always
 Nov 22: "I am always on Chrome." Laptop and iPhone. Safari only for short developer checks. Never give Safari steps or reasons ("Safari blocks…"); write every instruction for Chrome. On the iPhone, the home-screen app is added from Chrome (Share → Add to Home Screen).
