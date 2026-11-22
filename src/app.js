@@ -2935,12 +2935,15 @@ function tileInfoCard(id, player) {
   const favorite = listFavorites().find((item) => item.input === tile.input);
   const art = card.score ? null : favoriteArt({ name, input: tile.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
   const side = (team) => el('span', { class: 'ti-side' }, team.logo ? el('img', { class: 'ti-crest', src: crest(team.logo, 44), alt: '', referrerPolicy: 'no-referrer' }) : null, el('b', { textContent: team.name }), team.score !== '' ? el('span', { class: 'ti-goals', textContent: team.score }) : null);
+  // LIVE sits under the logo; with no logo, at the end of the first line.
+  const live = () => (card.live ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null);
+  const head = card.score
+    ? el('div', { class: 'ti-score' }, ...card.score.order.map((key) => side(card.score[key])), card.score.clock ? el('span', { class: 'ti-clock', textContent: card.score.clock }) : null, live())
+    : card.title ? el('div', { class: 'ti-head' }, el('b', { class: 'ti-title', textContent: card.title }), art ? null : live()) : null;
   return el('div', { class: 'ti-card' },
-    art ? el('span', { class: 'ti-art' }, art) : null,
+    art ? el('span', { class: 'ti-side-col' }, el('span', { class: 'ti-art' }, art), live()) : null,
     el('div', { class: 'ti-text' },
-      card.live ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null,
-      card.score ? el('div', { class: 'ti-score' }, ...card.score.order.map((key) => side(card.score[key])), card.score.clock ? el('span', { class: 'ti-clock', textContent: card.score.clock }) : null) : null,
-      card.title ? el('b', { class: 'ti-title', textContent: card.title }) : null,
+      head,
       ...card.lines.map((line) => el('small', { textContent: line }))));
 }
 
