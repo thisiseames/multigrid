@@ -27,3 +27,4 @@ Each needs a full plan and your "go" before building.
 - [ ] Parked: size-matched quality for video links (needs a "Full quality" switch per tile).
 - [x] (done Nov 22) **Zlive purple frame**: all Zlive embeds are normalized on play (including manually pasted links and older favorites), removing the purple frame and applying white controls. 235 tests.
 - [x] (done Nov 22) **Atlantic from Top 10/Trending**: Open in Atlantic when an exact saved Atlantic title exists, otherwise Search in Atlantic; added to the home billboard and Today's Top 10 in Canada rows. 236 tests.
+- [x] (done Nov 22) **Zlive purple edges**: the remaining purple bars were the player page’s scrollbars; `scrolling="no"` on Zlive iframes removes them. 236 tests.

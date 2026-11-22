@@ -1497,9 +1497,11 @@ function playlistPlayer(source, options) {
 function genericPlayer(source, options) {
   // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
   // page from another site out of MULTIGRID and its saved layouts.
-  // Zlive's default player has a purple frame; its embed options remove it. Apply them
-  // when playing too, so Zlive links pasted before the channel finder are fixed as well.
-  const frame = makeFrame(zliveEmbed(source.url) || source.url);
+  // Zlive's default player has a purple frame and occasionally a 1px overflow that paints
+  // purple scrollbars. Its embed options remove the frame; scrolling=no removes the bars.
+  const zlive = zliveEmbed(source.url);
+  const frame = makeFrame(zlive || source.url);
+  if (zlive) frame.setAttribute('scrolling', 'no');
   if (daddyLivePlayer(source.url)) frame.classList.add('frame-daddy');
   return closedPlayer(frame, options);
 }
