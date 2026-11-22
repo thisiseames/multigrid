@@ -6769,17 +6769,11 @@ function openSourceDialog(target) {
   podShow = '';
   renderAddFavorites($('source-favorites'), () => sourceTarget);
   loadGuide().then((changed) => changed && $('source-dialog').open && renderAddFavorites($('source-favorites'), () => sourceTarget));
-  // On a phone, Add stream is mostly for picking a favorite, so it opens without the keyboard:
-  // the box itself is selected, so neither the paste box nor a button is (a selected button
-  // shows a blue highlight on an iPhone).
-  const phone = document.body.classList.contains('is-phone');
+  // Open with neither the paste box nor a button highlighted. On a phone this also keeps the
+  // keyboard down; on a desktop it avoids the focus box around the paste field.
   openDialog($('source-dialog'));
-  if (phone) {
-    $('source-dialog').tabIndex = -1;
-    $('source-dialog').focus({ preventScroll: true });
-  } else {
-    $('source-input').select();
-  }
+  $('source-dialog').tabIndex = -1;
+  $('source-dialog').focus({ preventScroll: true });
   if (replacing) updateSourceMessage();
 }
 

@@ -14,6 +14,7 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 22) **White controls**: Add stream dialog and sound controls (desktop mixer, phone Sound sheet) no longer use periwinkle; active tabs/chips, switches, sliders and focus are white/near-white; the paste and X Add buttons stay the normal dark raised button. 219 tests.
 - [x] (done Nov 22) **Five across**: Favorites and Library show cards are five across on a wide laptop, up from four; tablet stays three, phone stays two, movie cards stay six. 219 tests.
 - [x] (done Nov 22) **Continue watching bar**: white/near-white instead of periwinkle, including YouTube; matches the Up Next home bar. 219 tests.
+- [x] (done Nov 22) **Add stream opening**: no auto-focused paste box or highlighted field on desktop; the dialog takes focus instead. 219 tests.
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.
 - [ ] **Modern top bar (laptop)**: icon + label buttons with the open panel highlighted; Remote/Saved/help/fullscreen behind the layout button; sound row as small per-stream cards (picture, name, Play/Pause, Mute, slider); clean file names ("Silo · S3 E8 · Gray Goo", no .mkv) in the sound row and tile labels.
