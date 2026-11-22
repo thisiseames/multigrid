@@ -6044,6 +6044,7 @@ function movieRow(movie) {
 
 /* Charts: the top 5 of Billboard's charts, one tab each. It opens on the Hot 100 every time. */
 let chartTab = 0;
+let topTabAt = 0;
 
 const openLink = (url) => window.open(url, '_blank', 'noopener');
 
@@ -6132,17 +6133,18 @@ function chartNote(chart) {
   return chart.id === 'netflix' ? `${chart.source} · week ending ${day}` : `${chart.source} · ${day}`;
 }
 
-function chartsView(data, top) {
-  const charts = [
-    ...(Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length),
-    ...topCharts(top),
-  ];
+/** Billboard's charts, or (with `top`) the Netflix and Trending lists, one tab each. */
+function chartsView(data, { top = false } = {}) {
+  const charts = top ? topCharts(data)
+    : (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
   if (!charts.length) return null;
-  if (chartTab >= charts.length) chartTab = 0;
+  // Each list remembers its own tab while Today is open.
+  const saved = top ? topTabAt : chartTab;
+  let at = saved < charts.length ? saved : 0;
   const list = el('ul', { class: 'rlist chart-list' });
   const note = el('p', { class: 'chart-week' });
   const draw = () => {
-    const chart = charts[chartTab];
+    const chart = charts[at];
     list.replaceChildren(...(chart.kind === 'title'
       ? chart.entries.map((entry) => topRow(entry, list))
       : chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list))));
@@ -6151,12 +6153,13 @@ function chartsView(data, top) {
   const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
     type: 'button',
     role: 'tab',
-    class: `matches-tab${index === chartTab ? ' is-on' : ''}`,
-    aria: { selected: String(index === chartTab) },
+    class: `matches-tab${index === at ? ' is-on' : ''}`,
+    aria: { selected: String(index === at) },
     textContent: chart.name,
     on: {
       click(event) {
-        chartTab = index;
+        at = index;
+        if (top) topTabAt = index; else chartTab = index;
         for (const other of tabs.children) {
           const on = other === event.currentTarget;
           other.classList.toggle('is-on', on);
@@ -6851,8 +6854,9 @@ async function fillToday() {
   const teamSection = todaySection('Your teams', teamList);
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
-  const chartsSection = todaySection('Charts', chartsView(charts, top));
-  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
+  const chartsSection = todaySection('Charts', chartsView(charts));
+  const topSection = todaySection('Top 10 in Canada', chartsView(top, { top: true }));
+  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, topSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
     headlinesSection,
@@ -6870,6 +6874,7 @@ async function fillToday() {
     moviesSection.section,
     episodesSection.section,
     premieresSection.section,
+    topSection,
     chartsSection,
   ].filter(Boolean);
 
@@ -6967,6 +6972,7 @@ function weekWeather(box, weather) {
 function buildToday() {
   const menu = $('today-menu');
   chartTab = 0;
+  topTabAt = 0;
   todayView = 'today';
   redrawTodayDates = null;
   redrawTodayView = null;
