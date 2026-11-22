@@ -47,3 +47,11 @@ test("a club's channel must really be the club's", () => {
   assert.ok(isClubChannel('Real Madrid', { name: 'Real Madrid', full: 'Real Madrid' }));
   assert.ok(!isClubChannel('Real Madrid Highlights', { name: 'Real Madrid', full: 'Real Madrid' }));
 });
+
+import { gameBonus } from '../tools/build-highlights.mjs';
+
+test("the whole game's highlights come before one player's", () => {
+  assert.ok(gameBonus('Cavs vs Pacers | Game Highlights | 11.20.2026') > gameBonus('Cavs vs Pacers | James Harden Highlights | 11.20.2026'));
+  assert.ok(gameBonus('BUCKS at 76ERS | FULL GAME HIGHLIGHTS') > gameBonus('Highlights: Anthony Davis drops 36 points in win over the Chicago Bulls'));
+  assert.ok(gameBonus('Coventry City 3-2 Crystal Palace | Premier League Highlights') > 0);
+});

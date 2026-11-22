@@ -142,7 +142,17 @@ export function matchUploads(uploads, game, { kind, rank }) {
         ? hasScore(upload.title, game) || names(upload.title, game.home) && names(upload.title, game.away) || names(upload.title, kind === 'club' && rank >= 2 ? game.away : game.home)
         : names(upload.title, game.home) && names(upload.title, game.away)))
     // One player's highlights come after the game's own.
-    .map((upload) => ({ ...upload, rank: rank - (/\bpts\b|player highlights|^[^|]*highlights vs\.?/i.test(upload.title) ? 1 : 0) }));
+    .map((upload) => ({ ...upload, rank: rank + gameBonus(upload.title) }));
+}
+
+/** The whole game's highlights first; one player's after ("James Harden Highlights", "drops 36 points"). */
+export function gameBonus(title) {
+  const named = title.match(/([A-Z][a-z]+) ([A-Z][a-zA-Z'-]+) Highlights/);
+  const player = /\b\d+\s*(pts|points|reb|rebounds|ast|assists)\b|career[- ]high|player highlights/i.test(title)
+    || (named && !/^(premier|full|match|game|league|extended|official|postgame|nba|nfl|week|season)$/i.test(named[1])
+      && !/^(league|game|cup|highlights)$/i.test(named[2]));
+  if (player) return -1;
+  return /full game|game highlights|game recap|postgame|extended|resumen|r[eé]sum[eé]|zusammenfassung|match highlights|league highlights|\d\s*[-–:]\s*\d/i.test(title) ? 0.5 : 0;
 }
 
 /** "0-1", "0 - 1", "0:1", "(0-1)": this game's score, either way round. */
@@ -166,7 +176,7 @@ async function main() {
   const clubs = saved.clubs ?? {};
 
   const finished = (await Promise.all(MY_LEAGUES.map((league) => finishedGames(league, now)))).flat()
-    .filter((game) => now - game.start < LOOK_FOR && (games[game.id]?.videos?.length ?? 0) < 3)
+    .filter((game) => now - game.start < LOOK_FOR)
     .sort((a, b) => b.start - a.start);
 
   let lookups = 0;
@@ -188,12 +198,17 @@ async function main() {
     for (const source of sources) found.push(...matchUploads(await uploadsOf(source.id), game, source));
     found.sort((a, b) => b.rank - a.rank || a.published - b.published);
 
-    const videos = (games[game.id]?.videos ?? []).slice();
-    for (const pick of found) {
+    // Best first, each run: what's found now plus what was found before (a busy channel's feed
+    // only shows its newest uploads, so earlier finds may have scrolled off it).
+    const before = games[game.id]?.videos ?? [];
+    const pool = [...found, ...before.filter((video) => !found.some((pick) => pick.id === video.id)).map((video) => ({ ...video, rank: video.rank ?? 0, known: true }))]
+      .sort((a, b) => b.rank - a.rank || (a.published ?? 0) - (b.published ?? 0));
+    const videos = [];
+    for (const pick of pool) {
       if (videos.length >= 3) break;
       if (videos.some((video) => video.id === pick.id)) continue;
-      await pause(200);
-      if (await embeddable(pick.id)) videos.push({ id: pick.id, title: pick.title });
+      if (!pick.known) { await pause(200); if (!(await embeddable(pick.id))) continue; }
+      videos.push({ id: pick.id, title: pick.title, rank: pick.rank });
     }
     games[game.id] = {
       league: game.league.name,
