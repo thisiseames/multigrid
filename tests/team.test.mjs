@@ -32,7 +32,7 @@ test('the squad page gives position, age, contract and value', () => {
 
 test('FPL availability and form merge with the contract rows by name', () => {
   const players = mergeSquad([
-    element('Carlos', 'Baleba', 'Baleba', 3, { status: 'i', news: 'Hamstring injury - Unknown return date', minutes: 232, total_points: 8 }),
+    element('Carlos', 'Baleba', 'Baleba', 3, { code: 535301, status: 'i', news: 'Hamstring injury - Unknown return date', minutes: 232, total_points: 8 }),
     element('Andrey', 'Nascimento dos Santos', 'Andrey Santos', 3),
     element('Kobbie', 'Mainoo', 'Mainoo', 3),
     element('Senne', 'Lammens', 'Lammens', 1),
@@ -44,6 +44,7 @@ test('FPL availability and form merge with the contract rows by name', () => {
   assert.equal(baleba.age, 22);
   assert.equal(baleba.contract, '2031-06-30');
   assert.equal(baleba.minutes, 232);
+  assert.ok(baleba.photo.endsWith('/p535301.png'));
   assert.equal(players[0].group, 'GK');
   const santos = players.find((player) => player.name === 'Andrey Santos');
   assert.equal(santos.contract, '2031-06-30');

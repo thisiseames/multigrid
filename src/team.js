@@ -61,6 +61,7 @@ export function mergeSquad(elements = [], transfermarkt = []) {
       age: row?.age ?? 0,
       contract: row?.contract ?? '',
       value: row?.value ?? '',
+      photo: player.code ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${player.code}.png` : '',
       status: player.status ?? 'a',
       news: player.news ?? '',
       chance: player.chance_of_playing_next_round ?? null,

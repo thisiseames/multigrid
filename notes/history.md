@@ -297,3 +297,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Each Now card shows its channel's logo (guide.json logos) in one uniform dark tile (112×38); logos made for light backgrounds are flipped light with invert+hue-rotate so every tile matches. No logo → the name, as before. Owner first said the mixed light/dark chips looked a mess, then OK'd the uniform version ("if I don't like it, we'll change it back"): the version before this is commit 750cee4.
 - Watch button removed; the whole card watches the channel (it used to open the show-details card). Timeline unchanged.
 - Nov 22 follow-up: owner missed the show-details card, so clicking a Now card opens it again (with its Watch); the big Watch button came back as a small round white play button (36px) that watches at once.
+
+## Nov 22 — Curated Sports desks
+- **Transfer desk** is no longer a 30-row wall. One lead card (the biggest fee, player photo, club and fee), a spent/received bar with net spend, a three-in/three-out Done table with club marks and fees, the three strongest Reader links, and a five-card league strip. “See all 30” and “Around the league” open a full-screen list.
+- **Team desk** is no longer 30 players plus seven news rows in one column. A club-crest snapshot with a GK/DEF/MID/FWD depth bar, three availability cards with player photos, position tabs that show one table at a time, contract-year pills with names, and a five-card loans strip. The default tab is DEF and the default contract year is 2027; the full team news and loans open in a sheet.
+- Data is unchanged; player photos come from FPL, clubs use monograms where no crest is available. Verified locally at 1280 and 390, no overflow or console errors; 305 tests.

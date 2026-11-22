@@ -21,7 +21,7 @@ import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, parseLineups, shortClock, todaysGames } from './matches.js';
 import { dangerMan, formOf, lastMeeting, lastResult } from './programme.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
-import { sourceTier, squadGroups, transferNews, windowState } from './transfers.js';
+import { sourceTier, transferNews, windowState } from './transfers.js';
 import { availability, contractSummary, contractText, teamNews } from './team.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
@@ -6121,6 +6121,8 @@ $('guide-dialog').addEventListener('keydown', (event) => {
 $('lineup-close').addEventListener('click', () => $('lineup-dialog').close());
 $('programme-close').addEventListener('click', () => $('programme-dialog').close());
 $('programme-dialog').addEventListener('click', (event) => { if (event.target === $('programme-dialog')) $('programme-dialog').close(); });
+$('list-close').addEventListener('click', () => $('list-dialog').close());
+$('list-dialog').addEventListener('click', (event) => { if (event.target === $('list-dialog')) $('list-dialog').close(); });
 $('lineup-dialog').addEventListener('click', (event) => {
   if (event.target === $('lineup-dialog')) $('lineup-dialog').close();
 });
@@ -6345,15 +6347,41 @@ function buildStandings() {
   }, 5 * 60 * 1000);
 }
 
+/* ---------- Sports desks: shared bits ---------- */
+
+const initialsOf = (name) => {
+  const parts = String(name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (parts.length > 1 ? `${parts[0][0]}${parts[parts.length - 1][0]}` : parts[0].slice(0, 2)).toUpperCase();
+};
+
+const clubMark = (name) => {
+  const skip = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'club', 'the', 'de', 'la', 'calcio', 'ssc', 'as', 'us', 'uc']);
+  const words = String(name ?? '').split(/[^a-z0-9]+/i).filter(Boolean).filter((word) => !skip.has(word.toLowerCase()));
+  return (words.length ? words.slice(0, 3).map((word) => word[0]).join('') : String(name ?? '?').slice(0, 2)).toUpperCase();
+};
+
+const clubMarkNode = (name, extra = '') => el('span', { class: `club-mark ${extra}` }, clubMark(name));
+
+const personPhoto = (player, fallback, extra = '') => (player?.photo
+  ? el('img', { class: `person-photo ${extra}`, src: player.photo, alt: '', loading: 'lazy' })
+  : el('span', { class: `person-photo is-blank ${extra}`, textContent: initialsOf(fallback) }));
+
+function openList(title, ...children) {
+  $('list-title').textContent = title;
+  const body = $('list-body');
+  body.replaceChildren(...children);
+  body.scrollTop = 0;
+  const box = $('list-dialog');
+  if (!box.open) openDialog(box);
+}
+
 /* ---------- Transfer desk ---------- */
 
 let transfersTimer = null;
 let transfersAsked = 0;
-let transferShowAll = false;
 let transfersCache = null;
 let transfersAt = 0;
-let squadCache = null;
-let squadAt = 0;
 
 async function loadTransfers(force = false) {
   if (!force && transfersCache && Date.now() - transfersAt < 5 * 60_000) return transfersCache;
@@ -6364,119 +6392,136 @@ async function loadTransfers(force = false) {
   return transfersCache;
 }
 
-async function loadSquad(force = false) {
-  if (!force && squadCache && Date.now() - squadAt < 30 * 60_000) return squadCache;
-  const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/teams/360/roster', { cache: 'no-cache' });
-  if (!response.ok) throw new Error('squad');
-  const data = await response.json();
-  squadCache = data.athletes ?? [];
-  squadAt = Date.now();
-  return squadCache;
+const transferFee = (fee) => {
+  const match = String(fee ?? '').match(/[£€]([\d.]+)\s*([MKB])/i);
+  if (!match) return -1;
+  const suffix = match[2].toUpperCase();
+  return Number(match[1]) * (suffix === 'B' ? 1000 : suffix === 'K' ? 0.001 : 1);
+};
+
+const byFee = (a, b) => transferFee(b.fee) - transferFee(a.fee) || b.date - a.date;
+const moneyValue = (text) => Number(String(text ?? '').match(/£([\d.]+)m/)?.[1] ?? 0);
+const poundsText = (amount) => `£${Number.isInteger(amount) ? amount : amount.toFixed(1)}m`;
+
+function xdHead(label, note, action, run) {
+  return el('div', { class: 'xd-head' },
+    el('h4', { class: 'xd-label', textContent: label }),
+    el('div', { class: 'xd-head-side' },
+      note ? el('span', { class: 'xd-note', textContent: note }) : null,
+      action ? el('button', { type: 'button', class: 'xd-action', textContent: action, on: { click: run } }) : null));
 }
 
-function transferDealRow(deal) {
-  const main = el('span', { class: 'transfer-main' },
-    el('span', { class: 'transfer-player', textContent: deal.player }),
-    el('span', { class: 'transfer-meta', textContent: `${deal.kind}${deal.club ? ` · ${deal.direction === 'in' ? 'from' : 'to'} ${deal.club}` : ''}` }));
-  const right = el('span', { class: 'transfer-right' },
-    el('span', { class: 'transfer-fee', textContent: deal.fee || '—' }),
-    el('span', { class: 'transfer-date', textContent: deal.date ? dayLabel(deal.date) : '' }));
+function transferRow(deal) {
+  const player = el('span', { class: 'xd-player' },
+    el('span', { class: `xd-dir is-${deal.direction}`, textContent: deal.direction === 'in' ? 'IN' : 'OUT' }),
+    clubMarkNode(deal.club, 'is-row'),
+    el('span', { class: 'xd-name', textContent: deal.player }));
+  const cells = [player, el('span', { class: 'xd-club', textContent: deal.club || '—' }), el('span', { class: 'xd-fee', textContent: deal.fee || '—' })];
   return deal.link
-    ? el('a', { class: 'transfer-row', href: deal.link, target: '_blank', rel: 'noopener' }, main, right)
-    : el('div', { class: 'transfer-row' }, main, right);
+    ? el('a', { class: 'xd-row', href: deal.link, target: '_blank', rel: 'noopener' }, ...cells)
+    : el('div', { class: 'xd-row' }, ...cells);
 }
 
-function transferStoryRow(item) {
+function transferTable(desk) {
+  const ins = (desk.united ?? []).filter((deal) => deal.direction === 'in').sort(byFee);
+  const outs = (desk.united ?? []).filter((deal) => deal.direction === 'out').sort(byFee);
+  const shown = [...ins.slice(0, 3), ...outs.slice(0, 3)];
+  if (!shown.length) return el('p', { class: 'xd-quiet', textContent: 'No confirmed deals in this window.' });
+  return el('div', { class: 'xd-table' },
+    el('div', { class: 'xd-thead' },
+      el('span', { textContent: 'Player' }), el('span', { textContent: 'Club' }), el('span', { textContent: 'Fee' })),
+    ...shown.map(transferRow));
+}
+
+function transferLead(desk, team) {
+  const lead = [...(desk.united ?? [])].sort(byFee)[0];
+  if (!lead) return null;
+  const key = (text) => String(text ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const target = key(lead.player);
+  const fpl = (team?.players ?? []).find((player) => [player.name, player.full]
+    .some((name) => {
+      const value = key(name);
+      return value && (value === target || value.includes(target) || target.includes(value));
+    }));
+  const image = personPhoto(fpl, lead.player, 'is-lead');
+  const copy = el('span', { class: 'xd-lead-copy' },
+    el('span', { class: 'xd-lead-tag', textContent: lead.direction === 'in' ? 'Biggest arrival' : 'Biggest exit' }),
+    el('b', { class: 'xd-lead-name', textContent: lead.player }),
+    el('span', { class: 'xd-lead-move', textContent: `${lead.kind} · ${lead.club || 'Free agent'}` }),
+    el('span', { class: 'xd-lead-fee', textContent: lead.fee || 'Undisclosed' }));
+  return lead.link
+    ? el('a', { class: 'xd-lead', href: lead.link, target: '_blank', rel: 'noopener' }, image, copy)
+    : el('div', { class: 'xd-lead' }, image, copy);
+}
+
+function transferMoney(desk) {
+  const spent = moneyValue(desk.spent);
+  const received = moneyValue(desk.received);
+  if (!spent && !received) return null;
+  const total = spent + received;
+  const spentPart = total ? (spent / total) * 100 : 0;
+  const net = spent - received;
+  return el('div', { class: 'xd-money' },
+    el('div', { class: 'xd-money-top' },
+      el('span', { textContent: `Spent ${desk.spent}` }),
+      el('span', { textContent: `Received ${desk.received}` })),
+    el('div', { class: 'xd-money-bar' },
+      el('span', { class: 'is-spent', style: `width:${spentPart.toFixed(1)}%` }),
+      el('span', { class: 'is-received', style: `width:${(100 - spentPart).toFixed(1)}%` })),
+    el('span', { class: 'xd-money-net', textContent: `${net >= 0 ? 'Net spend' : 'Net income'} ${poundsText(Math.abs(net))}` }));
+}
+
+function transferStory(item) {
   const tier = sourceTier(item.source);
-  return el('button', {
-    type: 'button',
-    class: 'transfer-story',
-    on: { click: () => openItem(item) },
+  return el('button', { type: 'button', class: 'xd-story', on: { click: () => openItem(item) } },
+    el('span', { class: 'xd-story-top' },
+      el('span', { class: 'xd-story-source', textContent: item.source }),
+      el('span', { class: `xd-tier is-${tier}`, textContent: tier === 1 ? 'Tier 1' : 'Tier 2' })),
+    el('span', { class: 'xd-story-title', textContent: item.title }),
+    el('span', { class: 'xd-story-time', textContent: ago(item.time) }));
+}
+
+function transferLeague(desk) {
+  const latest = (desk.league ?? []).slice(0, 5);
+  if (!latest.length) return el('p', { class: 'xd-quiet', textContent: 'No league deals yet.' });
+  return el('div', { class: 'xd-league' }, ...latest.map((deal) => el(deal.link ? 'a' : 'div', {
+    class: 'xd-league-card',
+    href: deal.link || undefined,
+    target: deal.link ? '_blank' : undefined,
+    rel: deal.link ? 'noopener' : undefined,
   },
-  el('span', { class: 'transfer-story-top' },
-    el('span', { class: 'transfer-story-source', textContent: item.source }),
-    el('span', { class: `transfer-tier is-${tier}`, textContent: tier === 1 ? 'Tier 1' : 'Tier 2' })),
-  el('span', { class: 'transfer-story-title', textContent: item.title }),
-  el('span', { class: 'transfer-story-time', textContent: ago(item.time) }));
+  clubMarkNode(deal.club),
+  el('b', { textContent: deal.club }),
+  el('span', { textContent: `${deal.player} · ${deal.kind}` }))));
 }
 
-function transferSection(label, note, ...children) {
-  return el('section', { class: 'transfer-sec' },
-    el('div', { class: 'transfer-sec-head' },
-      el('h4', { class: 'transfer-label', textContent: label }),
-      note ? el('span', { class: 'transfer-note', textContent: note }) : null),
-    ...children);
-}
-
-function renderTransferDesk(body, desk, squad, readerItems) {
+function renderTransferDesk(body, desk, readerItems, team) {
   const state = windowState(Date.now(), desk.next);
-  const feeValue = (deal) => {
-    const match = String(deal.fee ?? '').match(/£([\d.]+)\s*([MKB])/i);
-    if (!match) return -1;
-    const suffix = match[2].toUpperCase();
-    return Number(match[1]) * (suffix === 'B' ? 1000 : suffix === 'K' ? 0.001 : 1);
-  };
-  const byMoney = (a, b) => feeValue(b) - feeValue(a) || b.date - a.date;
-  const ins = desk.united.filter((deal) => deal.direction === 'in').sort(byMoney);
-  const outs = desk.united.filter((deal) => deal.direction === 'out').sort(byMoney);
-  const shownIn = transferShowAll ? ins : ins.slice(0, 5);
-  const shownOut = transferShowAll ? outs : outs.slice(0, 5);
-  const groups = squadGroups(squad);
-  const ages = squad.map((player) => Number(player.age)).filter(Number.isFinite);
-  const avg = ages.length ? Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length) : 0;
-  const stories = transferNews(readerItems, { limit: 5 });
-  const seen = new Set(stories.map((item) => String(item.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()));
-  const elsewhere = transferNews(readerItems, { united: false, limit: 4, exclude: seen });
-  const doneCount = ins.length + outs.length;
   const windowDay = (time) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(time));
-  const status = state.open
-    ? `Closes ${windowDay(state.closes)}`
-    : state.opens
-      ? `Opens ${windowDay(state.opens)} · ${state.days} day${state.days === 1 ? '' : 's'}`
-      : 'Window closed';
+  const status = state.open ? `Closes ${windowDay(state.closes)}` : `Opens ${windowDay(state.opens)} · ${state.days} day${state.days === 1 ? '' : 's'}`;
+  const stories = transferNews(readerItems, { limit: 3 });
+  const ins = (desk.united ?? []).filter((deal) => deal.direction === 'in').length;
+  const outs = (desk.united ?? []).filter((deal) => deal.direction === 'out').length;
 
   body.replaceChildren(
-    el('div', { class: 'transfer-head' },
-      el('div', { class: 'transfer-head-main' },
-        el('h3', { class: 'transfer-title', textContent: 'Transfer desk' }),
-        el('p', { class: 'transfer-sub', textContent: `${desk.window.name} window · ${state.open ? 'open' : 'closed'}` })),
-      el('span', { class: `transfer-state${state.open ? ' is-open' : ''}`, textContent: status })),
-
-    transferSection('Squad', `${squad.length} players · avg age ${avg}`,
-      el('div', { class: 'transfer-squad' }, ...groups.map((group) => el('div', { class: `transfer-squad-box${group.count < 3 ? ' is-thin' : ''}` },
-        el('span', { class: 'transfer-squad-short', textContent: group.short }),
-        el('b', { class: 'transfer-squad-count', textContent: String(group.count) }),
-        el('span', { class: 'transfer-squad-age', textContent: group.avgAge ? `avg ${group.avgAge}` : '' }))))),
-
-    transferSection('Done', `${ins.length} in · ${outs.length} out`,
-      desk.spent || desk.received
-        ? el('div', { class: 'transfer-money' },
-          el('span', { textContent: `Spent ${desk.spent}` }),
-          el('span', { textContent: `Received ${desk.received}` }))
-        : null,
-      el('h5', { class: 'transfer-sublabel', textContent: 'In' }),
-      el('div', { class: 'transfer-list' }, ...(shownIn.length ? shownIn.map(transferDealRow) : [el('p', { class: 'transfer-empty', textContent: 'No confirmed arrivals.' })])),
-      el('h5', { class: 'transfer-sublabel', textContent: 'Out' }),
-      el('div', { class: 'transfer-list' }, ...(shownOut.length ? shownOut.map(transferDealRow) : [el('p', { class: 'transfer-empty', textContent: 'No confirmed departures.' })])),
-      doneCount > shownIn.length + shownOut.length
-        ? el('button', { type: 'button', class: 'transfer-more', textContent: transferShowAll ? 'Show latest' : `Show all ${doneCount}`, on: { click() { transferShowAll = !transferShowAll; fillTransfers(); } } })
-        : null,
-      el('p', { class: 'transfer-note transfer-fees', textContent: 'Reported fees, in pounds.' })),
-
-    transferSection('United links', 'Reader',
-      el('div', { class: 'transfer-stories' }, ...(stories.length
-        ? stories.map(transferStoryRow)
-        : [el('p', { class: 'transfer-empty', textContent: 'No fresh United transfer stories.' })]))),
-
-    elsewhere.length
-      ? transferSection('Elsewhere', 'Reader', el('div', { class: 'transfer-stories' }, ...elsewhere.map(transferStoryRow)))
-      : null,
-
-    el('details', { class: 'transfer-league' },
-      el('summary', { class: 'transfer-league-summary', textContent: `Around the league · ${desk.league.length} clubs` }),
-      el('div', { class: 'transfer-league-list' }, ...desk.league.map((deal) => el('div', { class: 'transfer-league-row' },
-        el('b', { textContent: deal.club }),
-        el('span', { textContent: `${deal.player} · ${deal.kind}` }))))));
+    el('div', { class: 'xd-titlebar' },
+      el('div', {}, el('h3', { class: 'xd-title', textContent: 'Transfer desk' }), el('p', { class: 'xd-sub', textContent: `${desk.window.name} window · ${state.open ? 'open' : 'closed'}` })),
+      el('span', { class: `xd-state${state.open ? ' is-open' : ''}`, textContent: status })),
+    transferLead(desk, team),
+    transferMoney(desk),
+    xdHead('Done', `${ins} in · ${outs} out`, `See all ${ins + outs}`, () => openList('All transfer deals',
+      el('div', { class: 'xd-thead' }, el('span', { textContent: 'Player' }), el('span', { textContent: 'Club' }), el('span', { textContent: 'Fee' })),
+      ...[...(desk.united ?? [])].sort(byFee).map(transferRow))),
+    transferTable(desk),
+    xdHead('Strong links', 'Reader', 'Open Reader', () => { closePopovers(); $('reader-button').click(); }),
+    stories.length
+      ? el('div', { class: 'xd-stories' }, ...stories.map(transferStory))
+      : el('p', { class: 'xd-quiet', textContent: 'No fresh United transfer stories.' }),
+    xdHead('Around the league', `${(desk.league ?? []).length} clubs`, 'See all', () => openList('Around the league',
+      ...(desk.league ?? []).map((deal) => el('div', { class: 'xd-league-row' },
+        clubMarkNode(deal.club), el('b', { textContent: deal.club }), el('span', { textContent: `${deal.player} · ${deal.kind}` }))))),
+    transferLeague(desk),
+    el('p', { class: 'xd-foot', textContent: 'Reported fees, in pounds. Source: Premier League, Transfermarkt, FPL and the Reader.' }));
 }
 
 async function fillTransfers() {
@@ -6486,11 +6531,11 @@ async function fillTransfers() {
   const asked = ++transfersAsked;
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton is-thin' }))));
   try {
-    const [desk, squad, reader] = await Promise.all([loadTransfers(), loadSquad(), loadIndex()]);
+    const [desk, reader, team] = await Promise.all([loadTransfers(), loadIndex(), loadTeam().catch(() => null)]);
     if (asked !== transfersAsked || menu.hidden) return;
-    renderTransferDesk(body, desk, squad, reader?.items ?? []);
+    renderTransferDesk(body, desk, reader?.items ?? [], team);
     const updated = menu.querySelector('.matches-updated');
-    if (updated) updated.textContent = `Updated ${clock(desk.updated)} · Premier League, ESPN and the Reader`;
+    if (updated) updated.textContent = `Updated ${clock(desk.updated)} · Premier League, Transfermarkt, FPL and the Reader`;
   } catch {
     if (asked !== transfersAsked || menu.hidden) return;
     body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'The transfer desk could not load. Try again in a minute.' }));
@@ -6499,7 +6544,6 @@ async function fillTransfers() {
 
 function buildTransfers() {
   const menu = $('transfers-menu');
-  transferShowAll = false;
   menu.replaceChildren(sportsSwitch('transfers'), el('div', { class: 'matches-body transfer-body' }), el('p', { class: 'matches-updated', textContent: '' }));
   fillTransfers();
   clearInterval(transfersTimer);
@@ -6513,9 +6557,12 @@ function buildTransfers() {
 
 let teamTimer = null;
 let teamAsked = 0;
-let teamShowNews = false;
 let teamCache = null;
 let teamAt = 0;
+let teamGroup = 'DEF';
+let teamYear = '';
+
+const TEAM_GROUPS = [['GK', 'GK'], ['DEF', 'DEF'], ['MID', 'MID'], ['FWD', 'FWD']];
 
 async function loadTeam(force = false) {
   if (!force && teamCache && Date.now() - teamAt < 5 * 60_000) return teamCache;
@@ -6526,88 +6573,123 @@ async function loadTeam(force = false) {
   return teamCache;
 }
 
-const TEAM_GROUPS = [['GK', 'Goalkeepers'], ['DEF', 'Defenders'], ['MID', 'Midfielders'], ['FWD', 'Forwards']];
-
-function teamStatus(player) {
+function teamStatus(player, compact = false) {
   const state = availability(player);
-  return el('span', { class: `team-status is-${state.tone}`, textContent: state.label });
+  const label = compact
+    ? (state.label === 'Injured' ? 'INJ'
+      : state.label === 'Suspended' ? 'SUSP'
+        : state.label.startsWith('Doubt') ? 'DOUBT'
+          : state.label === 'Unavailable' ? 'N/A' : state.label)
+    : state.label;
+  return el('span', { class: `team-status is-${state.tone}`, title: state.label, textContent: label });
 }
 
-function teamPlayerRow(player) {
-  return el('div', { class: 'team-row' },
-    el('div', { class: 'team-row-top' },
-      el('span', { class: 'team-name', textContent: player.name }),
-      el('span', { class: 'team-contract', textContent: contractText(player.contract) || '—' }),
-      teamStatus(player)),
-    el('div', { class: 'team-meta' },
-      [player.position, player.age ? `${player.age}` : '', `${player.minutes} min`,
-        `${player.goals}G`, `${player.assists}A`, `${player.points} pts`].filter(Boolean).join(' · ')));
+function teamAvatar(player, extra = '') {
+  return personPhoto(player, player.name, extra);
 }
 
-function teamNewsRow(player) {
-  return el('div', { class: 'team-news-row' },
-    el('div', { class: 'team-news-top' },
-      el('span', { class: 'team-name', textContent: player.name }),
-      teamStatus(player)),
-    el('p', { class: 'team-news-text', textContent: player.news || 'No return date' }));
+function teamSnapshot(players) {
+  const total = players.length || 1;
+  const counts = TEAM_GROUPS.map(([key]) => ({ key, count: players.filter((player) => player.group === key).length }));
+  return el('div', { class: 'tdesk-snapshot' },
+    el('div', { class: 'tdesk-bar' }, ...counts.map(({ key, count }) => el('span', { class: `is-${key.toLowerCase()}`, style: `width:${((count / total) * 100).toFixed(1)}%` }))),
+    el('div', { class: 'tdesk-legend' }, ...counts.map(({ key, count }) => el('span', {}, el('b', { textContent: String(count) }), ` ${key}`))));
 }
 
-function teamSection(label, note, ...children) {
-  return el('section', { class: 'team-sec' },
-    el('div', { class: 'team-sec-head' },
-      el('h4', { class: 'team-label', textContent: label }),
-      note ? el('span', { class: 'team-note', textContent: note }) : null),
-    ...children);
+function teamGroupTable(players, body, desk) {
+  const rows = players.filter((player) => player.group === teamGroup);
+  return el('div', { class: 'tdesk-table' },
+    el('div', { class: 'tdesk-thead' },
+      el('span', { textContent: 'Player' }), el('span', { textContent: 'Contract' }), el('span', { textContent: 'Min' }), el('span', { textContent: 'Pts' }), el('span', { textContent: 'Status' })),
+    ...rows.map((player) => el('div', { class: 'tdesk-row' },
+      el('span', { class: 'tdesk-player' },
+        teamAvatar(player, 'is-row'),
+        el('span', { class: 'tdesk-player-info' },
+          el('b', { textContent: player.name }),
+          el('span', { textContent: `${player.position || player.group} · ${player.age || '—'}` }))),
+      el('span', { class: 'tdesk-cell', textContent: contractText(player.contract) || '—' }),
+      el('span', { class: 'tdesk-cell', textContent: String(player.minutes) }),
+      el('span', { class: 'tdesk-cell', textContent: String(player.points) }),
+      teamStatus(player, true))));
+}
+
+function openTeamNews(news) {
+  openList('Team news', ...news.map((player) => el('div', { class: 'tdesk-news-row' },
+    teamAvatar(player, 'is-news'),
+    el('div', { class: 'tdesk-news-copy' }, el('b', { textContent: player.name }), teamStatus(player), el('span', { class: 'tdesk-news-line', textContent: player.news || 'No return date' })))));
+}
+
+function openLoansList(loans) {
+  openList('Loans out', ...loans.map((loan) => el('div', { class: 'tdesk-loan-row' },
+    clubMarkNode(loan.club), el('b', { textContent: loan.player }), el('span', { textContent: loan.club }), el('span', { class: 'tdesk-loan-date', textContent: loan.date ? dayLabel(loan.date) : '' }))));
 }
 
 function renderTeamDesk(body, desk) {
   const players = desk.players ?? [];
   const news = teamNews(players);
-  const shownNews = teamShowNews ? news : news.slice(0, 5);
   const contracts = contractSummary(players);
+  const ages = players.map((player) => Number(player.age)).filter((age) => Number.isFinite(age) && age > 0);
+  const avg = ages.length ? Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length) : 0;
+  if (!contracts.some((group) => group.year === teamYear)) teamYear = contracts[0]?.year ?? '';
+  const shownContract = contracts.find((group) => group.year === teamYear) ?? contracts[0] ?? null;
   const next = md?.next;
   const nextLine = next ? `${next.home.name} v ${next.away.name} · ${dayLabel(next.start)} ${clock(next.start)}` : '';
 
   body.replaceChildren(
-    el('div', { class: 'tdesk-head' },
-      el('h3', { class: 'tdesk-title', textContent: 'Team' }),
-      el('p', { class: 'tdesk-sub', textContent: `${desk.team} · ${players.length} players · updated ${clock(desk.updated)}` }),
-      nextLine ? el('p', { class: 'tdesk-next', textContent: `Next: ${nextLine}` }) : null),
+    el('div', { class: 'tdesk-hero' },
+      el('img', { class: 'tdesk-crest', src: 'https://a.espncdn.com/i/teamlogos/soccer/500/360.png', alt: '' }),
+      el('div', { class: 'tdesk-hero-text' },
+        el('h3', { class: 'tdesk-name', textContent: 'Man Utd' }),
+        el('p', { class: 'tdesk-sub', textContent: `${players.length} players · avg age ${avg} · ${news.length} unavailable` }),
+        nextLine ? el('p', { class: 'tdesk-next', textContent: `Next: ${nextLine}` }) : null)),
+    teamSnapshot(players),
 
-    teamSection('Team news', news.length ? `${news.length} not fully fit` : 'Everyone fit',
-      news.length
-        ? el('div', { class: 'team-news' }, ...shownNews.map(teamNewsRow),
-          news.length > 5 ? el('button', { type: 'button', class: 'team-more', textContent: teamShowNews ? 'Show latest' : `Show all ${news.length}`, on: { click() { teamShowNews = !teamShowNews; fillTeam(); } } }) : null)
-        : el('p', { class: 'team-empty', textContent: 'No injuries or suspensions.' })),
+    el('div', { class: 'tdesk-sec-head' },
+      el('h4', { class: 'tdesk-label', textContent: 'Availability' }),
+      news.length > 3 ? el('button', { type: 'button', class: 'tdesk-action', textContent: `All ${news.length}`, on: { click: () => openTeamNews(news) } }) : null),
+    news.length
+      ? el('div', { class: 'tdesk-news' }, ...news.slice(0, 3).map((player) => el('div', { class: 'tdesk-news-card' },
+        teamAvatar(player, 'is-news'),
+        el('div', { class: 'tdesk-news-copy' }, el('b', { textContent: player.name }), teamStatus(player), el('span', { class: 'tdesk-news-line', textContent: player.news || 'No return date' })))))
+      : el('p', { class: 'xd-quiet', textContent: 'Everyone fit.' }),
 
-    teamSection('Squad', `${players.length} players`,
-      ...TEAM_GROUPS.map(([key, label]) => {
-        const rows = players.filter((player) => player.group === key);
-        if (!rows.length) return null;
-        return el('details', { class: 'team-group', open: true },
-          el('summary', { class: 'team-group-head' },
-            el('span', { textContent: label }),
-            el('span', { class: 'team-group-count', textContent: String(rows.length) })),
-          ...rows.map(teamPlayerRow));
-      }).filter(Boolean)),
+    el('div', { class: 'tdesk-sec-head' },
+      el('h4', { class: 'tdesk-label', textContent: 'Squad' }),
+      el('span', { class: 'tdesk-note', textContent: `${players.length} players` })),
+    el('div', { class: 'tdesk-tabs' }, ...TEAM_GROUPS.map(([key, label]) => el('button', {
+      type: 'button',
+      class: `tdesk-tab${teamGroup === key ? ' is-on' : ''}`,
+      textContent: `${label} ${players.filter((player) => player.group === key).length}`,
+      on: { click() { teamGroup = key; renderTeamDesk(body, desk); } },
+    }))),
+    teamGroupTable(players, body, desk),
 
-    teamSection('Contracts', 'expiry year',
-      el('div', { class: 'team-contracts' }, ...contracts.map((group) => el('div', { class: 'team-contract-row' },
-        el('b', { textContent: group.year }),
-        el('span', { textContent: group.names.join(', ') }))))),
+    el('div', { class: 'tdesk-sec-head' },
+      el('h4', { class: 'tdesk-label', textContent: 'Contracts' }),
+      el('span', { class: 'tdesk-note', textContent: 'expiry year' })),
+    contracts.length
+      ? el('div', { class: 'tdesk-years' }, ...contracts.map((group) => el('button', {
+        type: 'button',
+        class: `tdesk-year${teamYear === group.year ? ' is-on' : ''}`,
+        textContent: `${group.year} ${group.names.length}`,
+        on: { click() { teamYear = group.year; renderTeamDesk(body, desk); } },
+      })))
+      : el('p', { class: 'xd-quiet', textContent: 'No contract dates yet.' }),
+    shownContract ? el('div', { class: 'tdesk-names' }, ...shownContract.names.map((name) => el('span', { class: 'tdesk-name-chip', textContent: name }))) : null,
 
-    teamSection('Loans out', `${(desk.loans ?? []).length} players`,
-      (desk.loans ?? []).length
-        ? el('div', { class: 'team-loans' }, ...desk.loans.map((loan) => el('a', {
-          class: 'team-loan-row',
-          href: loan.link || undefined,
-          target: loan.link ? '_blank' : undefined,
-          rel: loan.link ? 'noopener' : undefined,
-        },
-        el('span', { textContent: loan.player }),
-        el('b', { textContent: loan.club }),
-        el('span', { class: 'team-loan-date', textContent: loan.date ? dayLabel(loan.date) : '' }))))
-        : el('p', { class: 'team-empty', textContent: 'No loans out.' })));
+    el('div', { class: 'tdesk-sec-head' },
+      el('h4', { class: 'tdesk-label', textContent: 'Loans out' }),
+      (desk.loans ?? []).length > 5 ? el('button', { type: 'button', class: 'tdesk-action', textContent: `All ${desk.loans.length}`, on: { click: () => openLoansList(desk.loans) } }) : null),
+    (desk.loans ?? []).length
+      ? el('div', { class: 'tdesk-loans' }, ...(desk.loans ?? []).slice(0, 5).map((loan) => el(loan.link ? 'a' : 'div', {
+        class: 'tdesk-loan',
+        href: loan.link || undefined,
+        target: loan.link ? '_blank' : undefined,
+        rel: loan.link ? 'noopener' : undefined,
+      }, clubMarkNode(loan.club), el('b', { textContent: loan.player }), el('span', { textContent: loan.club }))))
+      : el('p', { class: 'xd-quiet', textContent: 'No loans out.' }),
+
+    el('p', { class: 'xd-foot', textContent: 'Contracts from Transfermarkt; availability and form from FPL.' }));
 }
 
 async function fillTeam() {
@@ -6630,7 +6712,8 @@ async function fillTeam() {
 
 function buildTeam() {
   const menu = $('team-menu');
-  teamShowNews = false;
+  teamGroup = 'DEF';
+  teamYear = '';
   menu.replaceChildren(sportsSwitch('team'), el('div', { class: 'matches-body team-body' }), el('p', { class: 'matches-updated', textContent: '' }));
   fillTeam();
   clearInterval(teamTimer);
