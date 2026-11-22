@@ -6325,8 +6325,11 @@ function mdMediaItems(phase) {
       items.push({ key: `mdh:${video.id}`, label: 'Highlights', title: video.title, cardMeta: 'Official highlights', backdrop: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, playLabel: 'Watch', play: () => playFromHome(highlightsInput(video)) });
     }
   }
-  for (const video of clubVideos(highlightsData?.club?.[md.team.id]).filter((item) => item.published > after).slice(0, 4)) {
-    items.push({ key: `mdc:${video.id}`, label: md.team.short, title: video.title, cardMeta: `${md.team.short} · ${ago(video.published)}`, backdrop: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, playLabel: 'Watch', play: () => playFromHome(`https://www.youtube.com/watch?v=${video.id}`) });
+  // YouTube: the club's own uploads and the broadcasters' (Sky Sports, NBC, TNT, the league...).
+  const youtube = [];
+  for (const video of clubVideos(highlightsData?.club?.[md.team.id]).filter((item) => item.published > after).slice(0, 10)) {
+    const source = video.source || md.team.short;
+    youtube.push({ key: `mdc:${video.id}`, label: source, title: video.title, cardMeta: `${source} · ${ago(video.published)}`, backdrop: `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, playLabel: 'Watch', play: () => playFromHome(`https://www.youtube.com/watch?v=${video.id}`) });
   }
   const espn = [];
   const reading = [];
@@ -6336,8 +6339,8 @@ function mdMediaItems(phase) {
   for (const story of mdStories.filter((item) => item.time > after).slice(0, 6)) {
     reading.push({ key: `mdr:${story.id}`, label: story.source, title: story.title, cardMeta: `${story.source} · ${ago(story.time)}`, desc: story.summary || '', backdrop: story.image || '', playLabel: 'Read', play: () => openItem(story) });
   }
-  // Videos and stories take turns, so the row isn't one kind first.
-  for (let index = 0; index < Math.max(espn.length, reading.length); index++) items.push(...[espn[index], reading[index]].filter(Boolean));
+  // YouTube, ESPN and stories take turns, so the row isn't one kind first.
+  for (let index = 0; index < Math.max(youtube.length, espn.length, reading.length); index++) items.push(...[youtube[index], espn[index], reading[index]].filter(Boolean));
   return items.map((item) => ({ ...item, art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: item.label }), el('span', { class: 'title-card-name', textContent: item.title })) }));
 }
 var mdStories = []; // eslint-disable-line no-var
@@ -6463,7 +6466,7 @@ function matchCentre() {
   if (phase === 'early' || phase === 'buildup') {
     parts.push(section('Win chances', mdChances(match, md.odds)), section('Form', mdForm(match, data)));
     parts.push(section('Line-ups', mdLineup(match, data) || el('p', { class: 'md-quiet', textContent: 'ESPN usually posts the line-ups about an hour before kick-off.' })));
-    const build = mdMediaItems(phase).slice(0, 8);
+    const build = mdMediaItems(phase).slice(0, 12);
     if (build.length) parts.push(section('Build-up', el('ul', { class: 'md-media' }, ...build.map(mdMediaRow))));
   } else {
     parts.push(phase === 'fulltime' ? section('Goals', mdScorers(match, data)) : null);
@@ -6473,7 +6476,7 @@ function matchCentre() {
     if (phase === 'fulltime') {
       const place = data?.positions?.[mdSide(match)];
       if (place?.rank && !isCalledOff(match)) parts.push(section('Table', el('p', { class: 'md-quiet', textContent: `${match[mdSide(match)].name}: ${tableMove(positionBefore(match.id), place.rank)} · ${place.points} pts` })));
-      const reaction = mdMediaItems(phase).slice(0, 8);
+      const reaction = mdMediaItems(phase).slice(0, 12);
       if (reaction.length) parts.push(section('Reaction', el('ul', { class: 'md-media' }, ...reaction.map(mdMediaRow))));
     }
     if ((data?.lineups ?? []).length) parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, icon('pitch', 14), 'Line-ups and subs'));

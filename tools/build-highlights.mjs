@@ -40,7 +40,21 @@ export const SOURCES = {
 // Matchday teams' own channels, known for sure (the channel search missed Man United's). Their
 // recent uploads (press conferences, interviews, training) are kept in highlights.json under
 // `club`, for Matchday's build-up and reaction rows; Shorts and live streams are left out.
-export const MATCHDAY_CLUBS = { 'pl:360': 'UC6yW44UGJJBvYTlfC7CRg2Q' };
+// `about` picks the broadcasters' videos that are about the team (titles naming it).
+export const MATCHDAY_CLUBS = {
+  'pl:360': { channel: 'UC6yW44UGJJBvYTlfC7CRg2Q', name: 'Man Utd', about: /\bman(chester)?\.?\s*(utd|united)\b|\bold trafford\b|\bpochettino\b/i },
+};
+// Broadcasters and the league whose videos about the team join Matchday (previews, studio
+// analysis, interviews, reaction). Checked Nov 22, 2026: each had Man United videos that week.
+export const MATCHDAY_SOURCES = {
+  UCNAf1k0yIjyGu3k9BwAg3lg: 'Sky Sports Premier League',
+  UCcw05gGzjLIs5dnxGkQHMvw: 'Sky Sports News',
+  UCZ7wY7MRDSygp63HIEfdQZA: 'Sky Sports Football',
+  UCqZQlzSHbVJrwrn5XvzrzcA: 'NBC Sports',
+  'UCG5qGWdu8nIRZqJ_GgDwQ-w': 'Premier League',
+  UC4i_9WvfPRTuRWEaWyfKuFw: 'TNT Sports',
+  UCD2lJITnvzflNhOqQckMpQg: 'Fubo Canada',
+};
 
 const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and', 'vs']);
 export const words = (text) => String(text || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -179,7 +193,7 @@ async function main() {
   // Games found the old way (by searching) are found again from the channels.
   const games = Object.fromEntries(Object.entries(saved.games ?? {}).filter(([, game]) => now - game.start < FORGET && game.sources === 'feeds'));
   const clubs = saved.clubs ?? {};
-  for (const [key, channel] of Object.entries(MATCHDAY_CLUBS)) if (!clubs[key]) clubs[key] = channel;
+  for (const [key, club] of Object.entries(MATCHDAY_CLUBS)) if (!clubs[key]) clubs[key] = club.channel;
 
   const finished = (await Promise.all(MY_LEAGUES.map((league) => finishedGames(league, now)))).flat()
     .filter((game) => now - game.start < LOOK_FOR)
@@ -229,18 +243,24 @@ async function main() {
       for (const team of [game.home, game.away]) if (!clubs[`${game.league.id}:${team.id}`]) console.log(`    no channel found for ${team.full}`);
     }
   }
-  // Matchday: each team's latest uploads from the last four days that play on other sites.
+  // Matchday: from the last four days, the club's own uploads and the broadcasters' videos about
+  // the team, newest first, that play on other sites.
   const club = {};
-  for (const [key, channel] of Object.entries(MATCHDAY_CLUBS)) {
+  for (const [key, { channel, name, about }] of Object.entries(MATCHDAY_CLUBS)) {
     const team = key.split(':')[1];
     const known = new Map((saved.club?.[team] ?? []).map((video) => [video.id, video]));
+    const pool = (await uploadsOf(channel)).slice(0, 12).map((upload) => ({ ...upload, source: name }));
+    for (const [id, source] of Object.entries(MATCHDAY_SOURCES)) {
+      pool.push(...(await uploadsOf(id)).filter((upload) => about.test(upload.title)).map((upload) => ({ ...upload, source })));
+    }
     const list = [];
-    for (const upload of (await uploadsOf(channel)).filter((item) => now - item.published < FORGET).slice(0, 12)) {
+    for (const upload of pool.filter((item) => now - item.published < FORGET).sort((a, b) => b.published - a.published)) {
+      if (list.length >= 24 || list.some((video) => video.id === upload.id)) continue;
       if (!known.has(upload.id)) { await pause(200); if (!(await embeddable(upload.id))) continue; }
-      list.push({ id: upload.id, title: upload.title, published: upload.published });
+      list.push({ id: upload.id, title: upload.title, published: upload.published, source: upload.source });
     }
     club[team] = list.length ? list : (saved.club?.[team] ?? []).filter((video) => now - video.published < FORGET);
-    console.log(`Matchday club ${team}: ${club[team].length} recent uploads`);
+    console.log(`Matchday ${team}: ${club[team].length} videos (${[...new Set(club[team].map((video) => video.source))].join(', ')})`);
   }
   fs.writeFileSync(OUT, `${JSON.stringify({ updated: now, games, clubs, club }, null, 1)}\n`);
   console.log(`highlights.json: ${Object.values(games).filter((game) => game.videos.length).length} games with highlights; ${Object.values(clubs).filter(Boolean).length} club channels known (${lookups} looked up this run).`);
