@@ -3138,6 +3138,86 @@ body.is-phone .transfer-story-title { font-size: 14px; }
 body.is-phone .transfer-squad-box { padding: 9px 10px; }
 body.is-phone .transfer-squad-count { font-size: 22px; }
 
+/* Sports dropdown: black like the rest of the site, white text */
+#matches-menu,
+#standings-menu,
+#transfers-menu {
+  background: #000;
+  --surface: #000;
+  --raised: #101012;
+  --text: #fff;
+  --text-2: #fff;
+  color: #fff;
+}
+#matches-menu .sports-switch,
+#standings-menu .sports-switch,
+#transfers-menu .sports-switch {
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+#matches-menu .sports-tab.is-on,
+#standings-menu .sports-tab.is-on,
+#transfers-menu .sports-tab.is-on {
+  background: #f5f5f7;
+  color: #000;
+}
+#matches-menu .matches-tab,
+#standings-menu .matches-tab {
+  background: #000;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+#matches-menu .matches-tab.is-on,
+#standings-menu .matches-tab.is-on {
+  background: #f5f5f7;
+  color: #000;
+  box-shadow: none;
+}
+#matches-menu .matches-tab:hover,
+#standings-menu .matches-tab:hover {
+  background: #141416;
+  color: #fff;
+}
+#matches-menu .match-day {
+  background: #000;
+}
+#matches-menu .hero-label {
+  color: #fff;
+}
+#matches-menu .md-entry {
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+#standings-menu .standings-tab.is-on {
+  background: #f5f5f7;
+  color: #000;
+}
+#transfers-menu .transfer-state {
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+#transfers-menu .transfer-money {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+body.sports-sheet .sheet-frame,
+body.sports-sheet .popover.is-sheet {
+  background: #000;
+}
+body.sports-sheet .sheet-switch {
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+body.sports-sheet .sheet-switch button {
+  color: #fff;
+}
+body.sports-sheet .sheet-switch button.is-on {
+  background: #f5f5f7;
+  color: #000;
+}
+body.sports-sheet .sheet-close {
+  color: #fff;
+}
+
 /* The hover card over a tile (laptop): shown and hidden with the strip's icons. Clicks go through to the player. */
 .tile-info { position: absolute; top: calc(var(--strip) + 10px); left: 10px; z-index: 5; max-width: calc(100% - 20px); padding: 9px 12px; border-radius: 10px; background: rgba(0, 0, 0, .72); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: none; opacity: 0; transition: opacity 0.12s; }
 .tile:hover > .tile-info { opacity: 1; }
