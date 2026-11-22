@@ -38,6 +38,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
+import { followedShowInput, isPodcastShowInput, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -849,9 +850,10 @@ function openPalette() {
   const paint = () => {
     const query = input.value.trim().toLocaleLowerCase();
     const rank = (label) => (label.toLocaleLowerCase().startsWith(query) ? 0 : 1);
+    const favoritePool = listFavorites().filter((item) => !isPodcastShowInput(item.input));
     const favorites = (query
-      ? listFavorites().filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
-      : listFavorites().slice(0, 6)).map(favoriteItem);
+      ? favoritePool.filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
+      : favoritePool.slice(0, 6)).map(favoriteItem);
     const layouts = (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem);
     const events = (query
       ? ppv.filter((event) => has(event.name, query) || has(event.category, query) || has(event.tag, query) || has(event.source, query)).slice(0, 5)
@@ -1598,6 +1600,13 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '') {
     openPodcast(input, { title: title || favoriteName(input) || '', from: '' });
     return null;
   }
+  // A followed show opens its episode list in the Podcasts tab, never a tile.
+  if (source.kind === 'podcastshow') {
+    addFolder = PODCASTS;
+    podShow = favoriteName(input) || '';
+    if ($('source-dialog').open) fillAddFavorites($('source-favorites'));
+    return null;
+  }
   // Website embeds often carry the match in their URL; use that as a useful label.
   const autoTitle = title || (source.kind === 'iframe' ? eventLabelFor(input) : '');
   if (target.mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
@@ -1679,7 +1688,7 @@ function surfChannels(step, id = null) {
     toast('Click a tile first, then surf with the arrow keys.');
     return;
   }
-  const all = listFavorites().sort(byName);
+  const all = listFavorites().sort(byName).filter((item) => !isPodcastShowInput(item.input));
   if (!all.length) {
     toast('Add some favorites first.');
     return;
@@ -1898,7 +1907,9 @@ function fillFavorites(holder) {
   const query = input.value.trim().toLocaleLowerCase();
   clear.hidden = !query;
   const matches = (text) => text.toLocaleLowerCase().includes(query);
-  const favorites = listFavorites().sort(byName).filter((item) => !query || matches(item.name) || (item.group && matches(item.group)));
+  const favorites = listFavorites().sort(byName)
+    .filter((item) => !isPodcastShowInput(item.input))
+    .filter((item) => !query || matches(item.name) || (item.group && matches(item.group)));
   const getTarget = holder.getTarget;
   const loose = favorites.filter((item) => !item.group);
   const old = holder.querySelector('.favorites-body');
@@ -1917,7 +1928,7 @@ function fillFavorites(holder) {
 
 /** Fills one of the two places favorites appear. Hidden entirely when there are none. */
 function renderFavorites(holder, getTarget) {
-  holder.hidden = listFavorites().length === 0;
+  holder.hidden = listFavorites().filter((item) => !isPodcastShowInput(item.input)).length === 0;
   holder.getTarget = getTarget;
   const { wrap } = favoritesSearch(holder);
   const send = syncButton();
@@ -1955,20 +1966,35 @@ function episodeState(item) {
   return { text: 'New', cls: 'is-new' };
 }
 
-function episodeRow(item) {
+function episodeRow(item, { art = false, show = false } = {}) {
   const state = episodeState(item);
-  const meta = [dayLabel(item.time), item.length ? lengthText(item.length) : ''].filter(Boolean).join(' · ');
+  const meta = [show ? item.source : '', item.time ? dayLabel(item.time) : '', item.length ? lengthText(item.length) : '']
+    .filter(Boolean).join(' · ');
+  const artNode = art
+    ? el('span', { class: 'pod-art' })
+    : null;
+  if (artNode) {
+    if (item.image) {
+      const img = el('img', { src: item.image, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => artNode.replaceChildren(icon('sound', 16)), { once: true });
+      artNode.append(img);
+    } else {
+      artNode.append(icon('sound', 16));
+    }
+  }
   return el('li', {}, el('button', {
     type: 'button',
     class: `pod-ep ${state.cls}`,
     title: item.title,
     on: {
       click() {
+        if ($('podcast-box')?.open) $('podcast-box').close();
         if ($('source-dialog').open) $('source-dialog').close();
         openPodcast(audioInput(`${item.source}: ${item.title}`, item.audio), { title: item.title, image: item.image, from: item.source });
       },
     },
   },
+  artNode,
   el('span', { class: 'pod-text' },
     el('b', { class: 'pod-title', textContent: item.title }),
     el('small', { class: 'pod-meta', textContent: meta })),
@@ -2005,7 +2031,7 @@ const layoutsTab = () => grid.isStacked;
 const RECENT = '\u0001recent';
 const RECENT_KEY = 'multigrid.recent.v1';
 const RECENT_MAX = 10;
-const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore']);
+const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore', 'podcastshow']);
 function listRecent() {
   try {
     const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
@@ -2030,14 +2056,44 @@ function loadPodcasts(holder) {
     if (before !== episodes.map((item) => item.id).join() && holder.isConnected && $('source-dialog').open) fillAddFavorites(holder);
   }).catch(() => {});
 }
-const podShows = () => [...new Set(podEpisodes.map((item) => item.source))];
+const readerShows = () => [...new Set(podEpisodes.map((item) => item.source))];
+
+/** Shows followed through Apple's directory. They live as hidden favourites, so they sync. */
+function followedShows() {
+  return listFavorites()
+    .filter((item) => isPodcastShowInput(item.input))
+    .map((item) => ({
+      name: item.name,
+      id: showIdFromInput(item.input),
+      art: item.logo || item.poster || '',
+      input: item.input,
+    }))
+    .filter((show) => show.name && show.id);
+}
+
+const isReaderShow = (name) => readerShows().some((show) => sameShowName(show, name));
+const podShows = () => {
+  // Shows you followed come first; the Reader's feeds follow.
+  const followedNames = followedShows().map((show) => show.name);
+  const names = [
+    ...followedNames,
+    ...readerShows().filter((name) => !followedNames.some((show) => sameShowName(show, name))),
+  ];
+  const unique = [];
+  for (const name of names) {
+    if (name && !unique.some((show) => sameShowName(show, name))) unique.push(name);
+  }
+  return unique;
+};
 
 function showCard(show, holder) {
-  const newest = podEpisodes.find((item) => item.source === show);
+  const newest = podEpisodes.find((item) => sameShowName(item.source, show));
+  const followed = followedShows().find((item) => sameShowName(item.name, show));
+  const image = newest?.image || followed?.art || '';
   const art = el('span', { class: 'fart is-icon' }, icon('sound', 20));
-  if (newest?.image) {
+  if (image) {
     art.className = 'fart is-picture';
-    artPicture(art, newest.image, () => { art.className = 'fart is-icon'; art.replaceChildren(icon('sound', 20)); });
+    artPicture(art, image, () => { art.className = 'fart is-icon'; art.replaceChildren(icon('sound', 20)); });
   }
   return el('li', { class: 'fcard' }, el('button', {
     type: 'button',
@@ -2048,21 +2104,424 @@ function showCard(show, holder) {
   art,
   el('span', { class: 'fcard-text' },
     el('b', { textContent: show, title: show }),
-    newest ? el('small', {}, el('span', { class: 'fcard-kind', textContent: dayLabel(newest.time) }), el('span', { class: 'fcard-now', textContent: newest.title, title: newest.title })) : null)));
+    newest
+      ? el('small', {}, el('span', { class: 'fcard-kind', textContent: dayLabel(newest.time) }), el('span', { class: 'fcard-now', textContent: newest.title, title: newest.title }))
+      : el('small', {}, el('span', { class: 'fcard-kind', textContent: 'Podcast' })))));
+}
+
+function podcastFindButton() {
+  return el('button', { type: 'button', class: 'pod-find', on: { click: openPodcastBox } },
+    icon('search', 15), el('span', { textContent: 'Find a podcast' }));
+}
+
+const ITUNES_SHOW_TTL = 30 * 60 * 1000;
+const itunesShows = new Map();
+const itunesAsks = new Map();
+
+function appleSearchUrl(name) {
+  return `https://podcasts.apple.com/ca/search?term=${encodeURIComponent(name)}`;
+}
+
+/** Follow or unfollow a show; the hidden favourite is what syncs it to the other device. */
+function podcastFollowButton(show) {
+  const input = followedShowInput(show.id);
+  let undoTimer = 0;
+  const following = () => listFavorites().some((item) => item.input === input);
+  const button = el('button', {
+    type: 'button',
+    class: 'ch-add pod-follow',
+    textContent: following() ? 'Following' : 'Follow',
+    title: following() ? `Stop following ${show.name}` : `Follow ${show.name}`,
+  });
+  const paint = () => {
+    clearTimeout(undoTimer);
+    button.textContent = following() ? 'Following' : 'Follow';
+    button.title = following() ? `Stop following ${show.name}` : `Follow ${show.name}`;
+    button.classList.toggle('is-following', following());
+  };
+  button.addEventListener('click', () => {
+    if (following()) {
+      if (!removeFavorite(input)) { toast(STORAGE_FULL); return; }
+      // The dialog hides a toast, so Undo lives on the button itself for a few seconds.
+      button.textContent = 'Undo';
+      button.title = `Undo unfollowing ${show.name}`;
+      button.classList.remove('is-following');
+      clearTimeout(undoTimer);
+      undoTimer = setTimeout(() => { paint(); refreshFavorites(); }, 8000);
+      return;
+    }
+    if (!saveFavorite(input, show.name, '', show.art)) { toast(STORAGE_FULL); return; }
+    toast(`Following ${show.name}.`);
+    paint();
+    refreshFavorites();
+  });
+  paint();
+  return button;
+}
+
+function podcastShowArt(image, className = 'pod-show-art') {
+  const art = el('span', { class: className }, icon('sound', 22));
+  if (image) artPicture(art, image, () => art.replaceChildren(icon('sound', 22)));
+  return art;
+}
+
+function podcastShowHead(show, extra = null) {
+  const actions = el('span', { class: 'pod-show-actions' });
+  if (extra) actions.append(extra);
+  const apple = el('a', {
+    class: 'pod-open',
+    href: show.appleUrl || appleSearchUrl(show.name),
+    target: '_blank',
+    rel: 'noopener',
+    textContent: 'Apple Podcasts',
+  });
+  actions.append(apple);
+  return el('div', { class: 'pod-show-head' },
+    podcastShowArt(show.art),
+    el('span', { class: 'pod-show-text' },
+      el('b', { textContent: show.name, title: show.name }),
+      el('small', { textContent: show.author || 'Podcast' })),
+    actions);
+}
+
+/** A followed show's episodes, fetched the first time it is opened and cached for 30 minutes. */
+function itunesShowView(followed, holder) {
+  const cached = itunesShows.get(followed.id);
+  const fresh = cached && Date.now() - cached.at < ITUNES_SHOW_TTL;
+  const asked = itunesAsks.get(followed.id);
+  if (!fresh && asked !== 'loading' && asked !== 'error') {
+    itunesAsks.set(followed.id, 'loading');
+    lookupShowEpisodes(followed.id).then((episodes) => {
+      itunesShows.set(followed.id, { at: Date.now(), episodes });
+      itunesAsks.delete(followed.id);
+    }).catch(() => {
+      itunesAsks.set(followed.id, 'error');
+    }).finally(() => {
+      if ($('source-dialog').open && addFolder === PODCASTS && sameShowName(podShow, followed.name)) {
+        fillAddFavorites($('source-favorites'));
+      }
+    });
+  }
+  const follow = podcastFollowButton(followed);
+  let body;
+  if (fresh && cached.episodes.length) {
+    body = el('ul', { class: 'pod-list' }, ...cached.episodes.map((item) => episodeRow(item)));
+  } else if (fresh) {
+    body = el('p', { class: 'favorites-empty', textContent: 'No free episodes found for this show.' });
+  } else if (asked === 'error') {
+    body = el('div', {},
+      el('p', { class: 'favorites-empty', textContent: "Apple didn't answer." }),
+      el('button', {
+        type: 'button',
+        class: 'text-button',
+        textContent: 'Try again',
+        on: {
+          click() {
+            itunesAsks.delete(followed.id);
+            itunesShows.delete(followed.id);
+            fillAddFavorites(holder);
+          },
+        },
+      }));
+  } else {
+    body = el('p', { class: 'favorites-empty', textContent: 'Loading episodes…' });
+  }
+  return el('div', { class: 'pod-view' },
+    el('button', {
+      type: 'button',
+      class: 'pod-back',
+      on: { click() { podShow = ''; fillAddFavorites(holder); } },
+    }, icon('back', 14), el('span', { textContent: 'Podcasts' }), el('b', { textContent: followed.name })),
+    podcastShowHead(followed, follow),
+    body);
 }
 
 /** The Podcasts tab: every show, or one show's episodes with a way back. */
 function podcastsView(holder) {
-  if (podShow && podShows().includes(podShow)) {
-    return el('div', { class: 'pod-view' },
-      el('button', { type: 'button', class: 'pod-back', on: { click() { podShow = ''; fillAddFavorites(holder); } } }, icon('back', 14), el('span', { textContent: 'Podcasts' }), el('b', { textContent: podShow })),
-      el('ul', { class: 'pod-list' }, ...podEpisodes.filter((item) => item.source === podShow).map(episodeRow)));
+  const shown = podShow ? podShows().find((name) => sameShowName(name, podShow)) : '';
+  if (shown) {
+    podShow = shown;
+    const reader = podEpisodes.filter((item) => sameShowName(item.source, shown));
+    if (reader.length) {
+      return el('div', { class: 'pod-view' },
+        el('button', { type: 'button', class: 'pod-back', on: { click() { podShow = ''; fillAddFavorites(holder); } } }, icon('back', 14), el('span', { textContent: 'Podcasts' }), el('b', { textContent: shown })),
+        el('ul', { class: 'pod-list' }, ...reader.map((item) => episodeRow(item))));
+    }
+    const followed = followedShows().find((item) => sameShowName(item.name, shown));
+    if (followed) return itunesShowView(followed, holder);
   }
   podShow = '';
   const shows = podShows();
-  return shows.length ? el('ul', { class: 'addp-grid' }, ...shows.map((show) => showCard(show, holder)))
-    : el('p', { class: 'favorites-empty', textContent: 'No podcast episodes yet' });
+  return el('div', { class: 'pod-view' },
+    el('div', { class: 'pod-tools' }, podcastFindButton()),
+    shows.length
+      ? el('ul', { class: 'addp-grid' }, ...shows.map((show) => showCard(show, holder)))
+      : el('p', { class: 'favorites-empty', textContent: 'No podcasts yet. Find one with the button above.' }));
 }
+
+/* ---------- Podcast directory dialog ---------- */
+
+function podcastSearchShowRow(show, box, state, draw) {
+  const art = el('span', { class: 'ch-logo pod-logo' }, icon('sound', 18));
+  if (show.art) artPicture(art, show.art, () => art.replaceChildren(icon('sound', 18)));
+  const actions = el('span', { class: 'pod-row-actions' });
+  if (isReaderShow(show.name)) {
+    actions.append(el('button', {
+      type: 'button',
+      class: 'ch-add',
+      textContent: 'In your feeds',
+      on: {
+        click() {
+          box.close();
+          addFolder = PODCASTS;
+          podShow = show.name;
+          fillAddFavorites($('source-favorites'));
+        },
+      },
+    }));
+  } else {
+    actions.append(podcastFollowButton(show));
+    actions.append(el('button', {
+      type: 'button',
+      class: 'ch-add',
+      textContent: 'Episodes',
+      on: {
+        click() {
+          state.show = show;
+          state.showEpisodes = [];
+          state.showError = '';
+          loadPodcastDialogShow(show, state, draw);
+        },
+      },
+    }));
+  }
+  return el('li', { class: 'ch-row pod-row' },
+    art,
+    el('span', { class: 'ch-text' },
+      el('b', { textContent: show.name, title: show.name }),
+      el('small', { textContent: show.author || 'Podcast' })),
+    actions);
+}
+
+function loadPodcastDialogShow(show, state, draw) {
+  const token = ++state.showToken;
+  state.showStatus = 'loading';
+  state.showError = '';
+  draw();
+  lookupShowEpisodes(show.id).then((episodes) => {
+    if (token !== state.showToken || state.show?.id !== show.id) return;
+    state.showEpisodes = episodes;
+    state.showStatus = 'done';
+    draw();
+  }).catch((error) => {
+    if (token !== state.showToken || state.show?.id !== show.id) return;
+    state.showStatus = 'error';
+    state.showError = error?.message || "Apple didn't answer.";
+    draw();
+  });
+}
+
+function podcastDialogShow(show, state, draw) {
+  const list = state.showStatus === 'done'
+    ? (state.showEpisodes.length
+      ? el('ul', { class: 'pod-list pod-dialog-list' }, ...state.showEpisodes.map((item) => episodeRow(item, { art: true })))
+      : el('p', { class: 'favorites-empty', textContent: 'No free episodes found for this show.' }))
+    : state.showStatus === 'error'
+      ? el('div', {},
+        el('p', { class: 'favorites-empty', textContent: state.showError }),
+        el('button', {
+          type: 'button',
+          class: 'text-button',
+          textContent: 'Try again',
+          on: { click() { loadPodcastDialogShow(show, state, draw); } },
+        }))
+      : el('p', { class: 'favorites-empty', textContent: 'Loading episodes…' });
+  return el('div', { class: 'pod-dialog-show' },
+    el('button', {
+      type: 'button',
+      class: 'pod-back',
+      on: { click() { state.show = null; state.showStatus = 'idle'; draw(); } },
+    }, icon('back', 14), el('span', { textContent: 'Search results' })),
+    podcastShowHead(show, podcastFollowButton(show)),
+    list);
+}
+
+function openPodcastBox() {
+  const box = $('podcast-box');
+  if (box.open) return;
+  const state = {
+    tab: 'shows',
+    query: '',
+    shows: [],
+    episodes: [],
+    status: 'idle',
+    error: '',
+    show: null,
+    showStatus: 'idle',
+    showEpisodes: [],
+    showError: '',
+    showToken: 0,
+    token: 0,
+    timer: 0,
+    controller: null,
+  };
+  const heading = el('h2', { textContent: 'Find a podcast' });
+  const search = el('input', {
+    type: 'search',
+    class: 'ch-search',
+    placeholder: 'Search podcasts or episodes',
+    autocomplete: 'off',
+    aria: { label: 'Search podcasts' },
+  });
+  const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Podcast search type' } });
+  const count = el('p', { class: 'ch-count' });
+  const results = el('div', { class: 'ch-results pod-results' });
+  const foot = el('p', { class: 'ch-note' },
+    'Podcast search from ',
+    el('a', { href: 'https://podcasts.apple.com/', target: '_blank', rel: 'noopener' }, 'Apple Podcasts'),
+    '.');
+
+  const drawTabs = () => {
+    tabs.replaceChildren(...[['shows', 'Shows'], ['episodes', 'Episodes']].map(([id, label]) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `ch-tab${state.tab === id ? ' is-on' : ''}`,
+      aria: { selected: String(state.tab === id) },
+      textContent: label,
+      on: {
+        click() {
+          if (state.tab === id) return;
+          state.tab = id;
+          state.show = null;
+          state.status = state.query.trim().length >= 2 ? 'loading' : 'idle';
+          draw();
+          runSearch();
+        },
+      },
+    })));
+  };
+
+  const draw = () => {
+    const inShow = Boolean(state.show);
+    search.hidden = inShow;
+    tabs.hidden = inShow;
+    count.hidden = inShow;
+    heading.textContent = inShow ? state.show.name : 'Find a podcast';
+    if (inShow) {
+      results.replaceChildren(podcastDialogShow(state.show, state, draw));
+      return;
+    }
+    drawTabs();
+    if (state.query.trim().length < 2) {
+      count.textContent = '';
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Search for a show, or a topic like “Toronto”.' }));
+      return;
+    }
+    if (state.status === 'loading') {
+      count.textContent = 'Searching…';
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching Apple Podcasts…' }));
+      return;
+    }
+    if (state.status === 'error') {
+      count.textContent = '';
+      results.replaceChildren(
+        el('p', { class: 'ch-empty', textContent: state.error }),
+        el('button', { type: 'button', class: 'text-button', textContent: 'Try again', on: { click: runSearch } }));
+      return;
+    }
+    if (state.status !== 'done') {
+      count.textContent = '';
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Search for a show, or a topic like “Toronto”.' }));
+      return;
+    }
+    if (state.tab === 'shows') {
+      count.textContent = `${state.shows.length} show${state.shows.length === 1 ? '' : 's'}`;
+      results.replaceChildren(state.shows.length
+        ? el('ul', { class: 'pod-list pod-dialog-list' }, ...state.shows.map((show) => podcastSearchShowRow(show, box, state, draw)))
+        : el('p', { class: 'ch-empty', textContent: 'No shows match.' }));
+    } else {
+      count.textContent = `${state.episodes.length} episode${state.episodes.length === 1 ? '' : 's'}`;
+      results.replaceChildren(state.episodes.length
+        ? el('ul', { class: 'pod-list pod-dialog-list' }, ...state.episodes.map((item) => episodeRow(item, { art: true, show: true })))
+        : el('p', { class: 'ch-empty', textContent: 'No playable episodes match.' }));
+    }
+  };
+
+  const runSearch = async () => {
+    const query = state.query.trim();
+    if (query.length < 2) {
+      state.status = 'idle';
+      state.shows = [];
+      state.episodes = [];
+      draw();
+      return;
+    }
+    const token = ++state.token;
+    state.controller?.abort();
+    state.controller = new AbortController();
+    state.status = 'loading';
+    draw();
+    try {
+      const list = state.tab === 'shows'
+        ? await searchShows(query, { signal: state.controller.signal })
+        : await searchEpisodes(query, { signal: state.controller.signal });
+      if (token !== state.token) return;
+      if (state.tab === 'shows') state.shows = list;
+      else state.episodes = list;
+      state.status = 'done';
+    } catch (error) {
+      if (token !== state.token || error?.name === 'AbortError') return;
+      state.status = 'error';
+      state.error = error?.message || "Apple didn't answer.";
+    }
+    draw();
+  };
+
+  search.addEventListener('input', () => {
+    state.query = search.value;
+    state.show = null;
+    clearTimeout(state.timer);
+    state.controller?.abort();
+    state.token++;
+    if (state.query.trim().length < 2) {
+      state.status = 'idle';
+      state.shows = [];
+      state.episodes = [];
+      draw();
+      return;
+    }
+    // Clear stale rows straight away; a fast tap must not pick an old result.
+    state.status = 'loading';
+    state.error = '';
+    draw();
+    state.timer = setTimeout(runSearch, 350);
+  });
+  search.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    clearTimeout(state.timer);
+    state.query = search.value;
+    runSearch();
+  });
+
+  box.onclose = () => {
+    clearTimeout(state.timer);
+    state.controller?.abort();
+    state.token++;
+    state.showToken++;
+  };
+  box.replaceChildren(
+    el('div', { class: 'ch-head' }, heading, iconButton('close', 'Close', () => box.close())),
+    search,
+    tabs,
+    count,
+    results,
+    foot);
+  openDialog(box);
+  draw();
+  if (!document.body.classList.contains('is-phone')) search.focus();
+}
+
 onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fillAddFavorites($('source-favorites')); });
 
 /* ---------- Favorites: the local library tab ---------- */
@@ -2758,11 +3217,12 @@ let addFolder = '';
 const KIND_NAMES = {
   youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
+  podcastshow: 'Podcast',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -3214,7 +3674,7 @@ function addFolderPills(holder, folders) {
   const pills = () => {
     // Folders and Podcasts in A to Z order; Saved layouts last, after a small bar, as it's not a folder.
     const label = (folder) => (folder === PODCASTS ? 'PODCASTS' : folder === LAYOUTS ? 'SAVED LAYOUTS' : folder === RECENT ? 'RECENT' : folder === LIBRARY ? 'LIBRARY' : folder || 'All');
-    const sorted = [...folders, ...(podEpisodes.length ? [PODCASTS] : []), ...(libraryAvailable() ? [LIBRARY] : [])]
+    const sorted = [...folders, ...(podEpisodes.length || followedShows().length ? [PODCASTS] : []), ...(libraryAvailable() ? [LIBRARY] : [])]
       .sort((a, b) => label(a).localeCompare(label(b), undefined, { sensitivity: 'base' }));
     const tab = (folder) => el('button', {
       type: 'button',
@@ -3276,11 +3736,11 @@ function fillAddFavorites(holder) {
   const { input, clear } = addSearchBox(holder);
   const query = input.value.trim().toLocaleLowerCase();
   clear.hidden = !query;
-  const all = listFavorites().sort(byName);
+  const all = listFavorites().sort(byName).filter((item) => !isPodcastShowInput(item.input));
   const folders = listFolders().filter((folder) => all.some((item) => item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()));
   if (addFolder === LIBRARY) {
     if (!libraryAvailable()) addFolder = '';
-  } else if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) {
+  } else if (addFolder === PODCASTS ? !podEpisodes.length && !followedShows().length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) {
     addFolder = '';
   }
   const libraryOpen = addFolder === LIBRARY;
@@ -3311,7 +3771,7 @@ function fillAddFavorites(holder) {
           }))
             : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
               : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
-  const pills = (folders.length || podEpisodes.length || layoutsTab() || listRecent().length || libraryAvailable()) && !query ? addFolderPills(holder, folders) : null;
+  const pills = (folders.length || podEpisodes.length || followedShows().length || layoutsTab() || listRecent().length || libraryAvailable()) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
   if (old) old.replaceWith(grid);
@@ -3366,7 +3826,7 @@ function refreshFavoriteLists() {
 
 /** Favorites with listings, in the same folders and order as everywhere else. */
 function guideSections() {
-  const favorites = listFavorites().sort(byName);
+  const favorites = listFavorites().sort(byName).filter((item) => !isPodcastShowInput(item.input));
   const sections = [];
   const withListings = (items) => items
     .map((item) => ({ item, listing: nowAndNext(item.name, parseSource(item.input)) }))
@@ -4177,7 +4637,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file']);
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {
@@ -6146,7 +6606,7 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('palette'), $('import-box')]) {
+for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('podcast-box'), $('palette'), $('import-box')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
@@ -6157,7 +6617,10 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
 $('ppv-find').addEventListener('click', () => openPPV(sourceTarget));
-$('source-dialog').addEventListener('close', () => { if ($('ppv-box').open) $('ppv-box').close(); });
+$('source-dialog').addEventListener('close', () => {
+  if ($('ppv-box').open) $('ppv-box').close();
+  if ($('podcast-box').open) $('podcast-box').close();
+});
 $('palette-button').addEventListener('click', openPalette);
 document.addEventListener('keydown', (event) => {
   if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLocaleLowerCase() !== 'k') return;
@@ -6822,7 +7285,9 @@ function remoteState() {
     ticker: isTickerOn(),
     layout: ws.presetId,
     full: streamCount(ws) >= MAX_STREAMS,
-    favorites: listFavorites().map(({ input, name, group }) => ({ input, name, group })),
+    favorites: listFavorites()
+      .filter((item) => !isPodcastShowInput(item.input))
+      .map(({ input, name, group }) => ({ input, name, group })),
   };
 }
 

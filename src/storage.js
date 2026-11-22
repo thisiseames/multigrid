@@ -3,6 +3,7 @@
 // worked out fresh on whichever domain the app is opened from.
 
 import { emptyWorkspace, uid } from './layout.js';
+import { isPodcastShowInput } from './podcasts.js';
 import { episodePage } from './sources.js';
 
 const CURRENT_KEY = 'multigrid.current.v1';
@@ -221,8 +222,9 @@ const squeeze = async (bytes, stream) => new Uint8Array(await new Response(new B
 /** The favorites that can travel, and how many files had to stay. */
 export function transferableFavorites() {
   const all = listFavorites();
-  const items = all.filter((item) => !item.input.startsWith('local:'));
-  return { items, left: all.length - items.length };
+  const local = all.filter((item) => item.input.startsWith('local:'));
+  const items = all.filter((item) => !item.input.startsWith('local:') && !isPodcastShowInput(item.input));
+  return { items, left: local.length };
 }
 
 export async function packFavorites(items) {

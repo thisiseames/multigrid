@@ -17,6 +17,11 @@ test('an event poster travels with its favorite', () => {
   assert.deepEqual(items['f:https://a.test/event'], { name: 'Event', group: 'PPV', poster: 'https://img.test/poster.jpg' });
 });
 
+test('a followed podcast show syncs with its artwork', () => {
+  const items = itemsOf(lists([{ input: 'podcastshow:1439621628', name: 'Front Burner', group: '', logo: 'https://img.test/front.jpg' }]));
+  assert.deepEqual(items['f:podcastshow:1439621628'], { name: 'Front Burner', group: '', logo: 'https://img.test/front.jpg' });
+});
+
 test('a change is stamped once; nothing changed means nothing to send', () => {
   const items = itemsOf(lists([fav('https://a.test/1', 'CP24')]));
   const first = stamp(items, {}, 100);

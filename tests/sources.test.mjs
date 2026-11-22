@@ -310,3 +310,11 @@ test('season and episode come from the common kinds of episode address', () => {
   assert.equal(episodeOf('https://site.example/watch/247718'), null);
   assert.equal(episodeOf(''), null);
 });
+
+test('a followed podcast show is recognised as a show, not a website', () => {
+  const source = parseSource('podcastshow:1439621628');
+  assert.equal(source.ok, true);
+  assert.equal(source.kind, 'podcastshow');
+  assert.equal(source.showId, '1439621628');
+  assert.equal(parseSource('podcastshow:').ok, false);
+});

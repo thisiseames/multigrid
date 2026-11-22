@@ -30,7 +30,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 `index.html` has a Content-Security-Policy with a `sha256-…` hash of its own inline `<script type="module">`. If you change that inline script (including its list of files), recompute the hash: take the exact text between `<script type="module">` and `</script>`, sha256 it, base64 it, and replace the `sha256-…` value. A test checks that the file list includes every file in `src/`.
 
 ## Outside services in use (all free, no keys)
-Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed, ESPN, Twitch's preview images, api.ivr.fi (unofficial Twitch info), r.jina.ai (reader used for TikTok, X and trends24; about 20 requests a minute without a key), gamma-api.polymarket.com, iptv-org channel lists, google-flights-ts (in the flights job). Any of these can change or slow down; fail quietly (hide the section) rather than show errors or stale numbers as current.
+Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed, ESPN, Twitch's preview images, api.ivr.fi (unofficial Twitch info), r.jina.ai (reader used for TikTok, X and trends24; about 20 requests a minute without a key), gamma-api.polymarket.com, iptv-org channel lists, google-flights-ts (in the flights job), Apple's podcast directory (iTunes Search API; about 20 calls a minute, cached in the app). Any of these can change or slow down; fail quietly (hide the section) rather than show errors or stale numbers as current.
 
 ## No lesser duplicates
 

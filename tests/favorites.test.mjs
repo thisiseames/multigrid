@@ -157,8 +157,10 @@ test('favorites travel through a link and come back the same, without files from
   saveFavorite('<iframe src="https://example.com/sky?x=1&y=é"></iframe>', 'Sky Sports 1', 'Sports');
   saveFavorite('https://youtube.com/watch?v=abc', 'Loose');
   saveFavorite('local:abc123:clip.mp4', 'My clip');
+  saveFavorite('podcastshow:1439621628', 'Front Burner');
   const { items, left } = transferableFavorites();
   assert.equal(left, 1);
+  assert.equal(items.some((item) => item.input.startsWith('podcastshow:')), false);
   const code = await packFavorites(items);
   assert.match(code, /^[\w-]+$/);
   assert.deepEqual(await unpackFavorites(code), items);

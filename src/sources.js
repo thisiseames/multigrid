@@ -333,6 +333,13 @@ function parseAudio(input) {
 }
 export const audioInput = (title, url) => `audio:${encodeURIComponent(title.slice(0, 120))}|${url}`;
 
+/** A podcast show followed through Apple's directory. Its card opens the show, not a stream. */
+function parsePodcastShow(input) {
+  const match = input.match(/^podcastshow:([^:]+)$/);
+  if (!match) return fail(input, "That podcast show link isn't complete.");
+  return { ok: true, input, kind: 'podcastshow', label: 'Podcast show', showId: match[1], openUrl: null };
+}
+
 /** The stored form of a file on this computer. The file itself is never stored. */
 export const localInput = (id, name) => `local:${id}:${encodeURIComponent(name)}`;
 
@@ -366,6 +373,7 @@ export function parseSource(raw) {
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);
+  if (input.startsWith('podcastshow:')) return parsePodcastShow(input);
   if (input.startsWith('note:')) return parseNote(input);
   if (input.startsWith('boxscore:')) return parseBoxScoreInput(input);
 
