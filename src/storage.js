@@ -62,6 +62,8 @@ function sanitize(raw) {
       primary: tile.primary === true && Boolean(tile.input),
       ...(typeof tile.title === 'string' && tile.title.trim() ? { title: tile.title.trim().slice(0, 300) } : {}),
       ...(keptPage(tile) ? { page: keptPage(tile) } : {}),
+      ...(liveEvent(cleanTileEvent(tile.event)) ? { event: liveEvent(cleanTileEvent(tile.event)) } : {}),
+      ...(cleanSources(tile.sources).length ? { sources: cleanSources(tile.sources) } : {}),
     });
   }
   return {
@@ -94,7 +96,7 @@ function keptPage(tile) {
   return href ? { for: tile.input, href } : null;
 }
 
-function snapshot(ws) {
+function snapshot(ws, { keepEvent = true } = {}) {
   return {
     v: 1,
     ...(ws.previous ? { previous: ws.previous } : {}),
@@ -107,7 +109,16 @@ function snapshot(ws) {
     tiles: ws.tiles.map((tile) => {
       const { input, muted, volume, place, primary, title } = tile;
       const page = keptPage(tile);
-      return { input, muted, volume, place, ...(primary && input ? { primary: true } : {}), ...(title ? { title } : {}), ...(page ? { page } : {}) };
+      const event = keepEvent ? liveEvent(cleanTileEvent(tile.event)) : null;
+      const sources = cleanSources(tile.sources);
+      return {
+        input, muted, volume, place,
+        ...(primary && input ? { primary: true } : {}),
+        ...(title ? { title } : {}),
+        ...(page ? { page } : {}),
+        ...(event ? { event } : {}),
+        ...(sources.length ? { sources } : {}),
+      };
     }),
   };
 }
@@ -126,17 +137,58 @@ export const setOneSound = (on) => write(ONE_SOUND_KEY, Boolean(on));
 const sameFolder = (a, b) => a.toLocaleLowerCase() === b.toLocaleLowerCase();
 const cleanFolder = (folder) => (typeof folder === 'string' ? folder.trim() : '');
 const cleanLogo = (url) => (typeof url === 'string' && /^https:\/\//.test(url) ? url : '');
+const MAX_SOURCES = 6;
+
+const cleanSource = (source) => {
+  if (!source || typeof source.input !== 'string' || typeof source.name !== 'string') return null;
+  const input = source.input.trim();
+  const name = source.name.trim();
+  if (!input || !name || input.length > 4000 || name.length > 200) return null;
+  return { input, name };
+};
+
+const cleanSources = (sources) => {
+  const seen = new Set();
+  const out = [];
+  for (const source of Array.isArray(sources) ? sources : []) {
+    const clean = cleanSource(source);
+    if (!clean || seen.has(clean.input)) continue;
+    seen.add(clean.input);
+    out.push(clean);
+    if (out.length >= MAX_SOURCES) break;
+  }
+  return out;
+};
+
+const cleanTileEvent = (event) => {
+  if (!event || typeof event.key !== 'string' || typeof event.label !== 'string') return null;
+  const key = event.key.trim().slice(0, 200);
+  const label = event.label.trim().slice(0, 300);
+  if (!key || !label) return null;
+  const starts = Number(event.starts);
+  return { key, label, ...(Number.isFinite(starts) && starts > 0 ? { starts } : {}) };
+};
+
+const liveEvent = (event) => {
+  if (!event) return null;
+  if (event.starts && Date.now() > event.starts + 8 * 3600000) return null;
+  return event;
+};
 
 export function listFavorites() {
   const list = read(FAVORITES_KEY);
   if (!Array.isArray(list)) return [];
   return list
     .filter((item) => item && typeof item.input === 'string' && typeof item.name === 'string')
-    .map(({ input, name, group, logo, poster }) => ({
-      input, name, group: cleanFolder(group),
-      ...(cleanLogo(logo) ? { logo: cleanLogo(logo) } : {}),
-      ...(cleanLogo(poster) ? { poster: cleanLogo(poster) } : {}),
-    }));
+    .map(({ input, name, group, logo, poster, sources }) => {
+      const backups = cleanSources(sources);
+      return {
+        input, name, group: cleanFolder(group),
+        ...(cleanLogo(logo) ? { logo: cleanLogo(logo) } : {}),
+        ...(cleanLogo(poster) ? { poster: cleanLogo(poster) } : {}),
+        ...(backups.length ? { sources: backups } : {}),
+      };
+    });
 }
 
 export const favoriteName = (input) => listFavorites().find((item) => item.input === input)?.name ?? null;
@@ -165,10 +217,12 @@ export function saveFavorite(input, name, folder = '', logo, poster) {
   const list = listFavorites();
   const at = list.findIndex((other) => other.input === input);
   const previous = at === -1 ? null : list[at];
+  const sources = cleanSources(previous?.sources);
   const item = {
     input, name, group,
     ...(logo === undefined ? (previous?.logo ? { logo: previous.logo } : {}) : (cleanLogo(logo) ? { logo: cleanLogo(logo) } : {})),
     ...(poster === undefined ? (previous?.poster ? { poster: previous.poster } : {}) : (cleanLogo(poster) ? { poster: cleanLogo(poster) } : {})),
+    ...(sources.length ? { sources } : {}),
   };
   if (at === -1) list.unshift(item);
   else list[at] = item;
@@ -180,6 +234,38 @@ export function saveFavorite(input, name, folder = '', logo, poster) {
 
 export function removeFavorite(input) {
   return write(FAVORITES_KEY, listFavorites().filter((item) => item.input !== input));
+}
+
+export const favoriteSources = (input) => listFavorites().find((item) => item.input === input)?.sources ?? [];
+
+/** The old link becomes a backup when a favorite is repaired to another of the same channel. */
+export function promoteFavoriteSource(oldInput, newInput) {
+  if (!oldInput || !newInput || oldInput === newInput) return false;
+  const list = listFavorites();
+  const at = list.findIndex((item) => item.input === oldInput);
+  if (at < 0) return false;
+  if (list.some((item, index) => index !== at && item.input === newInput)) return false;
+  const favorite = list[at];
+  const sources = cleanSources([
+    { input: oldInput, name: favorite.name },
+    ...(favorite.sources ?? []),
+  ]);
+  list[at] = {
+    ...favorite,
+    input: newInput,
+    ...(sources.length ? { sources } : {}),
+  };
+  return write(FAVORITES_KEY, list);
+}
+
+export function removeFavoriteSource(input, sourceInput) {
+  const list = listFavorites();
+  const at = list.findIndex((item) => item.input === input);
+  if (at < 0) return false;
+  const sources = (list[at].sources ?? []).filter((source) => source.input !== sourceInput);
+  list[at] = { ...list[at], ...(sources.length ? { sources } : {}) };
+  if (!sources.length) delete list[at].sources;
+  return write(FAVORITES_KEY, list);
 }
 
 /** Renaming onto another folder's name puts the two together. */
@@ -302,7 +388,7 @@ export const findSaved = (name) => listSaved().find((item) => item.name === name
 /** Saves under a name, replacing a layout that already has it. */
 export function saveNamed(name, ws) {
   const list = listSaved().filter((item) => item.name !== name);
-  list.unshift({ name, savedAt: Date.now(), workspace: snapshot(ws) });
+  list.unshift({ name, savedAt: Date.now(), workspace: snapshot(ws, { keepEvent: false }) });
   return write(SAVED_KEY, list);
 }
 

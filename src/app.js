@@ -51,11 +51,15 @@ import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpi
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
-  loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
-  saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
+  loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
+  saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { searchLiveSources } from './live-search.js';
+import {
+  channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
+  gamesOnNow, mergeGames, resolveGameSources, sourceIdentity, sourcesForChannel,
+} from './game-links.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -316,6 +320,7 @@ function buildStreamMenu(id) {
     ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
+    bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
     view.source?.kind === 'iframe' ? bigButton('live', 'Find a direct feed', then(() => switchToDirectFeed(id))) : null,
     view.fullButton && !view.fullButton.hidden ? bigButton('expand', 'Fullscreen', then(() => view.toggleFullscreen())) : null,
@@ -628,9 +633,10 @@ function zliveRow(item, target) {
 }
 
 /** The directory inside Add stream: the verified catalog and Zlive's 277 live channels. */
-function openChannelFinder() {
+function openChannelFinder(query = '') {
   const box = $('channel-box');
   if (box.open) return;
+  const keepSearch = Boolean(query);
   const target = sourceTarget;
   let provider = 'catalog';
   let channels = [];
@@ -642,7 +648,7 @@ function openChannelFinder() {
   let zliveLoaded = false;
   let category = 'All';
   const nowCache = new Map();
-  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search English channels, teams or shows', autocomplete: 'off' });
+  const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search English channels, teams or shows', autocomplete: 'off', value: query });
   const sources = el('div', { class: 'gviews ch-sources', role: 'tablist', aria: { label: 'Channel sources' } });
   const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Countries' } });
   const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
@@ -674,7 +680,7 @@ function openChannelFinder() {
           if (provider === value) return;
           provider = value;
           category = 'All';
-          search.value = '';
+          if (!keepSearch) search.value = '';
           search.placeholder = value === 'zlive'
             ? 'Search Zlive channels, sports or regions'
             : 'Search English channels, teams or shows';
@@ -854,12 +860,14 @@ function openChannelFinder() {
 }
 
 
-function addPPV(event, target) {
+function addPPV(event, target, gameEvent = null) {
   $('ppv-box').close();
   $('source-dialog').close();
-  if (!addStream(event.input, target, event.name)) return;
+  const id = addStream(event.input, target, event.name, '', gameEvent);
+  if (!id) return null;
   saveFavorite(event.input, event.name, 'PPV', undefined, event.poster);
   toast(`Adding ${event.name}…`);
+  return id;
 }
 
 /** One PPV event card, shared by the picker and Today. */
@@ -886,13 +894,15 @@ function ppvCard(event, target, eager = false, before = null) {
     sub ? el('small', { textContent: sub }) : null));
 }
 
-function addDaddyLive(event, channel, target) {
+function addDaddyLive(event, channel, target, gameEvent = null) {
   $('ppv-box').close();
   $('source-dialog').close();
   const name = event.channels.length > 1 ? `${event.name} · ${channel.name}` : event.name;
-  if (!addStream(channel.url, target, name)) return;
+  const id = addStream(channel.url, target, name, '', gameEvent);
+  if (!id) return null;
   saveFavorite(channel.url, name, 'Daddy Live');
   toast(`Adding ${name}…`);
+  return id;
 }
 
 /** One Daddy Live event card. The API has no posters, so it uses the neutral play art. */
@@ -922,7 +932,7 @@ function daddyCard(event, target, eager = false, before = null) {
 }
 
 /** A small picker for an event with more than one Daddy Live link. */
-function chooseDaddyLink(event, target) {
+function chooseDaddyLink(event, target, gameEvent = null) {
   const box = el('dialog', {
     class: 'dialog dl-links',
     aria: { label: `Links for ${event.name}` },
@@ -933,7 +943,7 @@ function chooseDaddyLink(event, target) {
     on: {
       click() {
         box.close();
-        addDaddyLive(event, channel, target);
+        addDaddyLive(event, channel, target, gameEvent);
       },
     },
   },
@@ -953,12 +963,14 @@ function chooseDaddyLink(event, target) {
   box.focus({ preventScroll: true });
 }
 
-function addMatchora(event, target) {
+function addMatchora(event, target, gameEvent = null) {
   $('ppv-box').close();
   $('source-dialog').close();
-  if (!addStream(event.input, target, event.name)) return;
+  const id = addStream(event.input, target, event.name, '', gameEvent);
+  if (!id) return null;
   saveFavorite(event.input, event.name, 'Matchora');
   toast(`Adding ${event.name}…`);
+  return id;
 }
 
 /** One clean Matchora match card. The embed is player-only, with its own Channels button. */
@@ -1262,40 +1274,200 @@ async function loadLiveSports() {
   return liveSportsPending;
 }
 
-function addSearchChannel(source, target) {
-  const input = source.kind === 'zlive' ? zliveEmbed(source.url) : source.url;
-  if (!input) return;
-  if ($('source-dialog').open) $('source-dialog').close();
-  if (!addStream(input, target, source.name)) return;
-  saveFavorite(input, source.name, folderForCategory(source.category));
-  toast(`Adding ${source.name}…`);
+let gameDataCache = null;
+let gameDataAt = 0;
+let gameDataPending = null;
+
+/** The channel a favorite really is, from a Zlive address when its label is generic. */
+function favoriteChannel(favorite) {
+  try {
+    const url = new URL(favorite.input);
+    if (url.hostname.toLocaleLowerCase() === 'zlive.st') {
+      const slug = url.pathname.match(/^\/embed\/([a-z0-9-]+)$/i)?.[1] || '';
+      if (slug) {
+        const name = slug.replace(/^auto-/, '').replace(/-/g, ' ').replace(/\b(?:backup|feed)\s*\d*$/i, '').replace(/\d+$/, '').trim();
+        if (name) return channelName(name);
+      }
+    }
+  } catch {}
+  return favorite.name;
 }
 
-/** A channel found in both Catalog and Zlive: pick which source to play. */
-function chooseSearchChannel(group, target) {
+/** The Guide's current show for every favorite TV channel, deduped by channel. */
+async function guideRowsNow({ catalog = [], zlive = [] } = {}) {
+  const loaded = await loadGuide().catch(() => false);
+  if (!loaded) return [];
+  const rows = [];
+  const seen = new Set();
+  for (const favorite of listFavorites()) {
+    const channel = channelFromInput(favorite.input, { catalog, zlive }) || favoriteChannel(favorite);
+    const key = channelKey(channel);
+    if (!key || seen.has(key)) continue;
+    const info = nowAndNext(channel, parseSource(favorite.input));
+    const show = info?.current;
+    if (!show) continue;
+    seen.add(key);
+    rows.push({ channel, title: show.title, start: show.start, end: show.end });
+  }
+  return rows;
+}
+
+/** Sports, live events, the Guide and the channel lists, merged into games. */
+async function loadGameData() {
+  if (gameDataCache && Date.now() - gameDataAt < 60_000) return gameDataCache;
+  if (gameDataPending) return gameDataPending;
+  gameDataPending = Promise.all([
+    todaysGames().catch(() => []),
+    loadMatchora().catch(() => []),
+    loadPPV().catch(() => []),
+    loadDaddyLive().catch(() => []),
+    loadJob('live-channels.json').catch(() => null),
+    loadZliveManifest().catch(() => []),
+  ]).then(async ([sportsGroups, matchora, ppv, daddy, catalog, zlive]) => {
+    const sports = (sportsGroups ?? []).flatMap((group) => group.games ?? []);
+    const channels = Array.isArray(catalog?.channels) ? catalog.channels : [];
+    const guide = await guideRowsNow({ catalog: channels, zlive: zlive ?? [] }).catch(() => []);
+    const data = {
+      sports,
+      matchora: matchora ?? [],
+      ppv: ppv ?? [],
+      daddy: daddy ?? [],
+      guide: guide ?? [],
+      catalog: channels,
+      zlive: zlive ?? [],
+    };
+    data.games = mergeGames(data);
+    gameDataCache = data;
+    gameDataAt = Date.now();
+    return data;
+  }).finally(() => { gameDataPending = null; });
+  return gameDataPending;
+}
+
+/** The event a tile is linked to, or the game it is most likely showing. */
+async function detectTileGame(tile) {
+  if (!tile) return null;
+  const data = await loadGameData();
+  return gameForTile({
+    name: favoriteName(tile.input) || tile.title || labelOf(tile),
+    input: tile.input,
+    games: data.games,
+    guide: data.guide,
+    catalog: data.catalog,
+    zlive: data.zlive,
+  });
+}
+
+/** A provider event or a merged game becomes the small link a tile saves. */
+function tileEventFrom(event) {
+  if (!event) return null;
+  if (event.key && event.label) return gameLink(event);
+  const label = String(event.label || event.name || '').trim();
+  if (!label) return null;
+  const starts = Number(event.starts ?? event.start) || 0;
+  const key = event.id ? `event:${event.id}` : `event:${label}`;
+  return { key, label, ...(starts ? { starts } : {}) };
+}
+
+function rememberTileSource(tile, source) {
+  if (!tile || !source?.input) return;
+  const list = (Array.isArray(tile.sources) ? tile.sources : [])
+    .filter((item) => item && item.input !== source.input);
+  list.unshift({ input: source.input, name: String(source.name || '').trim() });
+  tile.sources = list.filter((item) => item.input && item.name).slice(0, 6);
+}
+
+
+/** Puts one chosen source into a new tile or over the tile being repaired. */
+function addSource(source, target = { mode: 'add' }, game = null) {
+  if (!source) return null;
+  const event = game ? gameLink(game) : null;
+  const tile = target.mode === 'replace' ? tileById(target.id) : null;
+  const oldInput = tile?.input || '';
+  const favorite = oldInput ? listFavorites().find((item) => item.input === oldInput) : null;
+  const provider = source.kind === 'matchora' || source.kind === 'ppv' || source.kind === 'daddy';
+  const sameChannel = Boolean(favorite && !provider && source.name
+    && channelKey(favoriteChannel(favorite)) === channelKey(source.name));
+  const title = sameChannel ? favorite.name : source.name;
+  let id = null;
+  if (source.kind === 'matchora') {
+    id = addMatchora(source.event, target, event);
+  } else if (source.kind === 'ppv') {
+    id = addPPV(source.event, target, event);
+  } else if (source.kind === 'daddy') {
+    const links = source.event?.channels ?? [];
+    if (links.length > 1) { chooseDaddyLink(source.event, target, event); return null; }
+    if (!links.length) { toast('No link for this event.'); return null; }
+    id = addDaddyLive(source.event, links[0], target, event);
+  } else {
+    const input = source.kind === 'zlive' ? zliveEmbed(source.input) : source.input;
+    if (!input) return null;
+    id = addStream(input, target, title, '', event);
+    if (!id) return null;
+    if (target.mode === 'add' && source.kind !== 'favorite') {
+      const current = tileById(id);
+      saveFavorite(current?.input || input, source.name, folderForCategory(source.category));
+    }
+  }
+  if (!id) return null;
+  const current = tileById(id);
+  if (current) {
+    if (event) current.event = event;
+    rememberTileSource(current, { input: current.input, name: title || source.name });
+    if (oldInput && oldInput !== current.input) rememberTileSource(current, { input: oldInput, name: favorite?.name || '' });
+    if (sameChannel && oldInput !== current.input) promoteFavoriteSource(oldInput, current.input);
+    commit();
+  }
+  return id;
+}
+
+/** A short picker when a game or channel has more than one playable source. */
+function chooseSourceList(title, sources, target, game = null) {
+  const seen = new Set();
+  const rows = [];
+  for (const source of sources ?? []) {
+    const key = sourceIdentity(source);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(source);
+    if (rows.length >= 8) break;
+  }
+  if (!rows.length) {
+    toast(`No source found for ${title}.`);
+    return;
+  }
+  if (rows.length === 1) {
+    addSource(rows[0], target, game);
+    return;
+  }
   const box = el('dialog', {
     class: 'dialog dl-links',
-    aria: { label: `Sources for ${group.label}` },
+    aria: { label: `Sources for ${title}` },
   });
-  const links = group.sources.map((source) => el('button', {
+  const provider = (source) => source.kind === 'matchora' || source.kind === 'ppv' || source.kind === 'daddy';
+  const links = rows.map((source) => el('button', {
     type: 'button',
     class: 'dl-link',
     on: {
       click() {
         box.close();
-        addSearchChannel(source, target);
+        addSource(source, target, game);
       },
     },
   },
-  el('b', { textContent: source.name }),
-  el('small', { textContent: [source.label, source.category, source.region, source.quality].filter(Boolean).join(' · ') })));
+  el('b', { textContent: provider(source) ? source.label : source.name }),
+  el('small', {
+    textContent: provider(source)
+      ? [source.name, title].filter(Boolean).join(' · ')
+      : [source.label, source.category, source.region, source.quality].filter(Boolean).join(' · '),
+  })));
   box.append(
     el('div', { class: 'ch-head' },
       el('h2', { textContent: 'Choose a source' }),
       iconButton('close', 'Close', () => box.close())),
-    el('p', { class: 'dl-event', textContent: group.label }),
+    el('p', { class: 'dl-event', textContent: title }),
     el('div', { class: 'dl-link-list' }, ...links),
-    el('p', { class: 'ch-note', textContent: 'These are different feeds of the same channel.' }));
+    el('p', { class: 'ch-note', textContent: game ? 'These are different feeds of the same game.' : 'These are different feeds of the same channel.' }));
   box.addEventListener('close', () => box.remove(), { once: true });
   document.body.append(box);
   openDialog(box);
@@ -1303,29 +1475,70 @@ function chooseSearchChannel(group, target) {
   box.focus({ preventScroll: true });
 }
 
+/** A game found in the normal Search: show its channels and sources before adding. */
+async function chooseGameSources(game) {
+  let data = gameDataCache;
+  if (!data) data = await loadGameData().catch(() => null);
+  if (!data) {
+    toast('Could not find sources for this game.');
+    return;
+  }
+  const resolved = resolveGameSources(game, { favorites: listFavorites(), catalog: data.catalog, zlive: data.zlive });
+  const sources = [
+    ...resolved.channels.flatMap((channel) => channel.sources),
+    ...resolved.providers,
+  ];
+  if (!sources.length) {
+    toast(`No source found for ${game.label}.`);
+    if (game.channels?.[0]?.name) openChannelFinder(game.channels[0].name);
+    return;
+  }
+  chooseSourceList(game.label, sources, { mode: 'add' }, game);
+}
+
 
 /** One search box for favourites, live channels and matches, sports, layouts and actions. */
-function openPalette() {
+function openPalette(options = {}) {
   const box = $('palette');
-  if (box.open) { box.querySelector('.palette-input')?.focus(); return; }
-  const target = $('source-dialog').open ? sourceTarget : { mode: 'add' };
+  const repair = options?.repair && typeof options.repair === 'object' ? options.repair : null;
+  if (box.open) {
+    if (!repair) { box.querySelector('.palette-input')?.focus(); return; }
+    box.close();
+  }
+  const repairTile = repair ? tileById(repair.id) : null;
+  if (repair && !repairTile) { toast('That tile is gone.'); return; }
+  const target = repair ? { mode: 'replace', id: repair.id } : ($('source-dialog').open ? sourceTarget : { mode: 'add' });
+  const label = repairTile ? labelOf(repairTile) : '';
+  let repairEvent = repairTile?.event || null;
   let ppv = [];
   let catalog = [];
   let zlive = [];
   let daddy = [];
   let matchora = [];
   let sports = [];
+  let sportsAll = [];
+  let guideRows = [];
+  let games = [];
   let ppvLoaded = false;
   let livePending = 0;
-  const loaded = { catalog: false, zlive: false, daddy: false, matchora: false, sports: false };
+  const loaded = { catalog: false, zlive: false, daddy: false, matchora: false, sports: false, sportsAll: false, guide: false };
   let items = [];
   let active = 0;
   const input = el('input', {
     type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false',
-    placeholder: 'Find a channel, game or action',
+    placeholder: repair ? `Find another source for ${label}` : 'Find a channel, game or action',
   });
   const results = el('div', { class: 'palette-results' });
-  const hint = el('p', { class: 'palette-hint', textContent: document.body.classList.contains('is-phone') ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close' });
+  const phone = document.body.classList.contains('is-phone');
+  const hint = el('p', {
+    class: 'palette-hint',
+    textContent: repair
+      ? (phone ? 'Tap a source to replace the tile' : '↑↓ to move · Enter to replace · Esc to close')
+      : (phone ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close'),
+  });
+  const title = repair ? el('div', { class: 'palette-title' },
+    el('b', { textContent: 'Fix stream' }),
+    el('small', { textContent: label })) : null;
   const closeAnd = (run) => { box.close(); run(); };
   const favoriteKind = (item) => {
     const source = parseSource(item.input);
@@ -1385,7 +1598,7 @@ function openPalette() {
     });
   };
   const ensureLive = () => {
-    if (input.value.trim().length < 2) return;
+    if (!repair && input.value.trim().length < 2) return;
     addLive('catalog', loadJob('live-channels.json'), (data) => {
       catalog = Array.isArray(data?.channels) ? data.channels : [];
     });
@@ -1393,21 +1606,47 @@ function openPalette() {
     addLive('daddy', loadDaddyLive(), (list) => { daddy = list ?? []; });
     addLive('matchora', loadMatchora(), (list) => { matchora = list ?? []; });
     addLive('sports', loadLiveSports(), (list) => { sports = list ?? []; });
+    addLive('sportsAll', todaysGames(), (list) => {
+      sportsAll = (list ?? []).flatMap((group) => group.games ?? []);
+    });
+    addLive('guide', guideRowsNow(), (list) => { guideRows = list ?? []; });
+  };
+  const rebuildGames = () => {
+    games = mergeGames({ sports: sportsAll, matchora, ppv, daddy, guide: guideRows });
+  };
+  const linkedGameNow = () => {
+    const event = repairEvent || tileById(repair?.id)?.event || null;
+    if (!event) return null;
+    return games.find((game) => game.key === event.key)
+      || gameForName(games, event.label)
+      || {
+        key: event.key, label: event.label, starts: event.starts || 0,
+        channels: [], sources: [], aliases: [event.label], teams: [], live: false,
+      };
   };
   const paint = () => {
     const query = input.value.trim().toLocaleLowerCase();
-    const rank = (label) => (label.toLocaleLowerCase().startsWith(query) ? 0 : 1);
+    const rank = (text) => (text.toLocaleLowerCase().startsWith(query) ? 0 : 1);
+    rebuildGames();
+    const showNormal = !repair || query.length >= 2;
     const favoritePool = listFavorites().filter((item) => !isPodcastShowInput(item.input));
-    const favorites = (query
-      ? favoritePool.filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
-      : favoritePool.slice(0, 6)).map(favoriteItem);
-    const layouts = (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem);
-    const found = (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6));
+    const favorites = showNormal
+      ? (query
+        ? favoritePool.filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
+        : favoritePool.slice(0, 6)).map(favoriteItem)
+      : [];
+    const layouts = showNormal && !repair
+      ? (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem)
+      : [];
+    const found = showNormal && !repair
+      ? (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6))
+      : [];
     let liveChannels = [];
     let liveMatches = [];
     let sportsItems = [];
+    let gameItems = [];
     if (query.length >= 2) {
-      const live = searchLiveSources({ catalog, zlive, daddy, ppv, matchora, sports }, query);
+      const live = searchLiveSources({ catalog, zlive, daddy, ppv, matchora, sports, games }, query);
       liveChannels = live.channels.map((group) => {
         const providers = [...new Set(group.sources.map((source) => source.label))];
         const feeds = group.sources.length > providers.length ? `${group.sources.length} feeds` : '';
@@ -1417,8 +1656,8 @@ function openPalette() {
           sub: [...providers, feeds, group.sources[0]?.category].filter(Boolean).join(' · '),
           icon: 'live',
           run: () => closeAnd(() => {
-            if (group.sources.length === 1) addSearchChannel(group.sources[0], target);
-            else chooseSearchChannel(group, target);
+            if (group.sources.length === 1) addSource(group.sources[0], target);
+            else chooseSourceList(group.label, group.sources, target);
           }),
         };
       });
@@ -1437,6 +1676,16 @@ function openPalette() {
           else addMatchora(match.event, target);
         }),
       }));
+      gameItems = (live.games ?? []).map((game) => ({
+        group: 'Games',
+        label: game.label,
+        sub: [
+          game.viaChannel?.name ? `on ${game.viaChannel.name}` : '',
+          game.live ? 'Live now' : game.starts ? `${dayLabel(game.starts)} ${clock(game.starts)}` : '',
+        ].filter(Boolean).join(' · '),
+        icon: 'calendar',
+        run: () => closeAnd(() => chooseGameSources(game)),
+      }));
       sportsItems = live.sports.map((game) => ({
         group: 'Sports',
         label: game.label,
@@ -1448,25 +1697,194 @@ function openPalette() {
         }),
       }));
     }
-    const ppvItems = query ? [] : ppv.slice(0, 4).map(ppvItem);
-    items = [...favorites, ...liveChannels, ...sportsItems, ...liveMatches, ...ppvItems, ...layouts, ...found];
+    const repairItems = [];
+    if (repair) {
+      const tile = tileById(repair.id);
+      if (!tile) { box.close(); return; }
+      const currentName = channelFromInput(tile.input, { catalog, zlive })
+        || favoriteName(tile.input) || tile.title || labelOf(tile);
+      const linked = linkedGameNow();
+      if (linked) {
+        const resolved = resolveGameSources(linked, { favorites: listFavorites(), catalog, zlive });
+        const exactKey = channelKey(currentName);
+        const family = channelFamily(currentName);
+        const channelRank = (channel) => (
+          (channel.key === exactKey ? 0 : 2)
+          + (channel.key.startsWith(family) ? 0 : 1)
+          + (channel.sources.some((source) => source.kind === 'favorite') ? 0 : 2)
+        );
+        for (const channel of resolved.channels.filter((item) => item.sources.length).sort((a, b) => channelRank(a) - channelRank(b) || a.name.localeCompare(b.name)).slice(0, 4)) {
+          const providers = [...new Set(channel.sources.map((source) => source.label))];
+          const feeds = channel.sources.length > providers.length ? `${channel.sources.length} feeds` : '';
+          repairItems.push({
+            group: 'This game',
+            label: channel.name,
+            sub: [...providers, feeds].filter(Boolean).join(' · '),
+            icon: 'live',
+            run: () => closeAnd(() => {
+              if (channel.sources.length === 1) addSource(channel.sources[0], target, linked);
+              else chooseSourceList(channel.name, channel.sources, target, linked);
+            }),
+          });
+        }
+        const providers = [];
+        for (const source of resolved.providers) {
+          const at = providers.findIndex((item) => item.kind === source.kind);
+          if (at < 0) providers.push(source);
+          else if ((source.event?.channels?.length || 0) > (providers[at].event?.channels?.length || 0)) providers[at] = source;
+        }
+        for (const source of providers) {
+          repairItems.push({
+            group: 'This game',
+            label: source.label,
+            sub: source.name,
+            icon: 'calendar',
+            run: () => closeAnd(() => addSource(source, target, linked)),
+          });
+        }
+        for (const channel of resolved.alsoOn.filter((item) => item.key.startsWith(family)).slice(0, 3)) {
+          repairItems.push({
+            group: 'This game',
+            label: channel.name,
+            sub: 'Not in your sources · Find it',
+            icon: 'search',
+            run: () => closeAnd(() => openChannelFinder(channel.name)),
+          });
+        }
+        repairItems.push({
+          group: 'This game',
+          label: 'Change game',
+          sub: `Linked to ${linked.label}`,
+          icon: 'calendar',
+          run: () => {
+            const current = tileById(repair.id);
+            if (current) { delete current.event; commit(); }
+            repairEvent = null;
+            active = 0;
+            paint();
+          },
+        });
+      } else {
+        const now = Date.now();
+        const exactKey = channelKey(currentName);
+        const family = channelFamily(currentName);
+        const gameRank = (game) => {
+          const channels = game.channels ?? [];
+          const exact = channels.some((channel) => channel.key === exactKey);
+          return (exact ? 0 : 4)
+            + (channels.some((channel) => channel.key.startsWith(family)) ? 0 : 2)
+            + (/Man Utd|Manchester United|49ers|Raptors/i.test(`${game.label} ${(game.teams ?? []).join(' ')}`) ? 0 : 2)
+            + (game.live ? 0 : 1)
+            - (exact && game.live ? 2 : 0);
+        };
+        const list = gamesOnNow(games, now, 300)
+          .sort((a, b) => gameRank(a) - gameRank(b) || (a.live === b.live ? 0 : a.live ? -1 : 1))
+          .slice(0, 10);
+        if (list.length) {
+          for (const game of list) {
+            repairItems.push({
+              group: 'Games on now',
+              label: game.label,
+              sub: [
+                game.live ? 'Live now' : game.starts ? `${dayLabel(game.starts)} ${clock(game.starts)}` : '',
+                game.channels?.length ? `${game.channels.length} channel${game.channels.length === 1 ? '' : 's'}` : '',
+              ].filter(Boolean).join(' · '),
+              icon: game.live ? 'live' : 'calendar',
+              run: () => {
+                const current = tileById(repair.id);
+                if (!current) return;
+                current.event = gameLink(game);
+                repairEvent = current.event;
+                commit();
+                input.value = '';
+                active = 0;
+                paint();
+              },
+            });
+          }
+        } else if (!livePending) {
+          repairItems.push({
+            group: 'Games on now',
+            label: 'No games found',
+            sub: 'Search for a team or channel instead',
+            icon: 'search',
+            run: () => input.focus(),
+          });
+        }
+      }
+      const channel = channelName(currentName);
+      const favorite = listFavorites().find((item) => item.input === tile.input);
+      const seen = new Set([tile.input]);
+      const memory = [];
+      for (const source of favorite?.sources ?? []) {
+        if (!source?.input || seen.has(source.input)) continue;
+        seen.add(source.input);
+        memory.push({ kind: 'favorite', label: 'Backup', name: source.name, input: source.input, backup: true });
+      }
+      for (const source of sourcesForChannel(channel, { favorites: listFavorites(), catalog, zlive })) {
+        if (!source.input || seen.has(source.input)) continue;
+        seen.add(source.input);
+        memory.push(source);
+      }
+      for (const source of memory.slice(0, 6)) {
+        repairItems.push({
+          group: 'This channel',
+          label: source.name,
+          sub: [source.label, source.category, source.quality].filter(Boolean).join(' · '),
+          icon: 'live',
+          run: () => closeAnd(() => addSource(source, target, linked || null)),
+          ...(source.backup && favorite ? {
+            remove: () => {
+              if (!tileById(repair.id)) return;
+              removeFavoriteSource(favorite.input, source.input);
+              paint();
+            },
+          } : {}),
+        });
+      }
+      if (!memory.length && channel) {
+        repairItems.push({
+          group: 'This channel',
+          label: `Find another ${channel} feed`,
+          sub: 'Search live channels',
+          icon: 'search',
+          run: () => closeAnd(() => openChannelFinder(channel)),
+        });
+      }
+    }
+    const ppvItems = !repair && !query ? ppv.slice(0, 4).map(ppvItem) : [];
+    items = [...repairItems, ...favorites, ...liveChannels, ...gameItems, ...sportsItems, ...liveMatches, ...ppvItems, ...layouts, ...found];
     const groups = new Map();
     for (const item of items) groups.set(item.group, [...(groups.get(item.group) || []), item]);
-    const loading = query.length >= 2 && livePending > 0;
+    const loading = (repair || query.length >= 2) && livePending > 0;
+    const empty = repair
+      ? (loading ? 'Loading sources…' : 'No sources found. Search for a channel or team.')
+      : (query ? (loading ? 'Searching live sources…' : 'Nothing matches.') : 'Type to find something.');
     results.replaceChildren(...(items.length
       ? [...groups].flatMap(([group, list]) => [
         el('p', { class: 'palette-group', textContent: group }),
-        ...list.map((item) => el('button', {
-          type: 'button',
-          class: 'palette-item',
-          on: { click: item.run },
-        },
-        el('span', { class: 'palette-icon' }, icon(item.icon, 16)),
-        el('span', { class: 'palette-text' },
-          el('b', { textContent: item.label }),
-          item.sub ? el('small', { textContent: item.sub }) : null))),
+        ...list.map((item) => {
+          const row = el('button', {
+            type: 'button',
+            class: 'palette-item',
+            on: { click: item.run },
+          },
+          el('span', { class: 'palette-icon' }, icon(item.icon, 16)),
+          el('span', { class: 'palette-text' },
+            el('b', { textContent: item.label }),
+            item.sub ? el('small', { textContent: item.sub }) : null));
+          return item.remove
+            ? el('div', { class: 'palette-row' }, row, el('button', {
+              type: 'button',
+              class: 'palette-remove',
+              title: `Remove backup ${item.label}`,
+              aria: { label: `Remove backup ${item.label}` },
+              on: { click(event) { event.stopPropagation(); item.remove(); } },
+            }, icon('close', 14)))
+            : row;
+        }),
       ])
-      : [el('p', { class: 'palette-empty', textContent: query ? (loading ? 'Searching live sources…' : 'Nothing matches.') : 'Type to find something.' })]));
+      : [el('p', { class: 'palette-empty', textContent: empty })]));
     if (items.length && loading) results.append(el('p', { class: 'palette-hint', textContent: 'Searching live sources…' }));
     active = Math.min(active, Math.max(0, items.length - 1));
     mark();
@@ -1482,13 +1900,29 @@ function openPalette() {
     else if (event.key === 'ArrowUp') { event.preventDefault(); active = Math.max(0, active - 1); mark(); }
     else if (event.key === 'Enter') { event.preventDefault(); items[active]?.run(); }
   });
-  box.replaceChildren(input, results, hint);
+  box.replaceChildren(...[title, input, results, hint].filter(Boolean));
   openDialog(box);
+  if (repair) ensureLive();
   paint();
   input.focus();
+  if (repairTile && !repairTile.event) {
+    detectTileGame(repairTile).then((game) => {
+      if (!game) return;
+      const current = tileById(repair.id);
+      if (!current || current.event) return;
+      current.event = gameLink(game);
+      repairEvent = current.event;
+      commit();
+      if (box.open) paint();
+    }).catch(() => {});
+  }
   if (!ppvLoaded) {
     ppvLoaded = true;
-    loadPPV().then((events) => { if (!box.open) return; ppv = events ?? []; paint(); }).catch(() => {});
+    loadPPV().then((events) => {
+      if (!box.open) return;
+      ppv = events ?? [];
+      paint();
+    }).catch(() => {});
   }
 }
 
@@ -2210,9 +2644,10 @@ function muteAll() {
 
 /* ---------- Adding, replacing, removing ---------- */
 
-function addStream(input, target = { mode: 'add' }, title = '', page = '') {
+function addStream(input, target = { mode: 'add' }, title = '', page = '', event = null) {
   // A series opens the episode it's on, still as its favorite, from anywhere it's picked.
   const moved = episodePage(input, page || embedPlace(input)?.page);
+  const eventLink = tileEventFrom(event);
   const pageOf = () => (moved ? { for: input, href: moved } : undefined);
   const source = parseSource(input);
   // A podcast is audio, so it plays in the dock instead of taking a tile.
@@ -2234,20 +2669,27 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '') {
     return;
   }
   let addedId = null;
+  let oldSource = null;
   if (target.mode === 'replace') {
     const tile = tileById(target.id);
     if (tile) {
+      if (tile.input) oldSource = { input: tile.input, name: labelOf(tile) };
       tile.input = input;
       tile.title = autoTitle || undefined;
       tile.page = pageOf();
+      if (eventLink) tile.event = eventLink;
+      else delete tile.event;
       addedId = tile.id;
     }
   } else {
     let slot = target.mode === 'fill' ? tileById(target.id) : null;
     if (!slot || isStream(slot)) slot = makeRoom(ws);
+    if (slot.input) oldSource = { input: slot.input, name: labelOf(slot) };
     slot.input = input;
     slot.title = autoTitle || undefined;
     slot.page = pageOf();
+    if (eventLink) slot.event = eventLink;
+    else delete slot.event;
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
@@ -2262,7 +2704,20 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '') {
   ws.started = true;
   commit();
   const added = tileById(addedId);
-  if (added) noteRecent(input, labelOf(added));
+  if (added) {
+    noteRecent(input, labelOf(added));
+    rememberTileSource(added, { input: added.input, name: title || favoriteName(input) || labelOf(added) });
+    if (oldSource) rememberTileSource(added, oldSource);
+    if (!eventLink && (source.kind === 'iframe' || source.kind === 'hls')) {
+      detectTileGame(added).then((game) => {
+        if (!game) return;
+        const current = tileById(addedId);
+        if (!current || current.input !== input || current.event) return;
+        current.event = gameLink(game);
+        commit();
+      }).catch(() => {});
+    }
+  }
   // YouTube only gives the video's title through its small public card, so ask for it.
   if (!title && source.kind === 'youtube' && source.youtube.id) {
     youtubeTitle(source.youtube.id).then((found) => {
@@ -8242,7 +8697,7 @@ $('source-dialog').addEventListener('close', () => {
   if ($('podcast-box').open) $('podcast-box').close();
   if ($('library-detail').open) $('library-detail').close();
 });
-$('palette-button').addEventListener('click', openPalette);
+$('palette-button').addEventListener('click', () => openPalette());
 document.addEventListener('keydown', (event) => {
   if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLocaleLowerCase() !== 'k') return;
   event.preventDefault();

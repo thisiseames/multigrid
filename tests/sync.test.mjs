@@ -17,6 +17,14 @@ test('an event poster travels with its favorite', () => {
   assert.deepEqual(items['f:https://a.test/event'], { name: 'Event', group: 'PPV', poster: 'https://img.test/poster.jpg' });
 });
 
+test('favorite backups travel with the favorite', () => {
+  const items = itemsOf(lists([{ input: 'https://a.test/1', name: 'Sky Sports', group: 'Sports', sources: [{ input: 'https://b.test/1', name: 'Sky Sports' }] }]));
+  assert.deepEqual(items['f:https://a.test/1'].sources, [{ input: 'https://b.test/1', name: 'Sky Sports' }]);
+  const doc = Object.fromEntries(Object.entries(items).map(([key, value]) => [key, { t: 1, v: value }]));
+  const out = listsOf(doc, lists([]));
+  assert.deepEqual(out.favorites[0].sources, [{ input: 'https://b.test/1', name: 'Sky Sports' }]);
+});
+
 test('a followed podcast show syncs with its artwork', () => {
   const items = itemsOf(lists([{ input: 'podcastshow:1439621628', name: 'Front Burner', group: '', logo: 'https://img.test/front.jpg' }]));
   assert.deepEqual(items['f:podcastshow:1439621628'], { name: 'Front Burner', group: '', logo: 'https://img.test/front.jpg' });

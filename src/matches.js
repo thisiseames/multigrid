@@ -378,11 +378,26 @@ export function groupGames(byLeague, now = Date.now()) {
   return groups;
 }
 
+let gamesCache = null;
+let gamesCacheDay = '';
+let gamesCacheAt = 0;
+let gamesPending = null;
+
 export async function todaysGames(now = Date.now()) {
-  const byLeague = await Promise.all(GAME_LEAGUES.map(({ name, path }) => getJSON(`${SITE}/${path}/scoreboard?dates=${dayParam(now)}`)
+  const day = dayParam(now);
+  if (gamesCache && gamesCacheDay === day && Date.now() - gamesCacheAt < 60_000) return gamesCache;
+  if (gamesPending && gamesCacheDay === day) return gamesPending;
+  gamesCacheDay = day;
+  gamesPending = Promise.all(GAME_LEAGUES.map(({ name, path }) => getJSON(`${SITE}/${path}/scoreboard?dates=${day}`)
     .then((answer) => ({ name, games: (answer.events ?? []).map((event) => toMatch(event, name, path.startsWith('soccer') ? 'soccer/all' : path)) }))
-    .catch(() => ({ name, games: [] }))));
-  return groupGames(byLeague, now);
+    .catch(() => ({ name, games: [] }))))
+    .then((byLeague) => {
+      gamesCache = groupGames(byLeague, now);
+      gamesCacheAt = Date.now();
+      return gamesCache;
+    })
+    .finally(() => { gamesPending = null; });
+  return gamesPending;
 }
 
 /** A live game's clock, the short way: "4:12 - 3rd" → "Q3 4:12", "0.1 - 4th" → "Q4 0.1", "Halftime" → "HT". */
