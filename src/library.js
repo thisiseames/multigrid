@@ -1,10 +1,19 @@
-// A local TV library: one folder on this computer, indexed by show and season. Files are
-// never copied or uploaded; the browser keeps a folder handle and the names it found.
+// A local TV and movie library: folders on this computer, indexed by show/season or movie.
+// Files are never copied or uploaded; the browser keeps folder handles and the names it found.
 
 const DB_NAME = 'multigrid-library';
 const STORE = 'state';
 const VIDEO = /\.(mp4|m4v|mov|webm|ogv|ogg|mkv)$/i;
+const IMAGE = /\.(jpg|jpeg|png|webp)$/i;
 const SKIP = /(^|[._\s-])(sample|trailer|featurette|teaser)([._\s-]|$)/i;
+const GENERIC_FOLDERS = new Set([
+  'movie', 'movies', 'film', 'films', 'video', 'videos', 'media', 'downloads',
+  'action', 'comedy', 'drama', 'horror', 'thriller', 'sci-fi', 'scifi', 'science fiction',
+  'animation', 'anime', 'documentary', 'family', 'romance', 'crime', 'mystery', 'war',
+  'western', 'fantasy', 'adventure', 'classics', 'new',
+]);
+const POSTER_KEY = 'multigrid.moviePosters.v1';
+const POSTER_TTL = 30 * 24 * 60 * 60 * 1000;
 
 export const librarySupported = () => typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
 
@@ -13,6 +22,15 @@ export function isLibraryVideo(name) {
   const value = String(name || '');
   return VIDEO.test(value) && !SKIP.test(value) && !/(\.part|\.crdownload|\.tmp)$/i.test(value);
 }
+
+export function isLibraryImage(name) {
+  const value = String(name || '');
+  return IMAGE.test(value) && !SKIP.test(value) && !/(\.part|\.crdownload|\.tmp)$/i.test(value);
+}
+
+const normalKind = (kind) => (kind === 'movies' ? 'movies' : 'tv');
+const rootKey = (kind) => (normalKind(kind) === 'movies' ? 'moviesRoot' : 'root');
+const indexKey = (kind) => (normalKind(kind) === 'movies' ? 'moviesIndex' : 'index');
 
 let dbPromise = null;
 function db() {
@@ -203,60 +221,128 @@ export function groupLibraryFiles(files) {
     .sort((a, b) => collator.compare(a.name, b.name));
 }
 
-async function walk(directory, prefix, files) {
+const parentOf = (path) => {
+  const parts = String(path || '').split('/').filter(Boolean);
+  parts.pop();
+  return parts.join('/');
+};
+const stemOf = (name) => String(name || '').replace(/\.[^.]+$/, '');
+const yearOf = (value) => {
+  const found = String(value || '').match(/(?:^|[^\d])((?:19|20)\d{2})(?:[^\d]|$)/);
+  return found ? Number(found[1]) : 0;
+};
+
+/** A movie title and year from a folder/file name. */
+export function parseMovieFile(file, titleSource = '') {
+  const parts = String(file.path || file.name || '').split('/').filter(Boolean);
+  const name = parts.pop() || file.name || '';
+  const raw = titleSource || stemOf(name);
+  const year = yearOf(raw);
+  let title = cleanShowName(raw);
+  if (!title || title === 'Other videos') {
+    title = stemOf(raw).replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Movie';
+  }
+  return {
+    path: file.path,
+    name,
+    size: Number(file.size) || 0,
+    modified: Number(file.modified) || 0,
+    title,
+    year,
+    posterPath: '',
+  };
+}
+
+/** Groups movie files, using a movie's own folder when it holds exactly one movie. */
+export function groupMovieFiles(files) {
+  const list = Array.isArray(files) ? files : [];
+  const videos = list.filter((file) => file?.path && isLibraryVideo(file.name || file.path));
+  const images = list.filter((file) => file?.path && isLibraryImage(file.name || file.path));
+  const byFolder = new Map();
+  for (const file of videos) {
+    const folder = parentOf(file.path);
+    byFolder.set(folder, [...(byFolder.get(folder) || []), file]);
+  }
+  const movies = videos.map((file) => {
+    const folder = parentOf(file.path);
+    const folderName = folder.split('/').filter(Boolean).at(-1) || '';
+    const onlyMovie = (byFolder.get(folder) || []).length === 1;
+    const useFolder = onlyMovie && folderName && !GENERIC_FOLDERS.has(folderName.toLocaleLowerCase());
+    const movie = parseMovieFile(file, useFolder ? folderName : '');
+    const siblings = images.filter((image) => parentOf(image.path) === folder);
+    const preferred = siblings.find((image) => ['poster', 'folder', 'cover'].includes(stemOf(image.name).toLocaleLowerCase()));
+    movie.posterPath = (preferred || siblings[0])?.path || '';
+    return movie;
+  });
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+  return movies.sort((a, b) => collator.compare(a.title, b.title) || (a.year || 9999) - (b.year || 9999));
+}
+
+async function walk(directory, prefix, files, kind) {
   for await (const [name, handle] of directory.entries()) {
     if (!name || name.startsWith('.')) continue;
     if (handle.kind === 'directory') {
-      if (/^(sample|samples|trailers?)$/i.test(name)) continue;
-      await walk(handle, `${prefix}${name}/`, files);
+      if (/^(samples?|trailers?)$/i.test(name)) continue;
+      await walk(handle, `${prefix}${name}/`, files, kind);
       continue;
     }
-    if (!isLibraryVideo(name)) continue;
+    const image = kind === 'movies' && isLibraryImage(name);
+    if (!image && !isLibraryVideo(name)) continue;
     try {
       const file = await handle.getFile();
-      if (file.size > 0) files.push({ path: `${prefix}${name}`, name, size: file.size, modified: file.lastModified });
+      if (file.size > 0) files.push({ path: `${prefix}${name}`, name, size: file.size, modified: file.lastModified, image });
     } catch {
       // A file that vanished during the scan is picked up next time.
     }
   }
 }
 
-async function scan(root) {
+async function scan(root, kind) {
   const files = [];
-  await walk(root, '', files);
-  return {
-    version: 1,
+  await walk(root, '', files, normalKind(kind));
+  const data = {
+    version: 2,
+    kind: normalKind(kind),
     rootName: root.name || '',
     scannedAt: Date.now(),
-    shows: groupLibraryFiles(files),
   };
+  if (kind === 'movies') data.movies = groupMovieFiles(files);
+  else data.shows = groupLibraryFiles(files);
+  return data;
 }
 
-/** Opens the folder chooser. Must be called from a click. */
-export async function chooseLibrary() {
+/** Opens the TV or movie folder chooser. Must be called from a click. */
+export async function chooseLibrary(kind = 'tv') {
   if (!librarySupported()) throw new Error('This browser cannot keep a folder.');
-  const root = await window.showDirectoryPicker({ id: 'multigrid-library', mode: 'read' });
-  const data = await scan(root);
-  await writeState('root', root);
-  await writeState('index', data);
+  const mode = normalKind(kind);
+  const root = await window.showDirectoryPicker({
+    id: mode === 'movies' ? 'multigrid-movies' : 'multigrid-library',
+    mode: 'read',
+  });
+  const data = await scan(root, mode);
+  await writeState(rootKey(mode), root);
+  await writeState(indexKey(mode), data);
   return { ...data, needsPermission: false };
 }
 
-/** The saved index, if there is one. A permission prompt is reported, not forced. */
-export async function loadLibrary() {
-  const [root, index] = await Promise.all([readState('root'), readState('index')]);
+/** The saved index for one mode, if there is one. Permission prompts are reported, not forced. */
+export async function loadLibrary(kind = 'tv') {
+  const mode = normalKind(kind);
+  const [root, index] = await Promise.all([readState(rootKey(mode)), readState(indexKey(mode))]);
   if (!root) return null;
   const permission = await permissionOf(root);
   return {
-    ...(index || { version: 1, rootName: root.name || '', scannedAt: 0, shows: [] }),
+    ...(index || { version: 2, kind: mode, rootName: root.name || '', scannedAt: 0, ...(mode === 'movies' ? { movies: [] } : { shows: [] }) }),
+    kind: mode,
     rootName: root.name || index?.rootName || '',
     needsPermission: permission !== 'granted',
   };
 }
 
-/** Re-scans the chosen folder. request=true may ask for permission from a user click. */
-export async function refreshLibrary({ request = false } = {}) {
-  const root = await readState('root');
+/** Re-scans one mode. request=true may ask for permission from a user click. */
+export async function refreshLibrary({ request = false, kind = 'tv' } = {}) {
+  const mode = normalKind(kind);
+  const root = await readState(rootKey(mode));
   if (!root) return { missing: true };
   let permission = await permissionOf(root);
   if (permission !== 'granted') {
@@ -266,23 +352,27 @@ export async function refreshLibrary({ request = false } = {}) {
     permission = await root.requestPermission({ mode: 'read' }).catch(() => 'denied');
     if (permission !== 'granted') return { needsPermission: true, rootName: root.name || '' };
   }
-  const data = await scan(root);
-  await writeState('index', data);
+  const data = await scan(root, mode);
+  await writeState(indexKey(mode), data);
   return { ...data, needsPermission: false };
 }
 
-export async function forgetLibrary() {
-  await Promise.all([clearState('root'), clearState('index')]);
+export async function forgetLibrary(kind = 'tv') {
+  const mode = normalKind(kind);
+  await Promise.all([clearState(rootKey(mode)), clearState(indexKey(mode))]);
+  if (mode === 'movies') {
+    try { localStorage.removeItem(POSTER_KEY); } catch { /* not cached */ }
+  }
 }
 
-/** The actual File and handle for one indexed episode, read only when it is played. */
-export async function fileForEpisode(episode) {
-  const root = await readState('root');
+/** The actual File and handle for one entry, read only when it is played or shown. */
+export async function fileForEntry(entry, kind = 'tv') {
+  const root = await readState(rootKey(kind));
   if (!root) return { missing: true };
   const permission = await permissionOf(root);
   if (permission !== 'granted') return { needsPermission: true };
   try {
-    const parts = String(episode?.path || '').split('/').filter(Boolean);
+    const parts = String(entry?.path || '').split('/').filter(Boolean);
     if (!parts.length) return null;
     let directory = root;
     for (const part of parts.slice(0, -1)) directory = await directory.getDirectoryHandle(part);
@@ -291,4 +381,144 @@ export async function fileForEpisode(episode) {
   } catch {
     return null;
   }
+}
+
+/** Kept for the TV code; movies use fileForEntry. */
+export const fileForEpisode = (episode) => fileForEntry(episode, 'tv');
+
+/* ---------- Movie posters: local image, Wikipedia, then a frame ---------- */
+
+const readPosterCache = () => {
+  try {
+    const all = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}');
+    return all && typeof all === 'object' ? all : {};
+  } catch {
+    return {};
+  }
+};
+const writePosterCache = (all) => {
+  try { localStorage.setItem(POSTER_KEY, JSON.stringify(all)); } catch { /* not cached */ }
+};
+
+async function wikipediaPoster(title, year) {
+  const params = new URLSearchParams({
+    action: 'query',
+    generator: 'search',
+    gsrsearch: [title, year, 'film'].filter(Boolean).join(' '),
+    gsrlimit: '4',
+    prop: 'pageimages',
+    pithumbsize: '600',
+    pilicense: 'any',
+    format: 'json',
+    origin: '*',
+  });
+  try {
+    const response = await fetch(`https://en.wikipedia.org/w/api.php?${params}`, { signal: AbortSignal.timeout?.(7000) });
+    if (!response.ok) return '';
+    const data = await response.json();
+    const pages = Object.values(data?.query?.pages || {}).sort((a, b) => (a.index || 99) - (b.index || 99));
+    const wanted = String(title || '').toLocaleLowerCase().replace(/[^\w]+/g, ' ').trim();
+    const page = pages.find((item) => {
+      if (!item.thumbnail?.source || !wanted) return false;
+      if (/soundtrack|album|novel|video game/i.test(item.title || '')) return false;
+      const pageTitle = String(item.title || '').toLocaleLowerCase().replace(/[^\w]+/g, ' ').trim();
+      if (!pageTitle.includes(wanted)) return false;
+      const pageYear = yearOf(item.title);
+      return !year || !pageYear || pageYear === year;
+    });
+    return page?.thumbnail?.source || '';
+  } catch {
+    return '';
+  }
+}
+
+async function fileDataUrl(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
+const frameCache = new Map();
+async function framePoster(movie, kind) {
+  const key = `${movie.path}:${movie.size}`;
+  if (frameCache.has(key)) return frameCache.get(key);
+  const entry = await fileForEntry(movie, kind);
+  if (!entry?.file) return '';
+  const url = URL.createObjectURL(entry.file);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'metadata';
+  video.src = url;
+  const answer = await new Promise((resolve) => {
+    let done = false;
+    const finish = (value) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+    const timer = setTimeout(() => finish(''), 8000);
+    video.addEventListener('error', () => finish(''), { once: true });
+    video.addEventListener('loadedmetadata', () => {
+      if (!(video.duration > 0)) { finish(''); return; }
+      const at = Math.min(Math.max(5, video.duration * 0.1), Math.max(5, video.duration - 1));
+      video.addEventListener('seeked', () => {
+        try {
+          const width = 480;
+          const height = 270;
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext('2d');
+          const vw = video.videoWidth || width;
+          const vh = video.videoHeight || height;
+          const scale = Math.min(width / vw, height / vh);
+          const w = vw * scale;
+          const h = vh * scale;
+          context.fillStyle = '#000';
+          context.fillRect(0, 0, width, height);
+          context.drawImage(video, (width - w) / 2, (height - h) / 2, w, h);
+          finish(canvas.toDataURL('image/jpeg', 0.72));
+        } catch {
+          finish('');
+        }
+      }, { once: true });
+      video.currentTime = at;
+    }, { once: true });
+  });
+  frameCache.set(key, answer);
+  return answer;
+}
+
+/** Local poster file first, then Wikipedia's page image, then a frame from the movie. */
+export async function moviePoster(movie, kind = 'movies') {
+  if (movie?.posterPath) {
+    const poster = await fileForEntry({ path: movie.posterPath }, kind);
+    if (poster?.file) {
+      const data = await fileDataUrl(poster.file);
+      if (data) return data;
+    }
+  }
+  const title = String(movie?.title || '').trim();
+  if (title) {
+    const cache = readPosterCache();
+    const key = `${title.toLocaleLowerCase()}|${movie.year || ''}`;
+    const known = cache[key];
+    if (known && Date.now() - (known.at || 0) < (known.url ? POSTER_TTL : 7 * 24 * 60 * 60 * 1000)) {
+      if (known.url) return known.url;
+    } else {
+      const url = await wikipediaPoster(title, movie.year);
+      cache[key] = { url, at: Date.now() };
+      writePosterCache(cache);
+      if (url) return url;
+    }
+  }
+  return framePoster(movie, kind);
 }

@@ -21,7 +21,7 @@ import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
-import { chooseLibrary, fileForEpisode, forgetLibrary, librarySupported, loadLibrary, refreshLibrary } from './library.js';
+import { chooseLibrary, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
@@ -1914,9 +1914,14 @@ function episodeRow(item) {
   state.percent ? el('span', { class: 'pod-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, state.percent)).toFixed(1)}%` })) : null));
 }
 
-/* A folder of your own video files, shown as its own tab inside Favorites. */
+/* TV shows and movies from folders on this computer, in one tab inside Favorites. */
 const LIBRARY = '\u0001library';
+const LIBRARY_SECTION_KEY = 'multigrid.librarysection.v1';
 const libraryAvailable = () => librarySupported() && !onPhone();
+const readLibrarySection = () => {
+  try { return localStorage.getItem(LIBRARY_SECTION_KEY) === 'movies' ? 'movies' : 'tv'; } catch { return 'tv'; }
+};
+let librarySection = readLibrarySection();
 let libraryData = null;
 let libraryLoading = false;
 let libraryScanning = false;
@@ -1998,7 +2003,7 @@ onPlacesChange(() => { if ($('source-dialog').open && addFolder === PODCASTS) fi
 
 /* ---------- Favorites: the local library tab ---------- */
 
-const libraryFileKey = (episode) => `file:${episode.name}:${episode.size || 0}`;
+const libraryFileKey = (entry) => `file:${entry.name}:${entry.size || 0}`;
 const libraryRedraw = () => {
   if ($('source-dialog').open && addFolder === LIBRARY) fillAddFavorites($('source-favorites'));
 };
@@ -2014,6 +2019,31 @@ function nextUpForShow(show) {
   return season?.episodes?.length ? { season, episode: season.episodes[0], index: 0 } : null;
 }
 
+function librarySectionTabs() {
+  const tab = (value, label) => el('button', {
+    type: 'button',
+    class: `matches-tab${librarySection === value ? ' is-on' : ''}`,
+    textContent: label,
+    on: {
+      click() {
+        if (librarySection === value) return;
+        librarySection = value;
+        try { localStorage.setItem(LIBRARY_SECTION_KEY, value); } catch { /* not remembered */ }
+        libraryData = null;
+        libraryLoading = false;
+        libraryScanning = false;
+        libraryNeedsPermission = false;
+        libraryError = '';
+        libraryOpenChecked = false;
+        libraryShow = '';
+        librarySeason = 0;
+        fillAddFavorites($('source-favorites'));
+      },
+    },
+  });
+  return el('div', { class: 'matches-tabs lib-modes' }, tab('tv', 'TV'), tab('movies', 'MOVIES'));
+}
+
 function startLibraryTimer() {
   if (libraryTimer) return;
   libraryTimer = setInterval(() => {
@@ -2026,16 +2056,18 @@ function ensureLibrary() {
   if (!libraryAvailable() || libraryLoading) return;
   if (!libraryData) {
     if (libraryOpenChecked) return;
+    const section = librarySection;
     libraryLoading = true;
-    loadLibrary().then((data) => {
+    libraryOpenChecked = true;
+    loadLibrary(section).then((data) => {
+      if (librarySection !== section) return;
       libraryLoading = false;
       libraryData = data;
       libraryNeedsPermission = Boolean(data?.needsPermission);
-      libraryOpenChecked = true;
       libraryRedraw();
     }).catch(() => {
+      if (librarySection !== section) return;
       libraryLoading = false;
-      libraryOpenChecked = true;
       libraryError = 'The library could not be read.';
       libraryRedraw();
     });
@@ -2048,17 +2080,19 @@ function ensureLibrary() {
 
 function refreshLibraryNow(request = false) {
   if (libraryScanning) return;
+  const section = librarySection;
   libraryScanning = true;
   libraryError = '';
   libraryRedraw();
-  refreshLibrary({ request }).then((data) => {
+  refreshLibrary({ request, kind: section }).then((data) => {
+    if (librarySection !== section) return;
     libraryScanning = false;
     if (data?.missing) {
       libraryData = null;
       libraryNeedsPermission = false;
     } else if (data?.needsPermission) {
       libraryNeedsPermission = true;
-    } else if (data?.shows) {
+    } else if (data?.shows || data?.movies) {
       libraryData = data;
       libraryNeedsPermission = false;
       libraryError = '';
@@ -2066,6 +2100,7 @@ function refreshLibraryNow(request = false) {
     libraryOpenChecked = true;
     libraryRedraw();
   }).catch(() => {
+    if (librarySection !== section) return;
     libraryScanning = false;
     libraryError = "The library folder couldn't be read.";
     libraryRedraw();
@@ -2074,10 +2109,12 @@ function refreshLibraryNow(request = false) {
 
 function chooseLibraryNow() {
   if (!libraryAvailable() || libraryLoading) return;
+  const section = librarySection;
   libraryLoading = true;
   libraryError = '';
   libraryRedraw();
-  chooseLibrary().then((data) => {
+  chooseLibrary(section).then((data) => {
+    if (librarySection !== section) return;
     libraryLoading = false;
     libraryData = data;
     libraryNeedsPermission = false;
@@ -2086,6 +2123,7 @@ function chooseLibraryNow() {
     librarySeason = 0;
     libraryRedraw();
   }).catch((error) => {
+    if (librarySection !== section) return;
     libraryLoading = false;
     if (error?.name !== 'AbortError') libraryError = "That folder couldn't be opened.";
     libraryRedraw();
@@ -2093,7 +2131,9 @@ function chooseLibraryNow() {
 }
 
 function forgetLibraryNow() {
-  forgetLibrary().then(() => {
+  const section = librarySection;
+  forgetLibrary(section).then(() => {
+    if (librarySection !== section) return;
     libraryData = null;
     libraryShow = '';
     librarySeason = 0;
@@ -2105,19 +2145,36 @@ function forgetLibraryNow() {
 }
 
 function libraryIntro() {
+  const movies = librarySection === 'movies';
   return el('div', { class: 'lib-intro' },
-    el('p', { textContent: 'Choose the TV folder on this computer. MULTIGRID lists the shows and episodes without copying or uploading anything.' }),
+    el('p', { textContent: movies
+      ? 'Choose the movie folder on this computer. MULTIGRID lists each movie without copying or uploading anything.'
+      : 'Choose the TV folder on this computer. MULTIGRID lists the shows and episodes without copying or uploading anything.' }),
     el('button', { type: 'button', class: 'addp-file', on: { click: chooseLibraryNow } },
-      icon('upload', 16), el('span', { textContent: 'Choose your TV folder' })),
+      icon('upload', 16), el('span', { textContent: movies ? 'Choose your movie folder' : 'Choose your TV folder' })),
     el('p', { class: 'lib-note', textContent: 'Chrome on this computer only. Files stay where they are.' }));
 }
 
 function libraryReconnect() {
   return el('div', { class: 'lib-intro' },
-    el('p', { textContent: 'The TV folder needs permission again. Nothing was moved; Chrome just wants one click.' }),
+    el('p', { textContent: 'The folder needs permission again. Nothing was moved; Chrome just wants one click.' }),
     el('button', { type: 'button', class: 'addp-file', on: { click: () => refreshLibraryNow(true) } },
       icon('upload', 16), el('span', { textContent: 'Reconnect folder' })),
     el('button', { type: 'button', class: 'text-button', on: { click: chooseLibraryNow } }, 'Choose another folder'));
+}
+
+function libraryHead() {
+  const movies = librarySection === 'movies';
+  return el('div', { class: 'lib-head' },
+    el('h3', { class: 'addp-label', textContent: 'Library' }),
+    el('button', {
+      type: 'button',
+      class: 'text-button lib-refresh',
+      disabled: libraryScanning,
+      on: { click: () => refreshLibraryNow(true) },
+    }, libraryScanning ? 'Scanning…' : 'Refresh'),
+    el('button', { type: 'button', class: 'text-button', on: { click: chooseLibraryNow } }, movies ? 'Change movie folder' : 'Change TV folder'),
+    el('button', { type: 'button', class: 'text-button', on: { click: forgetLibraryNow } }, movies ? 'Forget movies' : 'Forget TV'));
 }
 
 function libraryShowCard(show) {
@@ -2188,7 +2245,7 @@ async function libraryPlay(show, season, startIndex) {
   const chosen = [];
   let skipped = 0;
   for (const episode of season.episodes.slice(startIndex)) {
-    const entry = await fileForEpisode(episode);
+    const entry = await fileForEntry(episode, 'tv');
     if (entry?.needsPermission) {
       libraryNeedsPermission = true;
       toast('Reconnect the library folder first.');
@@ -2208,31 +2265,79 @@ async function libraryPlay(show, season, startIndex) {
   if (skipped) toast(`${skipped} episode${skipped === 1 ? '' : 's'} couldn't be opened and ${skipped === 1 ? 'was' : 'were'} skipped.`);
 }
 
-function libraryHead() {
-  return el('div', { class: 'lib-head' },
-    el('h3', { class: 'addp-label', textContent: 'Library' }),
-    el('button', {
-      type: 'button',
-      class: 'text-button lib-refresh',
-      disabled: libraryScanning,
-      on: { click: () => refreshLibraryNow(true) },
-    }, libraryScanning ? 'Scanning…' : 'Refresh'),
-    el('button', { type: 'button', class: 'text-button', on: { click: chooseLibraryNow } }, 'Change folder'),
-    el('button', { type: 'button', class: 'text-button', on: { click: forgetLibraryNow } }, 'Forget'));
+function libraryMovieState(movie) {
+  const key = libraryFileKey(movie);
+  if (isPlayed(key)) return 'Played';
+  const place = savedPlace(key);
+  if (place) return place.length ? timeLeft(place.length - place.at) : 'In progress';
+  return 'New';
+}
+
+function libraryMovieCard(movie) {
+  const art = el('span', { class: 'fart is-icon' }, icon('film', 20));
+  moviePoster(movie, 'movies').then((url) => {
+    if (!url) return;
+    art.className = 'fart is-picture';
+    artPicture(art, url, () => {
+      art.className = 'fart is-icon';
+      art.replaceChildren(icon('film', 20));
+    }, true);
+  });
+  return el('li', { class: 'fcard' }, el('button', {
+    type: 'button',
+    class: 'fcard-main',
+    title: `Play ${movie.title}`,
+    on: { click: () => libraryMoviePlay(movie) },
+  },
+  art,
+  el('span', { class: 'fcard-text' },
+    el('b', { textContent: movie.title, title: movie.title }),
+    el('small', {},
+      el('span', { class: 'fcard-kind', textContent: movie.year ? String(movie.year) : 'Movie' }),
+      el('span', { class: 'fcard-now', textContent: libraryMovieState(movie) })))));
+}
+
+function libraryMoviesView(query = '') {
+  const movies = libraryData?.movies || [];
+  const matching = query ? movies.filter((movie) => movie.title.toLocaleLowerCase().includes(query)) : movies;
+  return matching.length
+    ? el('ul', { class: 'addp-grid' }, ...matching.map(libraryMovieCard))
+    : el('p', { class: 'favorites-empty', textContent: query ? 'No movies match' : 'No movie files found in this folder.' });
+}
+
+async function libraryMoviePlay(movie) {
+  const target = sourceTarget || { mode: 'add' };
+  const entry = await fileForEntry(movie, 'movies');
+  if (entry?.needsPermission) {
+    libraryNeedsPermission = true;
+    toast('Reconnect the movie folder first.');
+    libraryRedraw();
+    return;
+  }
+  if (!entry?.file) {
+    toast("Couldn't open that movie. Refresh the library.");
+    return;
+  }
+  if ($('source-dialog').open) $('source-dialog').close();
+  addStream(registerChosen(entry), target, movie.title);
 }
 
 function libraryView(holder, query = '') {
   ensureLibrary();
   startLibraryTimer();
-  if (libraryLoading && !libraryData) return el('p', { class: 'favorites-empty', textContent: 'Reading your folder…' });
+  const tabs = librarySectionTabs();
+  if (libraryLoading && !libraryData) return el('div', {}, tabs, el('p', { class: 'favorites-empty', textContent: 'Reading your folder…' }));
   if (libraryError) {
-    return el('div', { class: 'lib-intro' },
+    return el('div', {}, tabs, el('div', { class: 'lib-intro' },
       el('p', { textContent: libraryError }),
       el('button', { type: 'button', class: 'addp-file', on: { click: () => refreshLibraryNow(true) } },
-        icon('refresh', 16), el('span', { textContent: 'Try again' })));
+        icon('refresh', 16), el('span', { textContent: 'Try again' }))));
   }
-  if (!libraryData) return libraryIntro();
-  if (libraryNeedsPermission) return libraryReconnect();
+  if (!libraryData) return el('div', {}, tabs, libraryIntro());
+  if (libraryNeedsPermission) return el('div', {}, tabs, libraryReconnect());
+  const head = libraryHead();
+  if (librarySection === 'movies') return el('div', {}, tabs, head, libraryMoviesView(query));
+
   const shows = libraryData.shows || [];
   if (libraryShow) {
     const show = shows.find((item) => item.name === libraryShow);
@@ -2242,8 +2347,7 @@ function libraryView(holder, query = '') {
         || show.seasons.find((item) => item.number === next?.season.number)
         || show.seasons[0];
       if (!season) season = { number: 1, episodes: [] };
-      return el('div', {},
-        libraryHead(),
+      return el('div', {}, tabs, head,
         el('button', { type: 'button', class: 'pod-back', on: { click: () => { libraryShow = ''; fillAddFavorites($('source-favorites')); } } },
           icon('back', 14), el('span', { textContent: 'Library' }), el('b', { textContent: show.name })),
         el('div', { class: 'matches-tabs lib-seasons' }, ...show.seasons.map((item) => el('button', {
@@ -2264,8 +2368,7 @@ function libraryView(holder, query = '') {
     libraryShow = '';
   }
   const matching = query ? shows.filter((show) => show.name.toLocaleLowerCase().includes(query)) : shows;
-  return el('div', {},
-    libraryHead(),
+  return el('div', {}, tabs, head,
     matching.length
       ? el('ul', { class: 'addp-grid' }, ...matching.map(libraryShowCard))
       : el('p', { class: 'favorites-empty', textContent: query ? 'No shows match' : 'No video files found in this folder.' }));
@@ -3085,10 +3188,10 @@ function fillAddFavorites(holder) {
   } else if (addFolder === PODCASTS ? !podEpisodes.length : addFolder === LAYOUTS ? !layoutsTab() : addFolder === RECENT ? !listRecent().length : addFolder && !folders.some((folder) => folder.toLocaleLowerCase() === addFolder.toLocaleLowerCase())) {
     addFolder = '';
   }
-  const libraryMode = addFolder === LIBRARY;
-  if (libraryMode && query) libraryShow = '';
-  input.placeholder = libraryMode ? 'Search library' : 'Search favorites';
-  input.setAttribute('aria-label', libraryMode ? 'Search library' : 'Search favorites');
+  const libraryOpen = addFolder === LIBRARY;
+  if (libraryOpen && query) libraryShow = '';
+  input.placeholder = libraryOpen ? 'Search library' : 'Search favorites';
+  input.setAttribute('aria-label', libraryOpen ? 'Search library' : 'Search favorites');
   const matches = (text) => text.toLocaleLowerCase().includes(query);
   const podcasts = addFolder === PODCASTS && !query;
   const layouts = addFolder === LAYOUTS && !query;
@@ -3097,13 +3200,13 @@ function fillAddFavorites(holder) {
   const inAll = (item) => !isAccountSource(parseSource(item.input));
   const shown = query
     ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
-    : podcasts || layouts || recent || libraryMode ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
+    : podcasts || layouts || recent || libraryOpen ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
   // A search also finds podcast shows by name, but not while the library tab is open.
-  const shows = query && !libraryMode ? podShows().filter(matches) : [];
+  const shows = query && !libraryOpen ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
   const grid = el('div', { class: 'addp-grid-wrap' },
-    libraryMode ? libraryView(holder, query)
+    libraryOpen ? libraryView(holder, query)
       : podcasts ? podcastsView(holder)
         : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
           : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
