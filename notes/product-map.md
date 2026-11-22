@@ -47,18 +47,19 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Today / Guide / Sports / Reader
 
-- **Today:** date/weather (Open-Meteo), headlines (Reader), your teams, events today, movies this week, new episodes, premieres, charts, flight deals from Toronto, prediction markets (Polymarket), trending on X, newest YouTube uploads, Continue watching, recent podcasts, markets ticker (CNBC). Today / This week switch.
+- **Today:** date/weather (Open-Meteo), headlines (Reader), your teams, events today, movies this week, new episodes, premieres, charts, flight deals from Toronto, prediction markets (Polymarket), trending on X, newest YouTube uploads, Continue watching, recent podcasts, markets ticker (CNBC). It opens fresh every time on the Today view and the Hot 100 chart.
+- **Today / This week switch:** “This week” means tomorrow through the next seven days, not Monday–Sunday. It swaps today's teams/events for “Your teams this week” and “Events this week”, and hides headlines, trends, Continue watching, podcasts, YouTube uploads, PPV, prediction markets, flight deals and charts. Do not treat those sections as all-week features.
 - **Charts:** Billboard charts (Hot 100, Billboard 200, R&B/Hip-Hop, Latin, Afrobeats), movement markers. Row actions already: **Watch here** (YouTube video), **Spotify**, **Amazon Music**, **YouTube Music** when no video. There is no 30-second preview; do not propose one as new.
-- **Guide:** TV listings for favorite TV channels, now/next, search, details, Watch here; Twitch live strip; Channel Finder.
-- **Sports:** Games and Standings; leagues in `src/leagues.js` (PL, LaLiga, Bundesliga, Ligue 1, UCL, Nations League, NFL, NBA). Game mode Scores/Odds and phone ticker. Highlights for finished games (official channels). Lineups board. Polymarket odds. PPV picker.
-- **Reader:** feed tabs (All, News, Sport, Man United, Entertainment, Tech, Travel, Podcasts & Video), unread/read, counts, search, story view. Full article text is encrypted; reader key is private. Podcast/YouTube feeds feed the audio shelf/Today.
+- **Guide:** TV listings for favorite TV channels with Now and Timeline views, folder pills, search over title/description, show details, Watch here; Twitch live strip; Channel Finder. The guide job covers roughly now−30 min to now+30 h and refuses to run unless the guide is at least 165 minutes old.
+- **Sports:** Games and Standings, plus Game mode as a separate 330 px laptop column (never over a stream) with Scores/Odds; on a phone Game mode becomes the bottom ticker. Leagues in `src/leagues.js` (PL, LaLiga, Bundesliga, Ligue 1, UCL, Nations League, NFL, NBA) feed Sports, Standings, Game mode, odds and the ticker. Highlights for finished games (official channels), lineups board, Polymarket odds, PPV picker. Game rows already have Watch on a favorite, box score as a tile, and highlight buttons.
+- **Reader:** feed tabs (All, News, Sport, Man United, Entertainment, Tech, Travel, Podcasts & Video), unread counts, Mark all as read, read dimming, story view. There is **no Reader search**; the ⌘K palette does not search stories. Full article text is encrypted with a private reader key, with an unlock link; a story opens as a Reader tile, YouTube tile or podcast dock. Podcast/YouTube feeds feed the audio shelf/Today.
 - **Movies this week:** Wikipedia posters, trailers via YouTube, cinema/streaming label.
 - **Flights:** daily job, Google Flights via `google-flights-ts`, links to booking.
 - **Weather, markets, predictions, trends:** free keyless services; each hides quietly when unavailable.
 
 ## Data, jobs and the extension
 
-- **Jobs:** `.github/workflows/guide.yml` (guide, feeds, movies, charts, shows), `reader.yml` (Reader self-chaining; also highlights), `flights.yml`, `channels.yml`, `highlights.yml` (on request). Job-owned JSON: `guide.json`, `feeds.json`, `charts.json`, `shows.json`, `movies.json`, `flights.json`, `live-channels.json`, `highlights.json`, `reader/index.json`, `reader/a/*`.
+- **Jobs:** `.github/workflows/guide.yml` (guide, feeds, movies, charts, shows; about every 30 min but skips until the guide is 165 min old), `reader.yml` (Reader self-chaining every 25 min with a 45-min stale backup; also highlights), `flights.yml` (daily), `channels.yml` (daily), `highlights.yml` (manual). Job-owned JSON: `guide.json`, `feeds.json`, `charts.json`, `shows.json`, `movies.json`, `flights.json`, `live-channels.json`, `highlights.json`, `reader/index.json`, `reader/a/*`. Never hand-edit or commit these; run the job and discard the output when testing.
 - **Outside services:** Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed/search, ESPN, Twitch previews/api.ivr.fi, r.jina.ai, Polymarket Gamma, iptv-org, Google Flights, PPV.st. All free/keyless. No paid service.
 - **Storage/sync:** localStorage for favorites, workspaces, resume/played/places, settings; IndexedDB for local file handles and the local library; sync encrypted on free Nostr relays; favorites transfer links.
 - **Extension MULTIGRID Sound:** background content script in all frames for sound, pause/play, seek, in-frame resume, page tracking, and progress; toolbar popup Send this tab (v1.11) scans the page for YouTube video/channel, direct video/audio/player/page, resolves real UC… channel IDs, and sends to MULTIGRID. Owner reloads the extension after a version bump.
@@ -75,6 +76,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - Modern top-bar redesign and clean file names (TODO).
 - Size-matched/full-quality switch for video links (parked).
 - Global search across Guide/Sports/Reader/YouTube.
+- Reader search (there is none today).
 - 30-second music previews or a chart preview queue.
 - Live radio (Radio Browser) or Pluto TV.
 - TMDB/movie API; movie posters come from Wikipedia/local poster/frame.
