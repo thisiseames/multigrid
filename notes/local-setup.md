@@ -4,7 +4,8 @@ Written Nov 20 from the owner's Mac so cloud sessions don't have to ask. No secr
 
 ## Devices
 - **Laptop:** an Intel MacBook Pro with Google Chrome 158 (main profile "Default"). MULTIGRID is used at https://thisiseames.github.io/multigrid.
-- **Phone:** an iPhone, Safari and the home-screen app. Check every change at phone width (about 390 px).
+- **Phone:** an iPhone, Chrome and the home-screen app. Check every change at phone width (about 390 px).
+- **Browser: always Chrome** (laptop and phone). Safari only for brief developer checks. Never write instructions, tests or explanations around Safari.
 - The Mac's clock is set to Central time, so the laptop shows times an hour behind Toronto. The owner is in Toronto.
 
 ## The MULTIGRID Sound extension (Chrome)
