@@ -10,7 +10,9 @@ globalThis.localStorage = {
 };
 
 const {
-  favoriteName, folderForCategory, isFolderClosed, listFavorites, listFolders, removeFavorite, renameFolder, saveFavorite, setFolderClosed,
+  favoriteName, favoriteSources, findSaved, folderForCategory, isFolderClosed, listFavorites, listFolders,
+  openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder,
+  saveFavorite, saveNamed, setFolderClosed,
 } = await import('../src/storage.js');
 
 beforeEach(() => store.clear());
@@ -223,4 +225,49 @@ test("a series tile remembers the episode it moved on to, but only for its own l
   assert.equal(a.input, series);
   assert.equal(b.page, undefined);
   assert.equal(c.page, undefined);
+});
+
+test('a favorite keeps same-channel backups and promotes a repaired link', () => {
+  store.set('multigrid.favorites.v1', JSON.stringify([{
+    input: 'https://zlive.st/embed/TSN4', name: 'TSN 4', group: 'Sports',
+    sources: [{ input: 'https://old.test/tsn4', name: 'TSN 4' }, { input: 'https://old.test/tsn4', name: 'duplicate' }],
+  }]));
+  assert.deepEqual(favoriteSources('https://zlive.st/embed/TSN4'), [{ input: 'https://old.test/tsn4', name: 'TSN 4' }]);
+  assert.equal(promoteFavoriteSource('https://zlive.st/embed/TSN4', 'https://new.test/tsn4'), true);
+  const item = listFavorites()[0];
+  assert.equal(item.input, 'https://new.test/tsn4');
+  assert.equal(item.name, 'TSN 4');
+  assert.deepEqual(item.sources, [
+    { input: 'https://zlive.st/embed/TSN4', name: 'TSN 4' },
+    { input: 'https://old.test/tsn4', name: 'TSN 4' },
+  ]);
+  assert.equal(removeFavoriteSource(item.input, 'https://old.test/tsn4'), true);
+  assert.deepEqual(favoriteSources(item.input), [{ input: 'https://zlive.st/embed/TSN4', name: 'TSN 4' }]);
+});
+
+test('backups are capped at six and survive a normal edit', () => {
+  const sources = Array.from({ length: 8 }, (_, index) => ({ input: `https://s.test/${index}`, name: `Feed ${index}` }));
+  store.set('multigrid.favorites.v1', JSON.stringify([{ input: 'a', name: 'A', sources }]));
+  assert.equal(listFavorites()[0].sources.length, 6);
+  saveFavorite('a', 'A renamed', 'News');
+  assert.equal(listFavorites()[0].sources.length, 6);
+});
+
+test('the current wall keeps a game link and a saved layout drops it', () => {
+  const event = { key: 'sports:1', label: 'Liverpool vs Man Utd', starts: Date.now() + 3600000 };
+  const ws = {
+    v: 1, presetId: 'single', minSlots: 0, started: true, fit: true, cols: [1], rows: [1],
+    tiles: [{
+      id: 't', input: 'https://a.test/1', muted: true, volume: 100, place: { c: 0, r: 0, cs: 1, rs: 1 },
+      event, sources: [{ input: 'https://b.test/1', name: 'Sky Sports' }],
+    }],
+  };
+  saveCurrent(ws);
+  const current = loadCurrent();
+  assert.deepEqual(current.tiles[0].event, event);
+  assert.deepEqual(current.tiles[0].sources, [{ input: 'https://b.test/1', name: 'Sky Sports' }]);
+  saveNamed('Game wall', ws);
+  const saved = openSaved(findSaved('Game wall'));
+  assert.equal('event' in saved.tiles[0], false);
+  assert.deepEqual(saved.tiles[0].sources, [{ input: 'https://b.test/1', name: 'Sky Sports' }]);
 });

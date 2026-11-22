@@ -1,3 +1,5 @@
+import { gamesForChannel } from './game-links.js';
+
 // Cross-source search for the top Search box. Pure matching and ranking; the app supplies
 // the Catalog, Zlive, Daddy Live, PPV.st, Matchora and Sports lists.
 
@@ -165,7 +167,7 @@ export function searchSports(sports, query, limit = 4) {
 
 /** All live groups for one query. Empty/one-letter queries do no work. */
 export function searchLiveSources(data, query, limit = {}) {
-  if (queryWords(query).length === 0) return { channels: [], matches: [], sports: [] };
+  if (queryWords(query).length === 0) return { channels: [], matches: [], sports: [], games: [] };
   return {
     channels: searchChannels(data?.catalog, data?.zlive, query, limit.channels ?? 8),
     matches: searchMatches({
@@ -174,5 +176,6 @@ export function searchLiveSources(data, query, limit = {}) {
       matchora: data?.matchora,
     }, query, limit.matches ?? 8),
     sports: searchSports(data?.sports, query, limit.sports ?? 4),
+    games: gamesForChannel(data?.games, query, limit.games ?? 6),
   };
 }

@@ -80,11 +80,12 @@ test('channel sources keep their own feed names for the picker', () => {
   assert.deepEqual(list[0].sources.map((source) => source.label), ['Zlive', 'Zlive']);
 });
 
-test('one search returns all three live groups and does no work for one letter', () => {
+test('one search returns every live group and does no work for one letter', () => {
   const data = { catalog, zlive, daddy: [], ppv: [], matchora: [], sports: [] };
-  assert.deepEqual(searchLiveSources(data, 'T'), { channels: [], matches: [], sports: [] });
+  assert.deepEqual(searchLiveSources(data, 'T'), { channels: [], matches: [], sports: [], games: [] });
   const result = searchLiveSources(data, 'TSN');
   assert.equal(result.channels.length, 2);
   assert.deepEqual(result.matches, []);
   assert.deepEqual(result.sports, []);
+  assert.deepEqual(result.games, []);
 });

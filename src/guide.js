@@ -76,6 +76,8 @@ export function nowAndNext(name, source) {
   return current || next ? { current, next } : null;
 }
 
+export const currentShow = (name, source) => nowAndNext(name, source)?.current ?? null;
+
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
 
 /** 2:00 pm, the way he reads times. */
