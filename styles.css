@@ -2697,3 +2697,8 @@ body.is-phone .match-watch:hover { background: rgba(255,255,255,.2); }
 .home-rows { padding-top: 88px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 40px, #000 92px); mask-image: linear-gradient(to bottom, transparent 0, transparent 40px, #000 92px); }
 .home-rows { margin-top: -64px; padding-top: 78px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 64px, #000 78px); mask-image: linear-gradient(to bottom, transparent 0, transparent 64px, #000 78px); }
 .hero-info { bottom: 84px; }
+/* The × on a Continue watching card, shown on hover. */
+.hcard { position: relative; }
+.hcard-x { position: absolute; z-index: 2; top: 8px; right: 8px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .72); color: #fff; opacity: 0; transition: opacity .15s ease; cursor: pointer; }
+.hcard:hover .hcard-x, .hcard-x:focus-visible { opacity: 1; }
+.hcard-x:hover { background: #f5f5f7; color: #0b0b0d; }

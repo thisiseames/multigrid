@@ -17,7 +17,7 @@ import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './
 import { el, icon, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 import { runBoxScore } from './boxscore.js';
-import { forgetPlace, isPlayed, notePlace, placeOf, rememberMedia, resumePoint, showResumed } from './resume.js';
+import { DONE_AT, forgetPlace, isPlayed, notePlace, placeOf, rememberMedia, resumePoint, showResumed } from './resume.js';
 
 const scripts = new Map();
 
@@ -257,7 +257,7 @@ function youtubePlayer(source, options) {
     checked.add(key);
     const point = resumePoint(key);
     const length = api.getDuration?.() || 0;
-    if (!point || (length && point >= length * 0.95)) return;
+    if (!point || (length && point >= length * DONE_AT)) return;
     api.seekTo(point, true);
     showResumed(frame.parentElement, point, () => { api?.seekTo(0, true); forgetPlace(key); });
   };

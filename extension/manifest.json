@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MULTIGRID Sound",
-  "version": "1.14",
+  "version": "1.15",
   "description": "Lets MULTIGRID's sound mixer reach players inside embedded streams, and sends the page you are on to MULTIGRID as a stream or favorite.",
   "icons": {
     "16": "icon-16.png",

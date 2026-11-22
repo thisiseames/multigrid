@@ -3920,7 +3920,12 @@ function homeCard(item) {
   item.refresh = fill;
   if (item.live) art.append(el('span', { class: 'hcard-live', textContent: 'LIVE' }));
   if (Number.isFinite(item.progress)) art.append(el('span', { class: 'hcard-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, item.progress)).toFixed(1)}%` })));
-  return el('li', { class: 'hcard' }, el('button', {
+  // Continue watching cards: a small × on hover takes it off the list.
+  const remove = item.forget ? el('button', {
+    type: 'button', class: 'hcard-x', title: `Remove ${item.title} from Continue watching`, aria: { label: `Remove ${item.title} from Continue watching` },
+    on: { click(event) { event.stopPropagation(); item.forget(); drawHome(); } },
+  }, icon('close', 14)) : null;
+  return el('li', { class: 'hcard' }, remove, el('button', {
     type: 'button', class: 'hcard-main', title: item.title,
     on: { click: () => item.play(), mouseenter: () => showHero(item, { hold: true }), focus: () => showHero(item, { hold: true }) },
   }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null)));
@@ -3963,6 +3968,7 @@ async function drawHome() {
       progress: (place.at / place.length) * 100,
       art: artOf({ ...favorite, name, input: place.input }, source),
       playLabel: 'Resume',
+      forget: () => forgetPlace(place.key),
       play: () => (source.kind === 'audio' ? openPodcast(place.input, { title: place.name, from: place.from }) : playFromHome(place.input, place.page)),
     };
     if (source.kind === 'audio') {

@@ -141,7 +141,7 @@
     // MULTIGRID lists it under Continue watching (or drops it once it's finished).
     window.top.postMessage({ multigridProgress: { at: Math.floor(media.currentTime), length: Math.round(media.duration) } }, '*');
     const all = readPlaces();
-    if (media.currentTime >= 60 && media.currentTime < media.duration * 0.95) {
+    if (media.currentTime >= 60 && media.currentTime < media.duration * 0.9) {
       all[key] = { at: Math.floor(media.currentTime), saved: Date.now() };
       const keys = Object.keys(all);
       if (keys.length > 300) keys.sort((a, b) => all[a].saved - all[b].saved).slice(0, keys.length - 300).forEach((old) => delete all[old]);
@@ -156,7 +156,7 @@
     if (!key || resumedHere.get(media) === key) return;
     resumedHere.set(media, key);
     const point = readPlaces()[key]?.at;
-    if (!point || point >= media.duration * 0.95) return;
+    if (!point || point >= media.duration * 0.9) return;
     media.currentTime = point;
     window.top.postMessage({ multigridResumed: { at: point } }, '*');
   }, true);

@@ -1,5 +1,6 @@
 // Where you stopped in a long video or podcast, remembered on this device so it starts there
-// next time. Only things over 10 minutes, stopped after the first minute and before the end.
+// next time. Only things over 10 minutes, stopped after the first minute and before the last 10%
+// (outros, sponsor reads and end screens count as finished).
 
 import { el } from './ui.js';
 
@@ -7,6 +8,8 @@ const STORE = 'multigrid.resume.v1';
 const KEEP = 300;
 const MIN_LENGTH = 10 * 60;
 const MIN_PLAYED = 60;
+/** Into the last 10%: finished. */
+export const DONE_AT = 0.9;
 
 const readAll = () => {
   try {
@@ -33,10 +36,10 @@ export function resumePoint(key) {
  */
 export function notePlace(key, seconds, length, meta) {
   if (!key || !Number.isFinite(seconds) || !Number.isFinite(length) || length <= 0) return;
-  // Reaching the last 5% counts as played, for the Podcasts shelf.
-  if (seconds >= length * 0.95) markPlayed(key);
+  // Reaching the last 10% counts as played, for the Podcasts shelf.
+  if (seconds >= length * DONE_AT) markPlayed(key);
   const all = readAll();
-  const worth = length >= MIN_LENGTH && seconds >= MIN_PLAYED && seconds < length * 0.95;
+  const worth = length >= MIN_LENGTH && seconds >= MIN_PLAYED && seconds < length * DONE_AT;
   if (worth) {
     const known = all[key] || {};
     const what = meta && meta.input ? meta : known;
@@ -99,7 +102,8 @@ export function listPlaces(limit = 10) {
   const all = readAll();
   const seen = new Set();
   return Object.entries(all)
-    .filter(([, point]) => point.input && point.name && point.length)
+    // Places saved before "finished" moved to the last 10% drop out now too.
+    .filter(([, point]) => point.input && point.name && point.length && point.at < point.length * DONE_AT)
     .sort(([, a], [, b]) => (b.saved || 0) - (a.saved || 0))
     // A playlist can have a place for every episode; show its newest one once.
     .filter(([, point]) => {
@@ -175,7 +179,7 @@ export function rememberMedia(media, keyOf, holderOf, metaOf = () => null) {
     if (!key || checked.has(key) || !Number.isFinite(media.duration)) return;
     checked.add(key);
     const point = resumePoint(key);
-    if (!point || point >= media.duration * 0.95) return;
+    if (!point || point >= media.duration * DONE_AT) return;
     // Some stream players move to the start once they begin, so the place is held until
     // playback is under way, and nothing is saved over it in the meantime.
     settling = point;
