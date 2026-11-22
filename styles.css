@@ -1390,7 +1390,7 @@ body:not(.is-phone) #add-button.add-button:hover { background: #28282d; filter: 
 .addp-top .addp-x-row { margin: 0; }
 .addp-x-col { min-width: 0; display: flex; flex-direction: column; }
 .addp-top .addp-x-list { margin: 4px 0 0; }
-.addp-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 16px 0; }
+.addp-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 16px 0; }
 .addp-actions .addp-file { margin: 0; }
 @media (max-width: 640px) { .addp-top, .addp-actions { grid-template-columns: 1fr; } }
 @media (hover: none) and (max-height: 500px) { .addp-top, .addp-actions { grid-template-columns: 1fr; } }
@@ -2378,6 +2378,15 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .gamebar-source { margin: 12px 4px 0; font-size: 11px; color: var(--text-2); }
 
 /* Import YouTube subscriptions: the steps, then a ticked list of the channels in the file. */
+.import-box { width: min(420px, calc(100vw - 24px)); }
+.import-choices { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+.import-choice { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 12px; border-radius: 12px; background: var(--surface); text-align: left; }
+.import-choice:hover { background: var(--raised); }
+.import-icon { flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: rgba(255,255,255,.06); color: var(--accent); }
+.import-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.import-text b { font-size: 14px; font-weight: 650; }
+.import-text small { font-size: 12px; line-height: 1.35; color: var(--text-2); }
+.import-chevron { flex: none; color: var(--text-2); }
 .yt-import-steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
 .yt-import-steps li + li { margin-top: 6px; }
 .yt-import-steps a { color: var(--accent); }
