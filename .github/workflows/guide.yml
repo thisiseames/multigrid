@@ -7,6 +7,8 @@ name: guide
 
 on:
   push:
+    # Only main: on the working branch it would commit its output there too.
+    branches: [main]
     paths:
       - 'tools/build-guide.mjs'
       - 'tools/build-top10.mjs'
