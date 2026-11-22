@@ -2028,6 +2028,12 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 .pod-view { display: flex; flex-direction: column; }
 /* Library: a folder on this computer, in Favorites */
 .lib-modes { padding: 2px 0 8px; border-bottom: 0; }
+.addp-grid.movie-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.fcard.movie-card .fart { aspect-ratio: 2 / 3; background: #0b0b0c; }
+.fcard.movie-card .fart img { object-fit: contain; }
+.fcard.movie-card .fcard-text { padding-right: 10px; }
+@media (max-width: 1000px) { .addp-grid.movie-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .addp-grid.movie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .lib-head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
 .lib-head .addp-label { flex: 1; font-size: 11px; }
 .lib-head .text-button { font-size: 12px; }
