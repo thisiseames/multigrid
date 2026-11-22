@@ -70,3 +70,7 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 **Why:** I suggested ideas before checking them against his real setup (notes/setup-data.json) and the platform's limits.
 
 **How to apply:** before an idea goes in a brainstorm, work it through end to end: what exactly he taps, on which device, what it affects in his actual favorites, and every platform limit (iOS web app, embeds, CORS, keys). Drop anything that doesn't survive. Fewer, bigger ideas that hold up; no small tweaks to whatever was built last. His bar: OpenCode's extension (click on any site → it plays in MULTIGRID / a YouTube channel lands in Favorites).
+
+## Never suggest again
+- Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
+- Also turned down before: broken-link "Not working since …" labels; goal/score alerts and other small sports gimmicks.
