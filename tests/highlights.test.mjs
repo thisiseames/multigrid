@@ -22,3 +22,15 @@ test('a club channel only needs to name the other side ("SPURS 2 TOWN 0")', () =
   const spurs = { home: { name: 'Spurs', full: 'Tottenham Hotspur', nick: 'Spurs', abbr: 'TOT' }, away: { name: 'Ipswich', full: 'Ipswich Town', nick: 'Tractor Boys', abbr: 'IPS' } };
   assert.deepEqual(pickHighlights([r('ips', 'Ipswich Town FC', 'HIGHLIGHTS | SPURS 2 TOWN 0')], spurs, []).map((pick) => pick.id), ['ips']);
 });
+
+import { canadaFromPage } from '../tools/build-highlights.mjs';
+
+test('a video counts only when its page says it plays in Canada and on other sites', () => {
+  const page = (extra) => `{"playabilityStatus":{"status":"OK","playableInEmbed":true},${extra}}`;
+  assert.equal(canadaFromPage(page('"availableCountries":["US","CA","GB"]')), 'yes');
+  assert.equal(canadaFromPage(page('"availableCountries":["US","PR"]')), 'no');
+  assert.equal(canadaFromPage('{"playabilityStatus":{"status":"OK","playableInEmbed":false},"availableCountries":["CA"]}'), 'no');
+  assert.equal(canadaFromPage('{"playabilityStatus":{"status":"UNPLAYABLE"},"availableCountries":["CA"]}'), 'no');
+  assert.equal(canadaFromPage('<html>Sign in to confirm you’re not a bot</html>'), 'unknown');
+  assert.equal(canadaFromPage(page('"other":1')), 'unknown');
+});

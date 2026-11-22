@@ -1,0 +1,34 @@
+# Runs the highlights search now, on request (the Reader's job also runs it about every 25 minutes).
+# Shares the Reader's lock, so the two never write highlights.json at the same time.
+name: highlights
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: reader-build
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-highlights.mjs
+        env:
+          HIGHLIGHT_SEARCHES: '40'
+          HIGHLIGHT_MINUTES: '15'
+      - name: Save the highlights
+        run: |
+          git config user.name "multigrid-reader"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f highlights.json ]; then git add highlights.json; fi
+          git diff --cached --quiet && exit 0
+          git commit -m "Update highlights"
+          for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

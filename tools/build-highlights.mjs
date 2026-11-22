@@ -3,10 +3,10 @@
 // about every 30 minutes.
 //
 // Only the league's own channel, a broadcaster that holds the rights, or either club's own channel
-// counts; re-uploads by anyone else never do. A video whose owner turned off playing on other
-// sites (YouTube's oEmbed answers 401) can't play in a tile, so it's left out. Whether a video
-// plays in Canada can't be known from here (GitHub's computers are in the US), so the page tries
-// the next video when YouTube refuses one.
+// counts; re-uploads by anyone else never do. Every video is checked before it's saved: it must
+// play on other sites (oEmbed answers 200, and its page says playableInEmbed) and in Canada (its
+// page lists the countries it plays in). A video that can't be confirmed isn't saved; the game is
+// tried again next run.
 //
 // YouTube stops answering a computer that searches too fast, so searches are spaced out, each run
 // does only a few, and a run stops at the first sign of YouTube's bot check.
@@ -22,7 +22,7 @@ const LOOK_FOR = 30 * HOUR; // keep looking this long after kick-off
 const FORGET = 4 * 24 * HOUR;
 const MAX_SEARCHES = Number(process.env.HIGHLIGHT_SEARCHES || 14);
 const GAP = Number(process.env.HIGHLIGHT_GAP_MS || 12000);
-const BUDGET = Date.now() + 6 * 60000;
+const BUDGET = Date.now() + Number(process.env.HIGHLIGHT_MINUTES || 6) * 60000;
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
 // Channels that hold the rights in each league, besides the clubs' own.
@@ -129,6 +129,31 @@ async function search(query) {
   return html.includes('ytInitialData') ? parseResults(html) : null;
 }
 
+const COUNTRY = 'CA';
+
+/**
+ * Whether a video plays in Canada inside another site, from its public page: 'yes', 'no', or
+ * 'unknown' when YouTube didn't show the page (its bot check), so nothing is decided.
+ */
+export function canadaFromPage(html) {
+  const text = String(html || '');
+  if (!text.includes('playabilityStatus')) return 'unknown';
+  if (/"playableInEmbed":false/.test(text)) return 'no';
+  const status = text.match(/"playabilityStatus":\{"status":"([A-Z_]+)"/)?.[1];
+  if (status && status !== 'OK') return 'no';
+  const list = text.match(/"availableCountries":\[([^\]]*)\]/)?.[1];
+  if (list == null) return 'unknown';
+  return list.includes(`"${COUNTRY}"`) ? 'yes' : 'no';
+}
+
+async function playsInCanada(id) {
+  const response = await fetch(`https://www.youtube.com/watch?v=${id}&hl=en`, {
+    headers: { 'User-Agent': BROWSER, 'Accept-Language': 'en-US' }, redirect: 'manual', signal: AbortSignal.timeout(15000),
+  }).catch(() => null);
+  if (!response || response.status !== 200) return 'unknown';
+  return canadaFromPage(await response.text());
+}
+
 /** 200: other sites may play it. 401: its owner said no. */
 const embeddable = (id) => fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`, { signal: AbortSignal.timeout(10000) })
   .then((response) => response.status === 200).catch(() => false);
@@ -140,7 +165,7 @@ async function main() {
   const games = Object.fromEntries(Object.entries(saved.games ?? {}).filter(([, game]) => now - game.start < FORGET));
 
   const finished = (await Promise.all(MY_LEAGUES.map((league) => finishedGames(league, now)))).flat()
-    .filter((game) => now - game.start < LOOK_FOR && !(games[game.id]?.videos?.length))
+    .filter((game) => now - game.start < LOOK_FOR && !(games[game.id]?.videos?.length && games[game.id]?.checked === COUNTRY))
     // Newest first: those are the ones you're most likely to want.
     .sort((a, b) => b.start - a.start);
 
@@ -153,17 +178,31 @@ async function main() {
     const results = await search(`${game.home.full} vs ${game.away.full} highlights`);
     if (!results) { blocked = true; break; }
     const videos = [];
+    const turnedDown = [];
+    let unsure = false;
     for (const pick of pickHighlights(results, game, OFFICIAL[game.league.id] ?? [])) {
       if (videos.length >= 3) break;
-      if (await embeddable(pick.id)) videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
-      await pause(300);
+      await pause(1500);
+      if (!(await embeddable(pick.id))) { turnedDown.push(`${pick.channel} (not on other sites)`); continue; }
+      const canada = await playsInCanada(pick.id);
+      if (canada === 'unknown') { unsure = true; break; }
+      if (canada === 'no') { turnedDown.push(`${pick.channel} (not in Canada)`); continue; }
+      videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
+    }
+    if (unsure) {
+      // YouTube wouldn't show a video's page: nothing about this game is decided this run.
+      blocked = true;
+      console.log(`${game.league.name}: ${game.home.name} v ${game.away.name} → couldn't check Canada yet (YouTube's bot check); trying next run`);
+      break;
     }
     games[game.id] = {
       league: game.league.name,
       title: `${game.home.name} ${game.home.score}–${game.away.score} ${game.away.name}`,
       start: game.start,
+      checked: COUNTRY,
       videos,
     };
+    if (turnedDown.length) console.log(`  left out: ${turnedDown.join(', ')}`);
     console.log(`${game.league.name}: ${games[game.id].title} → ${videos.length ? videos.map((video) => video.channel).join(', ') : 'none yet'}`);
   }
   fs.writeFileSync(OUT, `${JSON.stringify({ updated: now, games }, null, 1)}\n`);
