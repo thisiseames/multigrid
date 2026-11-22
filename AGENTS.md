@@ -22,7 +22,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 
 ## Never
 - Never commit secrets: `READER-KEY.txt`, API keys, tokens. Secrets live in GitHub repo secrets, and only the owner adds them.
-- Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `flights.json`, `highlights.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
+- Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `flights.json`, `highlights.json`, `podcast-charts.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
 - Never store full article text unlocked in the repo (the Reader keeps it encrypted).
 - Never add a paid service, an account sign-up or anything that collects the owner's personal details without the owner's explicit yes.
 
@@ -30,7 +30,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 `index.html` has a Content-Security-Policy with a `sha256-…` hash of its own inline `<script type="module">`. If you change that inline script (including its list of files), recompute the hash: take the exact text between `<script type="module">` and `</script>`, sha256 it, base64 it, and replace the `sha256-…` value. A test checks that the file list includes every file in `src/`.
 
 ## Outside services in use (all free, no keys)
-Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed, ESPN, Twitch's preview images, api.ivr.fi (unofficial Twitch info), r.jina.ai (reader used for TikTok, X and trends24; about 20 requests a minute without a key), gamma-api.polymarket.com, iptv-org channel lists, google-flights-ts (in the flights job), Apple's podcast directory (iTunes Search API; about 20 calls a minute, cached in the app). Any of these can change or slow down; fail quietly (hide the section) rather than show errors or stale numbers as current.
+Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed, ESPN, Twitch's preview images, api.ivr.fi (unofficial Twitch info), r.jina.ai (reader used for TikTok, X and trends24; about 20 requests a minute without a key), gamma-api.polymarket.com, iptv-org channel lists, google-flights-ts (in the flights job), Apple's podcast directory (iTunes Search API; about 20 calls a minute, cached in the app) and podcast charts (Marketing Tools RSS, fetched by the hourly podcasts job; no CORS in the browser). Any of these can change or slow down; fail quietly (hide the section) rather than show errors or stale numbers as current.
 
 ## No lesser duplicates
 

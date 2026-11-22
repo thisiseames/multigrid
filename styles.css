@@ -1471,6 +1471,8 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
 .pod-logo { width: 42px; height: 42px; border-radius: 10px; }
 .pod-logo img { width: 100%; height: 100%; object-fit: cover; }
 .pod-follow.is-following { color: var(--text-2); font-weight: 600; }
+.pod-rank { flex: none; min-width: 20px; text-align: right; color: var(--text-2); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chart-row { padding-left: 0; }
 .pod-dialog-list { margin: 0; }
 .pod-dialog-list .pod-ep { width: 100%; }
 .pod-dialog-show { display: flex; flex-direction: column; gap: 2px; }
@@ -1501,6 +1503,8 @@ body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
   .pod-find { min-height: 44px; }
   .pod-row { flex-wrap: wrap; }
   .pod-row .ch-text { flex-basis: calc(100% - 54px); }
+  .podcast-box .pod-row.chart-row { flex-wrap: nowrap; }
+  .podcast-box .pod-row.chart-row .ch-text { flex: 1; flex-basis: auto; }
   .pod-row-actions { width: 100%; justify-content: flex-end; }
   .podcast-box .pod-row-actions .ch-add, .podcast-box .pod-follow, .podcast-box .pod-open {
     min-height: 44px; display: inline-flex; align-items: center; padding: 0 8px;

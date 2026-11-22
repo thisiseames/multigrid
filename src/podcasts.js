@@ -11,12 +11,17 @@ export const MAX_SEARCH_EPISODES = 20;
 export const MAX_SHOW_EPISODES = 50;
 // Topic search hides tiny news/AI clips; a followed show still shows its short episodes.
 export const MIN_SEARCH_EPISODE_SECONDS = 5 * 60;
+export const PODCAST_CHARTS_PATH = 'podcast-charts.json';
+export const MAX_CHART_SHOWS = 25;
+export const MAX_CHART_EPISODES = 10;
+export const CHART_STALE_MS = 48 * 60 * 60 * 1000;
 
 const SEARCH_API = 'https://itunes.apple.com/search';
 const LOOKUP_API = 'https://itunes.apple.com/lookup';
 const AUDIO_EXTENSIONS = new Set(['mp3', 'm4a', 'aac']);
 
 const cache = new Map();
+let chartCache = null;
 
 /** Tests use this so one case cannot see another case's answers. */
 export function clearPodcastCache() {
@@ -114,6 +119,93 @@ export function normalizeEpisode(item) {
     time,
     appleUrl: secureUrl(item?.trackViewUrl),
   };
+}
+
+/** The chart feed's 100px artwork can be asked for at 600px; the suffix is the only difference. */
+export function chartArtwork(value) {
+  const secure = secureUrl(value);
+  return secure ? secure.replace(/\/\d+x\d+bb\.[a-z]+$/i, '/600x600bb.jpg') : '';
+}
+
+/** The show ID in an Apple Podcasts URL: .../id1200361736, or .../id1112425552?i=... */
+export function parseAppleShowId(value) {
+  const match = String(value ?? '').match(/\/id(\d+)(?:[?#]|$)/);
+  return match ? match[1] : '';
+}
+
+/** Validate the chart file the job writes; a missing, malformed or 48-hour-old file gives null. */
+export function readPodcastCharts(data, { now = Date.now() } = {}) {
+  const raw = Number(data?.updated);
+  const updated = raw > 0 && raw < 1e12 ? raw * 1000 : raw;
+  if (!Number.isFinite(updated) || updated <= 0 || now - updated > CHART_STALE_MS) return null;
+  const shows = (Array.isArray(data?.shows) ? data.shows : [])
+    .map((show, index) => {
+      const id = String(show?.id ?? '').trim();
+      const name = String(show?.name ?? '').trim();
+      if (!id || !name) return null;
+      const rank = Number(show?.rank);
+      return {
+        rank: Number.isFinite(rank) && rank > 0 ? Math.floor(rank) : index + 1,
+        id,
+        name,
+        author: String(show?.author ?? '').trim(),
+        art: secureUrl(show?.art),
+        appleUrl: secureUrl(show?.appleUrl),
+        genre: String(show?.genre ?? '').trim(),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, MAX_CHART_SHOWS);
+  const episodes = (Array.isArray(data?.episodes) ? data.episodes : [])
+    .map((episode, index) => {
+      const id = String(episode?.id ?? '').trim();
+      const title = String(episode?.title ?? '').trim();
+      const audio = httpsAudio(episode?.audio);
+      if (!id || !title || !audio) return null;
+      const rank = Number(episode?.rank);
+      const length = Math.round(Number(episode?.length) || 0);
+      const time = Number(episode?.time) || 0;
+      return {
+        rank: Number.isFinite(rank) && rank > 0 ? Math.floor(rank) : index + 1,
+        id,
+        title,
+        source: String(episode?.source ?? '').trim() || 'Podcast',
+        image: secureUrl(episode?.image),
+        audio,
+        length: length > 0 ? length : 0,
+        time: time > 0 ? time : 0,
+        appleUrl: secureUrl(episode?.appleUrl),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, MAX_CHART_EPISODES);
+  if (!shows.length && !episodes.length) return null;
+  return { updated, country: String(data?.country || 'ca'), shows, episodes };
+}
+
+/** Read the job-built chart file once per ten minutes; a missing file is retried after a minute. */
+export async function loadPodcastCharts({ fetchImpl = fetch, now = Date.now(), force = false, signal } = {}) {
+  const ttl = chartCache?.value ? 10 * 60 * 1000 : 60 * 1000;
+  if (!force && chartCache && now - chartCache.at < ttl) return chartCache.value;
+  try {
+    const response = await fetchImpl(PODCAST_CHARTS_PATH, { cache: 'no-cache', signal });
+    if (!response.ok) {
+      chartCache = { at: now, value: null };
+      return null;
+    }
+    const value = readPodcastCharts(await response.json(), { now });
+    chartCache = { at: now, value };
+    return value;
+  } catch {
+    chartCache = { at: now, value: null };
+    return null;
+  }
+}
+
+export function clearPodcastChartCache() {
+  chartCache = null;
 }
 
 const dedupe = (items, key) => {

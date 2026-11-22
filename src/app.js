@@ -39,7 +39,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
-import { followedShowInput, isPodcastShowInput, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
+import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -1970,7 +1970,7 @@ function episodeState(item) {
   return { text: 'New', cls: 'is-new' };
 }
 
-function episodeRow(item, { art = false, show = false } = {}) {
+function episodeRow(item, { art = false, show = false, rank = null } = {}) {
   const state = episodeState(item);
   const meta = [show ? item.source : '', item.time ? dayLabel(item.time) : '', item.length ? lengthText(item.length) : '']
     .filter(Boolean).join(' · ');
@@ -1998,6 +1998,7 @@ function episodeRow(item, { art = false, show = false } = {}) {
       },
     },
   },
+  rank ? el('span', { class: 'pod-rank', textContent: String(rank) }) : null,
   artNode,
   el('span', { class: 'pod-text' },
     el('b', { class: 'pod-title', textContent: item.title }),
@@ -2350,6 +2351,37 @@ function podcastDialogShow(show, state, draw) {
     list);
 }
 
+function podcastChartShowRow(show, box, state, draw) {
+  const art = el('span', { class: 'ch-logo pod-logo' }, icon('sound', 18));
+  if (show.art) artPicture(art, show.art, () => art.replaceChildren(icon('sound', 18)));
+  const sub = [show.author, show.genre].filter(Boolean).join(' · ') || 'Podcast';
+  return el('li', {}, el('button', {
+    type: 'button',
+    class: 'ch-row pod-row chart-row',
+    title: `Open ${show.name}`,
+    on: {
+      click() {
+        if (isReaderShow(show.name)) {
+          box.close();
+          addFolder = PODCASTS;
+          podShow = show.name;
+          fillAddFavorites($('source-favorites'));
+          return;
+        }
+        state.show = show;
+        state.showEpisodes = [];
+        state.showError = '';
+        loadPodcastDialogShow(show, state, draw);
+      },
+    },
+  },
+  el('span', { class: 'pod-rank', textContent: String(show.rank) }),
+  art,
+  el('span', { class: 'ch-text' },
+    el('b', { textContent: show.name, title: show.name }),
+    el('small', { textContent: sub }))));
+}
+
 function openPodcastBox() {
   const box = $('podcast-box');
   if (box.open) return;
@@ -2360,6 +2392,9 @@ function openPodcastBox() {
     episodes: [],
     status: 'idle',
     error: '',
+    chart: null,
+    chartStatus: 'loading',
+    chartTab: 'shows',
     show: null,
     showStatus: 'idle',
     showEpisodes: [],
@@ -2386,14 +2421,25 @@ function openPodcastBox() {
     '.');
 
   const drawTabs = () => {
-    tabs.replaceChildren(...[['shows', 'Shows'], ['episodes', 'Episodes']].map(([id, label]) => el('button', {
+    const chartMode = state.query.trim().length < 2;
+    const options = chartMode
+      ? [['shows', 'Top shows'], ['episodes', 'Trending']]
+      : [['shows', 'Shows'], ['episodes', 'Episodes']];
+    const active = chartMode ? state.chartTab : state.tab;
+    tabs.replaceChildren(...options.map(([id, label]) => el('button', {
       type: 'button',
       role: 'tab',
-      class: `ch-tab${state.tab === id ? ' is-on' : ''}`,
-      aria: { selected: String(state.tab === id) },
+      class: `ch-tab${active === id ? ' is-on' : ''}`,
+      aria: { selected: String(active === id) },
       textContent: label,
       on: {
         click() {
+          if (chartMode) {
+            if (state.chartTab === id) return;
+            state.chartTab = id;
+            draw();
+            return;
+          }
           if (state.tab === id) return;
           state.tab = id;
           state.show = null;
@@ -2417,8 +2463,25 @@ function openPodcastBox() {
     }
     drawTabs();
     if (state.query.trim().length < 2) {
-      count.textContent = '';
-      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Search for a show, or a topic like “Toronto”.' }));
+      if (state.chartStatus === 'loading') {
+        count.textContent = 'Loading charts…';
+        results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading top podcasts…' }));
+        return;
+      }
+      if (!state.chart) {
+        count.textContent = '';
+        results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Search for a show, or a topic like “Toronto”.' }));
+        return;
+      }
+      const chartTab = state.chartTab;
+      const list = chartTab === 'shows' ? state.chart.shows : state.chart.episodes;
+      const what = chartTab === 'shows' ? 'top show' : 'trending episode';
+      count.textContent = `${list.length} ${what}${list.length === 1 ? '' : 's'} · Updated ${clock(state.chart.updated)}`;
+      results.replaceChildren(list.length
+        ? el('ul', { class: 'pod-list pod-dialog-list' }, ...list.map((item) => (chartTab === 'shows'
+          ? podcastChartShowRow(item, box, state, draw)
+          : episodeRow(item, { art: true, show: true, rank: item.rank }))))
+        : el('p', { class: 'ch-empty', textContent: chartTab === 'shows' ? 'No chart data right now.' : 'No trending episodes right now.' }));
       return;
     }
     if (state.status === 'loading') {
@@ -2508,6 +2571,22 @@ function openPodcastBox() {
     runSearch();
   });
 
+  const loadCharts = () => {
+    if (!state.chart) state.chartStatus = 'loading';
+    draw();
+    loadPodcastCharts().then((chart) => {
+      if (!box.open) return;
+      state.chart = chart;
+      state.chartStatus = chart ? 'done' : 'empty';
+      draw();
+    }).catch(() => {
+      if (!box.open) return;
+      state.chart = null;
+      state.chartStatus = 'empty';
+      draw();
+    });
+  };
+
   box.onclose = () => {
     clearTimeout(state.timer);
     state.controller?.abort();
@@ -2522,7 +2601,7 @@ function openPodcastBox() {
     results,
     foot);
   openDialog(box);
-  draw();
+  loadCharts();
   if (!document.body.classList.contains('is-phone')) search.focus();
 }
 

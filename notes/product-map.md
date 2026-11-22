@@ -26,7 +26,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **On touch phones** Add a note and Find a live channel are hidden in Add stream; Channel Finder is still reachable from Search actions.
 - **PPV events:** PPV.st live/upcoming events with posters; adding one saves it in the PPV folder.
 - **Local Library:** one LIBRARY tab inside Favorites with TV / MOVIES switch. TV folder groups shows/seasons/episodes, TVmaze posters, Next up, episode playback, refresh/new downloads, Change/Forget TV. Movie folder has flat movie cards, year, 2:3 portrait cards six across on desktop, local `poster.jpg`/`folder.jpg`/`cover.jpg` → Wikipedia theatrical poster → frame → film icon, single-file playback and resume, Change/Forget movies. Chrome laptop only; hidden on phone/Safari. Refresh rescans (and it auto-refreshes every 5 minutes while open); old index upgrades automatically; a TV episode playlist is a snapshot, so new downloads appear after Refresh.
-- **Podcast directory:** PODCASTS tab → **Find a podcast**. Search Apple's public podcast directory by show or topic (Canada store), open a show's latest 50 episodes, play full episodes in the existing dock, and follow a show. Followed shows are hidden favourites (only in PODCASTS, not All or Recent) and sync. Podcast show art is square 1:1 (Apple sends 600×600/3000×3000), not the 16:9 TV/favourite shape. Podcast controls use white/near-white, never periwinkle. A show already in the six Reader feeds appears once and uses its Reader episodes. No new section.
+- **Podcast directory:** PODCASTS tab → **Find a podcast**. Before typing, it shows Apple's **Top Shows** (25) and **Trending Episodes** (10) for Canada from the job-built `podcast-charts.json`; tap a top show for its latest episodes and Follow, or a trending episode to play it in the dock. Typing searches Apple's public podcast directory by show or topic; clearing returns the charts. Followed shows are hidden favourites (only in PODCASTS, not All or Recent) and sync. Podcast show art is square 1:1 (Apple sends 600×600/3000×3000), not the 16:9 TV/favourite shape. Podcast controls use white/near-white, never periwinkle. A show already in the six Reader feeds appears once and uses its Reader episodes. No new section.
 - **Continue watching:** part-watched streams/podcasts/files, newest first; playlist places dedupe to one card.
 - **Favorites:** 342 in the owner's current setup across Sports, Series, Twitter, Entertainment, YouTube, News, TikTok, X, Streaming and unfiled. Folder tabs are All, Recent (last 10), user folders A–Z, Podcasts, Library (Chrome desktop) and Saved layouts on phone. Search covers favorites, podcast shows and the library. Cards have add, ••• Edit/Remove with a second confirm, folder rename with merge. TikTok/X account feeds are kept out of All. Sync/Synced button; no CSV/JSON export button (Sync is the path), though legacy `#fav1=` transfer links are still accepted.
 - **Notes:** text tile that saves with the layout.
@@ -68,14 +68,14 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Data, jobs and the extension
 
-- **Jobs:** `.github/workflows/guide.yml` (guide, feeds, movies, charts, shows; about every 30 min but skips until the guide is 165 min old), `reader.yml` (Reader self-chaining every 25 min with a 45-min stale backup; also highlights), `flights.yml` (daily), `channels.yml` (daily), `highlights.yml` (manual). Job-owned JSON: `guide.json`, `feeds.json`, `charts.json`, `shows.json`, `movies.json`, `flights.json`, `live-channels.json`, `highlights.json`, `reader/index.json`, `reader/a/*`. Never hand-edit or commit these; run the job and discard the output when testing.
-- **Outside services:** Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed/search, ESPN, Twitch previews/api.ivr.fi, r.jina.ai, Polymarket Gamma, iptv-org, Google Flights, PPV.st, Apple Podcasts (iTunes Search API). All free/keyless. No paid service.
+- **Jobs:** `.github/workflows/guide.yml` (guide, feeds, movies, charts, shows; about every 30 min but skips until the guide is 165 min old), `reader.yml` (Reader self-chaining every 25 min with a 45-min stale backup; also highlights), `flights.yml` (daily), `channels.yml` (daily), `podcasts.yml` (Apple Top Shows/Trending Episodes, hourly), `highlights.yml` (manual). Job-owned JSON: `guide.json`, `feeds.json`, `charts.json`, `shows.json`, `movies.json`, `flights.json`, `live-channels.json`, `highlights.json`, `podcast-charts.json`, `reader/index.json`, `reader/a/*`. Never hand-edit or commit these; run the job and discard the output when testing.
+- **Outside services:** Open-Meteo, CNBC quotes, TVmaze, Wikipedia/Wikidata, billboard.com, YouTube oEmbed/search, ESPN, Twitch previews/api.ivr.fi, r.jina.ai, Polymarket Gamma, iptv-org, Google Flights, PPV.st, Apple Podcasts (iTunes Search API) and Apple podcast charts (Marketing Tools RSS, read by the hourly job). All free/keyless. No paid service.
 - **Storage/sync:** localStorage for favorites, workspaces, resume/played/places, settings; IndexedDB for local file handles and the local library; sync encrypted on free Nostr relays; favorites transfer links.
 - **Extension MULTIGRID Sound:** background content script in all frames for sound, pause/play, seek, in-frame resume, page tracking, and progress; toolbar popup Send this tab (v1.11) scans the page for YouTube video/channel, direct video/audio/player/page, resolves real UC… channel IDs, and sends to MULTIGRID. Owner reloads the extension after a version bump.
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 209 tests as of Nov 21.
+`node --test tests/*.test.mjs` — 213 tests as of Nov 21.
 
 ## Not built yet — do not describe as existing
 
@@ -90,7 +90,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - TikTok live playback (the embed is blocked; it falls back to the profile feed).
 - A cross-source playback queue; saved layouts are grids, and only YouTube/local-file playlists auto-advance.
 - A favorites CSV/JSON export button; Sync, phone copy and legacy `#fav1=` links are the cross-device paths.
-- A podcast queue/auto-next, new-episode notifications, downloads, or video podcasts. The directory is search/follow/full-episode playback only.
+- A podcast queue/auto-next, new-episode notifications, downloads, video podcasts, or per-genre podcast charts. The directory is search/follow/full-episode playback plus the overall Canada Top Shows/Trending Episodes.
 - 30-second music previews or a chart preview queue.
 - Live radio (Radio Browser) or Pluto TV.
 - TMDB/movie API; movie posters come from Wikipedia/local poster/frame.
@@ -102,7 +102,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Do not propose PPV event discovery.** PPV.st picker already exists.
 - **Do not propose a local TV/movie library; it exists.**
 - **Do not propose X-list timelines, TikTok live, or a cross-source queue as existing.** X imports are per-profile favorites; TikTok live falls back to the profile; only YouTube and local-file playlists auto-advance.
-- **Do not propose a separate Podcasts section.** The dock and PODCASTS folder tab already exist; the owner rejected another space-eating section. The Apple directory is inside PODCASTS, with full episodes, not song previews.
+- **Do not propose a separate Podcasts section.** The dock and PODCASTS folder tab already exist; the owner rejected another space-eating section. The Apple directory is inside PODCASTS, with full episodes, not song previews. Podcast charts (Top Shows/Trending Episodes) already exist too.
 - **Do not propose iTunes/Deezer song previews for Charts.** The podcast directory uses `media=podcast`/`podcastEpisode`; it does not add 30-second music clips or touch chart actions.
 - **Do not add duplicate top-bar buttons for Fullscreen, Help, Saved layouts or Remote.** They already have hidden proxy buttons plus More-menu/phone entry points; replace those, don't add alongside.
 - **Do not propose a new mobile sound UI or extra bottom tabs.** The phone stream bar, Sound sheet, Sports switch and conditional Guide tab already exist.
@@ -121,5 +121,5 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - Cross-origin iframes and embeds may refuse to play, need a login, be geo-blocked, or not work on iOS. The app fails quietly or offers a replacement/backup feed; it does not bypass DRM or logins.
 - GitHub Pages is HTTPS: HTTP media/embeds are blocked as mixed content. Prefer HTTPS.
 - The repo is public. Secrets live in GitHub secrets/local files and are never committed.
-- Apple's podcast directory is free/keyless and CORS-open, but Apple limits it to about 20 calls a minute; the app caches searches for 10 minutes, a show's episodes for 30, and calls only on search/open. The Canada store misses some shows; premium/region-locked episodes have no playable `episodeUrl` and are hidden.
+- Apple's podcast directory is free/keyless and CORS-open, but Apple limits it to about 20 calls a minute; the app caches searches for 10 minutes, a show's episodes for 30, and calls only on search/open. The Canada store misses some shows; premium/region-locked episodes have no playable `episodeUrl` and are hidden. Apple's chart feed has **no CORS**, so `podcasts.yml` caches it hourly; a chart older than 48 hours is hidden.
 - Every outside service is free and keyless; paid services, accounts and keys need the owner's explicit yes.
