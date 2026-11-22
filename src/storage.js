@@ -414,6 +414,23 @@ export function restoreSavedItem(item) {
 
 export const openSaved = (item) => sanitize(item.workspace);
 
+/* Recent grids: the last ten grids that stayed on screen a while, kept on this device only
+   (a phone grid and a laptop grid look different). The same set of streams counts once. */
+const RECENT_GRIDS_KEY = 'multigrid.recentgrids.v1';
+const RECENT_GRIDS = 10;
+export function listRecentGrids() {
+  const list = read(RECENT_GRIDS_KEY);
+  return Array.isArray(list) ? list.filter((item) => item && typeof item.key === 'string' && Number.isFinite(item.at) && item.workspace) : [];
+}
+export function noteRecentGrid(ws, key, at = Date.now()) {
+  const entry = { key, at, workspace: snapshot(ws, { keepEvent: false }) };
+  return write(RECENT_GRIDS_KEY, [entry, ...listRecentGrids().filter((item) => item.key !== key)].slice(0, RECENT_GRIDS));
+}
+export function forgetRecentGrid(key) {
+  return write(RECENT_GRIDS_KEY, listRecentGrids().filter((item) => item.key !== key));
+}
+export const openRecentGrid = (entry) => sanitize(entry.workspace);
+
 /** For sync: the favorites and saved layouts as they are, and putting in what another device sent. */
 export const syncedLists = () => ({ favorites: listFavorites(), layouts: listSaved() });
 export function replaceSynced({ favorites, layouts }) {

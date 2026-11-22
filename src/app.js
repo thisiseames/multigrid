@@ -53,6 +53,7 @@ import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
   saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceFavorites, replaceSynced, syncedLists,
+  forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
@@ -2165,6 +2166,108 @@ function commit() {
   reflowPhone(ws);
   if (!saveCurrent(ws)) toast("Couldn't save. This browser's storage may be full or turned off.");
   render();
+  trackRecentGrid();
+}
+
+/* Recent grids: a grid that stays on screen for 10 minutes is remembered (the last ten, this
+   device only). The same streams count once; later changes to that grid keep it current. */
+const RECENT_GRID_AFTER = 10 * 60000;
+var recentGridKey = ''; // eslint-disable-line no-var
+var recentGridTimer = null; // eslint-disable-line no-var
+var recentGridNoted = false; // eslint-disable-line no-var
+const gridKeyOf = (workspace) => workspace.tiles.filter((tile) => tile.input && tile.place).map((tile) => tile.input).sort().join('\n');
+function trackRecentGrid() {
+  const key = gridKeyOf(ws);
+  if (key !== recentGridKey) {
+    recentGridKey = key;
+    recentGridNoted = false;
+    clearTimeout(recentGridTimer);
+    if (!key) return;
+    recentGridTimer = setTimeout(() => {
+      if (gridKeyOf(ws) !== key) return;
+      recentGridNoted = noteRecentGrid(fitToStreams(ws), key);
+    }, RECENT_GRID_AFTER);
+    return;
+  }
+  // Still the same streams after it was remembered: its layout and sound stay current.
+  if (key && recentGridNoted) noteRecentGrid(fitToStreams(ws), key);
+}
+
+/** The streams in a remembered grid, by the names you know them by: "Sky Sports PL + CP24 + 2 more". */
+function recentGridTitle(entry) {
+  const names = entry.workspace.tiles.filter((tile) => tile.input && tile.place)
+    .map((tile) => favoriteName(tile.input) || tile.title || parseSource(tile.input).label || 'Stream');
+  const shown = names.slice(0, 2).map((name) => (/[a-z]/.test(name) ? name : titleCase(name)));
+  return names.length > 2 ? `${shown.join(' + ')} + ${names.length - 2} more` : shown.join(' + ');
+}
+
+/** "Today 10:12 am", "Yesterday 9:40 pm", "Sat 3:05 pm", or "Nov 14". */
+function recentGridWhen(at, now = Date.now()) {
+  const day = dayKey(at);
+  if (day === dayKey(now)) return `Today ${clock(at)}`;
+  if (day === dayKey(now - 86400000)) return `Yesterday ${clock(at)}`;
+  if (now - at < 6 * 86400000) return `${new Date(at).toLocaleDateString(undefined, { weekday: 'short' })} ${clock(at)}`;
+  return new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function recentGridDiagram(entry, width, height) {
+  const { cols = [1], rows = [1], tiles = [] } = fitToStreams(entry.workspace);
+  const slots = tiles.filter((tile) => tile.place).map((tile) => tile.place);
+  return layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, width, height);
+}
+
+/** Puts a remembered grid back on screen, with Undo. */
+function openRecent(entry) {
+  const next = openRecentGrid(entry);
+  if (!next) { toast("This grid couldn't be read."); return; }
+  const previous = ws;
+  ws = fitToStreams(next);
+  closePopovers();
+  if ($('source-dialog').open) $('source-dialog').close();
+  commit();
+  toast(`Opened ${recentGridTitle(entry)}.`, { label: 'Undo', run() { ws = previous; commit(); } });
+}
+
+/** Recent grids as home screen cards: the layout's shape, the streams, when. */
+function recentGridItems() {
+  return listRecentGrids().sort((a, b) => b.at - a.at).map((entry) => ({
+    key: `rg:${entry.key}`,
+    label: 'Recent grid',
+    title: recentGridTitle(entry),
+    meta: `${savedSummary(entry)} · ${recentGridWhen(entry.at)}`,
+    cardMeta: recentGridWhen(entry.at),
+    desc: entry.workspace.tiles.filter((tile) => tile.input && tile.place).map((tile) => titleCase(favoriteName(tile.input) || tile.title || parseSource(tile.input).label || 'Stream')).join(' · '),
+    art: () => el('span', { class: 'rg-art' }, recentGridDiagram(entry, 120, 68)),
+    layer: () => el('div', { class: 'rg-hero' }, recentGridDiagram(entry, 340, 192)),
+    playLabel: 'Open this grid',
+    forget: () => forgetRecentGrid(entry.key),
+    forgetFrom: 'Recent grids',
+    play: () => openRecent(entry),
+  }));
+}
+
+/** Turns a remembered grid into a named saved layout (named after its streams; rename it in Saved layouts). */
+function saveRecent(entry) {
+  const next = openRecentGrid(entry);
+  if (!next) return;
+  let name = recentGridTitle(entry).slice(0, 60);
+  for (let number = 2; findSaved(name) && number < 50; number++) name = `${recentGridTitle(entry).slice(0, 55)} ${number}`;
+  if (!saveNamed(name, fitToStreams(next))) { toast(STORAGE_FULL); return; }
+  refreshSaved();
+  toast(`Saved as ${name}. Rename it in Saved layouts.`);
+}
+
+/** Recent grids as rows (the MULTIGRID drop-down and the phone's Layouts tab). */
+function recentGridRows(limit) {
+  const list = listRecentGrids().sort((a, b) => b.at - a.at).slice(0, limit);
+  if (!list.length) return null;
+  return el('div', { class: 'rg-block' },
+    el('p', { class: 'sdrop-head', textContent: 'Recent grids' }),
+    el('ul', { class: 'sdrop-list rg-list' }, ...list.map((entry) => el('li', { class: 'rg-item' },
+      el('button', { type: 'button', class: 'sdrop-row', title: `Open ${recentGridTitle(entry)}`, on: { click: () => openRecent(entry) } },
+        el('span', { class: 'sdrop-shape' }, recentGridDiagram(entry, 40, 26)),
+        el('span', { class: 'sdrop-text' }, el('b', { textContent: recentGridTitle(entry) }), el('small', { textContent: recentGridWhen(entry.at) }))),
+      iconButton('saved', 'Save as a layout', () => saveRecent(entry))))));
 }
 
 /* ---------- Drawing the top bar ---------- */
@@ -4856,7 +4959,7 @@ function homeCard(item) {
   item.refresh = fill;
   // Continue watching cards: a small × on hover takes it off the list.
   const remove = item.forget ? el('button', {
-    type: 'button', class: 'hcard-x', title: `Remove ${item.title} from Continue watching`, aria: { label: `Remove ${item.title} from Continue watching` },
+    type: 'button', class: 'hcard-x', title: `Remove ${item.title} from ${item.forgetFrom || 'Continue watching'}`, aria: { label: `Remove ${item.title} from ${item.forgetFrom || 'Continue watching'}` },
     on: { click(event) { event.stopPropagation(); item.forget(); drawHome(); } },
   }, icon('close', 14)) : null;
   return el('li', { class: 'hcard' }, remove, el('button', {
@@ -5022,7 +5125,7 @@ async function drawHome() {
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
-  paint([matchday.strip, matchdayRow, homeRow('Continue watching', cont), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow),
+  paint([matchday.strip, matchdayRow, homeRow('Continue watching', cont), homeRow('Recent grids', recentGridItems()), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow),
     homeRow('Top 10 on Netflix · Canada', netflixTop), homeRow('Trending in Canada', trendingTop)]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it.
@@ -5295,7 +5398,7 @@ function fillAddFavorites(holder) {
   const grid = el('div', { class: 'addp-grid-wrap' },
     libraryOpen ? libraryView(holder, query)
       : podcasts ? podcastsView(holder)
-        : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts())
+        : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts(), recentGridRows(10) ?? '')
           : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
             // A favorite shows as its favorite card; anything else by the name it had, without the favorite's menu.
             const favorite = all.find((item) => item.input === seen.input);
@@ -9226,6 +9329,7 @@ function buildSavedDrop() {
       el('span', { class: 'sdrop-text' }, el('b', { textContent: item.name }), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
+    recentGridRows(3),
     saveHereRow(),
     clearAllRow(),
     moveRow(),
