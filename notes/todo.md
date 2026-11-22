@@ -8,7 +8,7 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 21) **Local library**: choose a TV folder and a separate movie folder in Chrome; one LIBRARY tab in Favorites with a TV / MOVIES switch. TV groups shows/seasons/episodes with TVmaze posters, Next up, episode playback, refresh/new downloads, and Forget. Movies are flat cards with Wikipedia theatrical posters, a frame fallback, year, resume and single-file playback. Chrome-only; the phone hides it. Verified with generated folders; the owner still has to choose his real folders once.
 - [x] (done by OpenCode Nov 20) **Hell's Kitchen poster** (Entertainment folder): show TVmaze's wide picture. Plan already written for DeepSeek in OPENCODE-PLAN.md; test DeepSeek on it when Claude can fix anything that goes wrong.
 - [x] (done Nov 21) **Chart numbers**: ▲3 / ▼2 / – / NEW / RE-ENTRY under each position in Today's Charts (weeks on chart left out).
-- [x] (done Nov 21) **Podcast directory**: PODCASTS → Find a podcast searches Apple's keyless directory, plays full episodes in the dock, and follows shows as synced hidden favorites. 206 tests; verified laptop, phone, error/retry, Continue and real two-profile sync.
+- [x] (done Nov 21) **Podcast directory**: PODCASTS → Find a podcast searches Apple's keyless directory, plays full episodes in the dock, and follows shows as synced hidden favorites. 209 tests; verified laptop, phone, error/retry, Continue and real two-profile sync.
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **Captions (CC) button**: in the tile's top bar, for YouTube and video links.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.
