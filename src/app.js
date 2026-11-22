@@ -21,7 +21,7 @@ import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
-import { chooseLibrary, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
+import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
@@ -2081,6 +2081,8 @@ function ensureLibrary() {
 function refreshLibraryNow(request = false) {
   if (libraryScanning) return;
   const section = librarySection;
+  // A manual Refresh also retries posters that were cached as empty after a failed lookup.
+  if (section === 'movies' && request) clearMoviePosters();
   libraryScanning = true;
   libraryError = '';
   libraryRedraw();

@@ -12,8 +12,9 @@ const GENERIC_FOLDERS = new Set([
   'animation', 'anime', 'documentary', 'family', 'romance', 'crime', 'mystery', 'war',
   'western', 'fantasy', 'adventure', 'classics', 'new',
 ]);
-const POSTER_KEY = 'multigrid.moviePosters.v1';
+const POSTER_KEY = 'multigrid.moviePosters.v2';
 const POSTER_TTL = 30 * 24 * 60 * 60 * 1000;
+const POSTER_EMPTY_TTL = 60 * 60 * 1000;
 
 export const librarySupported = () => typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
 
@@ -315,6 +316,7 @@ async function scan(root, kind) {
 export async function chooseLibrary(kind = 'tv') {
   if (!librarySupported()) throw new Error('This browser cannot keep a folder.');
   const mode = normalKind(kind);
+  if (mode === 'movies') clearMoviePosters();
   const root = await window.showDirectoryPicker({
     id: mode === 'movies' ? 'multigrid-movies' : 'multigrid-library',
     mode: 'read',
@@ -388,6 +390,11 @@ export const fileForEpisode = (episode) => fileForEntry(episode, 'tv');
 
 /* ---------- Movie posters: local image, Wikipedia, then a frame ---------- */
 
+/** Called by Change folder and the manual Refresh so empty lookups get another chance. */
+export function clearMoviePosters() {
+  try { localStorage.removeItem(POSTER_KEY); } catch { /* not cached */ }
+}
+
 const readPosterCache = () => {
   try {
     const all = JSON.parse(localStorage.getItem(POSTER_KEY) || '{}');
@@ -400,36 +407,72 @@ const writePosterCache = (all) => {
   try { localStorage.setItem(POSTER_KEY, JSON.stringify(all)); } catch { /* not cached */ }
 };
 
-async function wikipediaPoster(title, year) {
-  const params = new URLSearchParams({
-    action: 'query',
-    generator: 'search',
-    gsrsearch: [title, year, 'film'].filter(Boolean).join(' '),
-    gsrlimit: '4',
-    prop: 'pageimages',
-    pithumbsize: '600',
-    pilicense: 'any',
-    format: 'json',
-    origin: '*',
-  });
+const normalizeTitle = (value) => String(value || '')
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLocaleLowerCase()
+  .replace(/[^\w]+/g, ' ')
+  .trim();
+const withoutArticle = (value) => value.replace(/^(the|a|an) /, '').replace(/ (the|a|an)$/, '');
+
+function pageMatches(item, title, year) {
+  if (!item?.thumbnail?.source) return false;
+  if (/soundtrack|album|novel|video game/i.test(item.title || '')) return false;
+  const wanted = withoutArticle(normalizeTitle(title));
+  const page = withoutArticle(normalizeTitle(item.title));
+  if (!wanted || !page) return false;
+  const titleMatches = page === wanted || page.includes(wanted) || wanted.includes(page);
+  if (!titleMatches) return false;
+  const pageYear = yearOf(item.title);
+  return !year || !pageYear || Math.abs(pageYear - year) <= 1;
+}
+
+async function wikipediaQuery(params) {
   try {
     const response = await fetch(`https://en.wikipedia.org/w/api.php?${params}`, { signal: AbortSignal.timeout?.(7000) });
-    if (!response.ok) return '';
+    if (!response.ok) return [];
     const data = await response.json();
-    const pages = Object.values(data?.query?.pages || {}).sort((a, b) => (a.index || 99) - (b.index || 99));
-    const wanted = String(title || '').toLocaleLowerCase().replace(/[^\w]+/g, ' ').trim();
-    const page = pages.find((item) => {
-      if (!item.thumbnail?.source || !wanted) return false;
-      if (/soundtrack|album|novel|video game/i.test(item.title || '')) return false;
-      const pageTitle = String(item.title || '').toLocaleLowerCase().replace(/[^\w]+/g, ' ').trim();
-      if (!pageTitle.includes(wanted)) return false;
-      const pageYear = yearOf(item.title);
-      return !year || !pageYear || pageYear === year;
-    });
-    return page?.thumbnail?.source || '';
+    return Object.values(data?.query?.pages || {}).sort((a, b) => (a.index || 99) - (b.index || 99));
   } catch {
-    return '';
+    return [];
   }
+}
+
+async function wikipediaPoster(title, year) {
+  if (!title) return '';
+  const search = async (text) => {
+    const params = new URLSearchParams({
+      action: 'query',
+      generator: 'search',
+      gsrsearch: text,
+      gsrlimit: '5',
+      prop: 'pageimages',
+      pithumbsize: '600',
+      pilicense: 'any',
+      format: 'json',
+      origin: '*',
+    });
+    const pages = await wikipediaQuery(params);
+    return pages.find((item) => pageMatches(item, title, year))?.thumbnail?.source || '';
+  };
+  const exact = async (titles) => {
+    const params = new URLSearchParams({
+      action: 'query',
+      titles,
+      prop: 'pageimages',
+      pithumbsize: '600',
+      pilicense: 'any',
+      format: 'json',
+      origin: '*',
+    });
+    const pages = await wikipediaQuery(params);
+    return pages.find((item) => pageMatches(item, title, year))?.thumbnail?.source || '';
+  };
+  return await exact(title)
+    || await search([title, year, 'film'].filter(Boolean).join(' '))
+    || await search([title, 'film'].filter(Boolean).join(' '))
+    || await exact(year ? `${title} (${year} film)` : title)
+    || '';
 }
 
 async function fileDataUrl(file) {
@@ -511,7 +554,7 @@ export async function moviePoster(movie, kind = 'movies') {
     const cache = readPosterCache();
     const key = `${title.toLocaleLowerCase()}|${movie.year || ''}`;
     const known = cache[key];
-    if (known && Date.now() - (known.at || 0) < (known.url ? POSTER_TTL : 7 * 24 * 60 * 60 * 1000)) {
+    if (known && Date.now() - (known.at || 0) < (known.url ? POSTER_TTL : POSTER_EMPTY_TTL)) {
       if (known.url) return known.url;
     } else {
       const url = await wikipediaPoster(title, movie.year);
