@@ -13,7 +13,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Layouts:** Single, Equal, Vertical stack, Horizontal row, Grid and phone, Feature and phone, Big screen and phone, Picture in picture, Picture in picture ×2, 2×2, 3×2, 2×3, 3×3, 4×4, Featured, Focus and row, One and two, One over two, Two and three, Two beside three, Pinwheel, Custom. Saved layouts, current layout, primary tile, add/replace/fill/remove, fullscreen, pop-out, Cinema, Crop.
 - **Sound:** desktop mixer row under the top bar with back/play/forward, mute and volume for each controllable tile; One sound (default on); Ticker (default off, bottom only); Mute all/Unmute all; podcast dock. Phone Sound sheet and per-tile sound actions. Tiles start muted so autoplay works; the first click restores saved sound. Sound controls use white/near-white, never periwinkle.
 - **Tiles and hidden streams:** title strip, star/favorite, primary crown, Cinema, Crop, mute, fullscreen, reload, pop-out, Cast/AirPlay, Send to phone, replace, open site, remove, more. A “N hidden” top-bar button lists streams that don't fit the current layout; choose one to swap it in or remove it. Feed tiles add Previous/Next and a counter. Playlists add Previous/Next episode. PiP tiles use Swap screens; PiP×2 has a Swap in each small mixer row and the phone stream sheet.
-- **Search palette (⌘K):** Favorites, saved layouts, PPV events, and actions. It is not a site-wide search over Guide/Sports/Reader/YouTube.
+- **Search palette (⌘K):** Favorites, saved layouts, PPV events and actions at rest. After two characters it also searches live channels (Catalog + Zlive merged by name, with a source picker), live matches (PPV.st, Daddy Live, Matchora) and your teams' games (Sports). Clicking adds through the same paths as the existing pickers. It does not search Guide shows, Reader stories, podcasts or the local library.
 - **Help:** in-app How it works dialog.
 
 ## Add stream
@@ -85,7 +85,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - YouTube Trending Music tab (blocked on Google 2-step verification).
 - Modern top-bar redesign and clean file names (TODO).
 - Size-matched/full-quality switch for video links (parked).
-- Global search across Guide/Sports/Reader/YouTube.
+- Global search across Guide/Reader/YouTube/podcasts/library (the Search palette covers live channels, matches, sports, favorites, PPV, layouts and actions, but not these).
 - Reader search (there is none today).
 - A combined X-list timeline; imported lists become per-profile favorites.
 - TikTok live playback (the embed is blocked; it falls back to the profile feed).

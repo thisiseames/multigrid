@@ -53,6 +53,7 @@ import {
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
+import { searchLiveSources } from './live-search.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -1215,27 +1216,129 @@ function openPPV(target = sourceTarget) {
 }
 
 
-/** One search box for favourites, layouts, PPV events and the main actions. */
+let liveSportsCache = null;
+let liveSportsAt = 0;
+let liveSportsPending = null;
+
+/** Your teams' games for the live-search group; the same ESPN feed Today already uses. */
+async function loadLiveSports() {
+  if (liveSportsCache && Date.now() - liveSportsAt < 5 * 60_000) return liveSportsCache;
+  if (liveSportsPending) return liveSportsPending;
+  const now = Date.now();
+  liveSportsPending = loadTab(MATCH_TABS.find((tab) => tab.mine), now).then((sections) => {
+    const found = [];
+    const seen = new Set();
+    for (const { card } of sections ?? []) {
+      for (const match of [card.last, card.live, ...(card.upcoming ?? [])]) {
+        if (!match || seen.has(match.id)) continue;
+        // Live, the next week's games, and a result from the last day and a half. No old scores.
+        const pre = match.state === 'pre' && match.start > now - 4 * 3600000 && match.start < now + 7 * 86400000;
+        const post = match.state === 'post' && now - match.start < 36 * 3600000;
+        if (match.state !== 'in' && !pre && !post) continue;
+        seen.add(match.id);
+        const side = isMine(match.home) ? match.home : isMine(match.away) ? match.away : null;
+        const channel = match.tv?.length ? favoriteForChannels(match.tv) : null;
+        const when = match.state === 'in'
+          ? `Live${shortClock(match.detail) ? ` · ${shortClock(match.detail)}` : ''}`
+          : match.state === 'pre' ? `${dayLabel(match.start)} ${clock(match.start)}` : `Final · ${dayLabel(match.start)}`;
+        found.push({
+          label: gameName(match),
+          meta: [when, channel ? `Watch on ${channel.name}` : 'Box score'].join(' · '),
+          live: match.state === 'in',
+          state: match.state,
+          starts: match.start,
+          channel,
+          aliases: side ? [side.full, side.name].filter(Boolean) : [],
+          match,
+        });
+      }
+    }
+    liveSportsCache = found;
+    liveSportsAt = Date.now();
+    return found;
+  }).catch(() => []).finally(() => { liveSportsPending = null; });
+  return liveSportsPending;
+}
+
+function addSearchChannel(source, target) {
+  const input = source.kind === 'zlive' ? zliveEmbed(source.url) : source.url;
+  if (!input) return;
+  if ($('source-dialog').open) $('source-dialog').close();
+  if (!addStream(input, target, source.name)) return;
+  saveFavorite(input, source.name, folderForCategory(source.category));
+  toast(`Adding ${source.name}…`);
+}
+
+/** A channel found in both Catalog and Zlive: pick which source to play. */
+function chooseSearchChannel(group, target) {
+  const box = el('dialog', {
+    class: 'dialog dl-links',
+    aria: { label: `Sources for ${group.label}` },
+  });
+  const links = group.sources.map((source) => el('button', {
+    type: 'button',
+    class: 'dl-link',
+    on: {
+      click() {
+        box.close();
+        addSearchChannel(source, target);
+      },
+    },
+  },
+  el('b', { textContent: source.name }),
+  el('small', { textContent: [source.label, source.category, source.region, source.quality].filter(Boolean).join(' · ') })));
+  box.append(
+    el('div', { class: 'ch-head' },
+      el('h2', { textContent: 'Choose a source' }),
+      iconButton('close', 'Close', () => box.close())),
+    el('p', { class: 'dl-event', textContent: group.label }),
+    el('div', { class: 'dl-link-list' }, ...links),
+    el('p', { class: 'ch-note', textContent: 'These are different feeds of the same channel.' }));
+  box.addEventListener('close', () => box.remove(), { once: true });
+  document.body.append(box);
+  openDialog(box);
+  box.tabIndex = -1;
+  box.focus({ preventScroll: true });
+}
+
+
+/** One search box for favourites, live channels and matches, sports, layouts and actions. */
 function openPalette() {
   const box = $('palette');
   if (box.open) { box.querySelector('.palette-input')?.focus(); return; }
   const target = $('source-dialog').open ? sourceTarget : { mode: 'add' };
   let ppv = [];
+  let catalog = [];
+  let zlive = [];
+  let daddy = [];
+  let matchora = [];
+  let sports = [];
+  let ppvLoaded = false;
+  let livePending = 0;
+  const loaded = { catalog: false, zlive: false, daddy: false, matchora: false, sports: false };
   let items = [];
   let active = 0;
   const input = el('input', {
     type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false',
-    placeholder: 'Find a favourite, layout, PPV event or action',
+    placeholder: 'Find a channel, game or action',
   });
   const results = el('div', { class: 'palette-results' });
   const hint = el('p', { class: 'palette-hint', textContent: document.body.classList.contains('is-phone') ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close' });
   const closeAnd = (run) => { box.close(); run(); };
+  const favoriteKind = (item) => {
+    const source = parseSource(item.input);
+    if (item.group) return item.group;
+    try {
+      if (new URL(item.input).hostname.toLocaleLowerCase() === 'zlive.st') return 'Zlive';
+    } catch {}
+    return KIND_NAMES[source.kind] || 'Stream';
+  };
   const favoriteItem = (item) => {
     const source = parseSource(item.input);
     return {
       group: 'Favorites',
       label: item.name,
-      sub: item.group || KIND_NAMES[source.kind] || 'Stream',
+      sub: favoriteKind(item),
       icon: KIND_ICONS[source.kind] || 'play',
       run: () => closeAnd(() => {
         if ($('source-dialog').open) $('source-dialog').close();
@@ -1270,6 +1373,25 @@ function openPalette() {
     { label: 'Help', sub: 'How MULTIGRID works', icon: 'help', run: () => $('help-button').click() },
   ].map((item) => ({ group: 'Actions', ...item, run: () => closeAnd(item.run) }));
   const has = (text, query) => text.toLocaleLowerCase().includes(query);
+  const addLive = (key, promise, save) => {
+    if (loaded[key]) return;
+    loaded[key] = true;
+    livePending += 1;
+    promise.then(save).catch(() => {}).finally(() => {
+      livePending -= 1;
+      if (box.open) paint();
+    });
+  };
+  const ensureLive = () => {
+    if (input.value.trim().length < 2) return;
+    addLive('catalog', loadJob('live-channels.json'), (data) => {
+      catalog = Array.isArray(data?.channels) ? data.channels : [];
+    });
+    addLive('zlive', loadZliveManifest(), (list) => { zlive = list ?? []; });
+    addLive('daddy', loadDaddyLive(), (list) => { daddy = list ?? []; });
+    addLive('matchora', loadMatchora(), (list) => { matchora = list ?? []; });
+    addLive('sports', loadLiveSports(), (list) => { sports = list ?? []; });
+  };
   const paint = () => {
     const query = input.value.trim().toLocaleLowerCase();
     const rank = (label) => (label.toLocaleLowerCase().startsWith(query) ? 0 : 1);
@@ -1278,13 +1400,57 @@ function openPalette() {
       ? favoritePool.filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
       : favoritePool.slice(0, 6)).map(favoriteItem);
     const layouts = (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem);
-    const events = (query
-      ? ppv.filter((event) => has(event.name, query) || has(event.category, query) || has(event.tag, query) || has(event.source, query)).slice(0, 5)
-      : ppv.slice(0, 4)).map(ppvItem);
     const found = (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6));
-    items = [...favorites, ...events, ...layouts, ...found];
+    let liveChannels = [];
+    let liveMatches = [];
+    let sportsItems = [];
+    if (query.length >= 2) {
+      const live = searchLiveSources({ catalog, zlive, daddy, ppv, matchora, sports }, query);
+      liveChannels = live.channels.map((group) => {
+        const providers = [...new Set(group.sources.map((source) => source.label))];
+        const feeds = group.sources.length > providers.length ? `${group.sources.length} feeds` : '';
+        return {
+          group: 'Live channels',
+          label: group.label,
+          sub: [...providers, feeds, group.sources[0]?.category].filter(Boolean).join(' · '),
+          icon: 'live',
+          run: () => closeAnd(() => {
+            if (group.sources.length === 1) addSearchChannel(group.sources[0], target);
+            else chooseSearchChannel(group, target);
+          }),
+        };
+      });
+      liveMatches = live.matches.map((match) => ({
+        group: 'Live matches',
+        label: match.label,
+        sub: match.sub,
+        icon: match.live ? 'live' : 'calendar',
+        run: () => closeAnd(() => {
+          if (match.source === 'daddy') {
+            const links = match.event.channels ?? [];
+            if (links.length > 1) chooseDaddyLink(match.event, target);
+            else if (!links.length) toast('No link for this event.');
+            else addDaddyLive(match.event, links[0], target);
+          } else if (match.source === 'ppv') addPPV(match.event, target);
+          else addMatchora(match.event, target);
+        }),
+      }));
+      sportsItems = live.sports.map((game) => ({
+        group: 'Sports',
+        label: game.label,
+        sub: game.meta,
+        icon: 'sports',
+        run: () => closeAnd(() => {
+          if (game.channel) addStream(game.channel.input, target, game.channel.name);
+          else openBoxScore(game.match);
+        }),
+      }));
+    }
+    const ppvItems = query ? [] : ppv.slice(0, 4).map(ppvItem);
+    items = [...favorites, ...liveChannels, ...sportsItems, ...liveMatches, ...ppvItems, ...layouts, ...found];
     const groups = new Map();
     for (const item of items) groups.set(item.group, [...(groups.get(item.group) || []), item]);
+    const loading = query.length >= 2 && livePending > 0;
     results.replaceChildren(...(items.length
       ? [...groups].flatMap(([group, list]) => [
         el('p', { class: 'palette-group', textContent: group }),
@@ -1298,7 +1464,8 @@ function openPalette() {
           el('b', { textContent: item.label }),
           item.sub ? el('small', { textContent: item.sub }) : null))),
       ])
-      : [el('p', { class: 'palette-empty', textContent: query ? 'Nothing matches.' : 'Type to find something.' })]));
+      : [el('p', { class: 'palette-empty', textContent: query ? (loading ? 'Searching live sources…' : 'Nothing matches.') : 'Type to find something.' })]));
+    if (items.length && loading) results.append(el('p', { class: 'palette-hint', textContent: 'Searching live sources…' }));
     active = Math.min(active, Math.max(0, items.length - 1));
     mark();
   };
@@ -1307,7 +1474,7 @@ function openPalette() {
     buttons.forEach((button, index) => button.classList.toggle('is-on', index === active));
     buttons[active]?.scrollIntoView({ block: 'nearest' });
   };
-  input.addEventListener('input', () => { active = 0; paint(); });
+  input.addEventListener('input', () => { active = 0; ensureLive(); paint(); });
   input.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown') { event.preventDefault(); active = Math.min(items.length - 1, active + 1); mark(); }
     else if (event.key === 'ArrowUp') { event.preventDefault(); active = Math.max(0, active - 1); mark(); }
@@ -1317,8 +1484,12 @@ function openPalette() {
   openDialog(box);
   paint();
   input.focus();
-  loadPPV().then((events) => { if (!box.open) return; ppv = events ?? []; paint(); }).catch(() => {});
+  if (!ppvLoaded) {
+    ppvLoaded = true;
+    loadPPV().then((events) => { if (!box.open) return; ppv = events ?? []; paint(); }).catch(() => {});
+  }
 }
+
 
 /** The TikTok accounts a feed tile can switch to, from its own name in the strip. */
 function buildAccountMenu(id) {
