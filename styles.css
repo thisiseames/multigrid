@@ -2026,6 +2026,19 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 
 /* Add stream: the Podcasts tab in Favorites (a show's episodes) */
 .pod-view { display: flex; flex-direction: column; }
+/* Library: a folder on this computer, in Favorites */
+.lib-modes { padding: 2px 0 8px; border-bottom: 0; }
+.lib-head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+.lib-head .addp-label { flex: 1; font-size: 11px; }
+.lib-head .text-button { font-size: 12px; }
+.lib-intro { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 2px 0 8px; color: var(--text-2); }
+.lib-intro p { margin: 0; max-width: 520px; font-size: 13px; line-height: 1.45; }
+.lib-intro .addp-file { margin: 4px 0 0; align-self: stretch; }
+.lib-intro .text-button { font-size: 12px; }
+.lib-note { font-size: 11.5px !important; color: var(--text-2); }
+.lib-seasons { padding: 4px 0 8px; border-bottom: 0; }
+.lib-next { margin: 0 0 8px; align-self: stretch; }
+
 .pod-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 8px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--text-2); font-size: 13px; }
 .pod-back b { color: var(--text); font-weight: 650; }
 .pod-back span:not(:first-child)::after { content: '›'; margin-left: 6px; color: var(--text-2); }
