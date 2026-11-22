@@ -2715,3 +2715,5 @@ body.is-phone .match-watch:hover { background: rgba(255,255,255,.2); }
 .hero-info { bottom: 78px; gap: 8px; }
 .hero-title { font-size: clamp(28px, 3.1vw, 46px); }
 .hero-desc { -webkit-line-clamp: 2; }
+/* Splash and home screen showing (laptop): the top bar is the same black, with no line under it. */
+body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-shadow: none; transition: background .6s ease, border-color .6s ease; }

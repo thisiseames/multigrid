@@ -1306,6 +1306,8 @@ function render() {
   // The laptop's empty screen plays MULTIGRID's opening sound as the wordmark draws together.
   if (wallNow && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
   $('stage').classList.toggle('is-empty-wall', wallNow);
+  // The top bar goes the same black as the splash and home screen, so it's one black screen.
+  document.body.classList.toggle('is-wall', wallNow && !onPhoneScreen());
   syncHome(wallNow);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
