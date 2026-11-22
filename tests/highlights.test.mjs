@@ -1,33 +1,49 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickHighlights } from '../tools/build-highlights.mjs';
+import { matchUploads, names, parseFeed } from '../tools/build-highlights.mjs';
 
-const game = { home: { name: 'Coventry', full: 'Coventry City', nick: 'Sky Blues', abbr: 'COV' }, away: { name: 'C Palace', full: 'Crystal Palace', nick: 'Eagles', abbr: 'CRY' } };
-const r = (id, channel, title, ago = '2h ago') => ({ id, channel, title, ago });
+const kick = Date.parse('2026-11-21T15:00:00Z');
+const later = (hours) => kick + hours * 3600000;
+const team = (name, full, nick, place, abbr) => ({ name, full, nick, place, abbr });
+const game = { start: kick, home: team('Newcastle', 'Newcastle United', 'Newcastle', 'Newcastle', 'NEW'), away: team('Arsenal', 'Arsenal', 'Arsenal', 'Arsenal', 'ARS') };
+const up = (id, title, hours = 3) => ({ id, title, published: later(hours) });
 
-test('only official highlights of this game count: league, rights holders and the two clubs', () => {
-  const picks = pickHighlights([
-    r('fan', 'CHEFON FF', 'Coventry City - Crystal Palace | 3-2 | Highlights'),
-    r('away', 'Crystal Palace FC', 'Match Highlights | Coventry City 3-2 Crystal Palace'),
-    r('home', 'Coventry City FC', 'Coventry City 3-2 Crystal Palace | Premier League Highlights'),
-    r('talk', 'Coventry City FC', 'Frank Lampard reaction | Coventry City vs Crystal Palace'),
-    r('league', 'Premier League', 'EXTENDED HIGHLIGHTS | Coventry City v Crystal Palace'),
-    r('old', 'Premier League', 'HIGHLIGHTS | Coventry City v Crystal Palace', '3 months ago'),
-    r('other', 'Coventry City FC', 'Highlights | Coventry City 1-0 Leeds'),
-  ], game, ['Premier League']);
-  assert.deepEqual(picks.map((pick) => pick.id), ['league', 'home', 'away']);
+test("a league or broadcaster's upload must name both teams and be highlights from after kick-off", () => {
+  const got = matchUploads([
+    up('yes', 'Newcastle United vs. Arsenal FC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada'),
+    up('other', 'Chelsea FC vs. Leeds United | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada'),
+    up('before', 'Newcastle United vs. Arsenal FC | PREMIER LEAGUE HIGHLIGHTS', -20),
+    up('preview', 'Newcastle United vs. Arsenal FC | PREVIEW and highlights of the last meeting'),
+  ], game, { kind: 'league', rank: 3 });
+  assert.deepEqual(got.map((item) => item.id), ['yes']);
 });
 
-test('a club channel only needs to name the other side ("SPURS 2 TOWN 0")', () => {
-  const spurs = { home: { name: 'Spurs', full: 'Tottenham Hotspur', nick: 'Spurs', abbr: 'TOT' }, away: { name: 'Ipswich', full: 'Ipswich Town', nick: 'Tractor Boys', abbr: 'IPS' } };
-  assert.deepEqual(pickHighlights([r('ips', 'Ipswich Town FC', 'HIGHLIGHTS | SPURS 2 TOWN 0')], spurs, []).map((pick) => pick.id), ['ips']);
+test("a club's own upload counts when it shows this game's score or names the other side (clubs name games their own way)", () => {
+  const lyon = { start: kick, home: { ...team('Lille', 'Lille', 'Lille', 'Lille', 'LIL'), score: '0' }, away: { ...team('Lyon', 'Lyon', 'Lyon', 'Lyon', 'LYON'), score: '1' } };
+  const got = matchUploads([up('ol', 'LOSC 0-1 OL : le résumé'), up('talk', 'Fonseca après LOSC-OL : conférence de presse'), up('old', 'OL 2-0 OM : résumé', -50), up('reserves', 'Lille B 4-0 Créteil : le résumé')], lyon, { kind: 'club', rank: 2 });
+  assert.deepEqual(got.map((item) => item.id), ['ol']);
+  assert.ok(names('Olympique Lyonnais', lyon.away));
+  assert.ok(!names('Olympique de Marseille', lyon.away));
 });
 
+test("a channel's feed gives each upload's id, title and time", () => {
+  const xml = '<feed><entry><yt:videoId>abcDEF12345</yt:videoId><title>REAL MADRID 2 - 1 CELTA | RESUMEN LALIGA EA SPORTS</title><published>2026-11-21T22:13:00+00:00</published></entry><entry><yt:videoId>x</yt:videoId><title>Q&amp;A</title><published>2026-11-21T10:00:00+00:00</published></entry></feed>';
+  const feed = parseFeed(xml);
+  assert.equal(feed.length, 2);
+  assert.equal(feed[0].title, 'REAL MADRID 2 - 1 CELTA | RESUMEN LALIGA EA SPORTS');
+  assert.equal(feed[1].title, 'Q&A');
+  assert.equal(feed[0].published, Date.parse('2026-11-21T22:13:00Z'));
+});
 
-test('US-only broadcasters never count; Canadian ones do', () => {
-  const picks = pickHighlights([
-    r('nbc', 'NBC Sports', 'Coventry City v Crystal Palace | PREMIER LEAGUE HIGHLIGHTS'),
-    r('tsn', 'TSN', 'Coventry City vs. Crystal Palace HIGHLIGHTS'),
-  ], game, ['Premier League', 'TSN']);
-  assert.deepEqual(picks.map((pick) => pick.id), ['tsn']);
+import { isClubChannel } from '../tools/build-highlights.mjs';
+
+test("a club's channel must really be the club's", () => {
+  const nice = { name: 'Nice', full: 'Nice' };
+  assert.ok(isClubChannel('OGC Nice', nice));
+  assert.ok(!isClubChannel('Ah Nice', nice));
+  assert.ok(isClubChannel('Atlanta Hawks', { name: 'Hawks', full: 'Atlanta Hawks' }));
+  assert.ok(isClubChannel('Olympique Lyonnais', { name: 'Lyon', full: 'Lyon' }));
+  assert.ok(!isClubChannel('Lyon Fans TV', { name: 'Lyon', full: 'Lyon' }));
+  assert.ok(isClubChannel('Real Madrid', { name: 'Real Madrid', full: 'Real Madrid' }));
+  assert.ok(!isClubChannel('Real Madrid Highlights', { name: 'Real Madrid', full: 'Real Madrid' }));
 });

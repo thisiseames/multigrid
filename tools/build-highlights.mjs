@@ -1,15 +1,14 @@
 // Builds highlights.json: for each finished game in your leagues (src/leagues.js), up to three
-// official highlights videos on YouTube that other sites may play. Runs inside the Reader's job,
-// about every 30 minutes.
+// official highlights videos that play in Canada and inside other sites. Runs inside the Reader's
+// job (about every 25 minutes) and on request (.github/workflows/highlights.yml).
 //
-// Only the league's own channel, a broadcaster that holds the rights, or either club's own channel
-// counts, and only broadcasters that show the league in Canada; re-uploads by anyone else never
-// do. A video whose owner turned off playing on other sites (YouTube's oEmbed answers 401) can't
-// play in a tile, so it's left out. If YouTube still refuses one when it's played, the page moves
-// on to the game's next video.
-//
-// YouTube stops answering a computer that searches too fast, so searches are spaced out, each run
-// does only a few, and a run stops at the first sign of YouTube's bot check.
+// Where they come from: each league's official source for Canada (below), and both clubs' own
+// channels. Nothing is searched for: GitHub's computers are in the US, and YouTube's search there
+// hides everything that doesn't play in the US (the leagues' own highlights, Fubo Canada's...).
+// Instead each source's own list of recent uploads is read (its public feed, which isn't filtered
+// by country), and an upload is matched to a game by its title and when it went up.
+// A video whose owner turned off playing on other sites (oEmbed answers 401) is left out; if
+// YouTube still refuses one when it's played, the page moves on to the game's next video.
 
 import fs from 'node:fs';
 import { MY_LEAGUES } from '../src/leagues.js';
@@ -20,44 +19,44 @@ const BROWSER = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537
 const HOUR = 3600000;
 const LOOK_FOR = 30 * HOUR; // keep looking this long after kick-off
 const FORGET = 4 * 24 * HOUR;
-const MAX_SEARCHES = Number(process.env.HIGHLIGHT_SEARCHES || 14);
-const GAP = Number(process.env.HIGHLIGHT_GAP_MS || 12000);
-const BUDGET = Date.now() + Number(process.env.HIGHLIGHT_MINUTES || 6) * 60000;
+const MAX_LOOKUPS = Number(process.env.HIGHLIGHT_LOOKUPS || 12); // club channels looked up per run
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
-// Besides the clubs' own channels: each league's own channel, and the broadcasters that show
-// your leagues in Canada (you're in Canada, so their highlights play). US-only broadcasters
-// (NBC Sports, beIN SPORTS USA, CBS, ESPN FC...) are left out: their highlights don't play here.
-const CANADA = ['TSN', 'Sportsnet', 'DAZN Canada', 'Fubo Canada', 'fuboTV Canada', 'Fubo Sports Canada', 'OneSoccer', 'TVA Sports', 'RDS', 'CBC Sports'];
-const OFFICIAL = {
-  pl: ['Premier League', ...CANADA],
-  laliga: ['LALIGA EA SPORTS', 'LaLiga', 'LALIGA', 'LaLiga Hypermotion', ...CANADA],
-  bundesliga: ['Bundesliga', 'Bundesliga Official', ...CANADA],
-  ligue1: ["Ligue 1 McDonald's", 'Ligue 1', 'Ligue 1 Uber Eats', 'LIGUE 1+', ...CANADA],
-  ucl: ['UEFA', 'UEFA Champions League', ...CANADA],
-  unl: ['UEFA', ...CANADA],
-  nfl: ['NFL', ...CANADA],
-  nba: ['NBA', ...CANADA],
+// Each league's official highlights for Canada, as YouTube channel ids. Checked Nov 22, 2026:
+// each had that day's games. Clubs' own channels are added per game.
+const TSN = 'UC--i2rV5NCxiEIPefr3l-zQ';
+const SPORTSNET = 'UCVhibwHk4WKw4leUt6JfRLg';
+export const SOURCES = {
+  pl: { UCD2lJITnvzflNhOqQckMpQg: 'Fubo Canada' },
+  laliga: { 'UCTv-XvfzLX3i4IGWAm4sbmA': 'LALIGA EA SPORTS' },
+  bundesliga: { UC6UL29enLNe4mqwTfAyeNuw: 'Bundesliga' },
+  ligue1: {},
+  ucl: {},
+  unl: {},
+  nfl: { UCDVYQ4Zhbm3S2dlz7P1GBDg: 'NFL', [TSN]: 'TSN' },
+  nba: { UCWJ2lWNubArHWmf3FIHbfcQ: 'NBA', [TSN]: 'TSN', [SPORTSNET]: 'Sportsnet' },
 };
 
-// The word each league's own channel uses for highlights, and the start of its channel's name.
-const LOCAL = { laliga: 'resumen', bundesliga: 'Zusammenfassung', ligue1: 'résumé' };
-const LEAGUE_CHANNEL = { pl: 'Premier League', laliga: 'LALIGA', bundesliga: 'Bundesliga', ligue1: 'Ligue 1', ucl: 'UEFA', unl: 'UEFA', nfl: 'NFL', nba: 'NBA' };
-
-const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and']);
+const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and', 'vs']);
 export const words = (text) => String(text || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
   .split(/[^a-z0-9]+/).filter((word) => word.length > 1 && !GENERIC.has(word));
-const squash = (text) => words(text).join('');
 const HIGHLIGHT_WORDS = /highlight|resumen|r[eé]sum[eé]|zusammenfassung|recap|all goals|extended|melhores momentos|sintesi/i;
-const NOT_THE_GAME = /preview|press conference|reaction|predict|live stream|watchalong|podcast|interview|training|\bfifa\b|\bpes\b|efootball|madden|nba 2k|simulation/i;
+const NOT_THE_GAME = /preview|press conference|reaction|predict|watchalong|podcast|interview|training|mic'd up|\bfifa\b|efootball|madden|2k\d\d|simulation|#shorts/i;
 
 const dayParam = (time) => new Date(time).toLocaleDateString('en-CA', { timeZone: 'America/Toronto' }).replaceAll('-', '');
 
 const teamOf = (competitor) => {
   const team = competitor?.team ?? {};
-  return { name: team.shortDisplayName || team.displayName || '', full: team.displayName || '', nick: team.name || '', abbr: team.abbreviation || '', score: competitor?.score ?? '' };
+  return { id: String(team.id ?? ''), name: team.shortDisplayName || team.displayName || '', full: team.displayName || '', nick: team.name || '', place: team.location || '', abbr: team.abbreviation || '', score: competitor?.score ?? '' };
 };
-const teamWords = (team) => new Set([...words(team.full), ...words(team.name), ...words(team.nick), ...words(team.abbr)]);
+/** Every way a title might name a team: "Manchester United", "Man United", "Red Devils"... */
+const teamWords = (team) => new Set([...words(team.full), ...words(team.name), ...words(team.nick), ...words(team.place), ...words(team.abbr)].filter((word) => word.length > 2));
+
+/** Whether a title names this team: one of its words, or a word starting with one ("Lyonnais" for Lyon). */
+export function names(title, team) {
+  const have = words(title);
+  return [...teamWords(team)].some((word) => have.some((got) => got === word || (word.length >= 4 && got.startsWith(word))));
+}
 
 /** Finished games in one league from yesterday and today (Toronto time). */
 async function finishedGames(league, now) {
@@ -77,64 +76,81 @@ async function finishedGames(league, now) {
   return games;
 }
 
-/** The videos on YouTube's results page: id, title, channel and how long ago. */
-export function parseResults(html) {
-  const found = [];
-  const seen = new Set();
-  for (const match of String(html).matchAll(/"videoRenderer":\{"videoId":"([\w-]{11})"/g)) {
-    const id = match[1];
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const chunk = html.slice(match.index, match.index + 8000);
-    const title = chunk.match(/"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*)"/)?.[1] ?? '';
-    const channel = chunk.match(/"ownerText":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*)"/)?.[1] ?? '';
-    const ago = chunk.match(/"publishedTimeText":\{"simpleText":"([^"]*)"/)?.[1] ?? '';
-    const unescape = (text) => { try { return JSON.parse(`"${text}"`); } catch { return text; } };
-    found.push({ id, title: unescape(title), channel: unescape(channel), ago });
-  }
-  return found;
+/** A channel's recent uploads from its public feed: [{ id, title, published }]. */
+export function parseFeed(xml) {
+  const decode = (text) => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  return [...String(xml).matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(([, entry]) => ({
+    id: entry.match(/<yt:videoId>([^<]+)/)?.[1] ?? '',
+    title: decode(entry.match(/<title>([^<]*)/)?.[1] ?? ''),
+    published: Date.parse(entry.match(/<published>([^<]+)/)?.[1] ?? ''),
+  })).filter((item) => item.id && Number.isFinite(item.published));
 }
 
-// "2h ago", "45 minutes ago", "1 day ago": within about a day.
-const isRecent = (ago) => !ago || /^\s*(?:streamed\s+)?(?:\d+\s*(?:s|sec|seconds?|m|min|minutes?|h|hr|hours?)|1\s*(?:d|day))\s+ago/i.test(ago);
+const feeds = new Map();
+function uploadsOf(channelId) {
+  if (!feeds.has(channelId)) {
+    // UULF…: the channel's uploads without Shorts or live streams.
+    feeds.set(channelId, fetch(`https://www.youtube.com/feeds/videos.xml?playlist_id=UULF${channelId.slice(2)}`, { signal: AbortSignal.timeout(15000) })
+      .then((response) => (response.ok ? response.text() : '')).then(parseFeed).catch(() => []));
+  }
+  return feeds.get(channelId);
+}
 
 /**
- * Which of the results are this game's official highlights, best first. A result counts when its
- * channel is the league's, a rights holder's or either club's, its title says it's highlights and
- * names the other side (or both sides, from a league or broadcaster), and it's from the last day.
+ * Whether a channel's name is the club's own: it holds the club's whole name ("Atlanta Hawks",
+ * "OGC Nice", "Olympique Lyonnais" for Lyon) and is either just that or says it's a club. "Ah Nice"
+ * (a singer) or a fan channel never is.
  */
-export function pickHighlights(results, game, official = []) {
-  const home = teamWords(game.home);
-  const away = teamWords(game.away);
-  const names = (team) => [team.full, team.name].map(squash).filter(Boolean);
-  const officialNames = official.map(squash);
-  const picks = [];
-  for (const result of results) {
-    if (!HIGHLIGHT_WORDS.test(result.title) || NOT_THE_GAME.test(result.title) || !isRecent(result.ago)) continue;
-    const channel = squash(result.channel);
-    const title = new Set(words(result.title));
-    const mentions = (set) => [...set].some((word) => title.has(word));
-    const club = (team) => names(team).some((name) => name && (channel === name || channel.startsWith(name) || (name.length > 5 && name.startsWith(channel) && channel.length > 4)));
-    let score = 0;
-    const leagueChannel = officialNames.includes(channel);
-    if (leagueChannel) score = mentions(home) && mentions(away) ? 3 : 0;
-    else if (club(game.home)) score = mentions(away) ? 2 : 0;
-    else if (club(game.away)) score = mentions(home) ? 1.5 : 0;
-    if (!score) continue;
-    if (/extended/i.test(result.title)) score += 0.5;
-    picks.push({ ...result, score });
-  }
-  return picks.sort((a, b) => b.score - a.score);
+export function isClubChannel(channel, team) {
+  const squash = (text) => words(text).join('');
+  const name = squash(channel);
+  const full = squash(team.full || team.name);
+  if (!full || /\bfans?\b|news|daily|zone|talk|podcast|nation|central|world|highlights?\b/i.test(channel)) return false;
+  const holds = name.includes(full) || (full.length >= 4 && words(channel).some((word) => word.startsWith(full)));
+  if (!holds) return false;
+  const club = /\b(fc|cf|afc|ac|as|sc|ogc|losc|rc|ss|ssc|sv|tsg|vfb|vfl|bvb|rb|cd|ud|olympique|club|official|football|futbol|fútbol|calcio)\b/i;
+  return name === full || club.test(channel) || squash(team.full).split('').length >= 8 && name.startsWith(full);
 }
 
-async function search(query) {
-  // sp=EgIIAw%3D%3D: uploaded this week.
-  const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIIAw%253D%253D&hl=en&gl=CA`, {
+/** A club's own YouTube channel: the top verified channel named after it. '' if none; null if YouTube didn't answer. */
+async function findClubChannel(team) {
+  const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(team.full || team.name)}&sp=EgIQAg%253D%253D&hl=en`, {
     headers: { 'User-Agent': BROWSER, 'Accept-Language': 'en-US' }, redirect: 'manual', signal: AbortSignal.timeout(15000),
-  });
-  if (response.status !== 200) return null; // a redirect here is YouTube's bot check
+  }).catch(() => null);
+  if (!response || response.status !== 200) return null;
   const html = await response.text();
-  return html.includes('ytInitialData') ? parseResults(html) : null;
+  const found = [...html.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"((?:[^"\\]|\\.)*)"/g)];
+  for (const [index, match] of found.entries()) {
+    const chunk = html.slice(match.index, found[index + 1]?.index ?? match.index + 8000);
+    const verified = /BADGE_STYLE_TYPE_VERIFIED"/.test(chunk);
+    if (verified && isClubChannel(match[2], team)) return match[1];
+  }
+  return '';
+}
+
+/**
+ * This game's highlights among some uploads. From a league or broadcaster the title must name
+ * both teams; from a club's own channel it only has to say it's highlights, since a club plays
+ * once in a day. Either way it went up after kick-off, within LOOK_FOR.
+ */
+export function matchUploads(uploads, game, { kind, rank }) {
+  return uploads.filter((upload) => upload.published > game.start && upload.published - game.start < LOOK_FOR
+      && HIGHLIGHT_WORDS.test(upload.title) && !NOT_THE_GAME.test(upload.title)
+      && (kind === 'club'
+        // A club's channel also posts its other teams' games (reserves, women): the title must show
+        // this game's score or name the other side.
+        ? hasScore(upload.title, game) || names(upload.title, game.home) && names(upload.title, game.away) || names(upload.title, kind === 'club' && rank >= 2 ? game.away : game.home)
+        : names(upload.title, game.home) && names(upload.title, game.away)))
+    // One player's highlights come after the game's own.
+    .map((upload) => ({ ...upload, rank: rank - (/\bpts\b|player highlights|^[^|]*highlights vs\.?/i.test(upload.title) ? 1 : 0) }));
+}
+
+/** "0-1", "0 - 1", "0:1", "(0-1)": this game's score, either way round. */
+export function hasScore(title, game) {
+  const [a, b] = [game.home.score, game.away.score].map((score) => String(score ?? '').trim());
+  if (a === '' || b === '') return false;
+  const score = (x, y) => new RegExp(`(^|[^\\d])${x}\\s*[-–:]\\s*${y}([^\\d]|$)`).test(title);
+  return score(a, b) || score(b, a);
 }
 
 /** 200: other sites may play it. 401: its owner said no. */
@@ -143,55 +159,57 @@ const embeddable = (id) => fetch(`https://www.youtube.com/oembed?format=json&url
 
 async function main() {
   const now = Date.now();
-  let saved = { games: {} };
+  let saved = {};
   try { saved = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch { /* first run */ }
-  const games = Object.fromEntries(Object.entries(saved.games ?? {}).filter(([, game]) => now - game.start < FORGET));
+  // Games found the old way (by searching) are found again from the channels.
+  const games = Object.fromEntries(Object.entries(saved.games ?? {}).filter(([, game]) => now - game.start < FORGET && game.sources === 'feeds'));
+  const clubs = saved.clubs ?? {};
 
   const finished = (await Promise.all(MY_LEAGUES.map((league) => finishedGames(league, now)))).flat()
-    .filter((game) => now - game.start < LOOK_FOR && !(games[game.id]?.videos?.length && games[game.id]?.sources === 'canada'))
-    // Newest first: those are the ones you're most likely to want.
+    .filter((game) => now - game.start < LOOK_FOR && (games[game.id]?.videos?.length ?? 0) < 3)
     .sort((a, b) => b.start - a.start);
 
-  let searches = 0;
-  let blocked = false;
+  let lookups = 0;
   for (const game of finished) {
-    if (searches >= MAX_SEARCHES || Date.now() > BUDGET) break;
-    if (searches) await pause(GAP);
-    searches++;
-    const queries = [
-      `${game.home.full} vs ${game.away.full} highlights`,
-      LOCAL[game.league.id] ? `${game.home.full} ${game.away.full} ${LOCAL[game.league.id]}` : '',
-      `${LEAGUE_CHANNEL[game.league.id] || game.league.name} ${game.home.full} ${game.away.full} highlights`,
-    ].filter(Boolean);
-    const videos = [];
-    const turnedDown = [];
-    for (const [index, query] of queries.entries()) {
-      if (videos.length || searches >= MAX_SEARCHES + 10) break;
-      if (index) { await pause(GAP); searches++; }
-      const results = await search(query);
-      if (!results) { blocked = true; break; }
-      if (process.env.HIGHLIGHT_DEBUG) console.log(`    [${query}] ${results.slice(0, 8).map((result) => `${result.channel} (${result.ago})`).join(' | ')}`);
-      for (const pick of pickHighlights(results, game, OFFICIAL[game.league.id] ?? [])) {
-        if (videos.length >= 3) break;
-        if (videos.some((video) => video.id === pick.id)) continue;
-        await pause(300);
-        if (!(await embeddable(pick.id))) { turnedDown.push(`${pick.channel} (not on other sites)`); continue; }
-        videos.push({ id: pick.id, channel: pick.channel, title: pick.title });
-      }
+    for (const team of [game.home, game.away]) {
+      const key = `${game.league.id}:${team.id}`;
+      if (key in clubs || lookups >= MAX_LOOKUPS) continue;
+      lookups++;
+      await pause(3000);
+      const channel = await findClubChannel(team);
+      if (channel !== null) clubs[key] = channel;
     }
-    if (blocked) break;
+    const sources = [
+      ...Object.keys(SOURCES[game.league.id] ?? {}).map((id) => ({ id, kind: 'league', rank: 3 })),
+      clubs[`${game.league.id}:${game.home.id}`] ? { id: clubs[`${game.league.id}:${game.home.id}`], kind: 'club', rank: 2 } : null,
+      clubs[`${game.league.id}:${game.away.id}`] ? { id: clubs[`${game.league.id}:${game.away.id}`], kind: 'club', rank: 1.5 } : null,
+    ].filter(Boolean);
+    const found = [];
+    for (const source of sources) found.push(...matchUploads(await uploadsOf(source.id), game, source));
+    found.sort((a, b) => b.rank - a.rank || a.published - b.published);
+
+    const videos = (games[game.id]?.videos ?? []).slice();
+    for (const pick of found) {
+      if (videos.length >= 3) break;
+      if (videos.some((video) => video.id === pick.id)) continue;
+      await pause(200);
+      if (await embeddable(pick.id)) videos.push({ id: pick.id, title: pick.title });
+    }
     games[game.id] = {
       league: game.league.name,
       title: `${game.home.name} ${game.home.score}–${game.away.score} ${game.away.name}`,
       start: game.start,
-      sources: 'canada',
+      sources: 'feeds',
       videos,
     };
-    if (turnedDown.length) console.log(`  left out: ${turnedDown.join(', ')}`);
-    console.log(`${game.league.name}: ${games[game.id].title} → ${videos.length ? videos.map((video) => video.channel).join(', ') : 'none yet'}`);
+    console.log(`${game.league.name}: ${games[game.id].title} → ${videos.length ? videos.map((video) => video.title.slice(0, 70)).join(' | ') : 'none yet'}`);
+    if (process.env.HIGHLIGHT_DEBUG && !videos.length) {
+      for (const source of sources) console.log(`    ${source.kind} ${source.id}: ${(await uploadsOf(source.id)).slice(0, 5).map((upload) => `${new Date(upload.published).toISOString().slice(5, 16)} ${upload.title.slice(0, 50)}`).join(' | ')}`);
+      for (const team of [game.home, game.away]) if (!clubs[`${game.league.id}:${team.id}`]) console.log(`    no channel found for ${team.full}`);
+    }
   }
-  fs.writeFileSync(OUT, `${JSON.stringify({ updated: now, games }, null, 1)}\n`);
-  console.log(`highlights.json: ${Object.values(games).filter((game) => game.videos.length).length} games with highlights; ${searches} searches${blocked ? '; stopped: YouTube asked for its bot check' : ''}.`);
+  fs.writeFileSync(OUT, `${JSON.stringify({ updated: now, games, clubs }, null, 1)}\n`);
+  console.log(`highlights.json: ${Object.values(games).filter((game) => game.videos.length).length} games with highlights; ${Object.values(clubs).filter(Boolean).length} club channels known (${lookups} looked up this run).`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main().catch((error) => { console.error(error); process.exitCode = 0; });

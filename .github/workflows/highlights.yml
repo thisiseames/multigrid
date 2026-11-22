@@ -22,7 +22,7 @@ jobs:
           node-version: 22
       - run: node tools/build-highlights.mjs
         env:
-          HIGHLIGHT_SEARCHES: '40'
+          HIGHLIGHT_LOOKUPS: '80'
           HIGHLIGHT_MINUTES: '15'
           HIGHLIGHT_DEBUG: '1'
       - name: Save the highlights
