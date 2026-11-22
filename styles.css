@@ -211,12 +211,13 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 .channel-jump { width: 24px; color: var(--text-2); }
 .channel-jump svg { width: 15px; height: 15px; }
 .channel-jump:hover { color: var(--text); }
-.channel.is-paused .channel-name { color: var(--text-2); }
+.channel-name { color: #fff; }
+.channel.is-paused .channel-name { color: #fff; }
 .channel:has(.channel-play) { padding-left: 2px; gap: 3px; }
 .channel:has(.channel-play) .channel-name { margin-left: 3px; }
 .channel-mute.is-on { color: var(--accent); }
 .channel-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.channel.is-muted .channel-name { color: var(--text-2); }
+.channel.is-muted .channel-name { color: #fff; }
 .channel-level { width: 84px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .channel.is-muted .channel-level { opacity: 0.6; }
 .channel.no-control { padding-left: 10px; color: var(--text-2); cursor: help; }
