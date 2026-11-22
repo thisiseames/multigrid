@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --bg: #0b0b0c;
+  --bg: #000;
   --chrome: #0d0d10;
   --surface: #161618;
   --raised: #1f1f22;
@@ -473,7 +473,7 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 }
 
 /* Empty slot */
-.tile.is-empty { background: #0f0f10; box-shadow: inset 0 0 0 1px var(--border); }
+.tile.is-empty { background: #000; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
 .slot-button {
   flex: 1;
   width: 100%;
@@ -1705,12 +1705,12 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .live-badge.is-offline { background: rgba(255,255,255,.08); color: var(--text-2); }
 
 /* Ticker */
-.ticker { flex: none; height: 34px; display: flex; align-items: stretch; background: var(--chrome); border-top: 1px solid var(--border-strong); overflow: hidden; padding-bottom: env(safe-area-inset-bottom); box-sizing: content-box; }
+.ticker { flex: none; height: 34px; display: flex; align-items: stretch; background: #000; border-top: 1px solid var(--border-strong); overflow: hidden; padding-bottom: env(safe-area-inset-bottom); box-sizing: content-box; }
 .ticker[hidden] { display: none; }
 .ticker-box[hidden] { display: none; }
 .ticker-box { flex: none; max-width: 48%; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 10px; background: #1c1c21; border-right: 1px solid var(--border-strong); color: var(--text); font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; }
 .ticker-box.is-live { background: #2a1416; }
-.ticker-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; }
+.ticker-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 4px; background: #f5f5f7; color: #0b0b0d; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; }
 .ticker-box.is-live .ticker-tag { background: #e5484d; color: #fff; }
 .ticker-box.is-live .ticker-tag .live-dot { background: #fff; }
 .ticker-score { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
