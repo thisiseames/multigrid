@@ -1868,7 +1868,7 @@ body.remote-open { overflow: hidden; }
 .strip-actions .strip-more { display: none; }
 
 @media (max-width: 640px), (hover: none) and (max-height: 500px) {
-  :root { --tabbar: 56px; --phonebar-h: 52px; }
+  :root { --tabbar: 60px; --phonebar-h: 52px; }
   .phone-only { display: inline; }
   .add-button .wide-only { display: none; }
 
@@ -1956,7 +1956,7 @@ body.remote-open { overflow: hidden; }
     position: relative;
     z-index: 60;
   }
-  .tab { flex: 1; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text-2); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
+  .tab { flex: 1; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 12px; gap: 3px; color: var(--text-2); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
   .tab[hidden] { display: none; }
   .tab svg { width: 24px; height: 24px; }
   .tab.is-on { color: var(--accent); }
@@ -2087,7 +2087,7 @@ body.remote-open { overflow: hidden; }
 }
 @media (hover: none) and (max-height: 500px) {
   :root { --tabbar: 46px; --phonebar-h: 46px; }
-  .tab { flex-direction: row; gap: 7px; font-size: 12px; }
+  .tab { flex-direction: row; justify-content: center; padding-top: 0; gap: 7px; font-size: 12px; }
   .tab svg { width: 20px; height: 20px; }
   .sheet-frame { top: calc(env(safe-area-inset-top) + 10px); }
   body.is-phone .popover.is-sheet { top: calc(env(safe-area-inset-top) + 10px + 64px) !important; }
