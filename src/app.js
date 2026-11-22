@@ -96,6 +96,9 @@ const grid = new GridView($('grid'), $('stage'), env, {
     tile.input = `note:${encodeURIComponent(text)}`;
     saveCurrent(ws);
   },
+  // A highlights video YouTube won't play here (not in this country, or not on other sites): the
+  // tile moves on to the game's next official video. True when it did.
+  onUnplayable: (id) => nextHighlights(id),
   // A playlist moved to its next episode: the tile's name follows it, and the place stays saved.
   onEpisode: (id, name) => {
     const tile = tileById(id);
@@ -1331,6 +1334,7 @@ function gameRow(game) {
   // Every row has the same small Box score button on the right, so the rows stay uniform.
   const boxButton = el('span', { class: 'mrow-box', role: 'button', tabIndex: 0, title: 'Open the box score as a tile', aria: { label: `Box score: ${gameName(game)}` },
     on: { click(event) { event.stopPropagation(); openBoxScore(game); }, keydown(event) { if (event.key === 'Enter') { event.stopPropagation(); openBoxScore(game); } } } }, icon('table', 15));
+  row.querySelector('.mrow-hl')?.remove();
   row.querySelector('.mrow-end')?.prepend(boxButton);
   const watch = row.querySelector('.match-watch');
   if (!watch) return row;
@@ -3994,6 +3998,62 @@ function fillDetails(match, holder, refresh = false) {
 }
 
 /** One game: status on the left, both teams with crests and scores, a tap opens the details. */
+/* Highlights: official highlights videos for finished games, found by the Reader's job
+   (tools/build-highlights.mjs) and kept in highlights.json, up to three per game, best first. */
+let highlightsData = null;
+let highlightsAt = 0;
+async function loadHighlights() {
+  if (highlightsData && Date.now() - highlightsAt < 10 * 60000) return highlightsData;
+  const data = await loadJob('highlights.json');
+  if (data?.games) { highlightsData = data; highlightsAt = Date.now(); }
+  return highlightsData;
+}
+const highlightsOf = (match) => highlightsData?.games?.[match.id]?.videos ?? [];
+const highlightsInput = (video) => `https://www.youtube.com/watch?v=${video.id}`;
+
+function playHighlights(match) {
+  const [first] = highlightsOf(match);
+  if (!first) return;
+  closePopovers();
+  addStream(highlightsInput(first), { mode: 'add' }, `Highlights · ${gameName(match)}`);
+}
+
+/** The tile was playing one of a game's highlights and YouTube refused it: try that game's next one. */
+function nextHighlights(id) {
+  const tile = tileById(id);
+  if (!tile?.input || !highlightsData) return false;
+  for (const game of Object.values(highlightsData.games)) {
+    const at = game.videos.findIndex((video) => highlightsInput(video) === tile.input);
+    if (at === -1) continue;
+    const next = game.videos[at + 1];
+    if (next) {
+      addStream(highlightsInput(next), { mode: 'replace', id }, tile.title);
+      return true;
+    }
+    toast("These highlights can't be played here. YouTube may only allow them in another country.");
+    return false;
+  }
+  return false;
+}
+
+/** The same small spot on every row; a finished game with highlights shows its play button there. */
+function highlightsButton(match) {
+  const slot = el('span', { class: 'mrow-hl' });
+  const fill = () => {
+    if (match.state !== 'post' || !highlightsOf(match).length) return;
+    slot.replaceChildren(el('span', {
+      class: 'mrow-hl-button', role: 'button', tabIndex: 0, title: 'Watch the highlights', aria: { label: `Highlights: ${gameName(match)}` },
+      on: {
+        click(event) { event.stopPropagation(); playHighlights(match); },
+        keydown(event) { if (event.key === 'Enter') { event.stopPropagation(); playHighlights(match); } },
+      },
+    }, icon('film', 15)));
+  };
+  if (highlightsData) fill();
+  else if (match.state === 'post') loadHighlights().then(fill);
+  return slot;
+}
+
 function matchRow(match, { withDay = false, result = '' } = {}) {
   const shows = match.state !== 'pre';
   const status = match.state === 'in' ? liveBadge(match)
@@ -4024,7 +4084,7 @@ function matchRow(match, { withDay = false, result = '' } = {}) {
   },
   el('span', { class: 'mrow-status' }, status, result ? el('span', { class: `result is-${result}`, textContent: result }) : null),
   el('span', { class: 'mrow-teams' }, team(match.home, match.away), team(match.away, match.home)),
-  el('span', { class: 'mrow-end' }, tv, el('span', { class: 'mrow-chevron' }, icon('chevron'))));
+  el('span', { class: 'mrow-end' }, tv, highlightsButton(match), el('span', { class: 'mrow-chevron' }, icon('chevron'))));
   item.append(main, details, boxScoreLink(match));
   if (watch) main.querySelector('.mrow-end').prepend(watch);
   if (open) fillDetails(match, details, true);

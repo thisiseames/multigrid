@@ -2355,3 +2355,8 @@ body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 
 .yt-import-row.is-had .yt-import-name { color: var(--text-2); }
 .yt-import-had { font-size: 11.5px; color: var(--text-2); }
 .yt-import-gap { flex: 1; }
+
+/* Highlights: the same small spot on every game row, so rows stay one shape; finished games fill it. */
+.mrow-hl { flex: none; width: 26px; height: 26px; display: inline-flex; }
+.mrow-hl-button { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text); cursor: pointer; }
+.mrow-hl-button:hover, .mrow-hl-button:focus-visible { background: var(--hover); }

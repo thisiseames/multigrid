@@ -221,6 +221,8 @@ class TileView {
   async recover(message) {
     if (this.recovering) return;
     if (!this.player || this.source?.kind !== 'hls' || this.pausedByUser || isPoppedOut(this) || /player didn't load/i.test(message)) {
+      // Highlights refused by YouTube move on to the game's next video instead of showing an error.
+      if (this.source?.kind === 'youtube' && this.grid.handlers.onUnplayable?.(this.id)) return;
       this.showError(message);
       this.grid.handlers.onPlayerChanged();
       return;

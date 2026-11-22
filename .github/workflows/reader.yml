@@ -1,5 +1,6 @@
 # Refreshes the Reader about every 30 minutes: headlines from Eames's feeds, and each new story's
 # text locked with READER_KEY (a repository secret), so the public project shows only noise.
+# The same run also looks for official highlights of finished games (tools/build-highlights.mjs).
 #
 # GitHub barely runs scheduled jobs for this project, so the job keeps itself going instead:
 # when a refresh finishes it starts the next run, which waits 25 minutes in the "reader-wait"
@@ -57,12 +58,19 @@ jobs:
         if: steps.fresh.outputs.skip != 'true'
         env:
           READER_KEY: ${{ secrets.READER_KEY }}
+      # Official highlights for finished games in your leagues (highlights.json). A YouTube hiccup
+      # must never stop the Reader, so this step can fail without failing the run.
+      - run: node tools/build-highlights.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
+        timeout-minutes: 7
       - name: Save the new headlines
         if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "multigrid-reader"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A reader
+          if [ -f highlights.json ]; then git add highlights.json; fi
           git diff --cached --quiet && exit 0
           git commit -m "Update Reader"
           for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
