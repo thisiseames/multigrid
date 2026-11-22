@@ -7037,24 +7037,33 @@ function saveHereRow() {
 /** Moving address: "Copy move link" at the old address, "Paste move link" at the new one. */
 function moveRow() {
   if (isOldHome()) {
-    return el('button', {
+    // Packed as soon as the menu opens, so the tap itself copies it: Safari (and sometimes Chrome)
+    // refuses a copy that happens after waiting on something.
+    const packing = moveLink(NEW_HOME);
+    const holder = el('div', { class: 'sdrop-save' });
+    const shown = (link, copied) => {
+      const box = el('textarea', { class: 'sdrop-movebox', readOnly: true, rows: 3, value: link, aria: { label: 'Move link' }, on: { focus() { box.select(); } } });
+      holder.replaceChildren(el('p', { class: 'sdrop-movenote', textContent: copied ? 'Copied. Paste it into Notes and keep it until you open it at multigrid.club.' : 'Tap the box, choose Select All, then Copy. Paste it into Notes and keep it.' }), box);
+      if (!copied) { box.focus(); box.select(); }
+    };
+    holder.append(el('button', {
       type: 'button',
       class: 'sdrop-row',
       on: {
-        async click() {
-          const link = await moveLink(NEW_HOME);
-          try {
-            await navigator.clipboard.writeText(link);
-            toast('Move link copied. Paste it somewhere safe, like Notes, until you open it at multigrid.club.');
-          } catch {
-            // No clipboard here: show the link to copy by hand.
-            window.prompt('Copy this move link and keep it until you open it at multigrid.club:', link);
-          }
+        click() {
+          let copied = false;
+          // A copy started inside the tap, with the link handed over as soon as it's ready.
+          const text = packing.then((link) => new Blob([link], { type: 'text/plain' }));
+          const attempt = window.ClipboardItem && navigator.clipboard?.write
+            ? navigator.clipboard.write([new ClipboardItem({ 'text/plain': text })])
+            : packing.then((link) => navigator.clipboard.writeText(link));
+          attempt.then(() => { copied = true; }).catch(() => {}).finally(() => packing.then((link) => shown(link, copied)));
         },
       },
     },
     el('span', { class: 'sdrop-shape' }, icon('upload', 18)),
-    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Copy move link' }), el('small', { textContent: 'Everything on this device, for multigrid.club' })));
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Copy move link' }), el('small', { textContent: 'Everything on this device, for multigrid.club' }))));
+    return holder;
   }
   const row = el('div', { class: 'sdrop-save' });
   const showButton = () => row.replaceChildren(el('button', { type: 'button', class: 'sdrop-row', on: { click: showForm } },

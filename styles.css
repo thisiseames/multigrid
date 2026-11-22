@@ -2512,3 +2512,7 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .fart.is-avatar { position: relative; }
 .fart.is-avatar .fart-backdrop { position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); object-fit: cover; filter: blur(14px) brightness(.55) saturate(1.2); }
 .fart.is-avatar .fart-face { position: relative; width: auto; height: 68%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 18px rgba(0, 0, 0, .45), 0 0 0 2px rgba(255, 255, 255, .12); }
+/* The move link, shown after copying it, so it can also be copied by hand. */
+.sdrop-movenote { margin: 4px 10px 6px; font-size: 12.5px; line-height: 1.4; color: var(--text-2); }
+.sdrop-movebox { display: block; width: calc(100% - 20px); margin: 0 10px 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; resize: none; word-break: break-all; }
+.sdrop-movebox:focus, .sdrop-movebox:focus-visible { outline: 1px solid #f5f5f7; outline-offset: 0; }
