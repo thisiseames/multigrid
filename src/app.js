@@ -5586,23 +5586,22 @@ function manUtdResults() {
     || a.show.start - b.show.start).slice(0, 100);
 }
 
-/** The next Man Utd show on each channel, in the order the results are already sorted. */
+/** The next Man Utd show on each channel, with the one after it for the card's next line. */
 function manUtdPicks() {
-  const seen = new Set();
-  const picks = [];
+  const byChannel = new Map();
   for (const found of manUtdResults()) {
-    if (seen.has(found.item.input)) continue;
-    seen.add(found.item.input);
-    picks.push(found);
+    const list = byChannel.get(found.item.input);
+    if (list) list.push(found);
+    else byChannel.set(found.item.input, [found]);
   }
-  return picks;
+  return [...byChannel.values()].map(([first, second]) => ({ item: first.item, show: first.show, next: second?.show ?? null }));
 }
 
 /** A Man Utd show drawn as the normal Now card, so the folder looks like every other folder. */
-const manUtdCard = ({ item, show }) => nowCard({
-  item,
-  listing: show.start <= Date.now() && Date.now() < show.end ? { current: show, next: null } : { current: null, next: show },
-});
+const manUtdCard = ({ item, show, next }) => {
+  const live = show.start <= Date.now() && Date.now() < show.end;
+  return nowCard({ item, listing: live ? { current: show, next } : { current: null, next: show } });
+};
 
 function watchChannel(item) {
   $('guide-dialog').close();
