@@ -85,5 +85,8 @@ test('the window countdown knows closed, open and expired', () => {
   const open = windowState(Date.UTC(2027, 0, 15), NEXT_WINDOW);
   assert.equal(open.open, true);
   assert.ok(open.days > 0);
-  assert.equal(windowState(Date.UTC(2027, 1, 2), NEXT_WINDOW).days, 0);
+  const closed = windowState(Date.UTC(2027, 1, 2), NEXT_WINDOW);
+  assert.equal(closed.open, false);
+  assert.equal(closed.opens, 0);
+  assert.equal(closed.days, 0);
 });

@@ -6333,7 +6333,9 @@ function renderTransferDesk(body, desk, squad, readerItems) {
   const windowDay = (time) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(time));
   const status = state.open
     ? `Closes ${windowDay(state.closes)}`
-    : `Opens ${windowDay(state.opens)} · ${state.days} day${state.days === 1 ? '' : 's'}`;
+    : state.opens
+      ? `Opens ${windowDay(state.opens)} · ${state.days} day${state.days === 1 ? '' : 's'}`
+      : 'Window closed';
 
   body.replaceChildren(
     el('div', { class: 'transfer-head' },

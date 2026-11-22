@@ -140,6 +140,9 @@ export function windowState(now = Date.now(), next = NEXT_WINDOW) {
       days: Math.max(0, Math.ceil((next.closes - now) / DAY)),
     };
   }
+  if (now > next.closes) {
+    return { open: false, opens: 0, closes: next.closes, days: 0 };
+  }
   return {
     open: false,
     opens: next.opens,
