@@ -52,6 +52,17 @@ svg { display: block; }
   z-index: 30;
 }
 .wordmark { font-size: 11px; font-weight: 600; letter-spacing: 0.24em; margin-right: 12px; white-space: nowrap; }
+#topbar .wordmark,
+#topbar .bar-button,
+#topbar .bar-button *,
+#topbar .icon-button,
+#topbar .icon-button *,
+#topbar .plain-button,
+#topbar .plain-button *,
+#topbar .surf-pill button,
+#topbar .surf-pill button *,
+#topbar .add-button,
+#topbar .add-button * { color: #fff !important; }
 .spacer { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .narrow-only { display: none; }
 
@@ -211,12 +222,13 @@ body.is-fullscreen.show-bar .topbar { transform: none; }
 .channel-jump { width: 24px; color: var(--text-2); }
 .channel-jump svg { width: 15px; height: 15px; }
 .channel-jump:hover { color: var(--text); }
-.channel.is-paused .channel-name { color: var(--text-2); }
+.channel-name { color: #fff; }
+.channel.is-paused .channel-name { color: #fff; }
 .channel:has(.channel-play) { padding-left: 2px; gap: 3px; }
 .channel:has(.channel-play) .channel-name { margin-left: 3px; }
 .channel-mute.is-on { color: var(--accent); }
 .channel-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.channel.is-muted .channel-name { color: var(--text-2); }
+.channel.is-muted .channel-name { color: #fff; }
 .channel-level { width: 84px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .channel.is-muted .channel-level { opacity: 0.6; }
 .channel.no-control { padding-left: 10px; color: var(--text-2); cursor: help; }
