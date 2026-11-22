@@ -3828,6 +3828,8 @@ async function drawHome() {
     const keep = home.querySelector('.home-hero');
     const hero = keep ?? el('div', { class: 'home-hero' }, el('div', { class: 'hero-layers' }), el('div', { class: 'hero-shade' }), el('div', { class: 'hero-info' }));
     home.replaceChildren(hero, el('div', { class: 'home-rows' }, ...rows.filter(Boolean)));
+    // Nothing to show yet (a new device): the wordmark stays in the middle instead of leaving a blank screen.
+    $('stage').classList.toggle('has-home', rows.some(Boolean));
   };
   paint([homeRow('Continue watching', cont)]);
   heroItems = cont.slice(0, 3);
@@ -3922,7 +3924,7 @@ function syncHome(wall) {
     homeShownAt = Date.now();
     home.replaceChildren();
     // The rows come in as the wordmark settles (its animation runs 1.6 s).
-    homeTimer = setTimeout(() => { $('stage').classList.add('has-home'); drawHome(); }, 1500);
+    homeTimer = setTimeout(() => drawHome(), 1500);
   }
   // Kept current while it's open: the On now bars, a game going live.
   const tick = () => { homeTimer = setTimeout(() => { if (!home.hidden) { drawHome(); tick(); } }, 60000); };

@@ -2672,3 +2672,7 @@ body.is-phone .match-watch:hover { background: rgba(255,255,255,.2); }
 #stage.is-empty-wall.has-home.is-scrolled::after { opacity: 0; transition: opacity .3s ease; }
 .hero-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .hero-title.is-long { font-size: clamp(24px, 2.6vw, 38px); }
+/* Once the home screen arrives, the wordmark keeps floating up and fades away. */
+#stage.is-empty-wall.has-home::after { top: 6px; opacity: 0; font-size: 18px; transition: top 1.4s cubic-bezier(.2, .7, .2, 1), font-size 1.4s cubic-bezier(.2, .7, .2, 1), opacity 1.1s ease .25s; }
+#stage.is-empty-wall.has-home::after { animation: wall-out 1.2s ease .3s both; }
+@keyframes wall-out { from { opacity: 1; letter-spacing: .42em; } to { opacity: 0; letter-spacing: .42em; } }
