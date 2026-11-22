@@ -2259,6 +2259,13 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 .grid.is-pip-beside .tile.is-pip-inset { margin: 0 0 14px 0; }
 /* On a phone, Swap screens is in the stream's ⋯ sheet. */
 body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 0; }
+/* Two small screens: the second sits right above the first, the same gap between them as from the edge.
+   A margin's % is of the width, so this is exactly one small screen's 16:9 height (21% × 9/16). */
+.grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(28px + 21% * 9 / 16); }
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(20px + 25% * 9 / 16); }
+/* In the sound row, each small screen's own Swap. */
+.channel-swap { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 8px; color: var(--text-2); font-size: 12px; font-weight: 600; }
+.channel-swap:hover { background: var(--hover); color: var(--text); }
 .mixer-swap { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 8px; }
 .mixer-swap[hidden] { display: none; }
 

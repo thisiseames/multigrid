@@ -4,7 +4,7 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, cinemaSpot, findDividers, fitStage, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitStage, isPipPreset, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
@@ -655,16 +655,17 @@ export class GridView {
      other sits small in the bottom-right corner. Twitch stops when anything covers it and
      YouTube doesn't allow it, so with either as the main stream the small one sits beside it. */
   markPictureInPicture(ws, placed) {
-    const pip = ws.presetId === 'pip' && !this.isStacked;
+    const pip = isPipPreset(ws.presetId) && !this.isStacked;
     const shown = placed.filter((tile) => tile.place);
     const main = pip ? (shown.find((tile) => tile.primary && isStream(tile)) ?? shown[0]) : null;
-    const inset = pip ? shown.find((tile) => tile !== main) : null;
+    const insets = pip ? shown.filter((tile) => tile !== main).slice(0, ws.presetId === 'pip2' ? 2 : 1) : [];
     const kind = main && isStream(main) ? parseSource(main.input).kind : '';
     this.gridEl.classList.toggle('is-pip', pip);
     this.gridEl.classList.toggle('is-pip-beside', pip && (kind === 'twitch' || kind === 'youtube'));
     for (const view of this.views.values()) {
       view.root.classList.toggle('is-pip-main', view.tile === main);
-      view.root.classList.toggle('is-pip-inset', view.tile === inset);
+      view.root.classList.toggle('is-pip-inset', insets.includes(view.tile));
+      view.root.classList.toggle('is-pip-upper', insets[1] === view.tile);
     }
   }
 

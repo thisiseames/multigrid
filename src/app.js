@@ -3,7 +3,7 @@
 // saving in storage.js and drawing in grid-view.js.
 
 import {
-  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isPhoneLayout, isStream, isVisible, makeRoom,
+  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
   phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
@@ -229,10 +229,14 @@ onTvChange(() => { for (const tile of ws.tiles) grid.viewFor(tile.id)?.syncContr
 
 /* Picture in picture: the other screen of the pair, and swapping the big and small ones. */
 function pipOther(id) {
-  if (ws.presetId !== 'pip') return null;
-  const views = ws.tiles.filter((tile) => tile.place && tile.input).map((tile) => grid.viewFor(tile.id)).filter(Boolean);
-  if (!views.some((view) => view.root.classList.contains('is-pip-main') || view.root.classList.contains('is-pip-inset'))) return null;
-  return views.find((view) => view.tile.id !== id)?.tile ?? null;
+  if (!isPipPreset(ws.presetId)) return null;
+  const roleOf = (tileId) => grid.viewFor(tileId)?.root.classList;
+  const main = ws.tiles.find((tile) => tile.input && roleOf(tile.id)?.contains('is-pip-main'));
+  const insets = ws.tiles.filter((tile) => tile.input && roleOf(tile.id)?.contains('is-pip-inset'));
+  if (!main || !insets.length) return null;
+  if (insets.some((tile) => tile.id === id)) return main;
+  // The big one: with one small screen it's that one; with two, each small one has its own swap.
+  return insets.length === 1 && main.id === id ? insets[0] : null;
 }
 function swapPip(id) {
   const tile = tileById(id);
@@ -240,9 +244,35 @@ function swapPip(id) {
   if (!tile?.input || !view) return;
   // The small one becomes the big one, whichever screen asked.
   const small = view.root.classList.contains('is-pip-inset') ? tile : pipOther(id);
-  if (!small) return;
+  const big = small && pipOther(small.id);
+  if (!small || !big) return;
+  // The big one takes the small one's spot, so the other small screen stays where it was.
+  const a = ws.tiles.indexOf(small);
+  const b = ws.tiles.indexOf(big);
+  if (a !== -1 && b !== -1) [ws.tiles[a], ws.tiles[b]] = [ws.tiles[b], ws.tiles[a]];
   setPrimary(ws, small.id, true);
   commit();
+}
+
+/** The small screens, when this is the big one of two small ones. */
+function pipInsetsFor(id) {
+  if (ws.presetId !== 'pip2' || !grid.viewFor(id)?.root.classList.contains('is-pip-main')) return [];
+  return ws.tiles.filter((tile) => tile.input && grid.viewFor(tile.id)?.root.classList.contains('is-pip-inset'));
+}
+
+/** With two small screens, each small stream's row in the sound row gets its own Swap. */
+function markMixerSwaps(two) {
+  for (const channel of $('mixer').querySelectorAll('.channel[data-tile]')) {
+    const id = channel.dataset.tile;
+    const want = two && grid.viewFor(id)?.root.classList.contains('is-pip-inset');
+    const button = channel.querySelector('.channel-swap');
+    if (!want) { button?.remove(); continue; }
+    if (button) continue;
+    channel.append(el('button', {
+      type: 'button', class: 'channel-swap', title: 'Make this the big screen', aria: { label: 'Make this the big screen' },
+      on: { click: () => swapPip(id) },
+    }, icon('pip', 15), el('span', { textContent: 'Swap' })));
+  }
 }
 
 /** Everything you can do to one stream, as a sheet of big buttons. */
@@ -268,6 +298,8 @@ function buildStreamMenu(id) {
     bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
     castWay(view.source, view.player?.el) ? bigButton('cast', castWay(view.source, view.player?.el) === 'airplay' ? 'AirPlay' : 'Cast to TV', then(() => castStream(id))) : null,
     pipOther(id) ? bigButton('pip', 'Swap screens', then(() => swapPip(id))) : null,
+    // With two small screens (they have no top bar), the big one's sheet swaps either of them in.
+    ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
@@ -1134,7 +1166,10 @@ function renderSound() {
 
   const playing = streams.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   mixer.render(open ? playing : []);
-  mixerSwap.hidden = !document.querySelector('.grid.is-pip .tile.is-pip-inset') || document.body.classList.contains('is-phone');
+  const insetCount = document.querySelectorAll('.grid.is-pip .tile.is-pip-inset').length;
+  const onPhone = document.body.classList.contains('is-phone');
+  mixerSwap.hidden = insetCount !== 1 || onPhone;
+  markMixerSwaps(insetCount === 2 && !onPhone);
   if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();

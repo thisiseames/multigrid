@@ -33,7 +33,7 @@ test('every preset covers the grid exactly, for 0 to 16 streams', () => {
     for (let n = 0; n <= MAX_STREAMS; n++) {
       const ws = withStreams(n, preset.id);
       // Picture in picture puts both screens in one cell on purpose; the grid draws the second small.
-      if (preset.id !== 'pip') assertTiled(ws, `${preset.id} n=${n}`);
+      if (preset.id !== 'pip' && preset.id !== 'pip2') assertTiled(ws, `${preset.id} n=${n}`);
       assert.equal(streamCount(ws), n, `${preset.id} n=${n} lost a stream`);
       const visible = ws.tiles.filter((tile) => tile.place).length;
       const hidden = hiddenTiles(ws).length;
@@ -262,6 +262,15 @@ test('picture in picture: one big cell with both screens in it, and the rest wai
   assert.deepEqual([ws.cols, ws.rows], [[1], [1]]);
   const shown = ws.tiles.filter((tile) => tile.place);
   assert.equal(shown.length, 2);
+  assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
+  assert.equal(hiddenTiles(ws).length, 1);
+});
+
+test('picture in picture ×2: one big cell with all three screens in it, the rest waiting in Hidden', () => {
+  const ws = withStreams(4, 'pip2');
+  assert.deepEqual([ws.cols, ws.rows], [[1], [1]]);
+  const shown = ws.tiles.filter((tile) => tile.place);
+  assert.equal(shown.length, 3);
   assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
   assert.equal(hiddenTiles(ws).length, 1);
 });

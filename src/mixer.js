@@ -76,8 +76,12 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
       if (shape !== drawn) {
         drawn = shape;
         rows.clear();
-        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause, canSeek }) => (
-          canMute ? openChannel(tile, name, canVolume, canPause, canSeek) : closedChannel(name))));
+        channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause, canSeek }) => {
+          const channel = canMute ? openChannel(tile, name, canVolume, canPause, canSeek) : closedChannel(name);
+          // Which stream a row is for, so the page can add to it (Swap screens, in picture in picture).
+          channel.dataset.tile = tile.id;
+          return channel;
+        }));
       }
       tiles.forEach(sync);
     },

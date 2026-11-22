@@ -131,6 +131,10 @@ export const PRESETS = [
   { id: 'pip', name: 'Picture in picture', hint: 'A small screen in the corner of the big one', fixed: 2,
     build: () => ({ cols: [1], rows: [1], slots: [{ c: 0, r: 0, cs: 1, rs: 1 }, { c: 0, r: 0, cs: 1, rs: 1 }] }),
     diagram: { cols: [3, 1], rows: [3, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 2 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
+  // The same, with two small screens stacked in the bottom-right corner, one above the other.
+  { id: 'pip2', name: 'Picture in picture ×2', hint: 'Two small screens in the corner of the big one', fixed: 3,
+    build: () => ({ cols: [1], rows: [1], slots: [0, 1, 2].map(() => ({ c: 0, r: 0, cs: 1, rs: 1 })) }),
+    diagram: { cols: [3, 1], rows: [2, 1, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 3 }, { c: 1, r: 2, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
@@ -185,6 +189,8 @@ export const isStream = (tile) => Boolean(tile.input);
 export const isVisible = (tile) => Boolean(tile.place);
 export const streamCount = (ws) => ws.tiles.filter(isStream).length;
 export const hiddenTiles = (ws) => ws.tiles.filter((tile) => isStream(tile) && !isVisible(tile));
+/** Picture in picture, with one small screen or two. */
+export const isPipPreset = (id) => id === 'pip' || id === 'pip2';
 export const primaryTile = (ws) => ws.tiles.find((tile) => tile.primary && isStream(tile)) ?? null;
 
 /** How much of the stage a place covers, as a share of each axis multiplied together. */
