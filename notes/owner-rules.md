@@ -74,6 +74,9 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 ## Never suggest again
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
 - Podcast queues/auto-next of any kind. Owner, Nov 22: does not care about a podcast queue; never suggest one again.
+
+## No dead-end proposals
+Before suggesting a tool, import or API, name the exact content source in one line. If it depends on a playlist, file, login, key or provider only the owner can supply, say that before the idea and do not recommend it unless he has confirmed he has it. Never propose a tool whose only input is a follow-up I refuse to do. If I cannot source and test the content, I drop the idea instead of building an empty container. M3U import is out: the owner has no playlist and Channel Finder already imports free channels.
 - Also turned down before: broken-link "Not working since …" labels; goal/score alerts and other small sports gimmicks.
 
 ## Never use periwinkle (or any blue-purple accent)
