@@ -2065,12 +2065,13 @@ function drawGamebar() {
     iconButton('close', 'Turn Game mode off', toggleGameMode));
   // On match day your team's match centre comes first.
   const matchday = mdPhase() !== 'off';
-  if (gameTab === 'matchday' && !matchday) gameTab = 'scores';
+  // The Matchday tab is kept while its match loads; until then (or on other days) Scores shows.
+  const shown = gameTab === 'matchday' && !matchday ? 'scores' : gameTab;
   const tabs = el('div', { class: 'gamebar-tabs addp-pills', role: 'tablist' }, ...[...(matchday ? [['matchday', md.team.short]] : []), ['scores', 'Scores'], ['odds', 'Odds']].map(([key, label]) => el('button', {
-    type: 'button', role: 'tab', class: `matches-tab${gameTab === key ? ' is-on' : ''}`, aria: { selected: String(gameTab === key) }, textContent: label,
+    type: 'button', role: 'tab', class: `matches-tab${shown === key ? ' is-on' : ''}`, aria: { selected: String(shown === key) }, textContent: label,
     on: { click: () => chooseGameTab(key) },
   })));
-  if (gameTab === 'matchday') {
+  if (shown === 'matchday') {
     const scrollTop = bar.querySelector('.gamebar-body')?.scrollTop ?? 0;
     const centre = el('div', { class: 'gamebar-body is-matchday' }, matchCentre());
     bar.replaceChildren(head, tabs, centre);
@@ -2081,7 +2082,7 @@ function drawGamebar() {
     bar.replaceChildren(head, tabs, el('p', { class: 'match-quiet', textContent: 'Loading scores…' }));
     return;
   }
-  const odds = gameTab === 'odds';
+  const odds = shown === 'odds';
   // Odds are for games still to be decided: a finished game's market is closed, so it isn't listed.
   const groups = odds ? gameGroups.map(({ title, games }) => ({ title, games: games.filter((game) => game.state !== 'post') })).filter(({ games }) => games.length) : gameGroups;
   const empty = !gameGroups.length ? 'No more games today in your leagues.' : 'Every game today is finished.';
@@ -6209,7 +6210,6 @@ function drawMatchdayViews() {
     else refreshMatchdayHero();
   }
   if (!$('gamebar').hidden && (gameTab === 'matchday' || changed)) {
-    if (gameTab === 'matchday' && phase === 'off') gameTab = 'scores';
     drawGamebar();
   }
   const sheet = document.getElementById('matchday-box');
@@ -6303,12 +6303,33 @@ function mdScorers(match, data) {
   return el('div', { class: 'md-scorers' }, ...['home', 'away'].map((key) => (side(key) ? el('p', {}, el('b', { textContent: `${match[key].name} ` }), side(key)) : null)).filter(Boolean));
 }
 
+/** A starting XI on an upright pitch: the goalkeeper at the bottom, the strikers at the top. */
+function mdPitch(side) {
+  const pitch = el('div', { class: 'md-pitch' },
+    el('span', { class: 'mdp-half' }), el('span', { class: 'mdp-circle' }),
+    el('span', { class: 'mdp-box' }), el('span', { class: 'mdp-six' }));
+  const rows = formationRows(side.formation, side.starters);
+  rows.forEach((row, rowIndex) => {
+    // Rows run from the goalkeeper (bottom) to the attack (top); players spread left to right.
+    const y = rows.length === 1 ? 50 : 86 - (rowIndex / (rows.length - 1)) * 74;
+    row.forEach((player, index) => {
+      pitch.append(el('span', {
+        class: 'mdp-player',
+        style: `left:${rowY(row.length, index)}%;top:${y}%`,
+        title: [player.name, player.position].filter(Boolean).join(' · '),
+      },
+      el('span', { class: 'mdp-shirt', textContent: player.jersey || '•' }),
+      el('small', { class: 'mdp-name', textContent: (player.short || player.name).replace(/^[A-Z]\.\s+/, '') })));
+    });
+  });
+  return pitch;
+}
+
 /** The Matchday team's starting XI on a pitch (white shirts: team colours stay in crests). */
 function mdLineup(match, data) {
   const side = (data?.lineups ?? []).find((item) => item.home === (mdSide(match) === 'home'));
   if (!side) return null;
-  const pitch = lineupPitch({ ...side, match: { ...match[mdSide(match)], color: '#f5f5f7' } });
-  pitch.classList.add('md-pitch');
+  const pitch = mdPitch(side);
   return el('div', { class: 'md-xi' },
     el('div', { class: 'md-xi-head' }, el('b', { textContent: `${match[mdSide(match)].name} XI` }), el('span', { textContent: side.formation })),
     pitch,

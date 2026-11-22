@@ -2960,3 +2960,18 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .gamebar .mrow.is-open { background: rgba(255, 255, 255, .03); }
 .gamebar .mrow-team.is-mine .mrow-name { color: #fff; font-weight: 700; }
 .gamebar .match-day { background: #000; }
+/* Matchday's XI: an upright half pitch, goalkeeper at the bottom, attack at the top. */
+.md-pitch { position: relative; width: 100%; aspect-ratio: 0.82 / 1; border-radius: 12px; overflow: hidden; background: #0e0e10; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.mdp-half, .mdp-circle, .mdp-box, .mdp-six { position: absolute; pointer-events: none; border: 1px solid rgba(255, 255, 255, .13); }
+.mdp-half { left: 0; right: 0; top: 0; height: 0; border-width: 1px 0 0; }
+.mdp-circle { left: 50%; top: 0; width: 30%; aspect-ratio: 1 / 1; border-radius: 50%; transform: translate(-50%, -50%); }
+.mdp-box { left: 22%; right: 22%; bottom: 0; height: 17%; border-bottom: 0; }
+.mdp-six { left: 37%; right: 37%; bottom: 0; height: 7%; border-bottom: 0; }
+.mdp-player { position: absolute; z-index: 1; width: 23%; display: flex; flex-direction: column; align-items: center; gap: 3px; transform: translate(-50%, -50%); text-align: center; }
+.mdp-shirt { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f5f5f7; color: #0b0b0d; font-size: 12px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.mdp-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 600; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.md-art .md-xi { width: 236px; top: 50%; }
+.md-art .md-xi .md-pitch { aspect-ratio: 1 / 1; }
+.md-art .md-xi .mdp-shirt { width: 24px; height: 24px; font-size: 11px; }
+.md-art .md-xi .mdp-name { font-size: 9.5px; }
+@media (max-width: 1180px) { .md-art .md-xi { width: 210px; } }

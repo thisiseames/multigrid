@@ -167,3 +167,16 @@ test("a result from the team's side", () => {
   assert.equal(resultFor({ ...done, away: { ...done.away, score: '1' } }, '360'), 'D');
   assert.equal(resultFor(game('in'), '360'), '');
 });
+
+test('a line-up with only G/D/M/F: sides and lines from the formation places', async () => {
+  const { formationRows } = await import('../src/matches.js');
+  const player = (name, position, formationPlace) => ({ name, short: name, position, formationPlace });
+  // Man United v Liverpool, Nov 22, 2026, as ESPN sent it.
+  const starters = [
+    player('Lammens', 'G', 1), player('Yoro', 'D', 2), player('de Ligt', 'D', 5), player('Martinez', 'D', 6), player('Dalot', 'D', 3),
+    player('Tielemans', 'M', 8), player('Mainoo', 'M', 4), player('Cunha', 'M', 11), player('Dorgu', 'M', 7), player('Fernandes', 'M', 10), player('Mbeumo', 'F', 9),
+  ];
+  const rows = formationRows('4-2-3-1', starters).map((row) => row.map((one) => one.name));
+  // Each row left to right, from the team's own view.
+  assert.deepEqual(rows, [['Lammens'], ['Dalot', 'Martinez', 'de Ligt', 'Yoro'], ['Mainoo', 'Tielemans'], ['Cunha', 'Fernandes', 'Dorgu'], ['Mbeumo']]);
+});

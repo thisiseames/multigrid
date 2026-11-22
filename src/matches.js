@@ -40,11 +40,19 @@ const lineRank = (player) => {
   if (/AM|CAM/.test(position)) return 3;
   if (/[BD]/.test(position)) return 1;
   if (/^(F|ST|CF|LW|RW|W|SS|WF|FW|LWF|RWF)$/.test(position) || /ST|CF|LW|RW|WF|SS/.test(position)) return 4;
+  // A plain "M": places 7, 10 and 11 play further forward than 4 and 8.
+  if (position === 'M' && player?.formationPlace) return [7, 10, 11].includes(player.formationPlace) ? 3 : 2;
   return 2.5;
 };
 
+// ESPN often gives only G/D/M/F. Its formation places follow the usual numbering, which does
+// carry the side: 2 right back, 3 left back, 5 right centre-back, 6 left centre-back,
+// 4 left and 8 right of a midfield two, 7 right wing, 11 left wing (the team's own view, attacking up the pitch).
+const PLACE_SIDE = { 2: 1, 3: -1, 4: -0.3, 5: 0.4, 6: -0.4, 7: 0.9, 8: 0.3, 11: -0.9 };
+
 const sideRank = (player) => {
   const position = positionOf(player);
+  if (/^[GDMF]$/.test(position) && PLACE_SIDE[player?.formationPlace] != null) return PLACE_SIDE[player.formationPlace];
   if (/CD-L|CB-L/.test(position)) return -0.6;
   if (/CD-R|CB-R/.test(position)) return 0.6;
   if (/AM-L|AML/.test(position)) return -0.8;
