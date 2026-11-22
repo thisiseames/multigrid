@@ -5884,6 +5884,18 @@ function twitchGuide() {
   return section;
 }
 
+/** The channel at the top of a Now card: its logo when the listings have one, else its name. */
+function guideChannelMark(name) {
+  const logo = logoFor(name);
+  const text = () => el('span', { textContent: name });
+  if (!logo) return text();
+  const mark = el('span', { class: `gnow-logo is-${logo.tone}`, title: name });
+  const img = el('img', { src: logo.url, alt: name, decoding: 'async', referrerPolicy: 'no-referrer' });
+  img.addEventListener('error', () => mark.replaceWith(text()), { once: true });
+  mark.append(img);
+  return mark;
+}
+
 /* Now: one card per channel. */
 function nowCard({ item, listing }) {
   const { current, next } = listing;
@@ -5896,12 +5908,12 @@ function nowCard({ item, listing }) {
     : el('div', { class: 'gnow-progress' }, el('span', { textContent: `Starts ${clock(show.start)}` }));
   const later = current && next ? el('span', { class: 'gnow-next' }, el('b', { textContent: clock(next.start) }), next.title) : null;
   return el('li', { class: `gnow${color ? ' is-mine' : ''}`, style: color ? `--team:${color}` : '' },
-    el('button', { type: 'button', class: 'gnow-main', on: { click: () => showDetails(item, show) } },
-      el('span', { class: 'gnow-channel' }, el('span', { textContent: item.name }), current?.live ? liveTag() : null),
+    // The whole card watches the channel; there's nothing else to do with it.
+    el('button', { type: 'button', class: 'gnow-main', title: `Watch ${item.name}`, on: { click: () => watchChannel(item) } },
+      el('span', { class: 'gnow-channel' }, guideChannelMark(item.name), current?.live ? liveTag() : null),
       el('span', { class: 'gnow-title' }, color ? el('span', { class: 'team-mark' }) : null, show.title),
       meta,
-      later),
-    guideWatchButton(item));
+      later));
 }
 
 /* Timeline: channels down the side, half hours across, a line at right now. */

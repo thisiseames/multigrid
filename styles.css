@@ -3349,3 +3349,13 @@ body.is-phone .tile-info { display: none; }
 .phone-bar-text b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 650; line-height: 1.2; }
 .phone-bar-text small { max-width: 100%; display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-size: 11px; line-height: 1.2; color: var(--text-2); }
 .phone-bar-text small .ti-live { flex: none; padding: 1px 5px; font-size: 9px; }
+
+/* The Guide's Now cards: the channel's logo in place of its name, every one in the same dark
+   tile so they line up. Logos drawn for light backgrounds (dark artwork) are flipped to light,
+   keeping their colours, so they read on the same tile. */
+.gnow-logo { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 112px; height: 38px; padding: 7px 10px; border-radius: 8px; background: #232327; }
+.gnow-logo img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.gnow-logo.is-light img { filter: invert(1) hue-rotate(180deg); }
+.gnow { cursor: pointer; }
+.gnow:hover { background: #222226; border-color: rgba(255, 255, 255, .1); }
+.gnow:has(.gnow-main:focus-visible) { outline: 2px solid #f5f5f7; outline-offset: 2px; }
