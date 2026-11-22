@@ -3359,3 +3359,6 @@ body.is-phone .tile-info { display: none; }
 .gnow { cursor: pointer; }
 .gnow:hover { background: #222226; border-color: rgba(255, 255, 255, .1); }
 .gnow:has(.gnow-main:focus-visible) { outline: 2px solid #f5f5f7; outline-offset: 2px; }
+.gnow-play { flex: none; align-self: center; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: #f5f5f7; color: #0b0b0d; cursor: pointer; }
+.gnow-play:hover { background: #fff; }
+.gnow-play svg { margin-left: 2px; }

@@ -296,3 +296,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 ## Nov 22 — Guide Now cards: logos, no Watch button
 - Each Now card shows its channel's logo (guide.json logos) in one uniform dark tile (112×38); logos made for light backgrounds are flipped light with invert+hue-rotate so every tile matches. No logo → the name, as before. Owner first said the mixed light/dark chips looked a mess, then OK'd the uniform version ("if I don't like it, we'll change it back"): the version before this is commit 750cee4.
 - Watch button removed; the whole card watches the channel (it used to open the show-details card). Timeline unchanged.
+- Nov 22 follow-up: owner missed the show-details card, so clicking a Now card opens it again (with its Watch); the big Watch button came back as a small round white play button (36px) that watches at once.

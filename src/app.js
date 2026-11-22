@@ -5908,12 +5908,13 @@ function nowCard({ item, listing }) {
     : el('div', { class: 'gnow-progress' }, el('span', { textContent: `Starts ${clock(show.start)}` }));
   const later = current && next ? el('span', { class: 'gnow-next' }, el('b', { textContent: clock(next.start) }), next.title) : null;
   return el('li', { class: `gnow${color ? ' is-mine' : ''}`, style: color ? `--team:${color}` : '' },
-    // The whole card watches the channel; there's nothing else to do with it.
-    el('button', { type: 'button', class: 'gnow-main', title: `Watch ${item.name}`, on: { click: () => watchChannel(item) } },
+    // The card opens the show's details; the small play button watches at once.
+    el('button', { type: 'button', class: 'gnow-main', on: { click: () => showDetails(item, show) } },
       el('span', { class: 'gnow-channel' }, guideChannelMark(item.name), current?.live ? liveTag() : null),
       el('span', { class: 'gnow-title' }, color ? el('span', { class: 'team-mark' }) : null, show.title),
       meta,
-      later));
+      later),
+    el('button', { type: 'button', class: 'gnow-play', title: `Watch ${item.name}`, aria: { label: `Watch ${item.name}` }, on: { click(event) { event.stopPropagation(); watchChannel(item); } } }, icon('play', 16)));
 }
 
 /* Timeline: channels down the side, half hours across, a line at right now. */
