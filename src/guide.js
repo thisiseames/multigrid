@@ -66,6 +66,14 @@ export function showsBetween(name, source, from, to) {
   return (listingsFor(name, source) ?? []).filter((show) => show.end > from && show.start < to);
 }
 
+/** Put a folder directly after another, leaving every other folder where it is. */
+export function folderAfter(folders, folder, after) {
+  const index = folders.findIndex((name) => guideKey(name) === guideKey(after));
+  const next = [...folders];
+  next.splice(index >= 0 ? index + 1 : next.length, 0, folder);
+  return next;
+}
+
 /** What's on now and what's next. Either can be missing, e.g. between listings. */
 export function nowAndNext(name, source) {
   const shows = listingsFor(name, source);

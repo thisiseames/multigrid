@@ -8,7 +8,7 @@ import {
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
-import { clock, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
+import { clock, folderAfter, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
 import { plays } from './backups.js';
@@ -5556,8 +5556,10 @@ function guideChannels() {
   const real = sections.map((section) => section.folder).filter(Boolean);
   const hasManUtd = all.some(({ item }) => nowAndNext(item.name, parseSource(item.input))?.current
     || showsBetween(item.name, parseSource(item.input), Date.now(), Infinity).some((show) => GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`)));
-  const folders = [...real];
-  if (hasManUtd && !folders.some((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER))) folders.push(MAN_UTD_FOLDER);
+  // Keep the owner's folder order; the Man Utd folder sits directly after Sports.
+  const folders = hasManUtd && !real.some((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER))
+    ? folderAfter(real, MAN_UTD_FOLDER, 'Sports')
+    : [...real];
   if (guideFolder && !folders.some((folder) => sameGuideFolder(folder, guideFolder))) guideFolder = '';
   const special = sameGuideFolder(guideFolder, MAN_UTD_FOLDER);
   const rows = special
@@ -5565,11 +5567,7 @@ function guideChannels() {
     : sections
       .filter((section) => !guideFolder || sameGuideFolder(section.folder, guideFolder))
       .flatMap((section) => section.rows);
-  // Sports first, then the Man Utd folder, then the rest A–Z.
-  const sports = folders.find((folder) => sameGuideFolder(folder, 'Sports'));
-  const united = folders.find((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER));
-  const rest = folders.filter((folder) => folder !== sports && folder !== united).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-  return { rows, folders: [sports, united, ...rest].filter(Boolean) };
+  return { rows, folders };
 }
 
 /** Shows about Man Utd across every favourite TV channel, in time order. */

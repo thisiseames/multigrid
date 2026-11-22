@@ -13,12 +13,19 @@ globalThis.fetch = async () => ({
     },
   }),
 });
-const { guideKey, loadGuide, nowAndNext, clock } = await import('../src/guide.js');
+const { folderAfter, guideKey, loadGuide, nowAndNext, clock } = await import('../src/guide.js');
 
 test('names match whatever the capitals, spaces and symbols', () => {
   assert.equal(guideKey('Sky Sports +'), guideKey('SKY SPORTS PLUS'));
   assert.equal(guideKey('ESPN 2'), guideKey('espn2'));
   assert.notEqual(guideKey('ESPN+'), guideKey('ESPN'));
+});
+
+test('the Man Utd folder goes after Sports and nothing else moves', () => {
+  assert.deepEqual(folderAfter(['News', 'Sports', 'Film'], 'Man Utd', 'Sports'), ['News', 'Sports', 'Man Utd', 'Film']);
+  assert.deepEqual(folderAfter(['SPORTS', 'News'], 'Man Utd', 'Sports'), ['SPORTS', 'Man Utd', 'News']);
+  // No Sports folder: add it at the end rather than reordering anything.
+  assert.deepEqual(folderAfter(['News', 'Film'], 'Man Utd', 'Sports'), ['News', 'Film', 'Man Utd']);
 });
 
 test('now and next skip finished shows, and a gap shows only what is next', async () => {
