@@ -100,7 +100,7 @@ export function squadGroups(athletes = []) {
   });
 }
 
-const TRANSFER_WORDS = /\b(transfer|sign|signing|signed|loan|fee|bid|deal|move|joins?|contract|release|sale|sell|buy|swap|target|talks)\b/i;
+const TRANSFER_WORDS = /\b(transfer|sign|signing|signed|loan|fee|deal|joins?|contract|release|sale|sell|buy|swap|target|talks|gossip)\b/i;
 const UNITED_WORDS = /\b(?:man(?:chester)? (?:united|utd)|mufc|old trafford)\b/i;
 const FOOTBALL_WORDS = /\b(football|soccer|premier league|efl|championship|champions league|uefa|fifa|striker|midfielder|defender|goalkeeper|winger|manager|transfer|loan|club)\b/i;
 

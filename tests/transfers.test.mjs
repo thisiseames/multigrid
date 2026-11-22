@@ -66,6 +66,8 @@ test('United transfer stories are deduped, newest first, and other clubs are sep
     { title: 'Man Utd close in on Baleba deal', summary: 'duplicate', source: 'ESPN', time: 2 },
     { title: 'Match report', summary: 'no keywords here', source: 'BBC Sport', group: 'Sport', time: 1 },
     { title: 'Climate talks collapse after deal rejected', summary: 'World leaders leave the table', source: 'CBC', group: 'News', time: 6 },
+    { title: 'Fifa to confirm UK bid to host 2035 World Cup', summary: 'A football tournament hosted in the UK', source: 'BBC Sport', group: 'Sport', time: 7 },
+    { title: 'Pochettino’s bounce falls flat with De Ligt move', summary: 'Manchester United fell apart at Anfield', source: 'The Guardian', group: 'Sport', time: 8 },
   ];
   const united = transferNews(items);
   assert.deepEqual(united.map((row) => row.title), ['Man Utd close in on Baleba deal', 'Man Utd transfer latest']);
