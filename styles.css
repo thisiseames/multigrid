@@ -3184,6 +3184,13 @@ body.is-phone .transfer-squad-count { font-size: 22px; }
 #matches-menu .hero-label {
   color: #fff;
 }
+#matches-menu .match-lineups {
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+#matches-menu .match-lineups:hover {
+  background: #141416;
+}
 #matches-menu .md-entry {
   background: #000;
   box-shadow: inset 0 0 0 1px var(--border);
