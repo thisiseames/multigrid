@@ -2952,3 +2952,11 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 }
 /* The Matchday picture is already black: only a thin fade at the bottom, so the XI isn't dimmed. */
 .home-hero.is-matchday .hero-shade { background: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0) 16%), linear-gradient(to right, rgba(0, 0, 0, .6) 0%, rgba(0, 0, 0, 0) 45%); }
+/* Game mode's column on black: rows sit flat with thin dividers (no grey cards), and your
+   teams are bold white instead of the old periwinkle. */
+.gamebar .mrow-list { border-radius: 0; background: transparent; border-top: 1px solid rgba(255, 255, 255, .07); border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.gamebar .mrow + .mrow { border-top-color: rgba(255, 255, 255, .07); }
+.gamebar .mrow-main:hover, .gamebar .mrow-main:focus-visible { background: rgba(255, 255, 255, .05); }
+.gamebar .mrow.is-open { background: rgba(255, 255, 255, .03); }
+.gamebar .mrow-team.is-mine .mrow-name { color: #fff; font-weight: 700; }
+.gamebar .match-day { background: #000; }
