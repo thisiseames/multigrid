@@ -17,6 +17,8 @@ on:
   push:
     paths:
       - '.github/workflows/matchday-reactions.yml'
+      - 'tools/build-matchday-reactions.mjs'
+      - 'tools/build-highlights.mjs'
 
 permissions:
   contents: write
