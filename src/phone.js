@@ -13,6 +13,7 @@ const TITLES = {
   'today-menu': 'Today',
   'matches-menu': 'Sports',
   'standings-menu': 'Sports',
+  'transfers-menu': 'Transfers',
   'reader-menu': 'Reader',
   'saved-menu': 'Saved layouts',
   'layout-menu': 'Layout',
@@ -24,6 +25,7 @@ const TITLES = {
 const TAB_OF = {
   'matches-menu': 'sports',
   'standings-menu': 'sports',
+  'transfers-menu': 'sports',
   'reader-menu': 'reader',
 };
 
@@ -53,7 +55,7 @@ function showSheet(menu) {
   menu.style.transform = '';
   // A stream's sheet is titled with the stream's name.
   $('sheet-title').textContent = menu.dataset.title || TITLES[menu.id];
-  const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu';
+  const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu' || menu.id === 'transfers-menu';
   $('sheet-title').hidden = sports;
   $('sheet-switch').hidden = !sports;
   for (const button of $('sheet-switch').querySelectorAll('button')) {
@@ -105,7 +107,8 @@ $('sheet-close').addEventListener('click', () => closePopovers());
 $('sheet-switch').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-panel]');
   if (!button || button.dataset.panel === openMenu?.id) return;
-  $(button.dataset.panel === 'standings-menu' ? 'standings-button' : 'matches-button').click();
+  $(button.dataset.panel === 'standings-menu' ? 'standings-button'
+    : button.dataset.panel === 'transfers-menu' ? 'transfers-button' : 'matches-button').click();
 });
 
 frame.addEventListener('pointerdown', (event) => {
