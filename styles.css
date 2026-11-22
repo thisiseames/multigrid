@@ -1868,7 +1868,7 @@ body.remote-open { overflow: hidden; }
 .strip-actions .strip-more { display: none; }
 
 @media (max-width: 640px), (hover: none) and (max-height: 500px) {
-  :root { --tabbar: 60px; --phonebar-h: 52px; }
+  :root { --tabbar: 56px; --phonebar-h: 52px; }
   .phone-only { display: inline; }
   .add-button .wide-only { display: none; }
 
