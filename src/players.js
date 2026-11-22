@@ -47,6 +47,18 @@ function makeFrame(src) {
   return frame;
 }
 
+/** Daddy Live's wrapper puts its 47-player bar under the clean matchora player. */
+function daddyLivePlayer(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:'
+      && /^\/player\/embed\.php$/.test(parsed.pathname)
+      && /(^|\.)daddylive\.(app|at)$/i.test(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 // iPhones leave the level to the phone's own buttons, and setting it does nothing.
 const levelWorks = (() => {
   const probe = document.createElement('audio');
@@ -1484,7 +1496,9 @@ function playlistPlayer(source, options) {
 function genericPlayer(source, options) {
   // Not sandboxed: some players refuse to run in a sandbox. The browser still keeps a
   // page from another site out of MULTIGRID and its saved layouts.
-  return closedPlayer(makeFrame(source.url), options);
+  const frame = makeFrame(source.url);
+  if (daddyLivePlayer(source.url)) frame.classList.add('frame-daddy');
+  return closedPlayer(frame, options);
 }
 
 /* A note: plain text that lives with the layout. It saves quietly as it's typed. */

@@ -434,6 +434,10 @@ body.is-phone .note-area { font-size: 16px; }
 /* A TikTok account is TikTok's own profile card, no bigger than this. It sits centred, and
    scrolls inside itself in a smaller tile. */
 .tile-body iframe.frame-card { color-scheme: light; max-width: 780px; max-height: 490px; margin: auto; }
+/* Daddy Live's wrapper has a 47-player bar under the clean matchora player. The crop frame
+   already clips; let the iframe run 80px past it so only the clean player shows. */
+.tile-body iframe.frame-daddy { height: calc(100% + 80px); }
+@media (max-width: 640px) { .tile-body iframe.frame-daddy { height: calc(100% + 68px); } }
 
 /* The first child of a Twitch holder is its own iframe, which fills the same way. */
 body.is-dragging iframe, body.is-dragging video { pointer-events: none; }
