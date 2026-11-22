@@ -2095,7 +2095,7 @@ function showCard(show, holder) {
     art.className = 'fart is-picture';
     artPicture(art, image, () => { art.className = 'fart is-icon'; art.replaceChildren(icon('sound', 20)); });
   }
-  return el('li', { class: 'fcard' }, el('button', {
+  return el('li', { class: 'fcard podcast-card' }, el('button', {
     type: 'button',
     class: 'fcard-main',
     title: `Episodes of ${show}`,
@@ -5871,11 +5871,11 @@ function todayPodcasts(news) {
 }
 
 function podcastTodayRow(item) {
-  const art = el('span', { class: 'fart is-icon' }, icon('sound', 20));
+  const art = el('span', { class: 'fart is-icon is-podcast' }, icon('sound', 20));
   if (/^https:\/\//.test(item.image || '')) {
-    art.className = 'fart is-picture';
+    art.className = 'fart is-picture is-podcast';
     artPicture(art, item.image, () => {
-      art.className = 'fart is-icon';
+      art.className = 'fart is-icon is-podcast';
       art.replaceChildren(icon('sound', 20));
     });
   }
