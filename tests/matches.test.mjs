@@ -161,22 +161,34 @@ test('a team card keeps every game still to come, not just the next three, for T
 
 import { gameOrder, groupGames } from '../src/matches.js';
 
-test('Game mode: your teams first, then each league; live, then later today, then finished', () => {
+test('Game mode: your teams first, then each league; live, then later today, then just finished', () => {
   const now = Date.parse('2026-11-22T17:00:00Z');
   const s = (name) => ({ name, full: name, logo: '', color: '', score: '0' });
   const g = (id, state, hour, home, away) => ({ id, state, start: Date.parse(`2026-11-22T${String(hour).padStart(2, '0')}:00:00Z`), home: s(home), away: s(away), tv: [] });
   const groups = groupGames([
-    { name: 'Premier League', games: [g('a', 'post', 12, 'Arsenal', 'Spurs'), g('b', 'in', 16, 'Liverpool', 'Manchester United'), g('c', 'pre', 19, 'Chelsea', 'Everton'), g('d', 'in', 16, 'Leeds', 'Fulham')] },
+    { name: 'Premier League', games: [g('a', 'post', 12, 'Arsenal', 'Spurs'), g('f', 'post', 15, 'Brentford', 'Wolves'), g('b', 'in', 16, 'Liverpool', 'Manchester United'), g('c', 'pre', 19, 'Chelsea', 'Everton'), g('d', 'in', 16, 'Leeds', 'Fulham')] },
     { name: 'NFL', games: [g('e', 'pre', 18, 'Bears', 'Lions'), { ...g('old', 'post', 1, 'Old', 'Game'), start: Date.parse('2026-11-20T18:00:00Z') }] },
     { name: 'NBA', games: [] },
   ], now);
   assert.deepEqual(groups.map((group) => [group.title, group.games.map((game) => game.id)]), [
     ['Your teams', ['b']],
-    ['Premier League', ['d', 'c', 'a']],
+    // Arsenal–Spurs ended hours ago, so it's gone; Brentford–Wolves only just finished.
+    ['Premier League', ['d', 'c', 'f']],
     ['NFL', ['e']],
   ]);
   // Finished games: the latest first.
   assert.ok(gameOrder(g('x', 'post', 14, 'A', 'B'), g('y', 'post', 12, 'C', 'D')) < 0);
+});
+
+test('a finished game drops out of Game mode about 45 minutes after it ends', async () => {
+  const { isLongOver } = await import('../src/matches.js');
+  const kick = Date.parse('2026-11-22T12:00:00Z');
+  const at = (minutes) => kick + minutes * 60000;
+  assert.equal(isLongOver({ state: 'post', start: kick, sport: 'soccer/all' }, at(150)), false);
+  assert.equal(isLongOver({ state: 'post', start: kick, sport: 'soccer/all' }, at(170)), true);
+  assert.equal(isLongOver({ state: 'post', start: kick, sport: 'basketball/nba' }, at(190)), false);
+  assert.equal(isLongOver({ state: 'post', start: kick, sport: 'football/nfl' }, at(250)), true);
+  assert.equal(isLongOver({ state: 'in', start: kick, sport: 'soccer/all' }, at(400)), false);
 });
 
 import { shortClock } from '../src/matches.js';

@@ -1394,7 +1394,7 @@ function drawGamebar() {
   const odds = gameTab === 'odds';
   // Odds are for games still to be decided: a finished game's market is closed, so it isn't listed.
   const groups = odds ? gameGroups.map(({ title, games }) => ({ title, games: games.filter((game) => game.state !== 'post') })).filter(({ games }) => games.length) : gameGroups;
-  const empty = !gameGroups.length ? 'No games today in your leagues.' : 'Every game today is finished.';
+  const empty = !gameGroups.length ? 'No more games today in your leagues.' : 'Every game today is finished.';
   const scroll = bar.querySelector('.gamebar-body')?.scrollTop ?? 0;
   const body = el('div', { class: `gamebar-body${odds ? ' is-odds' : ''}` }, ...(groups.length
     ? groups.map(({ title, games }) => el('section', { class: 'gamebar-group' },

@@ -352,8 +352,15 @@ export function gameOrder(a, b) {
  * Today's games, grouped: my teams first, then each league. A league that doesn't answer is left
  * out rather than shown as empty. [{ title, games }]
  */
+// About how long a game lasts from kick-off to the end, breaks included.
+const GAME_LENGTH = { 'football/nfl': 200, 'basketball/nba': 150 };
+const SOCCER_LENGTH = 115;
+/** A finished game stays in Game mode for about 45 minutes after it ends, then drops out. */
+export const isLongOver = (game, now = Date.now()) => game.state === 'post'
+  && now > game.start + ((GAME_LENGTH[game.sport] ?? SOCCER_LENGTH) + 45) * 60000;
+
 export function groupGames(byLeague, now = Date.now()) {
-  const today = byLeague.map(({ name, games }) => ({ name, games: games.filter((game) => Number.isFinite(game.start) && sameDay(game.start, now)) }));
+  const today = byLeague.map(({ name, games }) => ({ name, games: games.filter((game) => Number.isFinite(game.start) && sameDay(game.start, now) && !isLongOver(game, now)) }));
   const mine = today.flatMap(({ games }) => games.filter((game) => isMine(game.home) || isMine(game.away))).sort(gameOrder);
   const groups = mine.length ? [{ title: 'Your teams', games: mine }] : [];
   for (const { name, games } of today) {
