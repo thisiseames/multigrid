@@ -61,10 +61,11 @@ export function normalizePPV(data, now = Date.now()) {
   });
 }
 
-const skipToday = (event) => event.category === 'Ice Hockey'
+const skipToday = (event) => event.category === 'Ice Hockey' || event.category === 'Darts'
+  || /\bdarts\b/i.test(event.name || '')
   || /\b(college|ncaa)\b/i.test(`${event.tag} ${event.source}`);
 
-/** The six events Today shows: live or starting in the next six hours, without college sports or hockey. */
+/** The six events Today shows: live or starting in the next six hours, without college sports, hockey or darts. */
 export function todayPPV(events, now = Date.now(), limit = 6) {
   const end = now + 6 * 3600 * 1000;
   return (events ?? [])

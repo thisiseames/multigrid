@@ -52,7 +52,7 @@ test('live events that started most recently come first', () => {
   assert.deepEqual(list.map((item) => item.name), ['Started at three', 'Started at noon']);
 });
 
-test('Today leaves out college sports, hockey and always-on channels', () => {
+test('Today leaves out college sports, hockey, darts and always-on channels', () => {
   const event = (name, over = {}) => ({
     name, category: 'Football', tag: 'LaLiga', source: 'HD', always: false, live: true, upcoming: false, starts: now - 1800000, ...over,
   });
@@ -61,6 +61,8 @@ test('Today leaves out college sports, hockey and always-on channels', () => {
     event('BYU Cougars at Kansas Jayhawks', { category: 'American Football', tag: 'College Football' }),
     event('College basketball', { category: 'Basketball', tag: 'College Basketball' }),
     event('NHL game', { category: 'Ice Hockey', tag: 'NHL' }),
+    event('Grand Slam of Darts | Day 9', { category: 'Darts', tag: 'PDC' }),
+    event('World Darts Championship', { category: 'Other', tag: 'PDC' }),
     event('NBA game', { category: 'Basketball', tag: 'NBA' }),
     event('24/7 channel', { always: true }),
     event('Upcoming soccer', { tag: 'MLS', live: false, upcoming: true, starts: now + 3600000 }),
