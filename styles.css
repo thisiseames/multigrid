@@ -2982,3 +2982,4 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .md-art .md-xi .mdp-shirt { width: 24px; height: 24px; font-size: 11px; }
 .md-art .md-xi .mdp-name { font-size: 9.5px; }
 @media (max-width: 1180px) { .md-art .md-xi { width: 210px; } }
+.mdp-player.is-off { opacity: .32; }

@@ -6760,7 +6760,7 @@ function mdScorers(match, data) {
 }
 
 /** A starting XI on an upright pitch: the goalkeeper at the bottom, the strikers at the top. */
-function mdPitch(side) {
+function mdPitch(side, gone = new Set()) {
   const pitch = el('div', { class: 'md-pitch' },
     el('span', { class: 'mdp-half' }), el('span', { class: 'mdp-circle' }),
     el('span', { class: 'mdp-box' }), el('span', { class: 'mdp-six' }));
@@ -6769,8 +6769,10 @@ function mdPitch(side) {
     // Rows run from the goalkeeper (bottom) to the attack (top); players spread left to right.
     const y = rows.length === 1 ? 50 : 86 - (rowIndex / (rows.length - 1)) * 74;
     row.forEach((player, index) => {
+      // Sent off or substituted: still shown where they started, faded.
+      const off = player.subbedOut || gone.has(player.short) || gone.has(player.name);
       pitch.append(el('span', {
-        class: 'mdp-player',
+        class: `mdp-player${off ? ' is-off' : ''}`,
         style: `left:${rowY(row.length, index)}%;top:${y}%`,
         title: [player.name, player.position].filter(Boolean).join(' · '),
       },
@@ -6785,7 +6787,8 @@ function mdPitch(side) {
 function mdLineup(match, data) {
   const side = (data?.lineups ?? []).find((item) => item.home === (mdSide(match) === 'home'));
   if (!side) return null;
-  const pitch = mdPitch(side);
+  const gone = new Set((data?.timeline ?? []).filter((item) => item.kind === 'red' || item.kind === 'sub').map((item) => (item.kind === 'sub' ? item.off : item.player)));
+  const pitch = mdPitch(side, gone);
   return el('div', { class: 'md-xi' },
     el('div', { class: 'md-xi-head' }, el('b', { textContent: `${match[mdSide(match)].name} XI` }), el('span', { textContent: side.formation })),
     pitch,
