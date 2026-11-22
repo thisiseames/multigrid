@@ -287,3 +287,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Phone stream bar: logo beside two lines (show title; LIVE chip + time left), score on a game; same 52px height (owner: never taller). Logo drawn once per stream.
 - Channel flip (arrow keys): the hover card for ~5 s, with "2 / 3 · channel" on top; hides the hover card while showing.
 - Shared helpers in app.js: espnScores/espnMatchFor/streamCard/cardElement; scoreWatchers redraw hover, phone bar and Search.
+
+## Nov 22 — Team desk and matchday programme
+- **Team desk** is the fourth Sports tab (Games / Standings / Transfers / Team). `tools/build-team.mjs` writes `team.json` hourly in the Reader job: the 30 current players with FPL availability and form (minutes, goals, assists, points), Transfermarkt contract expiry, team news, contracts by year and loans out. Permanently departed and loaned-out players are removed from the squad list; the loans still show in Loans out. Baleba (hamstring), Shaw, Ugarte, Rashford and Šeško are injured, Yoro is suspended until 2 Dec and Darlow is 75%. No market values in v1.
+- **Matchday programme** opens from the build-up/full-time card and the phone matchday sheet. It uses ESPN for the opposition’s last five, table place, danger man, the last meeting and the last United XI, and the Team desk for the out list. The Sporting example shows 10th in the Champions League, L-W-W-W-W, Luis Suárez on 4 goals, the 2007 last meeting, Paramount+ and the last XI. No referee or stadium weather: there is no reliable free feed, so they are left out rather than guessed.
+- Verified locally at 1280 and 390, including the 4-tab sheet switch and the full-screen phone programme; no overflow or console errors; 305 tests.

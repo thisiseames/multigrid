@@ -14,6 +14,7 @@ const TITLES = {
   'matches-menu': 'Sports',
   'standings-menu': 'Sports',
   'transfers-menu': 'Transfers',
+  'team-menu': 'Team',
   'reader-menu': 'Reader',
   'saved-menu': 'Saved layouts',
   'layout-menu': 'Layout',
@@ -26,6 +27,7 @@ const TAB_OF = {
   'matches-menu': 'sports',
   'standings-menu': 'sports',
   'transfers-menu': 'sports',
+  'team-menu': 'sports',
   'reader-menu': 'reader',
 };
 
@@ -55,7 +57,7 @@ function showSheet(menu) {
   menu.style.transform = '';
   // A stream's sheet is titled with the stream's name.
   $('sheet-title').textContent = menu.dataset.title || TITLES[menu.id];
-  const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu' || menu.id === 'transfers-menu';
+  const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu' || menu.id === 'transfers-menu' || menu.id === 'team-menu';
   document.body.classList.toggle('sports-sheet', Boolean(sheet && sports));
   $('sheet-title').hidden = sports;
   $('sheet-switch').hidden = !sports;
@@ -109,7 +111,8 @@ $('sheet-switch').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-panel]');
   if (!button || button.dataset.panel === openMenu?.id) return;
   $(button.dataset.panel === 'standings-menu' ? 'standings-button'
-    : button.dataset.panel === 'transfers-menu' ? 'transfers-button' : 'matches-button').click();
+    : button.dataset.panel === 'transfers-menu' ? 'transfers-button'
+      : button.dataset.panel === 'team-menu' ? 'team-button' : 'matches-button').click();
 });
 
 frame.addEventListener('pointerdown', (event) => {

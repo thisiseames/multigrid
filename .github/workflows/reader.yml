@@ -69,6 +69,11 @@ jobs:
         if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
         timeout-minutes: 3
+      # The Team desk's squad, contracts, availability and loans.
+      - run: node tools/build-team.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
+        timeout-minutes: 3
       - name: Save the new headlines
         if: steps.fresh.outputs.skip != 'true'
         run: |
@@ -77,6 +82,7 @@ jobs:
           git add -A reader
           if [ -f highlights.json ]; then git add highlights.json; fi
           if [ -f transfers.json ]; then git add transfers.json; fi
+          if [ -f team.json ]; then git add team.json; fi
           git diff --cached --quiet && exit 0
           git commit -m "Update Reader"
           for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

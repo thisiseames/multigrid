@@ -18,9 +18,11 @@ import { episodeCode, episodeFor, isNewToday } from './episodes.js';
 import { createTicker, isTickerOn, setTickerOn, tickerScores } from './ticker.js';
 import { connect, controllerPairing, forgetController, forgetHost, hostPairing, pairLink, pairingFromText, qrSvg, saveController } from './remote.js';
 import { LEAGUES, loadLeague, withConference } from './standings.js';
-import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
+import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, parseLineups, shortClock, todaysGames } from './matches.js';
+import { dangerMan, formOf, lastMeeting, lastResult } from './programme.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { sourceTier, squadGroups, transferNews, windowState } from './transfers.js';
+import { availability, contractSummary, contractText, teamNews } from './team.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
 import { episodeMeta, loadMovieMeta, loadShowMeta } from './library-meta.js';
@@ -6104,6 +6106,8 @@ $('guide-dialog').addEventListener('keydown', (event) => {
 });
 
 $('lineup-close').addEventListener('click', () => $('lineup-dialog').close());
+$('programme-close').addEventListener('click', () => $('programme-dialog').close());
+$('programme-dialog').addEventListener('click', (event) => { if (event.target === $('programme-dialog')) $('programme-dialog').close(); });
 $('lineup-dialog').addEventListener('click', (event) => {
   if (event.target === $('lineup-dialog')) $('lineup-dialog').close();
 });
@@ -6492,7 +6496,138 @@ function buildTransfers() {
   }, 10 * 60 * 1000);
 }
 
-/** Games and Standings are one Sports button; this is the switch inside its panel. */
+/* ---------- Team desk ---------- */
+
+let teamTimer = null;
+let teamAsked = 0;
+let teamShowNews = false;
+let teamCache = null;
+let teamAt = 0;
+
+async function loadTeam(force = false) {
+  if (!force && teamCache && Date.now() - teamAt < 5 * 60_000) return teamCache;
+  const response = await fetch('team.json', { cache: 'no-cache' });
+  if (!response.ok) throw new Error('team');
+  teamCache = await response.json();
+  teamAt = Date.now();
+  return teamCache;
+}
+
+const TEAM_GROUPS = [['GK', 'Goalkeepers'], ['DEF', 'Defenders'], ['MID', 'Midfielders'], ['FWD', 'Forwards']];
+
+function teamStatus(player) {
+  const state = availability(player);
+  return el('span', { class: `team-status is-${state.tone}`, textContent: state.label });
+}
+
+function teamPlayerRow(player) {
+  return el('div', { class: 'team-row' },
+    el('div', { class: 'team-row-top' },
+      el('span', { class: 'team-name', textContent: player.name }),
+      el('span', { class: 'team-contract', textContent: contractText(player.contract) || '—' }),
+      teamStatus(player)),
+    el('div', { class: 'team-meta' },
+      [player.position, player.age ? `${player.age}` : '', `${player.minutes} min`,
+        `${player.goals}G`, `${player.assists}A`, `${player.points} pts`].filter(Boolean).join(' · ')));
+}
+
+function teamNewsRow(player) {
+  return el('div', { class: 'team-news-row' },
+    el('div', { class: 'team-news-top' },
+      el('span', { class: 'team-name', textContent: player.name }),
+      teamStatus(player)),
+    el('p', { class: 'team-news-text', textContent: player.news || 'No return date' }));
+}
+
+function teamSection(label, note, ...children) {
+  return el('section', { class: 'team-sec' },
+    el('div', { class: 'team-sec-head' },
+      el('h4', { class: 'team-label', textContent: label }),
+      note ? el('span', { class: 'team-note', textContent: note }) : null),
+    ...children);
+}
+
+function renderTeamDesk(body, desk) {
+  const players = desk.players ?? [];
+  const news = teamNews(players);
+  const shownNews = teamShowNews ? news : news.slice(0, 5);
+  const contracts = contractSummary(players);
+  const next = md?.next;
+  const nextLine = next ? `${next.home.name} v ${next.away.name} · ${dayLabel(next.start)} ${clock(next.start)}` : '';
+
+  body.replaceChildren(
+    el('div', { class: 'tdesk-head' },
+      el('h3', { class: 'tdesk-title', textContent: 'Team' }),
+      el('p', { class: 'tdesk-sub', textContent: `${desk.team} · ${players.length} players · updated ${clock(desk.updated)}` }),
+      nextLine ? el('p', { class: 'tdesk-next', textContent: `Next: ${nextLine}` }) : null),
+
+    teamSection('Team news', news.length ? `${news.length} not fully fit` : 'Everyone fit',
+      news.length
+        ? el('div', { class: 'team-news' }, ...shownNews.map(teamNewsRow),
+          news.length > 5 ? el('button', { type: 'button', class: 'team-more', textContent: teamShowNews ? 'Show latest' : `Show all ${news.length}`, on: { click() { teamShowNews = !teamShowNews; fillTeam(); } } }) : null)
+        : el('p', { class: 'team-empty', textContent: 'No injuries or suspensions.' })),
+
+    teamSection('Squad', `${players.length} players`,
+      ...TEAM_GROUPS.map(([key, label]) => {
+        const rows = players.filter((player) => player.group === key);
+        if (!rows.length) return null;
+        return el('details', { class: 'team-group', open: true },
+          el('summary', { class: 'team-group-head' },
+            el('span', { textContent: label }),
+            el('span', { class: 'team-group-count', textContent: String(rows.length) })),
+          ...rows.map(teamPlayerRow));
+      }).filter(Boolean)),
+
+    teamSection('Contracts', 'expiry year',
+      el('div', { class: 'team-contracts' }, ...contracts.map((group) => el('div', { class: 'team-contract-row' },
+        el('b', { textContent: group.year }),
+        el('span', { textContent: group.names.join(', ') }))))),
+
+    teamSection('Loans out', `${(desk.loans ?? []).length} players`,
+      (desk.loans ?? []).length
+        ? el('div', { class: 'team-loans' }, ...desk.loans.map((loan) => el('a', {
+          class: 'team-loan-row',
+          href: loan.link || undefined,
+          target: loan.link ? '_blank' : undefined,
+          rel: loan.link ? 'noopener' : undefined,
+        },
+        el('span', { textContent: loan.player }),
+        el('b', { textContent: loan.club }),
+        el('span', { class: 'team-loan-date', textContent: loan.date ? dayLabel(loan.date) : '' }))))
+        : el('p', { class: 'team-empty', textContent: 'No loans out.' })));
+}
+
+async function fillTeam() {
+  const menu = $('team-menu');
+  const body = menu.querySelector('.team-body');
+  if (!body) return;
+  const asked = ++teamAsked;
+  if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 6 }, () => el('span', { class: 'skeleton is-thin' }))));
+  try {
+    const desk = await loadTeam();
+    if (asked !== teamAsked || menu.hidden) return;
+    renderTeamDesk(body, desk);
+    const updated = menu.querySelector('.matches-updated');
+    if (updated) updated.textContent = `Updated ${clock(desk.updated)} · FPL, Transfermarkt and the Premier League`;
+  } catch {
+    if (asked !== teamAsked || menu.hidden) return;
+    body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'The team desk could not load. Try again in a minute.' }));
+  }
+}
+
+function buildTeam() {
+  const menu = $('team-menu');
+  teamShowNews = false;
+  menu.replaceChildren(sportsSwitch('team'), el('div', { class: 'matches-body team-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  fillTeam();
+  clearInterval(teamTimer);
+  teamTimer = setInterval(() => {
+    if (menu.hidden) return clearInterval(teamTimer);
+    fillTeam();
+  }, 10 * 60 * 1000);
+}
+
+/** Games, Standings, Transfers and Team are one Sports button; this is the switch inside its panel. */
 function sportsSwitch(current) {
   const tab = (label, panel) => el('button', {
     type: 'button',
@@ -6501,21 +6636,22 @@ function sportsSwitch(current) {
     textContent: label,
     on: { click: () => openSports(panel) },
   });
-  return el('div', { class: 'sports-switch', role: 'tablist', aria: { label: 'Sports' } }, tab('Games', 'games'), tab('Standings', 'standings'), tab('Transfers', 'transfers'));
+  return el('div', { class: 'sports-switch', role: 'tablist', aria: { label: 'Sports' } }, tab('Games', 'games'), tab('Standings', 'standings'), tab('Transfers', 'transfers'), tab('Team', 'team'));
 }
 
 function openSports(panel) {
   if (document.body.classList.contains('is-phone')) {
-    $(panel === 'standings' ? 'standings-button' : panel === 'transfers' ? 'transfers-button' : 'matches-button').click();
+    $(panel === 'standings' ? 'standings-button' : panel === 'transfers' ? 'transfers-button' : panel === 'team' ? 'team-button' : 'matches-button').click();
     return;
   }
-  const menu = panel === 'standings' ? $('standings-menu') : panel === 'transfers' ? $('transfers-menu') : $('matches-menu');
-  togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : panel === 'transfers' ? buildTransfers : buildMatches);
+  const menu = panel === 'standings' ? $('standings-menu') : panel === 'transfers' ? $('transfers-menu') : panel === 'team' ? $('team-menu') : $('matches-menu');
+  togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : panel === 'transfers' ? buildTransfers : panel === 'team' ? buildTeam : buildMatches);
 }
 
 $('sports-button').addEventListener('click', () => openSports('games'));
 $('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
 $('transfers-button').addEventListener('click', () => togglePopover($('sports-button'), $('transfers-menu'), buildTransfers));
+$('team-button').addEventListener('click', () => togglePopover($('sports-button'), $('team-menu'), buildTeam));
 
 /* ---------- Reader ---------- */
 
@@ -7121,7 +7257,7 @@ function highlightsButton(match) {
    full-time card tells the story for the rest of the day; other days a slim line counts down. */
 // var, not const: Game mode and the ticker can ask before this part of the file has run.
 var md = { team: matchdayTeam(), // eslint-disable-line no-var
-  match: null, next: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off' };
+  match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off' };
 var mdTimer = null; // eslint-disable-line no-var
 const MD_SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=';
 
@@ -7146,6 +7282,7 @@ function findMatchday(sections, now = Date.now()) {
   // A fresher state from the match file wins over the schedule's.
   md.match = today && md.data?.match?.id === today.id ? md.data.match : today;
   md.next = next;
+  md.last = card.last;
   md.found = now;
 }
 
@@ -7403,6 +7540,117 @@ async function loadMatchdayStories() {
   mdStories = (index?.items ?? []).filter((item) => item.group === 'Man United').sort((a, b) => b.time - a.time).slice(0, 12);
 }
 
+/* Matchday programme: the next match's opposition, form, danger man, last meeting and last XI. */
+
+let programmeAsked = 0;
+
+function programmeMatch() {
+  const now = Date.now();
+  if (md?.match && md.match.state === 'pre' && md.match.start > now - 4 * 3600000) return md.match;
+  return md?.next ?? null;
+}
+
+function programmeSection(label, ...children) {
+  return el('section', { class: 'prog-sec' },
+    el('h4', { class: 'prog-label', textContent: label }),
+    ...children.filter(Boolean));
+}
+
+const progDate = (time) => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(time));
+
+function renderProgramme(body, match, data) {
+  const { opponent, standing, form, last, danger, meeting, side, out, tv, venue } = data;
+  body.replaceChildren(
+    el('div', { class: 'prog-hero' },
+      el('h3', { class: 'prog-title', textContent: `${match.home.name} v ${match.away.name}` }),
+      el('p', { class: 'prog-sub', textContent: [dayLabel(match.start), clock(match.start), venue].filter(Boolean).join(' · ') })),
+    el('div', { class: 'prog-grid' },
+      programmeSection(`Opposition · ${opponent.name}`,
+        standing ? el('p', { class: 'prog-line', textContent: standing }) : null,
+        form.length ? el('div', { class: 'prog-form' }, ...form.map((result) => el('span', { class: `is-${result.toLowerCase()}`, textContent: result }))) : null,
+        last ? el('p', { class: 'prog-line', textContent: `Last: ${last.score} v ${last.opponent} (${last.home ? 'H' : 'A'})` }) : null,
+        danger ? el('p', { class: 'prog-line' }, el('b', { textContent: danger.name }), ` · ${danger.value} ${danger.stat}`) : null,
+        !standing && !form.length && !last && !danger ? el('p', { class: 'prog-line is-quiet', textContent: 'No opposition data yet.' }) : null),
+      programmeSection('United',
+        side ? el('p', { class: 'prog-line' }, el('b', { textContent: `Last XI${side.formation ? ` · ${side.formation}` : ''}` }), ` ${side.starters.map((player) => player.name).join(', ')}`) : null,
+        out.length ? el('p', { class: 'prog-line' }, el('b', { textContent: 'Out / doubtful:' }), ` ${out.map((player) => `${player.name} (${player.state.label})`).join(', ')}`) : null,
+        !side && !out.length ? el('p', { class: 'prog-line is-quiet', textContent: 'No team news yet.' }) : null)),
+    meeting ? programmeSection('Last meeting',
+      el('p', { class: 'prog-line', textContent: `${meeting.home} ${meeting.homeScore}–${meeting.awayScore} ${meeting.away} · ${progDate(meeting.date)}` })) : null,
+    programmeSection('Watch',
+      el('p', { class: 'prog-line', textContent: tv || 'Check the TV guide for the broadcaster.' })));
+}
+
+async function fillProgramme(match) {
+  const body = $('programme-body');
+  const asked = ++programmeAsked;
+  body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 6 }, () => el('span', { class: 'skeleton is-thin' }))));
+  try {
+    const opponent = match.home.id === md.team.id ? match.away : match.home;
+    const base = 'https://site.api.espn.com/apis/site/v2/sports/soccer/all';
+    const [summary, teamInfo, schedule] = await Promise.all([
+      fetch(`${MD_SUMMARY}${encodeURIComponent(match.id)}`, { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null),
+      fetch(`${base}/teams/${encodeURIComponent(opponent.id)}`, { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null),
+      fetch(`${base}/teams/${encodeURIComponent(opponent.id)}/schedule`, { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null),
+    ]);
+    if (asked !== programmeAsked) return;
+    const events = schedule?.events ?? [];
+    const form = formOf(events, opponent.id);
+    const last = lastResult(events, opponent.id);
+    const lastEvent = events.filter((event) => (event.competitions?.[0]?.status?.type?.state ?? event.status?.type?.state) === 'post')
+      .sort((a, b) => Date.parse(a.date) - Date.parse(b.date)).at(-1);
+    const oppSummary = lastEvent
+      ? await fetch(`${MD_SUMMARY}${encodeURIComponent(lastEvent.id)}`, { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null)
+      : null;
+    if (asked !== programmeAsked) return;
+    const danger = dangerMan(summary, opponent.id) ?? dangerMan(oppSummary, opponent.id);
+    const meeting = lastMeeting(summary?.seasonseries, md.team.id);
+    const tableEntries = (summary?.standings?.groups ?? []).flatMap((group) => group.standings?.entries ?? []);
+    const tableAt = tableEntries.findIndex((entry) => String(entry.id) === String(opponent.id));
+    const ordinal = (number) => `${number}${number % 10 === 1 && number % 100 !== 11 ? 'st'
+      : number % 10 === 2 && number % 100 !== 12 ? 'nd'
+        : number % 10 === 3 && number % 100 !== 13 ? 'rd' : 'th'}`;
+    const standing = teamInfo?.team?.standingSummary
+      || (tableAt >= 0 ? `${ordinal(tableAt + 1)} in ${String(summary?.standings?.header ?? 'the table').replace(/\s+Standings$/i, '')}` : '');
+    const lastUnited = md.last ?? (md.match?.state === 'post' ? md.match : null);
+    let lineups = md.data?.lineups ?? [];
+    if (lastUnited && (!lineups.length || md.data?.match?.id !== lastUnited.id)) {
+      const lastSummary = await fetch(`${MD_SUMMARY}${encodeURIComponent(lastUnited.id)}`, { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : null)).catch(() => null);
+      if (asked !== programmeAsked) return;
+      lineups = parseLineups(lastSummary);
+    }
+    const side = lineups.find((item) => item.home === (lastUnited?.home.id === md.team.id)) ?? lineups[0] ?? null;
+    const team = await loadTeam().catch(() => null);
+    if (asked !== programmeAsked) return;
+    renderProgramme(body, match, {
+      opponent,
+      standing,
+      form,
+      last,
+      danger,
+      meeting,
+      side,
+      out: team ? teamNews(team.players).slice(0, 7) : [],
+      tv: [...new Set(match.tv ?? [])].join(', '),
+      venue: match.venue || summary?.gameInfo?.venue?.fullName || '',
+    });
+  } catch {
+    if (asked === programmeAsked) body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'The programme could not load. Try again in a minute.' }));
+  }
+}
+
+function openProgramme(match = programmeMatch()) {
+  if (!match) {
+    toast('No next match yet.');
+    return;
+  }
+  $('programme-match').textContent = `${dayLabel(match.start)} ${clock(match.start)}${match.league ? ` · ${match.league}` : ''}`;
+  const box = $('programme-dialog');
+  if (!box.open) openDialog(box);
+  fillProgramme(match);
+}
+
 /** The banner: early (in the rotation), the build-up and the game itself (holding it), full time (in the rotation). */
 function matchdayHeroItem(phase) {
   const match = mdMatch();
@@ -7425,7 +7673,8 @@ function matchdayHeroItem(phase) {
       parts.push(facts(mdForm(match, data), mdChances(match, md.odds)));
       parts.push(el('div', { class: 'hero-buttons' },
         md.broadcast ? mdButton(now >= md.broadcast.start ? 'Watch the build-up' : `Watch from ${clock(md.broadcast.start)}`, 'play', mdWatch, true) : null,
-        mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast)));
+        mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast),
+        mdButton('Programme', 'guide', () => openProgramme(match))));
     } else if (phase === 'live') {
       const last = (data?.timeline ?? []).filter((item) => item.kind !== 'break').at(-1);
       parts.push(el('p', { class: 'hero-meta', textContent: [last ? `${last.minute} ${last.kind === 'goal' ? 'Goal' : last.kind === 'sub' ? 'Sub' : last.kind === 'red' ? 'Red card' : 'Yellow card'}: ${last.player}${last.kind === 'sub' ? ` for ${last.off}` : ''} (${match[last.side]?.name || ''})` : '', channel].filter(Boolean).join(' · ') }));
@@ -7447,6 +7696,7 @@ function matchdayHeroItem(phase) {
       parts.push(el('div', { class: 'hero-buttons' },
         highlights ? mdButton('Highlights', 'play', () => playHighlights(match), true) : null,
         reaction ? mdButton('Reaction', 'play', () => document.querySelector('.home-row.is-matchday')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), !highlights) : null,
+        md.next ? mdButton('Programme', 'guide', () => openProgramme(md.next)) : null,
         mdButton('Match centre', 'live', openMatchday, !highlights && !reaction)));
       if (md.next) parts.push(el('p', { class: 'hero-meta md-next-line', textContent: `Next: ${md.next.home.name} v ${md.next.away.name} · ${dayLabel(md.next.start)} ${clock(md.next.start)}` }));
     }
@@ -7616,7 +7866,11 @@ function fillMatchdaySheet() {
   if (!box) return;
   const scroll = box.querySelector('.matchday-body')?.scrollTop ?? 0;
   const body = el('div', { class: 'matchday-body' }, matchCentre());
-  box.replaceChildren(el('div', { class: 'ch-head' }, el('h2', { textContent: mdPhase() === 'fulltime' ? 'Post-match' : 'Matchday' }), iconButton('close', 'Close', () => box.close())), body);
+  const programme = programmeMatch();
+  box.replaceChildren(el('div', { class: 'ch-head' },
+    el('h2', { textContent: mdPhase() === 'fulltime' ? 'Post-match' : 'Matchday' }),
+    programme ? el('button', { type: 'button', class: 'md-link', on: { click: () => openProgramme(programme) } }, 'Programme') : null,
+    iconButton('close', 'Close', () => box.close())), body);
   body.scrollTop = scroll;
 }
 
