@@ -2370,6 +2370,11 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 /* Every picture box in the drop-down is the same size, so all the names start in one line. */
 .saved-drop .sdrop-shape { box-sizing: border-box; width: 52px; height: 38px; justify-content: center; align-items: center; }
 .saved-drop .sdrop-row.is-danger .sdrop-shape { color: var(--danger); }
+/* The MULTIGRID drop-down: white icons, layout pictures and switches (no periwinkle). */
+.saved-drop .sdrop-shape { color: #f5f5f7; }
+.saved-drop .sdrop-row.is-danger .sdrop-shape { color: var(--danger); }
+.saved-drop .more-switch.is-on { background: #f5f5f7; }
+.saved-drop .more-switch.is-on::after { background: #0b0b0d; }
 
 /* Picture in picture: the second stream sits small in the bottom-right corner of the first, like a TV. */
 /* The small screen is just the picture, no top bar. */

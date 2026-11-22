@@ -26,6 +26,7 @@ import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
+import { isStingOn, playSting, setStingOn } from './sting.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
@@ -1143,7 +1144,10 @@ function render() {
   const showWelcome = false;
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
-  $('stage').classList.toggle('is-empty-wall', !showWelcome && streamCount(ws) === 0);
+  const wallNow = !showWelcome && streamCount(ws) === 0;
+  // The laptop's empty screen plays MULTIGRID's opening sound as the wordmark draws together.
+  if (wallNow && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
+  $('stage').classList.toggle('is-empty-wall', wallNow);
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
@@ -7000,6 +7004,16 @@ function buildSavedDrop() {
     el('span', { class: 'sdrop-shape' }, icon('live', 18)),
     el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Game mode' }), el('small', { textContent: grid.isStacked || onPhoneScreen() ? 'Live scores in the ticker' : 'Live scores beside the streams' })),
     el('span', { class: `more-switch${isGameOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })),
+    // The opening sound plays only on the laptop's empty screen, so its switch is only there.
+    onPhoneScreen() ? null : el('button', {
+      type: 'button',
+      class: 'sdrop-switch',
+      aria: { pressed: String(isStingOn()) },
+      on: { click() { setStingOn(!isStingOn()); buildSavedDrop(); } },
+    },
+    el('span', { class: 'sdrop-shape' }, icon('sound', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Opening sound' }), el('small', { textContent: 'When the empty screen appears' })),
+    el('span', { class: `more-switch${isStingOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })),
   ].filter(Boolean));
 }
 $('wordmark').addEventListener('click', () => togglePopover($('wordmark'), $('saved-drop'), buildSavedDrop));
