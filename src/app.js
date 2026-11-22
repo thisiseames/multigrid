@@ -2320,7 +2320,7 @@ function libraryMovieCard(movie) {
       art.replaceChildren(icon('film', 20));
     }, true);
   });
-  return el('li', { class: 'fcard' }, el('button', {
+  return el('li', { class: 'fcard movie-card' }, el('button', {
     type: 'button',
     class: 'fcard-main',
     title: `Play ${movie.title}`,

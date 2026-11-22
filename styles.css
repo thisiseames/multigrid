@@ -2028,6 +2028,9 @@ body.is-phone .tile-popped button { height: 44px; padding: 0 20px; font-size: 14
 .pod-view { display: flex; flex-direction: column; }
 /* Library: a folder on this computer, in Favorites */
 .lib-modes { padding: 2px 0 8px; border-bottom: 0; }
+.fcard.movie-card .fart { aspect-ratio: 2 / 3; background: #0b0b0c; }
+.fcard.movie-card .fart img { object-fit: contain; }
+.fcard.movie-card .fcard-text { padding-right: 10px; }
 .lib-head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
 .lib-head .addp-label { flex: 1; font-size: 11px; }
 .lib-head .text-button { font-size: 12px; }
