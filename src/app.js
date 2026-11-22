@@ -5540,6 +5540,8 @@ const GUIDE_TEAMS = [
   { pattern: /\braptors\b/i, color: '#ce1141' },
 ];
 const teamColorOf = (show) => GUIDE_TEAMS.find((team) => team.pattern.test(`${show.title} ${show.about}`))?.color ?? '';
+/** A show is Man Utd content if the channel or the show says so. */
+const isManUtdShow = (item, show) => GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`);
 
 const minutesLeft = (show) => Math.max(1, Math.round((show.end - Date.now()) / 60000));
 const durationText = (minutes) => (minutes >= 60 ? `${Math.floor(minutes / 60)} hr${minutes % 60 ? ` ${minutes % 60} min` : ''}` : `${minutes} min`);
@@ -5554,8 +5556,7 @@ function guideChannels() {
   const { sections } = guideSections();
   const all = sections.flatMap((section) => section.rows);
   const real = sections.map((section) => section.folder).filter(Boolean);
-  const hasManUtd = all.some(({ item }) => nowAndNext(item.name, parseSource(item.input))?.current
-    || showsBetween(item.name, parseSource(item.input), Date.now(), Infinity).some((show) => GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`)));
+  const hasManUtd = all.some(({ item }) => showsBetween(item.name, parseSource(item.input), Date.now(), Infinity).some((show) => isManUtdShow(item, show)));
   // Keep the owner's folder order; the Man Utd folder sits directly after Sports.
   const folders = hasManUtd && !real.some((folder) => sameGuideFolder(folder, MAN_UTD_FOLDER))
     ? folderAfter(real, MAN_UTD_FOLDER, 'Sports')
@@ -5576,12 +5577,30 @@ function manUtdResults() {
   const found = [];
   for (const { item } of guideSections().sections.flatMap((section) => section.rows)) {
     for (const show of showsBetween(item.name, parseSource(item.input), now, Infinity)) {
-      if (GUIDE_TEAMS[0].pattern.test(`${item.name} ${show.title} ${show.about}`)) found.push({ item, show });
+      if (isManUtdShow(item, show)) found.push({ item, show });
     }
   }
   return found.sort((a, b) => (a.show.start <= now && now < a.show.end ? 0 : 1) - (b.show.start <= now && now < b.show.end ? 0 : 1)
     || a.show.start - b.show.start).slice(0, 100);
 }
+
+/** The next Man Utd show on each channel, in the order the results are already sorted. */
+function manUtdPicks() {
+  const seen = new Set();
+  const picks = [];
+  for (const found of manUtdResults()) {
+    if (seen.has(found.item.input)) continue;
+    seen.add(found.item.input);
+    picks.push(found);
+  }
+  return picks;
+}
+
+/** A Man Utd show drawn as the normal Now card, so the folder looks like every other folder. */
+const manUtdCard = ({ item, show }) => nowCard({
+  item,
+  listing: show.start <= Date.now() && Date.now() < show.end ? { current: show, next: null } : { current: null, next: show },
+});
 
 function watchChannel(item) {
   $('guide-dialog').close();
@@ -5686,7 +5705,7 @@ function nowCard({ item, listing }) {
 
 /* Timeline: channels down the side, half hours across, a line at right now. */
 const PER_MINUTE = 4;
-function timelineView(rows) {
+function timelineView(rows, only = null) {
   const now = Date.now();
   const half = 30 * 60000;
   // It starts at the current half hour, so what's on now begins at the left edge with its title showing.
@@ -5699,7 +5718,8 @@ function timelineView(rows) {
     marks.push(el('span', { class: 'gtl-mark', style: `left:${x(time)}px`, textContent: clock(time) }));
   }
   const lines = rows.map(({ item }) => {
-    const shows = showsBetween(item.name, parseSource(item.input), from, to);
+    const shows = showsBetween(item.name, parseSource(item.input), from, to).filter((show) => !only || only(item, show));
+    if (!shows.length) return null;
     return el('div', { class: 'gtl-row' },
       el('button', { type: 'button', class: 'gtl-channel', title: `Watch ${item.name}`, on: { click: () => watchChannel(item) } }, el('span', { textContent: item.name })),
       el('div', { class: 'gtl-track', style: `width:${width}px` }, ...shows.map((show) => {
@@ -5717,7 +5737,7 @@ function timelineView(rows) {
         el('span', { class: 'gtl-title' }, show.live ? el('span', { class: 'live-dot' }) : null, show.title),
         el('span', { class: 'gtl-time', textContent: `${clock(show.start)} – ${clock(show.end)}` }));
       })));
-  });
+  }).filter(Boolean);
   return el('div', { class: 'gtl', style: `--track:${width}px` },
     el('div', { class: 'gtl-head' }, el('span', { class: 'gtl-corner', textContent: dayLabel(now) }), el('div', { class: 'gtl-marks', style: `width:${width}px` }, ...marks, el('span', { class: 'gtl-now-head', style: `left:${x(now)}px` }))),
     el('div', { class: 'gtl-body' }, el('div', { class: 'gtl-lines' }, ...lines)));
@@ -5789,7 +5809,8 @@ function renderGuide() {
   const detail = box.querySelector('.gdetail');
 
   const manUtd = sameGuideFolder(guideFolder, MAN_UTD_FOLDER);
-  const views = manUtd ? null : el('div', { class: 'gviews', role: 'tablist' }, ...[['now', 'Now'], ['timeline', 'Timeline']].map(([id, label]) => el('button', {
+  const manUtdList = manUtd ? manUtdPicks() : [];
+  const views = el('div', { class: 'gviews', role: 'tablist' }, ...[['now', 'Now'], ['timeline', 'Timeline']].map(([id, label]) => el('button', {
     type: 'button',
     role: 'tab',
     class: `gview${guideView === id ? ' is-on' : ''}`,
@@ -5812,18 +5833,15 @@ function renderGuide() {
     body = el('div', { class: 'gbody' }, found.length
       ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
       : el('p', { class: 'match-quiet is-empty', textContent: `No shows on your channels match “${guideQuery}” in the guide, which runs about a day ahead.` }));
-  } else if (manUtd) {
-    const found = manUtdResults();
-    body = el('div', { class: 'gbody' }, found.length
-      ? el('ul', { class: 'gfound-list' }, ...found.map(guideResultRow))
-      : el('p', { class: 'match-quiet is-empty', textContent: 'No Man Utd shows in the guide.' }));
   } else if (guideView === 'timeline') {
-    body = el('div', { class: 'gbody is-timeline' }, timelineView(rows));
+    body = el('div', { class: 'gbody is-timeline' }, timelineView(manUtd ? manUtdList.map(({ item }) => item) : rows, manUtd ? isManUtdShow : null));
   } else {
     const shown = guideSections().sections.reduce((sum, section) => sum + section.rows.length, 0);
     const withoutSchedule = Math.max(0, total - shown - twitchRows.length);
     body = el('div', { class: 'gbody' },
-      el('ul', { class: 'gnow-list' }, ...rows.map(nowCard)),
+      manUtd && !manUtdList.length
+        ? el('p', { class: 'match-quiet is-empty', textContent: 'No Man Utd shows in the guide.' })
+        : el('ul', { class: 'gnow-list' }, ...(manUtd ? manUtdList.map(manUtdCard) : rows.map(nowCard))),
       withoutSchedule && !guideFolder
         ? el('p', { class: 'gnote', textContent: `${plural(withoutSchedule, 'other favorite')} ${withoutSchedule === 1 ? 'has' : 'have'} no TV schedule, like shows, YouTube channels and streaming services.` })
         : null);
