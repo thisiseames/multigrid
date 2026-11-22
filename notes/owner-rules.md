@@ -82,6 +82,10 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
 - Podcast queues/auto-next of any kind. Owner, Nov 22: does not care about a podcast queue; never suggest one again.
 
+## Check every piece of a pitch in the code first
+Nov 22: I pitched "live channel cards" (show title, progress bar, what's next), Reader pictures and a drifting banner as upgrades; all three already exist (favorite cards' On now line, Guide Now cards, readerHero/readerPicture, hero-drift). He was furious: "Understand the website before you pitch things." Before any idea: grep src/app.js and styles.css for every element the idea describes, and open the real screen. Each pitch must say what exists today and only the part that doesn't.
+Pitch to his bar: makes his life easier, wows him, elevates an existing feature's look/feel/use, and makes MULTIGRID look like a product from Netflix, Apple TV, DAZN or Fubo. No gimmicks, no filler to make a list of three.
+
 ## No dead-end proposals
 Before suggesting a tool, import or API, name the exact content source in one line. If it depends on a playlist, file, login, key or provider only the owner can supply, say that before the idea and do not recommend it unless he has confirmed he has it. Never propose a tool whose only input is a follow-up I refuse to do. If I cannot source and test the content, I drop the idea instead of building an empty container. M3U import is out: the owner has no playlist and Channel Finder already imports free channels.
 - Also turned down before: broken-link "Not working since …" labels; goal/score alerts and other small sports gimmicks.
