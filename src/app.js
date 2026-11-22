@@ -2845,6 +2845,8 @@ const channelPictureFor = (name) => CHANNEL_PICTURES.find(([pattern]) => pattern
 // Services whose own mark is clearer than a favicon. "picture" fills the card; "logo" sits on a
 // dark or light tile, because a black wordmark would disappear on the dark one.
 const BRAND_PICTURES = [
+  // Atlantic (atlantic.bz): its own "A" mark on its navy, made to fill the card. Exactly "Atlantic", so Sky Atlantic isn't caught.
+  [/^atlantic$/i, { url: 'assets/atlantic-card.svg', fit: 'picture', domain: 'atlantic.bz' }],
   [/^stan sport/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Stan_Sport_logo.svg/960px-Stan_Sport_logo.svg.png', fit: 'picture', domain: 'stan.com.au' }],
   [/^sky sports/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Sky_Sports_2020.svg/960px-Sky_Sports_2020.svg.png', fit: 'logo', tone: 'light', domain: 'skysports.com' }],
   [/^tnt sports/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/TNT_Sports_2021_logo.svg/960px-TNT_Sports_2021_logo.svg.png', fit: 'logo', tone: 'light', domain: 'tntsports.co.uk' }],

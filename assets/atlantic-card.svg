@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Atlantic">
+  <!-- Atlantic's own "A" mark (from atlantic.bz), on the site's navy, sized for a 16:9 favourite card. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="58%" r="55%">
+      <stop offset="0%" stop-color="#0d2a38"/>
+      <stop offset="100%" stop-color="#050b12"/>
+    </radialGradient>
+    <linearGradient id="aMarkGrad" x1="1" y1="0" x2="0.15" y2="1">
+      <stop offset="0%" stop-color="#2fb8dd"/>
+      <stop offset="40%" stop-color="#0c5870"/>
+      <stop offset="100%" stop-color="#050b12"/>
+    </linearGradient>
+    <clipPath id="aMarkClip">
+      <path d="M108,40 Q110,35 112,40 Q129,118 182,192 L127,192 L119,175 L101,175 L93,192 L38,192 Q91,118 108,40 Z"/>
+    </clipPath>
+  </defs>
+  <rect width="640" height="360" fill="url(#glow)"/>
+  <svg x="210" y="54" width="220" height="220" viewBox="0 0 220 220">
+    <path d="M108,40 Q110,35 112,40 Q129,118 182,192 L127,192 L119,175 L101,175 L93,192 L38,192 Q91,118 108,40 Z" fill="url(#aMarkGrad)"/>
+    <path d="M110,38 L119,175 L101,175 Z" fill="#ffffff" opacity="0.1"/>
+    <g clip-path="url(#aMarkClip)">
+      <path d="M10,134 C40,116 66,142 88,124 C112,104 142,132 174,114 C184,109 194,112 200,116 L200,130 C188,124 174,122 162,130 C138,146 110,118 86,138 C62,158 38,132 10,146 Z" fill="#0a6b86"/>
+      <path d="M2,152 C32,132 58,158 84,138 C108,118 136,146 168,126 L168,134 C142,150 114,126 88,146 C64,164 38,140 2,158 Z" fill="#4fe0fb"/>
+    </g>
+  </svg>
+</svg>
