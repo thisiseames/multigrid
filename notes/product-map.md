@@ -103,7 +103,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Do not propose a local TV/movie library; it exists.**
 - **Do not propose X-list timelines, TikTok live, or a cross-source queue as existing.** X imports are per-profile favorites; TikTok live falls back to the profile; only YouTube and local-file playlists auto-advance.
 - **Do not propose a separate Podcasts section.** The dock and PODCASTS folder tab already exist; the owner rejected another space-eating section. The Apple directory is inside PODCASTS, with full episodes, not song previews. Podcast charts (Top Shows/Trending Episodes) already exist too.
-- **Do not propose a same-show podcast queue.** The owner does not listen to several episodes of one podcast back-to-back. Any future queue must never do that.
+- **Do not propose a podcast queue of any kind.** The owner does not care about one.
 - **Do not propose iTunes/Deezer song previews for Charts.** The podcast directory uses `media=podcast`/`podcastEpisode`; it does not add 30-second music clips or touch chart actions.
 - **Do not add duplicate top-bar buttons for Fullscreen, Help, Saved layouts or Remote.** They already have hidden proxy buttons plus More-menu/phone entry points; replace those, don't add alongside.
 - **Do not propose a new mobile sound UI or extra bottom tabs.** The phone stream bar, Sound sheet, Sports switch and conditional Guide tab already exist.
