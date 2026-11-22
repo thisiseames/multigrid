@@ -1,31 +1,55 @@
 # Keeps the Man Utd post-match fan reactions fresh while a game is on and for four hours after.
 # The full Reader/highlights job is about every 25 minutes; this small feed is every five.
+# GitHub barely runs scheduled jobs for this project, so each run starts the next one and the
+# next one waits five minutes before refreshing. The schedule is only a backup.
 name: matchday-reactions
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
+    inputs:
+      chained:
+        description: 'Started by the previous run (waits five minutes first)'
+        type: boolean
+        default: false
   push:
     paths:
       - '.github/workflows/matchday-reactions.yml'
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     concurrency:
-      group: reader-build
+      group: matchday-reactions
       cancel-in-progress: false
     steps:
+      - name: Wait five minutes between refreshes
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.chained == 'true'
+        run: sleep 270
+
+      - name: Start the next refresh
+        # Before the work, so a failed build never breaks the loop.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3; do
+            gh workflow run matchday-reactions.yml --repo "${{ github.repository }}" --ref main -f chained=true && exit 0
+            sleep 10
+          done
+          exit 1
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: node tools/build-matchday-reactions.mjs
+
       - name: Save the reactions
         run: |
           git config user.name "multigrid-reader"
