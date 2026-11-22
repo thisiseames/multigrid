@@ -20,12 +20,12 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 - **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams.
 - **X account** field (fixed `x.com/@` prefix, 1–15 characters) with Add; it auto-saves to the Twitter folder.
-- **Action row** is Play a video file from this computer/phone, Browse PPV events, and Import a list — three across on desktop, one column on phone.
+- **Action row** is Play a video file from this computer/phone, Share a screen or tab (desktop Chrome), Browse PPV events, and Import a list — four across on a wide desktop, 2×2 under 980px, one column on phone (screen action hidden).
 - **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The old stacked links are gone.
 - **Files:** one file becomes one tile; several files become one episode playlist in filename order (100-file cap), with auto-advance, Previous/Next, per-episode resume, one Continue watching card. Chrome keeps file handles; Safari asks again after reload.
 - **On touch phones** Add a note and Find a live channel are hidden in Add stream; Channel Finder is still reachable from Search actions.
 - **PPV events:** PPV.st live/upcoming events with posters; adding one saves it in the PPV folder.
-- **Local Library:** one LIBRARY tab inside Favorites with TV / MOVIES switch. TV folder groups shows/seasons/episodes, TVmaze posters, Next up, episode playback, refresh/new downloads, Change/Forget TV. Movie folder has flat movie cards, year, 2:3 portrait cards six across on desktop, local `poster.jpg`/`folder.jpg`/`cover.jpg` → Wikipedia theatrical poster → frame → film icon, single-file playback and resume, Change/Forget movies. Chrome laptop only; hidden on phone/Safari. Refresh rescans (and it auto-refreshes every 5 minutes while open); old index upgrades automatically; a TV episode playlist is a snapshot, so new downloads appear after Refresh.
+- **Local Library:** one LIBRARY tab inside Favorites with TV / MOVIES switch. TV folder groups shows/seasons/episodes, TVmaze posters, TVmaze episode titles/air dates/synopses, Next up, episode playback, refresh/new downloads, Change/Forget TV. Movie folder has flat movie cards, year, 2:3 portrait cards six across on desktop, local `poster.jpg`/`folder.jpg`/`cover.jpg` → Wikipedia theatrical poster → frame → film icon, single-file playback and resume, a Details pill with Wikipedia/Wikidata plot, cast and runtime, Change/Forget movies. Chrome laptop only; hidden on phone/Safari. Refresh rescans (and it auto-refreshes every 5 minutes while open); old index upgrades automatically; a TV episode playlist is a snapshot, so new downloads appear after Refresh.
 - **Podcast directory:** PODCASTS tab → **Find a podcast**. Before typing, it shows Apple's **Top Shows** (25) and **Trending Episodes** (10) for Canada from the job-built `podcast-charts.json`; tap a top show for its latest episodes and Follow, or a trending episode to play it in the dock. Typing searches Apple's public podcast directory by show or topic; clearing returns the charts. Followed shows are hidden favourites (only in PODCASTS, not All or Recent) and sync. Podcast show art is square 1:1 (Apple sends 600×600/3000×3000), not the 16:9 TV/favourite shape. Podcast controls use white/near-white, never periwinkle. A show already in the six Reader feeds appears once and uses its Reader episodes. No new section.
 - **Continue watching:** part-watched streams/podcasts/files, newest first; playlist places dedupe to one card.
 - **Favorites:** 342 in the owner's current setup across Sports, Series, Twitter, Entertainment, YouTube, News, TikTok, X, Streaming and unfiled. Folder tabs are All, Recent (last 10), user folders A–Z, Podcasts, Library (Chrome desktop) and Saved layouts on phone. Search covers favorites, podcast shows and the library. Cards have add, ••• Edit/Remove with a second confirm, folder rename with merge. TikTok/X account feeds are kept out of All. Sync/Synced button; no CSV/JSON export button (Sync is the path), though legacy `#fav1=` transfer links are still accepted.
@@ -41,6 +41,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **TikTok:** 22 built-in feeds plus any public account via r.jina.ai; account switcher; Following import from the export file; vertical 9:16 tile/phone column; feed Back/Next and auto-advance. TikTok live cannot be embedded, so `/@name/live` opens the profile feed. Account favorites are kept out of All.
 - **X/Twitter:** single posts and per-profile video feeds with account switcher and HTML fallback; “Import an X list” creates individual Twitter-folder profile favorites, **not** one combined list timeline. No scrollable X browser, X-list feed, or single-post pause/seek.
 - **Kick:** live channel embeds only; no live status, preview art, schedule, resume or native VOD/clip support (those links become website tiles).
+- **Screen/tab sharing:** Add stream → Share a screen or tab (Chrome desktop) mirrors a tab, window or screen as a live tile with sound/mute/volume/One sound; no favourite, pop-out or Send to phone. It stops when the source closes, reload shows Share again, and protected content may be black. Placeholder is saved in layouts; the actual stream is never stored.
 - **HLS and direct links:** only a `*.m3u8` link gets the native/hls.js player with mute, volume, pause, ±10 s, fullscreen, crop/Cinema and casting. A plain `.mp4`/`.webm` link is a website iframe, not the native player. Live HLS never resumes; recordings over 10 minutes do.
 - **Iframe websites:** any other http(s) URL or pasted iframe becomes an unsandboxed website tile. Sound/pause/seek need the extension; a series' current page and in-frame resume also need it. Refusals cannot be detected, so there is no “may be blocked” label.
 - **HLS backup feeds:** when a live HLS channel fails, MULTIGRID maps it to other iptv-org feeds for the same channel, tests up to six in the browser, and uses the first that plays. Channel Finder also test-plays a channel before adding it. The backup is not saved into the tile.
@@ -75,7 +76,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 214 tests as of Nov 21.
+`node --test tests/*.test.mjs` — 222 tests as of Nov 22.
 
 ## Not built yet — do not describe as existing
 
@@ -124,4 +125,5 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - GitHub Pages is HTTPS: HTTP media/embeds are blocked as mixed content. Prefer HTTPS.
 - The repo is public. Secrets live in GitHub secrets/local files and are never committed.
 - Apple's podcast directory is free/keyless and CORS-open, but Apple limits it to about 20 calls a minute; the app caches searches for 10 minutes, a show's episodes for 30, and calls only on search/open. The Canada store misses some shows; premium/region-locked episodes have no playable `episodeUrl` and are hidden. Apple's chart feed has **no CORS**, so `podcasts.yml` caches it hourly; a chart older than 48 hours is hidden.
+- Screen/tab capture needs Chrome desktop and a fresh permission each time; it is not available on the phone or Safari. DRM/protected video can be blocked. The source tab/window must stay open.
 - Every outside service is free and keyless; paid services, accounts and keys need the owner's explicit yes.

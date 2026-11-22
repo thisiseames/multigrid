@@ -46,6 +46,7 @@ const ICON_PATHS = {
   tiles: '<rect x="2.3" y="2.3" width="5" height="5" rx="1.2"/><rect x="8.7" y="2.3" width="5" height="5" rx="1.2"/><rect x="2.3" y="8.7" width="5" height="5" rx="1.2"/><rect x="8.7" y="8.7" width="5" height="5" rx="1.2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
   pip: '<rect x="2" y="2.5" width="8.5" height="6.5" rx="1.2"/><rect x="5.5" y="7" width="8.5" height="6.5" rx="1.2" fill="var(--chrome, #0d0d10)"/>',
+  screen: '<rect x="2" y="2.5" width="12" height="8" rx="1.3"/><path d="M5.5 13h5M8 10.5V13"/>',
   cast: '<path d="M2.5 6V4.5A1.5 1.5 0 0 1 4 3h8a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 12 13H9.5"/><path d="M2.5 8.6a4.4 4.4 0 0 1 4.4 4.4M2.5 10.8a2.2 2.2 0 0 1 2.2 2.2"/><path d="M2.5 13h.01" stroke-width="2"/>',
   popout: '<path d="M13.5 7.5V4a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 4v7A1.5 1.5 0 0 0 4 12.5h3"/><rect x="8.7" y="9" width="5.3" height="4.3" rx="1" fill="currentColor" stroke="none"/>',
   back10: '<path d="M4.2 4.6A5.2 5.2 0 1 1 2.9 9"/><path d="M4.4 1.9v2.9H1.5"/><text x="8.4" y="10.6" font-size="5.4" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text>',

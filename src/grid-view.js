@@ -183,7 +183,7 @@ class TileView {
   }
 
   get canPopOut() {
-    return Boolean(this.source?.ok) && (isPoppedOut(this) || canPopOut(this));
+    return Boolean(this.source?.ok) && this.source.kind !== 'screen' && (isPoppedOut(this) || canPopOut(this));
   }
 
   /** Floats this stream in its own small window, or brings it back. */
@@ -420,9 +420,10 @@ class TileView {
     const label = this.tile.title || (this.source.ok ? this.source.label : 'Not playable');
     // Notes and box scores aren't video: no favorite, crop or Cinema.
     const isNote = this.source.kind === 'note' || this.source.kind === 'boxscore';
+    const isScreen = this.source.kind === 'screen';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
-    this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
+    this.starButton = this.source.ok && !isNote && !isScreen ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
     this.cropButton = this.source.ok && !isNote ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     this.cinemaButton = this.source.ok && !isNote ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
@@ -430,7 +431,7 @@ class TileView {
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
     this.moreButton.classList.add('strip-more');
-    this.popButton = this.source.ok ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
+    this.popButton = this.source.ok && !isScreen ? iconButton('popout', 'Pop out: float this stream over other apps', () => this.popOut()) : null;
     this.popButton?.classList.add('strip-pop');
     // A video link can go to the TV; the button shows only once a TV is found.
     this.castButton = this.source.ok && this.source.kind === 'hls' ? iconButton('cast', 'Cast to TV', () => handlers.onCast?.(this.id)) : null;
@@ -439,7 +440,7 @@ class TileView {
       this.castButton.hidden = true;
     }
     // A file lives on this computer, so it can't be sent.
-    this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && this.source.kind !== 'playlist' && handlers.onSendToPhone
+    this.sendButton = this.source.ok && !isNote && !isScreen && this.source.kind !== 'file' && this.source.kind !== 'playlist' && handlers.onSendToPhone
       ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
     this.sendButton?.classList.add('strip-send');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));

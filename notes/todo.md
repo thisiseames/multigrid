@@ -10,6 +10,8 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 21) **Chart numbers**: ▲3 / ▼2 / – / NEW / RE-ENTRY under each position in Today's Charts (weeks on chart left out).
 - [x] (done Nov 21) **Podcast directory**: PODCASTS → Find a podcast searches Apple's keyless directory, plays full episodes in the dock, and follows shows as synced hidden favorites. 209 tests; verified laptop, phone, error/retry, Continue and real two-profile sync.
 - [x] (done Nov 21) **Podcast charts**: Find a podcast opens on Apple's Top Shows (25) and Trending Episodes (10) for Canada, built hourly by `podcasts.yml` into `podcast-charts.json`; trending episodes play in the dock. 213 tests.
+- [x] (done Nov 22) **Screen/tab sharing**: Add stream → Share a screen or tab (Chrome desktop), live tile with sound, no favourite/pop-out/send; reload asks Share again. 222 tests.
+- [x] (done Nov 22) **Local library details**: TVmaze episode titles/air dates/synopses; Wikipedia/Wikidata movie plot/cast/runtime in a Details dialog. 222 tests.
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **Captions (CC) button**: in the tile's top bar, for YouTube and video links.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.

@@ -22,6 +22,7 @@ import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab,
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
+import { episodeMeta, loadMovieMeta, loadShowMeta } from './library-meta.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
@@ -41,6 +42,7 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
+import { chooseScreen, forgetScreen, newScreenId, rememberScreen, screenInput, screenSupported } from './screen.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -2025,6 +2027,9 @@ let libraryNeedsPermission = false;
 let libraryError = '';
 let libraryShow = '';
 let librarySeason = 0;
+let libraryMeta = null;
+let libraryMetaToken = 0;
+let libraryDetailToken = 0;
 let libraryOpenChecked = false;
 let libraryTimer = 0;
 
@@ -2037,7 +2042,7 @@ const layoutsTab = () => grid.isStacked;
 const RECENT = '\u0001recent';
 const RECENT_KEY = 'multigrid.recent.v1';
 const RECENT_MAX = 10;
-const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore', 'podcastshow']);
+const NOT_RECENT = new Set(['file', 'note', 'audio', 'reader', 'boxscore', 'podcastshow', 'screen']);
 function listRecent() {
   try {
     const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
@@ -2644,6 +2649,8 @@ function librarySectionTabs() {
         libraryOpenChecked = false;
         libraryShow = '';
         librarySeason = 0;
+        libraryMeta = null;
+        libraryMetaToken += 1;
         fillAddFavorites($('source-favorites'));
       },
     },
@@ -2730,6 +2737,8 @@ function chooseLibraryNow() {
     libraryOpenChecked = true;
     libraryShow = '';
     librarySeason = 0;
+    libraryMeta = null;
+    libraryMetaToken += 1;
     libraryRedraw();
   }).catch((error) => {
     if (librarySection !== section) return;
@@ -2746,6 +2755,8 @@ function forgetLibraryNow() {
     libraryData = null;
     libraryShow = '';
     librarySeason = 0;
+    libraryMeta = null;
+    libraryMetaToken += 1;
     libraryNeedsPermission = false;
     libraryError = '';
     libraryOpenChecked = true;
@@ -2786,6 +2797,23 @@ function libraryHead() {
     el('button', { type: 'button', class: 'text-button', on: { click: forgetLibraryNow } }, movies ? 'Forget movies' : 'Forget TV'));
 }
 
+function loadLibraryShowMeta(name) {
+  if (!name) return;
+  if (libraryMeta?.name === name) return;
+  const token = ++libraryMetaToken;
+  libraryMeta = { name, status: 'loading', data: null };
+  loadShowMeta(name).then((data) => {
+    if (token !== libraryMetaToken) return;
+    libraryMeta = { name, status: data ? 'done' : 'empty', data };
+    if (libraryShow === name && $('source-dialog').open && addFolder === LIBRARY) {
+      fillAddFavorites($('source-favorites'));
+    }
+  }).catch(() => {
+    if (token !== libraryMetaToken) return;
+    libraryMeta = { name, status: 'empty', data: null };
+  });
+}
+
 function libraryShowCard(show) {
   const art = el('span', { class: 'fart is-icon' }, icon('film', 20));
   posterFor(show.name).then((found) => {
@@ -2808,6 +2836,7 @@ function libraryShowCard(show) {
       click() {
         libraryShow = show.name;
         librarySeason = next?.season.number || show.seasons[0]?.number || 1;
+        loadLibraryShowMeta(show.name);
         fillAddFavorites($('source-favorites'));
       },
     },
@@ -2824,7 +2853,7 @@ function libraryShowCard(show) {
       })))));
 }
 
-function libraryEpisodeRow(show, season, episode, index) {
+function libraryEpisodeRow(show, season, episode, index, meta = null) {
   const key = libraryFileKey(episode);
   const place = savedPlace(key);
   const played = isPlayed(key);
@@ -2833,16 +2862,23 @@ function libraryEpisodeRow(show, season, episode, index) {
     : place
       ? { text: place.length ? timeLeft(place.length - place.at) : 'In progress', cls: 'is-partway', percent: place.length ? (place.at / place.length) * 100 : 0 }
       : { text: 'New', cls: 'is-new' };
-  const meta = [episode.label && episode.label !== episode.title ? episode.label : '', episode.modified ? dayLabel(episode.modified) : ''].filter(Boolean).join(' · ');
+  const tv = episodeMeta(meta, season.number, episode.episode);
+  const displayTitle = tv?.title || episode.title;
+  const air = tv?.airdate ? dayLabel(Date.parse(`${tv.airdate}T12:00:00`)) : '';
+  const metaText = [
+    episode.label && episode.label !== displayTitle ? episode.label : '',
+    air || (episode.modified ? dayLabel(episode.modified) : ''),
+  ].filter(Boolean).join(' · ');
   return el('li', {}, el('button', {
     type: 'button',
     class: `pod-ep ${state.cls}`,
-    title: episode.title,
+    title: displayTitle,
     on: { click: () => libraryPlay(show, season, index) },
   },
   el('span', { class: 'pod-text' },
-    el('b', { class: 'pod-title', textContent: episode.title }),
-    el('small', { class: 'pod-meta', textContent: meta })),
+    el('b', { class: 'pod-title', textContent: displayTitle }),
+    el('small', { class: 'pod-meta', textContent: metaText }),
+    tv?.summary ? el('small', { class: 'lib-summary', textContent: tv.summary }) : null),
   el('span', { class: 'pod-state' },
     played ? icon('check', 14) : null,
     el('span', { textContent: state.text })),
@@ -2882,6 +2918,33 @@ function libraryMovieState(movie) {
   return 'New';
 }
 
+function openMovieDetails(movie) {
+  const box = $('library-detail');
+  if (!box) return;
+  if (box.open) box.close();
+  const token = ++libraryDetailToken;
+  const head = el('div', { class: 'ch-head' },
+    el('h2', { textContent: movie.title }),
+    iconButton('close', 'Close', () => box.close()));
+  const sub = el('p', { class: 'lib-detail-sub', textContent: [movie.year || '', 'Movie'].filter(Boolean).join(' · ') });
+  const body = el('div', { class: 'lib-detail-body' }, el('p', { textContent: 'Looking up details…' }));
+  box.replaceChildren(head, sub, body);
+  openDialog(box);
+  loadMovieMeta(movie.title, movie.year).then((meta) => {
+    if (!box.open || token !== libraryDetailToken) return;
+    if (!meta) {
+      body.replaceChildren(el('p', { class: 'lib-cast', textContent: 'No extra details found for this movie.' }));
+      return;
+    }
+    const parts = [];
+    if (meta.runtime) parts.push(el('p', { class: 'lib-detail-sub', textContent: meta.runtime }));
+    if (meta.plot) parts.push(el('p', { textContent: meta.plot }));
+    if (meta.cast.length) parts.push(el('p', { class: 'lib-cast' }, el('b', { textContent: 'Cast: ' }), meta.cast.join(', ')));
+    if (meta.url) parts.push(el('p', {}, el('a', { class: 'pod-open', href: meta.url, target: '_blank', rel: 'noopener' }, 'Wikipedia')));
+    body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'lib-cast', textContent: 'No extra details found for this movie.' })]));
+  });
+}
+
 function libraryMovieCard(movie) {
   const art = el('span', { class: 'fart is-icon' }, icon('film', 20));
   moviePoster(movie, 'movies').then((url) => {
@@ -2903,7 +2966,14 @@ function libraryMovieCard(movie) {
     el('b', { textContent: movie.title, title: movie.title }),
     el('small', {},
       el('span', { class: 'fcard-kind', textContent: movie.year ? String(movie.year) : 'Movie' }),
-      el('span', { class: 'fcard-now', textContent: libraryMovieState(movie) })))));
+      el('span', { class: 'fcard-now', textContent: libraryMovieState(movie) })))),
+  el('button', {
+    type: 'button',
+    class: 'lib-info',
+    title: `Details for ${movie.title}`,
+    aria: { label: `Details for ${movie.title}` },
+    on: { click: () => openMovieDetails(movie) },
+  }, icon('help', 14), el('span', { textContent: 'Details' })));
 }
 
 function libraryMoviesView(query = '') {
@@ -2952,6 +3022,8 @@ function libraryView(holder, query = '') {
     const show = shows.find((item) => item.name === libraryShow);
     if (show) {
       const next = nextUpForShow(show);
+      const meta = libraryMeta?.name === show.name ? libraryMeta.data : null;
+      const nextMeta = next ? episodeMeta(meta, next.season.number, next.episode.episode) : null;
       let season = show.seasons.find((item) => item.number === librarySeason)
         || show.seasons.find((item) => item.number === next?.season.number)
         || show.seasons[0];
@@ -2969,9 +3041,9 @@ function libraryView(holder, query = '') {
           type: 'button',
           class: 'addp-file lib-next',
           on: { click: () => libraryPlay(show, next.season, next.index) },
-        }, icon('play', 16), el('span', { textContent: `Next up · ${next.episode.label || next.episode.title}` })) : null,
+        }, icon('play', 16), el('span', { textContent: `Next up · ${nextMeta?.title || next.episode.label || next.episode.title}` })) : null,
         season.episodes.length
-          ? el('ul', { class: 'pod-list' }, ...season.episodes.map((episode, index) => libraryEpisodeRow(show, season, episode, index)))
+          ? el('ul', { class: 'pod-list' }, ...season.episodes.map((episode, index) => libraryEpisodeRow(show, season, episode, index, meta)))
           : el('p', { class: 'favorites-empty', textContent: 'No episodes in this season.' }));
     }
     libraryShow = '';
@@ -3301,12 +3373,12 @@ let addFolder = '';
 const KIND_NAMES = {
   youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
-  podcastshow: 'Podcast',
+  podcastshow: 'Podcast', screen: 'Shared screen',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound', screen: 'screen' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow', 'screen']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -4721,7 +4793,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow']);
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow', 'screen']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {
@@ -6541,6 +6613,25 @@ function addFiles(chosen, target = { mode: 'add' }) {
   else toast(`Playlist of ${items.length} episodes added.`);
 }
 
+async function pickScreenFor(target) {
+  if (!screenSupported()) {
+    toast('Screen sharing is not available in this browser.');
+    return;
+  }
+  let picked;
+  try {
+    picked = await chooseScreen();
+  } catch {
+    return;
+  }
+  if ($('source-dialog').open) $('source-dialog').close();
+  const id = newScreenId();
+  rememberScreen(id, picked.stream);
+  if (!addStream(screenInput(id, picked.label), target, picked.label)) {
+    forgetScreen(id);
+  }
+}
+
 async function pickFilesFor(target) {
   const chosen = await chooseFiles({ multiple: target.mode !== 'replace' });
   if (!chosen.length) return;
@@ -6570,7 +6661,7 @@ function openSourceDialog(target) {
   $('source-title').textContent = replacing ? 'Replace stream' : 'Add stream';
   $('source-submit').textContent = replacing ? 'Replace' : 'Add';
   const current = replacing ? tileById(target.id)?.input ?? '' : '';
-  $('source-input').value = current.startsWith('local:') ? '' : current;
+  $('source-input').value = current.startsWith('local:') || current.startsWith('screen:') ? '' : current;
   $('source-x').value = '';
   showSourceMessage($('source-message'), '', false);
   if ($('source-favorites').addSearch) $('source-favorites').addSearch.input.value = '';
@@ -6690,7 +6781,7 @@ $('source-form').addEventListener('submit', (event) => {
   submitSource();
 });
 $('source-close').addEventListener('click', () => $('source-dialog').close());
-for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('podcast-box'), $('palette'), $('import-box')]) {
+for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('podcast-box'), $('library-detail'), $('palette'), $('import-box')]) {
   // Clicking the dimmed area around a dialog closes it.
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
@@ -6699,11 +6790,14 @@ for (const dialog of [$('source-dialog'), $('help-dialog'), $('ppv-box'), $('pod
 $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }));
 
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
+$('screen-zone').addEventListener('click', () => pickScreenFor(sourceTarget));
+if (!screenSupported() || onPhone()) $('screen-zone').hidden = true;
 $('channel-find').addEventListener('click', openChannelFinder);
 $('ppv-find').addEventListener('click', () => openPPV(sourceTarget));
 $('source-dialog').addEventListener('close', () => {
   if ($('ppv-box').open) $('ppv-box').close();
   if ($('podcast-box').open) $('podcast-box').close();
+  if ($('library-detail').open) $('library-detail').close();
 });
 $('palette-button').addEventListener('click', openPalette);
 document.addEventListener('keydown', (event) => {
