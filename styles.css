@@ -2407,3 +2407,8 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .mrow-hl { flex: none; width: 26px; height: 26px; display: inline-flex; }
 .mrow-hl-button { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text); cursor: pointer; }
 .mrow-hl-button:hover, .mrow-hl-button:focus-visible { background: var(--hover); }
+
+/* A TikTok or X account's own picture: round, on a soft blurred copy of itself. */
+.fart.is-avatar { position: relative; }
+.fart.is-avatar .fart-backdrop { position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); object-fit: cover; filter: blur(14px) brightness(.55) saturate(1.2); }
+.fart.is-avatar .fart-face { position: relative; width: auto; height: 68%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 18px rgba(0, 0, 0, .45), 0 0 0 2px rgba(255, 255, 255, .12); }

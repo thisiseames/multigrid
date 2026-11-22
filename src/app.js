@@ -25,6 +25,7 @@ import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, libraryS
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
+import { avatarFor, forgetAvatar } from './avatars.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
@@ -2930,6 +2931,31 @@ function favoriteArt(item, source, highRes = false) {
     art.className = brand.fit === 'picture' ? 'fart is-picture' : `fart is-logo is-${brand.tone || 'dark'}`;
     // A broken or stand-in picture falls back to the site's own mark, then the kind icon.
     artPicture(art, brand.url, () => (brand.domain ? showChannel(brand.domain) : quiet()), true);
+    return art;
+  }
+  // A TikTok or X account: the site's logo, then the account's own picture once it's found.
+  const account = source.kind === 'tiktok' ? source.tiktok?.profile : source.kind === 'x' && !source.x?.id ? source.x?.profile : '';
+  if (account) {
+    const site = source.kind;
+    art.className = 'fart is-picture';
+    artPicture(art, `assets/${site}-logo.svg`, quiet);
+    const ask = () => avatarFor(site, account).then((url) => {
+      if (!url) return;
+      const backdrop = el('img', { class: 'fart-backdrop', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+      const face = el('img', { class: 'fart-face', src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+      // Shown only once it has loaded; a picture that no longer works is forgotten and asked for again next time.
+      face.addEventListener('load', () => { art.className = 'fart is-avatar'; art.replaceChildren(backdrop, face); }, { once: true });
+      face.addEventListener('error', () => forgetAvatar(site, account), { once: true });
+    });
+    // Only cards on screen are looked up.
+    if ('IntersectionObserver' in window) {
+      const seen = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        seen.disconnect();
+        ask();
+      }, { rootMargin: '200px' });
+      requestAnimationFrame(() => seen.observe(art));
+    } else ask();
     return art;
   }
   if (source.kind === 'youtube') {
