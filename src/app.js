@@ -50,6 +50,7 @@ import {
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
   saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceSynced, syncedLists,
 } from './storage.js';
+import { openLabel, topCharts, topLine } from './top10.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -3895,7 +3896,9 @@ function showHero(item, { hold = false } = {}) {
     el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
     item.meta ? el('p', { class: 'hero-meta', textContent: item.meta }) : null,
     item.desc ? el('p', { class: 'hero-desc', textContent: item.desc }) : null,
-    el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon('play', 16), el('span', { textContent: item.playLabel || 'Play' })),
+    el('div', { class: 'hero-buttons' },
+      el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(item.playLabel?.startsWith('Open on') ? 'open' : 'play', 16), el('span', { textContent: item.playLabel || 'Play' })),
+      item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null),
   ].filter(Boolean));
 }
 
@@ -3914,15 +3917,20 @@ function rotateHero() {
 /** One card in a row. Hovering it makes it the billboard. */
 function homeCard(item) {
   const art = el('span', { class: 'hcard-art' });
+  // The badges stay when the picture changes (it can arrive late, or fail and fall back).
+  const badges = [
+    item.live ? el('span', { class: 'hcard-live', textContent: 'LIVE' }) : null,
+    item.rank ? el('span', { class: 'hcard-rank', textContent: String(item.rank), aria: { hidden: 'true' } }) : null,
+    Number.isFinite(item.progress) ? el('span', { class: 'hcard-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, item.progress)).toFixed(1)}%` })) : null,
+  ].filter(Boolean);
+  const show = (picture) => art.replaceChildren(picture, ...badges);
   const fill = () => {
-    if (item.match) art.replaceChildren(teamsArt(item.match, 54));
-    else if (item.backdrop) art.replaceChildren(homePicture(item.backdrop, () => art.replaceChildren(item.art?.() ?? '')));
-    else art.replaceChildren(item.art?.() ?? '');
+    if (item.match) show(teamsArt(item.match, 54));
+    else if (item.backdrop) show(homePicture(item.backdrop, () => show(item.art?.() ?? '')));
+    else show(item.art?.() ?? '');
   };
   fill();
   item.refresh = fill;
-  if (item.live) art.append(el('span', { class: 'hcard-live', textContent: 'LIVE' }));
-  if (Number.isFinite(item.progress)) art.append(el('span', { class: 'hcard-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, item.progress)).toFixed(1)}%` })));
   // Continue watching cards: a small × on hover takes it off the list.
   const remove = item.forget ? el('button', {
     type: 'button', class: 'hcard-x', title: `Remove ${item.title} from Continue watching`, aria: { label: `Remove ${item.title} from Continue watching` },
@@ -3999,11 +4007,12 @@ async function drawHome() {
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
-  const [sections, , episodes] = await Promise.all([
+  const [sections, , episodes, , top] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
     loadHighlights().catch(() => null),
+    loadJob('top10.json'),
   ]);
   if (asked !== homeAsked) return;
 
@@ -4058,7 +4067,27 @@ async function drawHome() {
       art: artOf(item, parseSource(item.input)), playLabel: `Watch ${item.name}`, play: () => playFromHome(item.input),
     }, listing.current.title));
 
-  paint([homeRow('Continue watching', cont), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow)]);
+  // What Canada is watching: Netflix's Top 10, and the most popular titles on every service.
+  const charts = topCharts(top);
+  const chartRow = (id, label) => (charts.find((chart) => chart.id === id)?.entries ?? []).map((entry) => {
+    const item = {
+      key: `t:${id}:${entry.rank}:${entry.title}`, label: `#${entry.rank} · ${label}`, title: entry.title, rank: entry.rank,
+      meta: topLine(entry),
+      cardMeta: topLine(entry, { withService: id !== 'netflix' }) || entry.service,
+      desc: entry.desc,
+      backdrop: entry.image,
+      art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
+      playLabel: entry.trailer ? 'Play trailer' : openLabel(entry),
+      link: entry.trailer && entry.url ? { label: openLabel(entry), url: entry.url } : null,
+      play: () => (entry.trailer ? playFromHome(`https://www.youtube.com/watch?v=${entry.trailer}`) : entry.url && openLink(entry.url)),
+    };
+    return withArt(item, entry.title);
+  });
+  const netflixTop = chartRow('netflix', 'Top 10 on Netflix');
+  const trendingTop = chartRow('trending', 'Trending in Canada');
+
+  paint([homeRow('Continue watching', cont), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow),
+    homeRow('Top 10 on Netflix · Canada', netflixTop), homeRow('Trending in Canada', trendingTop)]);
   // The billboard cycles through what matters most right now.
   heroItems = [...teams.filter((game) => game.match.state !== 'post'), ...cont.slice(0, 3), ...fresh.slice(0, 2), ...teams.filter((game) => game.match.state === 'post'), ...onNow.slice(0, 3)];
   if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
@@ -5910,17 +5939,60 @@ function chartRow(entry, chart, list) {
   return el('li', { class: 'trow' }, main, actions);
 }
 
-function chartsView(data) {
-  const charts = (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
+/** One title in the Netflix or Trending tab: tap it for its trailer and where it streams. */
+function topRow(entry, list) {
+  const act = (name, label, onClick) => el('button', { type: 'button', class: 'chart-act', on: { click: onClick } }, icon(name, 14), label);
+  const actions = el('div', { class: 'chart-actions', hidden: true },
+    entry.trailer ? act('play', 'Watch trailer', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${entry.trailer}`); }) : null,
+    entry.url ? act('open', openLabel(entry), () => openLink(entry.url)) : null);
+  const main = el('button', {
+    type: 'button',
+    class: 'trow-main',
+    aria: { expanded: 'false' },
+    on: {
+      click() {
+        const opening = actions.hidden;
+        for (const other of list.querySelectorAll('.chart-actions')) other.hidden = true;
+        for (const other of list.querySelectorAll('.trow-main')) other.setAttribute('aria-expanded', 'false');
+        actions.hidden = !opening;
+        main.setAttribute('aria-expanded', String(opening));
+      },
+    },
+  },
+  el('span', { class: 'chart-rank' }, el('b', { textContent: String(entry.rank) })),
+  entry.image
+    ? el('span', { class: 'fart is-picture chart-cover is-wide' }, el('img', { src: entry.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+    : el('span', { class: 'fart is-icon chart-cover is-wide' }, icon('film', 18)),
+  el('span', { class: 'trow-text' },
+    el('span', { class: 'trow-title', textContent: entry.title }),
+    el('span', { class: 'trow-sub', textContent: topLine(entry) })));
+  return el('li', { class: 'trow' }, main, actions);
+}
+
+/** Under a list: where it's from and which week. */
+function chartNote(chart) {
+  const [y, m, d] = String(chart.week || '').split('-').map(Number);
+  const day = y ? new Date(y, m - 1, d, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  if (chart.kind !== 'title') return day ? `Billboard · week of ${day}` : 'Billboard';
+  if (!day) return chart.source;
+  return chart.id === 'netflix' ? `${chart.source} · week ending ${day}` : `${chart.source} · ${day}`;
+}
+
+function chartsView(data, top) {
+  const charts = [
+    ...(Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length),
+    ...topCharts(top),
+  ];
   if (!charts.length) return null;
   if (chartTab >= charts.length) chartTab = 0;
   const list = el('ul', { class: 'rlist chart-list' });
   const note = el('p', { class: 'chart-week' });
   const draw = () => {
     const chart = charts[chartTab];
-    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list)));
-    const [y, m, d] = String(chart.week || '').split('-').map(Number);
-    note.textContent = y ? `Billboard · week of ${new Date(y, m - 1, d, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Billboard';
+    list.replaceChildren(...(chart.kind === 'title'
+      ? chart.entries.map((entry) => topRow(entry, list))
+      : chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list))));
+    note.textContent = chartNote(chart);
   };
   const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
     type: 'button',
@@ -6512,7 +6584,7 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights, top] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -6523,6 +6595,7 @@ async function fillToday() {
     loadPolymarkets().catch(() => []),
     newYouTubeUploads().catch(() => []),
     loadJob('flights.json'),
+    loadJob('top10.json'),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -6624,7 +6697,7 @@ async function fillToday() {
   const teamSection = todaySection('Your teams', teamList);
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
-  const chartsSection = todaySection('Charts', chartsView(charts));
+  const chartsSection = todaySection('Charts', chartsView(charts, top));
   const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
