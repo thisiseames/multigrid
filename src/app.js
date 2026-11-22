@@ -43,6 +43,7 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
 import { loadDaddyLive } from './daddylive.js';
+import { loadMatchora } from './matchora.js';
 import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './zlive.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
@@ -949,34 +950,105 @@ function chooseDaddyLink(event, target) {
   box.focus({ preventScroll: true });
 }
 
-/** PPV.st and Daddy Live's live events. Fetched only while this dialog is open. */
+function addMatchora(event, target) {
+  $('ppv-box').close();
+  $('source-dialog').close();
+  if (!addStream(event.input, target, event.name)) return;
+  saveFavorite(event.input, event.name, 'Matchora');
+  toast(`Adding ${event.name}…`);
+}
+
+/** One clean Matchora match card. The embed is player-only, with its own Channels button. */
+function matchoraCard(event, target, eager = false, before = null) {
+  const art = el('span', { class: 'ppv-art mora-art' });
+  const badgeImage = (src) => {
+    const img = el('img', { src, alt: '', loading: eager ? 'eager' : 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+    img.addEventListener('error', () => {
+      img.remove();
+      if (!art.querySelector('img')) art.append(icon('play', 24));
+    }, { once: true });
+    return img;
+  };
+  const badges = [];
+  if (event.homeBadge) badges.push(badgeImage(event.homeBadge));
+  if (event.homeBadge && event.awayBadge) badges.push(el('span', { class: 'mora-vs', textContent: 'v' }));
+  if (event.awayBadge) badges.push(badgeImage(event.awayBadge));
+  if (!badges.length && event.leagueBadge) badges.push(badgeImage(event.leagueBadge));
+  art.append(...(badges.length ? badges : [icon('play', 24)]));
+  const score = event.live ? [event.score, event.minute ? `${event.minute}'` : ''].filter(Boolean).join(' ') : '';
+  const sub = [event.league, event.sport, event.channelCount ? `${event.channelCount} channel${event.channelCount === 1 ? '' : 's'}` : '', score]
+    .filter(Boolean).join(' · ');
+  const badge = event.live ? 'LIVE' : event.starts ? clock(event.starts) : '';
+  return el('button', {
+    type: 'button',
+    class: 'ppv-card',
+    title: `Add ${event.name}`,
+    on: { click() { before?.(); addMatchora(event, target); } },
+  },
+  el('span', { class: 'ppv-art-wrap' }, art,
+    badge ? el('span', { class: `ppv-badge${event.live ? ' is-live' : ''}`, textContent: badge }) : null),
+  el('span', { class: 'ppv-text' },
+    el('b', { textContent: event.name }),
+    sub ? el('small', { textContent: sub }) : null));
+}
+
+/** PPV.st, Daddy Live and Matchora's live events. Fetched only while this dialog is open. */
 function openPPV(target = sourceTarget) {
   const box = $('ppv-box');
   if (box.open) return;
+  const now = Date.now();
   let provider = 'ppv';
   let ppvEvents = [];
   let daddyEvents = [];
-  const loaded = { ppv: false, daddy: false };
+  let matchoraEvents = [];
+  const loaded = { ppv: false, daddy: false, matchora: false };
   let category = 'All';
+  let when = 'today';
+  let matchoraAt = 0;
   let refreshTimer = null;
   const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search events, teams or shows', autocomplete: 'off' });
   const sources = el('div', { class: 'gviews ppv-sources', role: 'tablist', aria: { label: 'Event sources' } });
+  const dates = el('div', { class: 'ch-cats mora-dates', role: 'tablist', aria: { label: 'Match dates' } });
   const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
   const count = el('p', { class: 'ch-count' });
   const results = el('div', { class: 'ppv-results' });
   const note = el('p', { class: 'ch-note' });
-  const currentEvents = () => (provider === 'daddy' ? daddyEvents : ppvEvents);
+  const currentEvents = () => (provider === 'daddy' ? daddyEvents : provider === 'matchora' ? matchoraEvents : ppvEvents);
   const eventText = (event) => [
     event.name,
     event.category,
-    ...(event.categories ?? []),
+    event.league,
+    event.sport,
     event.tag,
     event.source,
+    ...(event.categories ?? []),
     ...(event.channels ?? []).map((channel) => channel.name),
   ].filter(Boolean).join(' ').toLocaleLowerCase();
+  const datePool = (event) => {
+    if (when === 'live') return event.live;
+    if (when === 'tomorrow') return Boolean(event.starts) && dayKey(event.starts) === dayKey(now + 86400000);
+    return event.live || (Boolean(event.starts) && dayKey(event.starts) === dayKey(now));
+  };
   const paint = () => {
     const query = search.value.trim().toLocaleLowerCase();
     const categoryKey = category.toLocaleLowerCase();
+    if (provider === 'matchora') {
+      const pool = matchoraEvents.filter((event) => (
+        (category === 'All' || event.sport.toLocaleLowerCase() === categoryKey)
+        && datePool(event)
+        && (!query || eventText(event).includes(query))
+      ));
+      count.textContent = `${pool.length} match${pool.length === 1 ? '' : 'es'}`;
+      results.replaceChildren(...(pool.length
+        ? [el('div', { class: 'ppv-grid' }, ...pool.map((event, index) => matchoraCard(event, target, index < 8)))]
+        : [el('p', {
+          class: 'ch-empty',
+          textContent: query
+            ? 'No matches match.'
+            : when === 'live' ? 'No live Matchora matches right now.' : 'No Matchora matches for that day.',
+        })]));
+      return;
+    }
     const pool = currentEvents().filter((event) => {
       const eventCategories = event.categories?.length ? event.categories : [event.category];
       const inCategory = category === 'All'
@@ -1003,7 +1075,9 @@ function openPPV(target = sourceTarget) {
   const drawCategories = () => {
     const byKey = new Map();
     for (const event of currentEvents()) {
-      const names = provider === 'daddy' && event.categories?.length ? event.categories : [event.category];
+      const names = provider === 'matchora'
+        ? [event.sport]
+        : provider === 'daddy' && event.categories?.length ? event.categories : [event.category];
       for (const name of names) {
         const key = String(name || '').toLocaleLowerCase();
         if (name && !byKey.has(key)) byKey.set(key, name);
@@ -1028,13 +1102,36 @@ function openPPV(target = sourceTarget) {
       },
     })));
   };
+  const drawDates = () => {
+    dates.hidden = provider !== 'matchora';
+    if (provider !== 'matchora') return;
+    const options = [['live', 'Live'], ['today', 'Today'], ['tomorrow', 'Tomorrow']];
+    if (!options.some(([value]) => value === when)) when = 'today';
+    dates.replaceChildren(...options.map(([value, label]) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `ch-cat${when === value ? ' is-on' : ''}`,
+      aria: { selected: String(when === value) },
+      textContent: label,
+      on: {
+        click() {
+          when = value;
+          drawDates();
+          paint();
+        },
+      },
+    })));
+  };
   const sourceNote = () => (provider === 'daddy'
     ? 'Live events from Daddy Live. Links can stop working; try another link from the same event.'
-    : 'Live and upcoming events and posters from PPV.st.');
+    : provider === 'matchora'
+      ? 'Live and upcoming matches from Matchora. Free, no key; the player carries their ads.'
+      : 'Live and upcoming events and posters from PPV.st.');
   const drawSources = () => {
     sources.replaceChildren(...[
       ['ppv', 'PPV.st'],
       ['daddy', 'Daddy Live'],
+      ['matchora', 'Matchora'],
     ].map(([value, label]) => el('button', {
       type: 'button',
       role: 'tab',
@@ -1046,9 +1143,13 @@ function openPPV(target = sourceTarget) {
           if (provider === value) return;
           provider = value;
           category = 'All';
+          when = 'today';
           search.value = '';
-          search.placeholder = value === 'daddy' ? 'Search Daddy Live events or teams' : 'Search events, teams or shows';
+          search.placeholder = value === 'daddy'
+            ? 'Search Daddy Live events or teams'
+            : value === 'matchora' ? 'Search Matchora matches, teams or leagues' : 'Search events, teams or shows';
           drawSources();
+          drawDates();
           drawCategories();
           paint();
           if (!loaded[value]) load();
@@ -1059,14 +1160,15 @@ function openPPV(target = sourceTarget) {
   };
   const load = (force = false, quiet = false) => {
     const wanted = provider;
+    const label = wanted === 'daddy' ? 'Daddy Live' : wanted === 'matchora' ? 'Matchora' : 'PPV';
     if (!quiet) {
       count.textContent = 'Loading…';
       results.replaceChildren(el('p', {
         class: 'ch-empty',
-        textContent: `Loading ${wanted === 'daddy' ? 'Daddy Live' : 'PPV'} events…`,
+        textContent: `Loading ${label} events…`,
       }));
     }
-    const ask = wanted === 'daddy' ? loadDaddyLive(force) : loadPPV(force);
+    const ask = wanted === 'daddy' ? loadDaddyLive(force) : wanted === 'matchora' ? loadMatchora(force) : loadPPV(force);
     ask.then((list) => {
       if (!box.open || provider !== wanted) return;
       if (!list) {
@@ -1075,36 +1177,43 @@ function openPPV(target = sourceTarget) {
         results.replaceChildren(
           el('p', {
             class: 'ch-empty',
-            textContent: wanted === 'daddy' ? "Daddy Live isn't answering right now." : "PPV.st isn't answering right now.",
+            textContent: wanted === 'daddy' ? "Daddy Live isn't answering right now." : wanted === 'matchora' ? "Matchora isn't answering right now." : "PPV.st isn't answering right now.",
           }),
           el('button', { type: 'button', class: 'text-button', textContent: 'Try again', on: { click: () => load(true) } }));
         return;
       }
       loaded[wanted] = true;
       if (wanted === 'daddy') daddyEvents = list;
+      else if (wanted === 'matchora') { matchoraEvents = list; matchoraAt = Date.now(); }
       else ppvEvents = list;
+      drawDates();
       drawCategories();
       paint();
     });
   };
   search.addEventListener('input', paint);
   box.replaceChildren(
-    el('div', { class: 'ch-head' }, el('h2', { textContent: 'PPV events' }), iconButton('close', 'Close', () => box.close())),
+    el('div', { class: 'ch-head' }, el('h2', { textContent: 'Live events' }), iconButton('close', 'Close', () => box.close())),
     sources,
     search,
+    dates,
     cats,
     count,
     results,
     note);
   drawSources();
+  drawDates();
   openDialog(box);
   if (!document.body.classList.contains('is-phone')) search.focus();
   load();
   refreshTimer = setInterval(() => {
-    if (box.open && provider === 'daddy') load(true, true);
+    if (!box.open) return;
+    if (provider === 'daddy') load(true, true);
+    else if (provider === 'matchora' && Date.now() - matchoraAt > 120_000) load(true, true);
   }, 60_000);
   box.addEventListener('close', () => clearInterval(refreshTimer), { once: true });
 }
+
 
 /** One search box for favourites, layouts, PPV events and the main actions. */
 function openPalette() {
