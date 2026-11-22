@@ -65,6 +65,7 @@ export const MATCHDAY_FANS = {
   UCMCNDW3uarK9vwNBaqZ2NbQ: 'Adikastakes',
   'UC_6IdIzLIduJCczV3KnlLaw': 'MinaFootball',
   UCQ0uvhxm3j2_sx3ubtTm2Eg: 'No Question About That',
+  'UCZDi95PJ6VmWtQAScA9Rh-w': 'DR Sports',
 };
 
 const GENERIC = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'cd', 'ud', 'sd', 'rc', 'the', 'de', 'la', 'el', 'club', 'official', 'tv', 'hd', 'sport', 'sports', 'and', 'vs']);
