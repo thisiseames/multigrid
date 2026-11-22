@@ -27,6 +27,7 @@ import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
+import { artFor } from './artwork.js';
 import { isStingOn, playSting, setStingOn } from './sting.js';
 import { applyMove, isOldHome, moveLink, NEW_HOME, readMove } from './move.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
@@ -3694,20 +3695,95 @@ function continueCard(item) {
 let homeAsked = 0;
 let homeTimer = null;
 let homeShownAt = 0;
+const HERO_EVERY = 8000;
+let heroItems = [];
+let heroAt = 0;
+let heroTimer = null;
+let heroHoldUntil = 0;
+let heroKey = '';
 
-function homeCard({ art, name, sub, left, percent, live = false, onClick }) {
-  return el('li', { class: 'cwcard hcard' },
-    el('button', { type: 'button', class: 'cw-main', title: name, on: { click: onClick } },
-      el('span', { class: 'cw-art' }, art,
-        live ? el('span', { class: 'hcard-live', textContent: 'LIVE' }) : null,
-        Number.isFinite(percent) ? el('span', { class: 'cw-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, percent)).toFixed(1)}%` })) : null),
-      el('span', { class: 'cw-text' },
-        el('b', { class: 'cw-name', textContent: name }),
-        sub ? el('small', { class: 'cw-sub', textContent: sub }) : null,
-        left ? el('small', { class: 'cw-left', textContent: left }) : null)));
+/** A picture that only shows once it has loaded; YouTube's grey stand-in counts as missing. */
+function homePicture(url, onFail) {
+  const img = el('img', { src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+  img.addEventListener('error', () => onFail?.(img), { once: true });
+  img.addEventListener('load', () => { if (img.naturalWidth <= 120) onFail?.(img); else img.classList.add('is-in'); }, { once: true });
+  return img;
 }
 
-const homeRow = (title, items) => (items.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: title }), el('ul', { class: 'cw-row' }, ...items)) : null);
+/** A game's look: the two teams' colours, and both crests. */
+function teamsArt(match, size) {
+  const color = (side, fallback) => (/^#?[0-9a-f]{6}$/i.test(side.color || '') ? `#${String(side.color).replace('#', '')}` : fallback);
+  return el('span', { class: 'teams-art', style: `--home:${color(match.home, '#2a2a30')};--away:${color(match.away, '#1c1c22')}` },
+    crestOf(match.home, size), el('span', { class: 'teams-vs', textContent: match.sport === 'soccer/all' ? 'v' : '@' }), crestOf(match.away, size));
+}
+
+/** The billboard: the featured title's picture full width, with its name, details, story and Play. */
+function showHero(item, { hold = false } = {}) {
+  const hero = $('home')?.querySelector('.home-hero');
+  if (!hero || !item) return;
+  if (hold) heroHoldUntil = Date.now() + 15000;
+  if (heroKey === item.key) return;
+  heroKey = item.key;
+  const layer = el('div', { class: 'hero-layer' });
+  if (item.match) layer.append(teamsArt(item.match, 150));
+  else if (item.backdrop) layer.append(homePicture(item.backdrop, () => { layer.replaceChildren(item.art?.() ?? ''); layer.classList.add('is-soft'); }));
+  else { layer.append(item.art?.() ?? ''); layer.classList.add('is-soft'); }
+  const layers = hero.querySelector('.hero-layers');
+  layers.append(layer);
+  requestAnimationFrame(() => requestAnimationFrame(() => layer.classList.add('is-on')));
+  // Older layers fade out under the new one, then go.
+  [...layers.children].slice(0, -1).forEach((old) => setTimeout(() => old.remove(), 900));
+  hero.querySelector('.hero-info').replaceChildren(
+    el('span', { class: 'hero-label', textContent: item.label }),
+    el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
+    item.meta ? el('p', { class: 'hero-meta', textContent: item.meta }) : null,
+    item.desc ? el('p', { class: 'hero-desc', textContent: item.desc }) : null,
+    el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon('play', 16), el('span', { textContent: item.playLabel || 'Play' })));
+}
+
+function rotateHero() {
+  clearTimeout(heroTimer);
+  heroTimer = setTimeout(() => {
+    if ($('home').hidden) return;
+    if (Date.now() > heroHoldUntil && heroItems.length > 1) {
+      heroAt = (heroAt + 1) % heroItems.length;
+      showHero(heroItems[heroAt]);
+    }
+    rotateHero();
+  }, HERO_EVERY);
+}
+
+/** One card in a row. Hovering it makes it the billboard. */
+function homeCard(item) {
+  const art = el('span', { class: 'hcard-art' });
+  const fill = () => {
+    if (item.match) art.replaceChildren(teamsArt(item.match, 54));
+    else if (item.backdrop) art.replaceChildren(homePicture(item.backdrop, () => art.replaceChildren(item.art?.() ?? '')));
+    else art.replaceChildren(item.art?.() ?? '');
+  };
+  fill();
+  item.refresh = fill;
+  if (item.live) art.append(el('span', { class: 'hcard-live', textContent: 'LIVE' }));
+  if (Number.isFinite(item.progress)) art.append(el('span', { class: 'hcard-bar' }, el('span', { style: `width:${Math.min(100, Math.max(2, item.progress)).toFixed(1)}%` })));
+  return el('li', { class: 'hcard' }, el('button', {
+    type: 'button', class: 'hcard-main', title: item.title,
+    on: { click: () => item.play(), mouseenter: () => showHero(item, { hold: true }), focus: () => showHero(item, { hold: true }) },
+  }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null)));
+}
+
+const homeRow = (title, items) => (items.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: title }), el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
+
+/** Fills in TVmaze's picture and story for an item once they arrive. */
+function withArt(item, name) {
+  artFor(name).then((art) => {
+    if (!art) return;
+    item.backdrop ||= art.backdrop;
+    item.desc ||= art.summary;
+    item.refresh?.();
+    if (heroKey === item.key) { heroKey = ''; showHero(item); }
+  });
+  return item;
+}
 
 function playFromHome(input, page = '') {
   addStream(input, { mode: 'add' }, '', page);
@@ -3717,36 +3793,54 @@ async function drawHome() {
   const home = $('home');
   const asked = ++homeAsked;
   const now = Date.now();
-  // Continue watching: newest first, as in Add stream.
-  const places = listPlaces(12).map((item) => {
-    const favorite = listFavorites().find((fav) => fav.input === item.input);
-    const source = parseSource(item.input);
-    return homeCard({
-      art: favoriteArt({ name: favorite?.name ?? item.name, input: item.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source),
-      name: item.name,
-      sub: seriesProgress(item.input) || item.from || '',
-      left: timeLeft(item.length - item.at),
-      percent: (item.at / item.length) * 100,
-      onClick: () => (source.kind === 'audio' ? openPodcast(item.input, { title: item.name, from: item.from }) : playFromHome(item.input, item.page)),
-    });
+  const favorites = listFavorites();
+  const favoriteNamed = (input) => favorites.find((fav) => fav.input === input);
+  const artOf = (item, source) => () => favoriteArt({ name: item.name, input: item.input, group: item.group ?? '', logo: item.logo ?? '', poster: item.poster ?? '' }, source);
+
+  // Continue watching.
+  const cont = listPlaces(12).map((place) => {
+    const favorite = favoriteNamed(place.input);
+    const source = parseSource(place.input);
+    const name = favorite?.name ?? place.name;
+    const item = {
+      key: `c:${place.key}`, label: 'Continue watching', title: name,
+      meta: [seriesProgress(place.input), timeLeft(place.length - place.at)].filter(Boolean).join(' · '),
+      progress: (place.at / place.length) * 100,
+      art: artOf({ ...favorite, name, input: place.input }, source),
+      playLabel: 'Resume',
+      play: () => (source.kind === 'audio' ? openPodcast(place.input, { title: place.name, from: place.from }) : playFromHome(place.input, place.page)),
+    };
+    if (source.kind === 'audio') {
+      item.art = () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: place.from || 'Podcast' }), el('span', { class: 'title-card-name', textContent: name }));
+      item.desc = place.from ? `An episode of ${place.from}` : '';
+    }
+    if (source.kind === 'youtube' && source.youtube?.id) {
+      item.backdrop = `https://i.ytimg.com/vi/${encodeURIComponent(source.youtube.id)}/maxresdefault.jpg`;
+      item.desc = place.from ? `From ${place.from}` : '';
+      return item;
+    }
+    return source.kind === 'audio' ? item : withArt(item, name);
   });
-  // Draw what's ready at once; the rest arrives in a moment.
-  const paint = (teams = [], fresh = [], onNow = []) => {
+
+  // Draw the frame at once; the rest fills in as it arrives.
+  const paint = (rows) => {
     if (asked !== homeAsked) return;
-    home.replaceChildren(...[
-      homeRow('Continue watching', places),
-      teams.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: 'Your teams' }), el('ul', { class: 'mrow-list home-games' }, ...teams)) : null,
-      homeRow('New today', fresh),
-      homeRow('On now', onNow),
-    ].filter(Boolean));
+    const keep = home.querySelector('.home-hero');
+    const hero = keep ?? el('div', { class: 'home-hero' }, el('div', { class: 'hero-layers' }), el('div', { class: 'hero-shade' }), el('div', { class: 'hero-info' }));
+    home.replaceChildren(hero, el('div', { class: 'home-rows' }, ...rows.filter(Boolean)));
   };
-  paint();
+  paint([homeRow('Continue watching', cont)]);
+  heroItems = cont.slice(0, 3);
+  if (heroItems.length && !heroKey) showHero(heroItems[0]);
+
   const [sections, , episodes] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
     loadHighlights().catch(() => null),
   ]);
+  if (asked !== homeAsked) return;
+
   // Your teams: live now, still to come today, and results from the last day and a half.
   const games = [];
   for (const { card } of sections ?? []) {
@@ -3757,27 +3851,52 @@ async function drawHome() {
     }
   }
   games.sort((a, b) => ({ in: 0, pre: 1, post: 2 }[a.state] - { in: 0, pre: 1, post: 2 }[b.state]) || a.start - b.start);
-  const teams = games.map((match) => matchRow(match, { withDay: match.state === 'post' && dayKey(match.start) !== dayKey(now) }));
-  // New today: series of yours with an episode out today.
+  const teams = games.map((match) => {
+    const channel = match.tv.length ? favoriteForChannels(match.tv) : null;
+    const score = `${match.home.name} ${match.home.score}–${match.away.score} ${match.away.name}`;
+    const when = match.state === 'in' ? `Live · ${shortClock(match.detail) || match.detail}` : match.state === 'pre' ? `Today ${clock(match.start)}` : `Final · ${dayLabel(match.start)}`;
+    const highlights = match.state === 'post' && highlightsOf(match).length;
+    return {
+      key: `g:${match.id}`, match, live: match.state === 'in',
+      label: match.state === 'post' ? 'Last result' : match.state === 'in' ? 'Live now' : 'Tonight',
+      title: match.state === 'pre' ? gameName(match) : score,
+      meta: [when, match.tv[0] ? `on ${channel?.name || match.tv[0]}` : ''].filter(Boolean).join(' · '),
+      cardMeta: when,
+      desc: match.venue || '',
+      playLabel: highlights ? 'Watch highlights' : channel ? `Watch on ${channel.name}` : 'Box score',
+      play: () => (highlights ? playHighlights(match) : channel ? playFromHome(channel.input) : openBoxScore(match)),
+    };
+  });
+
+  // New today: your series with an episode out today.
   const fresh = episodes.filter(({ info }) => isNewToday(info, now)).map(({ item, info }) => {
     const nextToday = info.next && dayKey(info.next.at) === dayKey(now);
     const episode = nextToday ? info.next : info.last;
-    return homeCard({ art: favoriteArt(item, parseSource(item.input)), name: item.name, sub: [episodeCode(episode), episode?.name].filter(Boolean).join(' · '), left: nextToday ? `New today · ${clock(info.next.at)}` : 'Aired today', onClick: () => playFromHome(item.input) });
+    return withArt({
+      key: `n:${item.input}`, label: 'New today', title: item.name,
+      meta: [episodeCode(episode), episode?.name, nextToday ? clock(info.next.at) : ''].filter(Boolean).join(' · '),
+      art: artOf(item, parseSource(item.input)), play: () => playFromHome(item.input),
+    }, item.name);
   });
-  // On now: your channels with a show on right now.
-  const onNow = listFavorites().map((item) => ({ item, listing: nowAndNext(item.name, parseSource(item.input)) }))
-    .filter(({ listing }) => listing?.current)
-    .slice(0, 16)
-    .map(({ item, listing }) => homeCard({
-      art: favoriteArt(item, parseSource(item.input)),
-      name: listing.current.title,
-      sub: item.name,
-      left: `${durationText(minutesLeft(listing.current))} left`,
-      percent: progressOf(listing.current) * 100,
+
+  // On now: your channels with a show on right now, its own picture when TVmaze knows it.
+  const onNow = favorites.map((item) => ({ item, listing: nowAndNext(item.name, parseSource(item.input)) }))
+    .filter(({ listing }) => listing?.current).slice(0, 16)
+    .map(({ item, listing }) => withArt({
+      key: `o:${item.input}`, label: `On now · ${item.name}`, title: listing.current.title,
+      meta: `${item.name} · until ${clock(listing.current.end)} · ${durationText(minutesLeft(listing.current))} left`,
+      cardMeta: item.name,
+      desc: listing.current.about || '',
+      progress: progressOf(listing.current) * 100,
       live: Boolean(listing.current.live),
-      onClick: () => playFromHome(item.input),
-    }));
-  paint(teams, fresh, onNow);
+      art: artOf(item, parseSource(item.input)), playLabel: `Watch ${item.name}`, play: () => playFromHome(item.input),
+    }, listing.current.title));
+
+  paint([homeRow('Continue watching', cont), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow)]);
+  // The billboard cycles through what matters most right now.
+  heroItems = [...teams.filter((game) => game.match.state !== 'post'), ...cont.slice(0, 3), ...fresh.slice(0, 2), ...teams.filter((game) => game.match.state === 'post'), ...onNow.slice(0, 3)];
+  if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
+  rotateHero();
 }
 
 /** Shows or hides the home screen with the empty wall (laptop only). */
@@ -3789,10 +3908,16 @@ function syncHome(wall) {
     home.hidden = true;
     $('stage').classList.remove('has-home');
     homeAsked++;
+    heroKey = '';
+    clearTimeout(heroTimer);
     return;
   }
   const fresh = home.hidden;
   home.hidden = false;
+  if (!home.dataset.scrollWatch) {
+    home.dataset.scrollWatch = '1';
+    home.addEventListener('scroll', () => $('stage').classList.toggle('is-scrolled', home.scrollTop > 40), { passive: true });
+  }
   if (fresh) {
     homeShownAt = Date.now();
     home.replaceChildren();
