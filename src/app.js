@@ -43,6 +43,7 @@ import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from '.
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
 import { loadDaddyLive } from './daddylive.js';
+import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './zlive.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
@@ -588,29 +589,127 @@ function channelResultRow(item, now, onDead, target) {
 }
 
 /** The directory inside Add stream: English channels that passed the play test. */
+function flagEmoji(code) {
+  const text = String(code || '').toLocaleLowerCase();
+  if (!/^[a-z]{2}$/.test(text)) return '';
+  return String.fromCodePoint(...[...text].map((char) => 0x1f1e6 + char.charCodeAt(0) - 97));
+}
+
+/** One Zlive channel row. Its embed is player-only, with white controls and no branding. */
+function zliveRow(item, target) {
+  const flag = flagEmoji(item.flag);
+  const art = el('span', { class: 'ch-logo' },
+    flag ? el('span', { class: 'ch-flag', textContent: flag }) : icon('live', 16));
+  const sub = [item.region, item.category, item.quality].filter(Boolean).join(' · ');
+  const add = el('span', { class: 'ch-add', textContent: 'Add' });
+  return el('button', {
+    type: 'button',
+    class: 'ch-row',
+    title: `Add ${item.name}`,
+    on: {
+      click() {
+        const input = zliveEmbed(item.url);
+        if (!input) return;
+        $('channel-box').close();
+        $('source-dialog').close();
+        saveFavorite(input, item.name, folderForCategory(item.category));
+        addStream(input, target, item.name);
+        toast(`Adding ${item.name}…`);
+      },
+    },
+  },
+  art,
+  el('span', { class: 'ch-text' }, el('b', { textContent: item.name }), el('small', { textContent: sub })),
+  add);
+}
+
+/** The directory inside Add stream: the verified catalog and Zlive's 277 live channels. */
 function openChannelFinder() {
   const box = $('channel-box');
   if (box.open) return;
   const target = sourceTarget;
+  let provider = 'catalog';
   let channels = [];
   let countries = [];
   let country = '';
+  let region = 'All';
+  let zlive = [];
+  let catalogLoaded = false;
+  let zliveLoaded = false;
   let category = 'All';
-  let asked = 0;
   const nowCache = new Map();
   const search = el('input', { type: 'search', class: 'ch-search', placeholder: 'Search English channels, teams or shows', autocomplete: 'off' });
+  const sources = el('div', { class: 'gviews ch-sources', role: 'tablist', aria: { label: 'Channel sources' } });
   const tabs = el('div', { class: 'ch-tabs', role: 'tablist', aria: { label: 'Countries' } });
   const cats = el('div', { class: 'ch-cats', role: 'tablist', aria: { label: 'Categories' } });
   const count = el('p', { class: 'ch-count', textContent: '' });
   const results = el('div', { class: 'ch-results' });
+  const note = el('p', { class: 'ch-note' });
   const nowFor = (item) => {
     if (!nowCache.has(item.name)) nowCache.set(item.name, nowAndNext(item.name, parseSource(item.url)));
     return nowCache.get(item.name);
   };
-  const searchText = (item) => [item.name, item.group, item.category, item.country,
-    nowFor(item)?.current?.title, nowFor(item)?.next?.title].filter(Boolean).join(' ').toLocaleLowerCase();
+  const searchText = (item) => (provider === 'zlive'
+    ? [item.name, item.region, item.category, item.quality]
+    : [item.name, item.group, item.category, item.country,
+      nowFor(item)?.current?.title, nowFor(item)?.next?.title])
+    .filter(Boolean).join(' ').toLocaleLowerCase();
   const noteFor = (query) => MISSING_CHANNEL_NOTES.find((item) => item.match.test(query))?.note || '';
-  const drawCountries = () => {
+  const drawSources = () => {
+    sources.replaceChildren(...[
+      ['catalog', 'Catalog'],
+      ['zlive', 'Zlive'],
+    ].map(([value, label]) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `gview${provider === value ? ' is-on' : ''}`,
+      aria: { selected: String(provider === value) },
+      textContent: label,
+      on: {
+        click() {
+          if (provider === value) return;
+          provider = value;
+          category = 'All';
+          search.value = '';
+          search.placeholder = value === 'zlive'
+            ? 'Search Zlive channels, sports or regions'
+            : 'Search English channels, teams or shows';
+          drawSources();
+          drawTabs();
+          drawCategories();
+          paint();
+          if (value === 'zlive' && !zliveLoaded) loadZliveChannels();
+          if (value === 'catalog' && !catalogLoaded) loadCatalog();
+        },
+      },
+    })));
+    note.textContent = provider === 'zlive'
+      ? "Live channels from Zlive's public embed manifest. Free, no key; links can stop working."
+      : 'English-language channels that passed a manifest, segment and CORS test. Paid feeds are not included.';
+  };
+  const drawTabs = () => {
+    if (provider === 'zlive') {
+      const present = [...new Set(zlive.map((item) => item.region).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      if (region !== 'All' && !present.includes(region)) region = 'All';
+      tabs.replaceChildren(...['All', ...present].map((name) => el('button', {
+        type: 'button',
+        role: 'tab',
+        class: `ch-tab${name === region ? ' is-on' : ''}`,
+        aria: { selected: String(name === region) },
+        textContent: name,
+        on: {
+          click() {
+            region = name;
+            category = 'All';
+            drawTabs();
+            drawCategories();
+            paint();
+          },
+        },
+      })));
+      return;
+    }
     tabs.replaceChildren(...countries.map((name) => el('button', {
       type: 'button',
       role: 'tab',
@@ -621,7 +720,7 @@ function openChannelFinder() {
         click() {
           country = name;
           category = 'All';
-          drawCountries();
+          drawTabs();
           drawCategories();
           paint();
         },
@@ -629,7 +728,13 @@ function openChannelFinder() {
     })));
   };
   const drawCategories = () => {
-    const present = CATEGORY_ORDER.filter((name) => channels.some((item) => item.category === name));
+    const present = provider === 'zlive'
+      ? [...new Set(zlive.map((item) => item.category).filter(Boolean))].sort((a, b) => {
+        const ar = ZLIVE_CATEGORIES.indexOf(a);
+        const br = ZLIVE_CATEGORIES.indexOf(b);
+        return (ar === -1 ? 99 : ar) - (br === -1 ? 99 : br) || a.localeCompare(b);
+      })
+      : CATEGORY_ORDER.filter((name) => channels.some((item) => item.category === name));
     if (category !== 'All' && !present.includes(category)) category = 'All';
     cats.replaceChildren(...['All', ...present].map((name) => el('button', {
       type: 'button',
@@ -648,6 +753,21 @@ function openChannelFinder() {
   };
   const paint = () => {
     const query = search.value.trim().toLocaleLowerCase();
+    if (provider === 'zlive') {
+      const pool = zlive.filter((item) => (category === 'All' || item.category === category)
+        && (query ? searchText(item).includes(query) : region === 'All' || item.region === region));
+      const shown = pool.slice(0, 120);
+      count.textContent = query
+        ? `${pool.length} match${pool.length === 1 ? '' : 'es'}`
+        : `${pool.length} channel${pool.length === 1 ? '' : 's'}`;
+      const children = shown.map((item) => zliveRow(item, target));
+      if (!children.length) children.push(el('p', {
+        class: 'ch-empty',
+        textContent: query ? 'No Zlive channels match.' : 'No Zlive channels here.',
+      }));
+      results.replaceChildren(...children);
+      return;
+    }
     const live = channels.filter((item) => !item.dead);
     const pool = query
       ? live.filter((item) => (category === 'All' || item.category === category) && searchText(item).includes(query))
@@ -662,39 +782,73 @@ function openChannelFinder() {
     if (!children.length) children.push(el('p', { class: 'ch-empty', textContent: query ? 'No working channels match.' : 'No channels here yet.' }));
     results.replaceChildren(...children);
   };
+  const loadCatalog = () => {
+    count.textContent = 'Loading…';
+    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading channels…' }));
+    loadJob('live-channels.json').then((data) => {
+      if (!box.open) return;
+      channels = (Array.isArray(data?.channels) ? data.channels : []).filter((item) => item && item.name && item.url && item.country);
+      if (!channels.length) {
+        if (provider === 'catalog') {
+          count.textContent = '';
+          results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'No working channel catalog yet.' }));
+        }
+        return;
+      }
+      catalogLoaded = true;
+      countries = [...new Set(channels.map((item) => item.country))]
+        .sort((a, b) => (COUNTRY_ORDER.indexOf(a) + 1 || 99) - (COUNTRY_ORDER.indexOf(b) + 1 || 99));
+      country = countries[0] || '';
+      if (provider === 'catalog') {
+        drawTabs();
+        drawCategories();
+        paint();
+      }
+    }).catch(() => {
+      if (!box.open || provider !== 'catalog') return;
+      count.textContent = '';
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
+    });
+  };
+  const loadZliveChannels = () => {
+    count.textContent = 'Loading…';
+    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading Zlive channels…' }));
+    loadZliveManifest().then((list) => {
+      if (!box.open) return;
+      if (!list) {
+        if (provider === 'zlive') {
+          count.textContent = '';
+          results.replaceChildren(
+            el('p', { class: 'ch-empty', textContent: "Zlive isn't answering right now." }),
+            el('button', { type: 'button', class: 'text-button', textContent: 'Try again', on: { click: () => loadZliveChannels() } }));
+        }
+        return;
+      }
+      zlive = list;
+      zliveLoaded = true;
+      if (provider === 'zlive') {
+        drawTabs();
+        drawCategories();
+        paint();
+      }
+    });
+  };
   search.addEventListener('input', paint);
   box.replaceChildren(
     el('div', { class: 'ch-head' }, el('h2', { textContent: 'Find a live channel' }), iconButton('close', 'Close', () => box.close())),
+    sources,
     search,
     tabs,
     cats,
     count,
     results,
-    el('p', { class: 'ch-note', textContent: 'English-language channels that passed a manifest, segment and CORS test. Paid feeds are not included.' }));
+    note);
+  drawSources();
   openDialog(box);
   search.focus();
-  count.textContent = 'Loading…';
-  results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Loading channels…' }));
-  loadJob('live-channels.json').then((data) => {
-    if (!box.open) return;
-    channels = (Array.isArray(data?.channels) ? data.channels : []).filter((item) => item && item.name && item.url && item.country);
-    if (!channels.length) {
-      count.textContent = '';
-      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'No working channel catalog yet.' }));
-      return;
-    }
-    countries = [...new Set(channels.map((item) => item.country))]
-      .sort((a, b) => (COUNTRY_ORDER.indexOf(a) + 1 || 99) - (COUNTRY_ORDER.indexOf(b) + 1 || 99));
-    country = countries[0] || '';
-    drawCountries();
-    drawCategories();
-    paint();
-  }).catch(() => {
-    if (!box.open) return;
-    count.textContent = '';
-    results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Channels could not load.' }));
-  });
+  loadCatalog();
 }
+
 
 function addPPV(event, target) {
   $('ppv-box').close();

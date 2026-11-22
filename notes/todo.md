@@ -17,6 +17,8 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 22) **Add stream opening**: no auto-focused paste box or highlighted field on desktop; the dialog takes focus instead. 219 tests.
 - [x] (done Nov 22) **Daddy Live picker**: second tab in Browse PPV events; live-only API, one card per event, Choose a link dialog, saved in the Daddy Live folder. 226 tests.
 - [x] (done Nov 22) **Daddy Live player**: hide the wrapper's 47-player bar by cropping; the clean matchora player and Channels button remain. 226 tests.
+- [x] (done Nov 22) **Zlive channels**: second source in Find a live channel, 277 channels from the CORS manifest, clean white-accent embeds. 229 tests.
+- [x] (done Nov 22) **Find a live channel on top**: moved into the top action row (first), four across on wide, 2×2 under 980, one column on phone. 229 tests.
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.
 - [ ] **YouTube Trending Music tab** in Charts: waiting on 2-step verification for your Google account.
 - [ ] **Modern top bar (laptop)**: icon + label buttons with the open panel highlighted; Remote/Saved/help/fullscreen behind the layout button; sound row as small per-stream cards (picture, name, Play/Pause, Mute, slider); clean file names ("Silo · S3 E8 · Gray Goo", no .mkv) in the sound row and tile labels.
