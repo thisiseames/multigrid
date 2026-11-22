@@ -2228,6 +2228,27 @@ function openRecent(entry) {
   toast(`Opened ${recentGridTitle(entry)}.`, { label: 'Undo', run() { ws = previous; commit(); } });
 }
 
+/**
+ * A remembered grid as a picture: its real arrangement, each box showing that stream's own art
+ * (channel logo, poster, YouTube thumbnail, account photo: what its favorite card shows). A screen
+ * capture isn't possible: browsers don't let a page photograph other sites' players.
+ */
+function recentGridPicture(entry, big = false) {
+  const { cols = [1], rows = [1], tiles = [] } = fitToStreams(entry.workspace);
+  const favorites = listFavorites();
+  const grid = el('span', { class: `rg-picture${big ? ' is-big' : ''}`, style: `grid-template-columns:${cols.map((track) => `${track}fr`).join(' ')};grid-template-rows:${rows.map((track) => `${track}fr`).join(' ')}` });
+  for (const tile of tiles.filter((item) => item.input && item.place)) {
+    const { c, r, cs = 1, rs = 1 } = tile.place;
+    const favorite = favorites.find((item) => item.input === tile.input);
+    const item = favorite ?? { input: tile.input, name: tile.title || parseSource(tile.input).label || 'Stream', group: '' };
+    const art = favoriteArt(item, parseSource(tile.input), true);
+    // A box with no picture shows the stream's name, like the Add stream cards.
+    art.classList.add('rg-cell-art');
+    grid.append(el('span', { class: 'rg-cell', style: `grid-column:${c + 1} / span ${cs};grid-row:${r + 1} / span ${rs}` }, art));
+  }
+  return el('span', { class: `rg-art${big ? ' is-big' : ''}` }, grid);
+}
+
 /** Recent grids as home screen cards: the layout's shape, the streams, when. */
 function recentGridItems() {
   return listRecentGrids().sort((a, b) => b.at - a.at).map((entry) => ({
@@ -2237,8 +2258,8 @@ function recentGridItems() {
     meta: `${savedSummary(entry)} · ${recentGridWhen(entry.at)}`,
     cardMeta: recentGridWhen(entry.at),
     desc: entry.workspace.tiles.filter((tile) => tile.input && tile.place).map((tile) => titleCase(favoriteName(tile.input) || tile.title || parseSource(tile.input).label || 'Stream')).join(' · '),
-    art: () => el('span', { class: 'rg-art' }, recentGridDiagram(entry, 120, 68)),
-    layer: () => el('div', { class: 'rg-hero' }, recentGridDiagram(entry, 340, 192)),
+    art: () => recentGridPicture(entry),
+    layer: () => el('div', { class: 'rg-hero' }, recentGridPicture(entry, true)),
     playLabel: 'Open this grid',
     forget: () => forgetRecentGrid(entry.key),
     forgetFrom: 'Recent grids',
@@ -6986,8 +7007,11 @@ function matchdayHeroItem(phase) {
 }
 
 /** "SKY SPORTS PREMIER LEAGUE" → "Sky Sports Premier League" (favorites are often in capitals). */
+const ACRONYMS = new Set(['AMC', 'TSN', 'CBC', 'CTV', 'BBC', 'ITV', 'ESPN', 'NBA', 'NFL', 'NHL', 'MLB', 'UFC', 'WWE', 'HBO', 'DAZN', 'TNT', 'CNN', 'ABC', 'CBS', 'NBC', 'FX', 'FOX', 'TLC', 'MTV', 'BET', 'USA', 'AE', 'A&E', 'BT', 'PL', 'UK', 'US', 'TV', 'HD', 'UHD', 'PPV', 'TBS', 'TCM', 'CNBC', 'MSNBC', 'NFL+', 'F1', 'MLS']);
 function titleCase(name) {
-  return /[a-z]/.test(name) ? name : name.toLowerCase().replace(/\b([a-z])/g, (letter) => letter.toUpperCase()).replace(/\b(Tv|Hd|Uk|Us|Nba|Nfl|Bbc|Cbc|Tsn|Espn|Pl|Bt|Uhd1?)\b/g, (word) => word.toUpperCase());
+  if (/[a-z]/.test(name)) return name;
+  // Acronyms and words with numbers keep their capitals: AMC, DAZN, CP24, UHD1.
+  return name.split(/(\s+)/).map((word) => (ACRONYMS.has(word) || /\d/.test(word) ? word : word.charAt(0) + word.slice(1).toLowerCase())).join('');
 }
 
 /** The banner's picture: both crests on black, or the team's XI once the line-ups are in. */
