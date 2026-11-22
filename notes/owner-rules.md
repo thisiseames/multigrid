@@ -73,7 +73,7 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 
 ## Never suggest again
 - **An idea offered once and not picked is a no.** Don't offer it again in a later brainstorm, reworded or not. Every brainstorm must be all new ideas. (Nov 22: I re-pitched the same six twice and he was furious: "If I didn't say yes the first time, what do you think that means?")
-- Offered and not picked (so: no): YouTube home (new uploads / live now), layouts that open themselves on a schedule, info tiles (league table / Game mode list / weather in the grid), teams' games in the iPhone calendar, keyboard control, voice control, live rewind/DVR/recording, a full TV guide grid, binge mode / auto-next episodes, a TV view run from the phone, share-sheet "send to MULTIGRID" on the iPhone, a "Live now" folder, grid hand-off between devices.
+- Offered and not picked (so: no): YouTube home (new uploads / live now), layouts that open themselves on a schedule, info tiles (league table / Game mode list / weather in the grid), teams' games in the iPhone calendar, keyboard control, voice control, live rewind/DVR/recording, a full TV guide grid, binge mode / auto-next episodes, a TV view run from the phone, share-sheet "send to MULTIGRID" on the iPhone, a "Live now" folder, grid hand-off between devices, captions on muted streams (also take it off the to-do list).
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
 - Podcast queues/auto-next of any kind. Owner, Nov 22: does not care about a podcast queue; never suggest one again.
 
