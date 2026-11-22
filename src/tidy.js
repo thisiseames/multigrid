@@ -1,7 +1,7 @@
 // Tidy up favorites: what needs sorting in the list, worked out without the page so it can be
 // tested. Nothing here changes anything; the page shows the issues and the owner picks each fix.
 //   · favorites with no folder, each with a suggested folder where its kind makes it clear
-//   · two folders for the same thing (TWITTER and X)
+//   · two folders for the same thing (none listed: TWITTER and X are separate on purpose)
 //   · the same link saved twice, and the same name on different links
 
 import { parseSource } from './sources.js';
@@ -10,8 +10,9 @@ import { isPodcastShowInput } from './podcasts.js';
 const same = (a, b) => String(a).toLocaleLowerCase() === String(b).toLocaleLowerCase();
 const plain = (name) => String(name || '').trim().toLocaleLowerCase();
 
-// Folder names that mean the same thing: the first gives way to the second.
-const SAME_FOLDERS = [['twitter', 'x']];
+// Folder names that mean the same thing: the first gives way to the second. None yet: TWITTER
+// and X are different folders to the owner (Nov 22), so nothing is merged on a guess.
+const SAME_FOLDERS = [];
 
 // A favorite's kind, and the folder names that hold that kind (the first one that exists wins).
 const KIND_FOLDERS = {

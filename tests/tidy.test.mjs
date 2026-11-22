@@ -28,12 +28,13 @@ test('two folders for one thing, the same link twice, the same name on different
     fav('podcastshow:123', 'A podcast'), fav('local:abc:clip.mp4', 'A file'),
   ];
   const issues = tidyIssues(list);
-  assert.deepEqual(issues.merges, [{ from: 'TWITTER', to: 'X', fromCount: 2, toCount: 1 }]);
+  // TWITTER and X are separate folders on purpose: never offered as a merge.
+  assert.deepEqual(issues.merges, []);
   assert.deepEqual(issues.sameName.map((items) => items.map((item) => item.input)), [['https://dazn.example/1', 'https://dazn.example/2']]);
   assert.equal(issues.sameLink.length, 1);
   // Hidden favorites (followed podcasts, files on this computer) are never issues.
   assert.ok(!issues.unfiled.some(({ item }) => /podcast|local/.test(item.input)));
-  assert.equal(issues.count, issues.unfiled.length + 1 + 1 + 1);
+  assert.equal(issues.count, issues.unfiled.length + 1 + 1);
   assert.equal(tidyIssues([]).count, 0);
 });
 
