@@ -2738,3 +2738,46 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .topbar { background: #000; }
 /* The sound row and each tile's top bar are black too, matching the top bar. */
 .mixer, .strip, body.is-phone .strip { background: #000; }
+
+/* Add stream, in the home screen's black: no grey sheet, no dashed boxes, cards like the home rows. */
+.addp { background: #000; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 40px 120px rgba(0, 0, 0, .85); }
+.addp.dialog::backdrop { background: rgba(0, 0, 0, .7); backdrop-filter: blur(6px); }
+.addp-head h2 { font-weight: 800; letter-spacing: -.03em; }
+.addp .addp-paste textarea, .addp-x, .addp-favs .favorites-search input {
+  background: #111113; border: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); transition: box-shadow .15s ease, background .15s ease;
+}
+.addp .addp-paste textarea:hover, .addp-x:hover, .addp-favs .favorites-search input:hover { background: #151517; }
+.addp .addp-paste textarea:focus, .addp-x:focus-within, .addp-favs .favorites-search input:focus { outline: none; background: #151517; box-shadow: inset 0 0 0 1px rgba(245, 245, 247, .55); }
+/* The Add buttons: white when there's something to add, quiet until then. */
+.addp .addp-pasteadd, .addp .addp-x-add { background: #f5f5f7; color: #0b0b0d; border: 0; font-weight: 700; }
+.addp .addp-pasteadd:hover, .addp .addp-x-add:hover { background: #fff; }
+.addp .addp-pasteadd:disabled, .addp .addp-x-add:disabled { background: #141416; color: rgba(255, 255, 255, .38); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+/* Find a live channel, Play a file, PPV, Import, Add a note, and the Library's buttons. */
+.addp .addp-file { border: 0; background: #111113; color: rgba(255, 255, 255, .78); font-weight: 600; min-height: 44px; transition: background .15s ease, color .15s ease; }
+.addp .addp-file svg { opacity: .8; }
+.addp .addp-file:hover, .addp .addp-file.is-drop { background: #1c1c1f; color: #fff; border: 0; }
+.addp .addp-file.is-drop { box-shadow: inset 0 0 0 1px #f5f5f7; }
+.addp-favs { border-top-color: rgba(255, 255, 255, .06); }
+.addp-preview { background: rgba(255, 255, 255, .06); }
+.addp-preview-text b { color: #f5f5f7; }
+.addp-rename { background: #111113; border-color: #f5f5f7; }
+/* Cards: the picture is the card (rounded, lifts and rings white on hover); the name sits under it. */
+.addp .addp-grid { column-gap: 14px; row-gap: 20px; }
+.addp .fcard, .addp .fcard:hover { background: transparent; border: 0; overflow: visible; }
+.addp .fcard .fart { border-radius: 10px; transition: transform .25s ease, box-shadow .25s ease; }
+.addp .fcard-main:hover .fart, .addp .fcard-main:focus-visible .fart { transform: scale(1.03); box-shadow: 0 12px 30px rgba(0, 0, 0, .7), 0 0 0 2px #f5f5f7; }
+.addp .fcard-main:focus-visible { outline: none; }
+.addp .fcard .fart.is-icon { background: radial-gradient(120% 140% at 0% 0%, #26262c 0%, #121215 55%, #0b0b0d 100%); }
+.addp .fcard .fart.is-icon svg { opacity: .35; }
+.addp .fcard-text { padding: 8px 30px 0 2px; }
+.addp .fcard-text b { font-size: 13.5px; font-weight: 650; }
+.addp .fcard-text small { color: rgba(255, 255, 255, .5); }
+.addp .fcard-more { bottom: -2px; right: 0; }
+.addp .fcard-menu { border-radius: 10px; background: rgba(12, 12, 14, .97); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+/* A card with no picture: its name, set like a title card, instead of a grey icon. */
+.fart-name { display: none; }
+.addp .fcard .fart.is-icon:has(.fart-name:not(:empty)) svg { display: none; }
+.addp .fcard .fart.is-icon .fart-name:not(:empty) {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 86%;
+  font-size: clamp(15px, 1.9vw, 24px); font-weight: 800; letter-spacing: -.01em; line-height: 1.1; text-align: center; overflow-wrap: anywhere; color: rgba(255, 255, 255, .88);
+}

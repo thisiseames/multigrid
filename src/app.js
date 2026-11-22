@@ -3829,7 +3829,8 @@ function favoriteArt(item, source, highRes = false) {
   const art = el('span', { class: 'fart' });
   const quiet = () => {
     art.className = 'fart is-icon';
-    art.replaceChildren(icon(KIND_ICONS[source.kind] || 'play', 20));
+    // The name doubles as a wordmark where the card is big enough (Add stream's shelf); elsewhere the icon shows.
+    art.replaceChildren(icon(KIND_ICONS[source.kind] || 'play', 20), el('span', { class: 'fart-name', textContent: item.name || '' }));
   };
   const showChannel = (domain) => {
     art.className = 'fart is-logo is-dark';
