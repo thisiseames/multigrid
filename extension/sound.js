@@ -1,7 +1,7 @@
 // Runs in every frame, because embed addresses change. It stops straight away unless the
 // page on top is MULTIGRID, and it only ever listens to the frame directly above it.
 (() => {
-  const MULTIGRID = ['https://thisiseames.github.io', 'http://localhost:5190'];
+  const MULTIGRID = ['https://multigrid.club', 'https://www.multigrid.club', 'https://thisiseames.github.io', 'http://localhost:5190'];
   const above = [...(location.ancestorOrigins || [])];
   const topOrigin = above.length ? above[above.length - 1] : location.origin;
   if (!MULTIGRID.includes(topOrigin)) return;

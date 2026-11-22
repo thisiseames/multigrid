@@ -8,6 +8,7 @@ const ICON_PATHS = {
   crown: '<path d="M2.5 5.2 5.4 8l2.6-4.2L10.6 8l2.9-2.8-1 6.3h-9z"/><path d="M3.6 13.5h8.8"/>',
   starFilled: '<path fill="currentColor" d="m8 2.6 1.7 3.5 3.8.5-2.8 2.7.7 3.8L8 11.2l-3.4 1.9.7-3.8-2.8-2.7 3.8-.5z"/>',
   upload: '<path d="M8 10.5V3M5 5.8 8 3l3 2.8M3 10v3h10v-3"/>',
+  download: '<path d="M8 3v7.5M5 7.7 8 10.5l3-2.8M3 10v3h10v-3"/>',
   chevron: '<path d="m5 6.5 3 3 3-3"/>',
   help: '<circle cx="8" cy="8" r="5.75"/><path d="M6.3 6.4a1.75 1.75 0 1 1 2.6 1.5c-.6.35-.9.7-.9 1.35"/><path d="M8 11.3v.01"/>',
   expand: '<path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/>',

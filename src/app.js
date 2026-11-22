@@ -27,6 +27,7 @@ import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { isStingOn, playSting, setStingOn } from './sting.js';
+import { applyMove, isOldHome, moveLink, NEW_HOME, readMove } from './move.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
@@ -7033,6 +7034,50 @@ function saveHereRow() {
   return row;
 }
 
+/** Moving address: "Copy move link" at the old address, "Paste move link" at the new one. */
+function moveRow() {
+  if (isOldHome()) {
+    return el('button', {
+      type: 'button',
+      class: 'sdrop-row',
+      on: {
+        async click() {
+          const link = await moveLink(NEW_HOME);
+          try {
+            await navigator.clipboard.writeText(link);
+            toast('Move link copied. Paste it somewhere safe, like Notes, until you open it at multigrid.club.');
+          } catch {
+            // No clipboard here: show the link to copy by hand.
+            window.prompt('Copy this move link and keep it until you open it at multigrid.club:', link);
+          }
+        },
+      },
+    },
+    el('span', { class: 'sdrop-shape' }, icon('upload', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Copy move link' }), el('small', { textContent: 'Everything on this device, for multigrid.club' })));
+  }
+  const row = el('div', { class: 'sdrop-save' });
+  const showButton = () => row.replaceChildren(el('button', { type: 'button', class: 'sdrop-row', on: { click: showForm } },
+    el('span', { class: 'sdrop-shape' }, icon('download', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Paste move link' }), el('small', { textContent: 'Brings everything over from the old address' }))));
+  function showForm() {
+    const input = el('input', { type: 'text', placeholder: 'Paste the move link', autocomplete: 'off', autocapitalize: 'off', spellcheck: false, aria: { label: 'Move link' } });
+    const go = el('button', { type: 'submit', class: 'add-button', textContent: 'Move' });
+    row.replaceChildren(el('form', {
+      class: 'sdrop-form',
+      on: {
+        async submit(event) {
+          event.preventDefault();
+          if (!(await receiveMove(input.value))) { toast("That isn't a move link. Copy it again at the old address."); input.focus(); }
+        },
+      },
+    }, input, go));
+    input.focus();
+  }
+  showButton();
+  return row;
+}
+
 /** "Clear all streams" in the MULTIGRID drop-down: everything off the screen at once, with Undo. */
 function clearAllRow() {
   if (!streamCount(ws)) return null;
@@ -7072,6 +7117,7 @@ function buildSavedDrop() {
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
     saveHereRow(),
     clearAllRow(),
+    moveRow(),
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
     el('div', { class: 'sdrop-sep' }),
     el('button', {
@@ -7327,6 +7373,17 @@ prepareAutoplaySound();
 render();
 receiveReaderKey();
 receiveFavorites();
+
+/* Moving to multigrid.club: a move link opened here puts everything back, then starts fresh. */
+async function receiveMove(text) {
+  const data = await readMove(text);
+  if (!data) return false;
+  const count = applyMove(data);
+  // Straight to a clean start, so nothing on this page writes over what just arrived.
+  location.replace(location.pathname + location.search);
+  return count > 0;
+}
+if (location.hash.startsWith('#move=')) receiveMove(location.href);
 receiveSend();
 startSync(syncStore, syncCameIn).catch(() => {});
 loadGuide().then(() => {
