@@ -56,6 +56,7 @@ import {
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
+import { BANNER_PARTS, bannerShows, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { searchLiveSources } from './live-search.js';
 import {
@@ -5067,7 +5068,9 @@ async function drawHome() {
     // Nothing to show yet (a new device): the wordmark stays in the middle instead of leaving a blank screen.
     $('stage').classList.toggle('has-home', rows.some(Boolean));
   };
-  paint([homeRow('Continue watching', cont)]);
+  const layout = loadHomeLayout();
+  const rowOn = (id) => layout.rows.some((row) => row.id === id && row.on);
+  paint([rowOn('continue') ? homeRow('Continue watching', cont) : null]);
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
@@ -5164,15 +5167,80 @@ async function drawHome() {
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
-  paint([matchday.strip, matchdayRow, homeRow('Continue watching', cont), homeRow('Recent grids', recentGridItems()), homeRow('Your teams', teams), homeRow('New today', fresh), homeRow('On now', onNow),
-    homeRow('Top 10 on Netflix · Canada', netflixTop), homeRow('Trending in Canada', trendingTop)]);
+  // The owner's order and choice of rows (Edit home); Matchday always leads.
+  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, netflix: netflixTop, trending: trendingTop };
+  paint([matchday.strip, matchdayRow, ...layout.rows.filter((row) => row.on).map((row) => homeRow(row.title, rowItems[row.id] ?? [])), editHomeButton()]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it.
-  let rotation = [...teams.filter((game) => game.match.state !== 'post'), ...cont.slice(0, 3), ...fresh.slice(0, 2), ...teams.filter((game) => game.match.state === 'post'), ...onNow.slice(0, 3)];
+  const part = (id, items) => (bannerShows(layout, id) ? items : []);
+  let rotation = [...part('teams', teams.filter((game) => game.match.state !== 'post')), ...part('continue', cont.slice(0, 3)), ...part('fresh', fresh.slice(0, 2)),
+    ...part('teams', teams.filter((game) => game.match.state === 'post')), ...part('onnow', onNow.slice(0, 3)), ...part('netflix', netflixTop.slice(0, 3)), ...part('trending', trendingTop.slice(0, 3))];
   if (matchday.hero) rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
   heroItems = matchday.hold ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
   if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
   rotateHero();
+}
+
+/* Edit home: the owner moves rows up or down, hides them, and picks what the banner shows. Each
+   change shows on the home screen behind the panel at once; Undo steps back, Reset starts over. */
+let editHomeUndo = null;
+
+function editHomeButton() {
+  return el('div', { class: 'home-edit' }, el('button', { type: 'button', class: 'home-edit-button', on: { click: openEditHome } }, 'Edit home'));
+}
+
+function editHomeChange(change) {
+  const before = loadHomeLayout();
+  saveHomeLayout(change(before));
+  editHomeUndo = before;
+  drawEditHome();
+  drawHome();
+}
+
+function openEditHome() {
+  let box = document.getElementById('edit-home-box');
+  if (!box) {
+    box = el('dialog', { id: 'edit-home-box', class: 'dialog tidy-box edit-home-box', aria: { label: 'Edit home' } });
+    box.addEventListener('click', (event) => { if (event.target === box) box.close(); });
+    document.body.append(box);
+  }
+  editHomeUndo = null;
+  drawEditHome();
+  openDialog(box);
+}
+
+function drawEditHome() {
+  const box = document.getElementById('edit-home-box');
+  if (!box) return;
+  const layout = loadHomeLayout();
+  const scroll = box.querySelector('.tidy-body')?.scrollTop ?? 0;
+  const toggle = (label, on, flip, disabled = false) => el('button', {
+    type: 'button', role: 'switch', class: `eh-switch${on ? ' is-on' : ''}`, disabled, aria: { checked: String(on), label }, on: { click: flip },
+  }, el('span', { class: 'eh-knob' }));
+  const rows = el('ul', { class: 'tidy-list eh-list' }, ...layout.rows.map((row, at) => el('li', { class: `tidy-row eh-row${row.on ? '' : ' is-off'}` },
+    el('span', { class: 'tidy-name' }, el('b', { textContent: row.title })),
+    el('button', { type: 'button', class: 'eh-move', disabled: at === 0, title: 'Move up', aria: { label: `Move ${row.title} up` }, on: { click: () => editHomeChange((now) => moveHomeRow(now, row.id, -1)) } }, '↑'),
+    el('button', { type: 'button', class: 'eh-move', disabled: at === layout.rows.length - 1, title: 'Move down', aria: { label: `Move ${row.title} down` }, on: { click: () => editHomeChange((now) => moveHomeRow(now, row.id, 1)) } }, '↓'),
+    toggle(`Show ${row.title}`, row.on, () => editHomeChange((now) => setRow(now, row.id, !row.on))))));
+  const banner = el('ul', { class: 'tidy-list eh-list' }, ...BANNER_PARTS.map((part) => {
+    const rowOn = layout.rows.some((row) => row.id === part.id && row.on);
+    return el('li', { class: `tidy-row eh-row${rowOn ? '' : ' is-off'}` },
+      el('span', { class: 'tidy-name' }, el('b', { textContent: part.label }), rowOn ? null : el('small', { textContent: 'Its row is hidden' })),
+      toggle(`Banner: ${part.label}`, bannerShows(layout, part.id), () => editHomeChange((now) => setBanner(now, part.id, !now.banner[part.id])), !rowOn));
+  }));
+  const section = (title, note, ...body) => el('section', { class: 'tidy-section' }, el('h3', { class: 'tidy-title', textContent: title }), el('p', { class: 'tidy-note', textContent: note }), ...body);
+  const body = el('div', { class: 'tidy-body' },
+    section('Rows', 'Their order on the home screen. On match day, Matchday always comes first.', rows),
+    section('Banner', 'What the big picture at the top cycles through.', banner),
+    el('div', { class: 'eh-foot' }, el('button', { type: 'button', class: 'tidy-act is-quiet', on: { click: () => editHomeChange(() => homeLayout(null)) } }, 'Reset to standard')));
+  const undo = editHomeUndo ? el('div', { class: 'tidy-undo' }, el('span', { textContent: 'Home changed.' }), el('button', { type: 'button', class: 'tidy-act', on: { click() {
+    saveHomeLayout(editHomeUndo);
+    editHomeUndo = null;
+    drawEditHome();
+    drawHome();
+  } } }, 'Undo')) : null;
+  box.replaceChildren(...[el('div', { class: 'ch-head' }, el('h2', { textContent: 'Edit home' }), iconButton('close', 'Close', () => box.close())), undo, body].filter(Boolean));
+  body.scrollTop = scroll;
 }
 
 /** Shows or hides the home screen with the empty wall (laptop only). */
