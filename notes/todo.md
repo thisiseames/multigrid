@@ -4,7 +4,7 @@ Ideas waiting for a plan and the owner's go. Tick items off here when they ship.
 
 Each needs a full plan and your "go" before building.
 
-- [ ] **Playlist for video files**: pick Silo S3 E8, E9, E10 together; they play one after another in one tile, in episode order, with a Next button. (Today, picking several files makes one tile each: `addFiles` in src/app.js.)
+- [x] (done Nov 21) **Playlist for video files**: pick Silo S3 E8, E9, E10 together; they play one after another in one tile, in episode order, with Previous/Next, per-episode resume and one Continue watching card. Several picked files now make one playlist; one file still makes one tile. Chrome keeps access; Safari asks for the files again after a reload, like a single local file.
 - [x] (done by OpenCode Nov 20) **Hell's Kitchen poster** (Entertainment folder): show TVmaze's wide picture. Plan already written for DeepSeek in OPENCODE-PLAN.md; test DeepSeek on it when Claude can fix anything that goes wrong.
 - [x] (done Nov 21) **Chart numbers**: ▲3 / ▼2 / – / NEW / RE-ENTRY under each position in Today's Charts (weeks on chart left out).
 - [ ] **Twitch LIVE badge**: on favorites cards, live channels first inside their folder, re-checked every 5 minutes.

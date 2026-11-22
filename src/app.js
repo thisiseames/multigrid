@@ -20,7 +20,7 @@ import { connect, controllerPairing, forgetController, forgetHost, hostPairing, 
 import { LEAGUES, loadLeague, withConference } from './standings.js';
 import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab, outcome, shortClock, todaysGames } from './matches.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
-import { chooseFiles, filesFromDrop, registerChosen } from './local-files.js';
+import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { createMixer } from './mixer.js';
 import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds } from './odds.js';
@@ -36,7 +36,7 @@ import { twitchStatus, viewerCount } from './twitch.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { loadPPV, todayPPV } from './ppv.js';
-import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, parseSource, readerInput } from './sources.js';
+import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   loadCurrent, newFavorites, openSaved, removeFavorite, renameFolder, renameSaved, restoreSavedItem, saveCurrent, saveFavorite,
@@ -95,6 +95,15 @@ const grid = new GridView($('grid'), $('stage'), env, {
     if (!tile) return;
     tile.input = `note:${encodeURIComponent(text)}`;
     saveCurrent(ws);
+  },
+  // A playlist moved to its next episode: the tile's name follows it, and the place stays saved.
+  onEpisode: (id, name) => {
+    const tile = tileById(id);
+    if (!tile) return;
+    tile.title = name;
+    saveCurrent(ws);
+    grid.viewFor(id)?.syncControls();
+    renderPhoneBar();
   },
   // A website tile moved on inside (a series' next episode): remembered, so a reload opens it.
   // The tile keeps playing; only what's saved changes.
@@ -244,13 +253,14 @@ function buildStreamMenu(id) {
   const then = (action) => () => { closePopovers(); action(); };
   const favorite = favoriteName(tile.input) !== null;
   const feed = view.player?.stripButtons;
+  const feedLabels = view.player?.stripLabels || ['Previous video', 'Next video'];
   const actions = [
     bigButton('crown', tile.primary ? 'Primary' : 'Make primary', then(() => togglePrimary(id)), { on: Boolean(tile.primary) }),
     view.cinemaButton ? bigButton('film', 'Cinema', then(() => view.toggleCinema()), { on: Boolean(getCinema(tile.input)) }) : null,
     view.cropButton ? bigButton('crop', 'Crop', then(() => view.editCrop())) : null,
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
-    feed && !feed[0].hidden ? bigButton('back', 'Previous video', () => feed[0].click()) : null,
-    feed && !feed[2].hidden ? bigButton('next', 'Next video', () => feed[2].click()) : null,
+    feed && !feed[0].hidden ? bigButton('back', feedLabels[0], () => feed[0].click()) : null,
+    feed && !feed[2].hidden ? bigButton('next', feedLabels[1], () => feed[2].click()) : null,
     bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
     bigButton('next', 'Next channel', then(() => surfChannels(1, id))),
     castWay(view.source, view.player?.el) ? bigButton('cast', castWay(view.source, view.player?.el) === 'airplay' ? 'AirPlay' : 'Cast to TV', then(() => castStream(id))) : null,
@@ -2285,12 +2295,12 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveP
 let addFolder = '';
 const KIND_NAMES = {
   youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
-  hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
+  playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', note: 'pencil' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'reader', 'audio', 'note']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -5395,20 +5405,30 @@ async function offerFavorites(code) {
   openDialog(box);
 }
 
-/** Adds chosen files, one tile each. The first takes the place the dialog was opened for. */
+/** Adds chosen files: one file per tile, or several files as one playlist. */
 function addFiles(chosen, target = { mode: 'add' }) {
   if (!chosen.length) return;
-  const replacing = target.mode === 'replace';
-  const room = replacing ? 1 : MAX_STREAMS - streamCount(ws);
-  chosen.slice(0, room).forEach((item, index) => {
-    addStream(registerChosen(item), index === 0 ? target : { mode: 'add' });
-  });
-  const left = chosen.length - room;
-  if (left > 0) {
-    toast(replacing
-      ? 'Only the first file was used, because a tile holds one.'
-      : `${left} ${left === 1 ? 'file' : 'files'} left out, because ${MAX_STREAMS} streams is the limit.`);
+  if (target.mode === 'replace') {
+    addStream(registerChosen(chosen[0]), target);
+    if (chosen.length > 1) toast('Only the first file was used, because a tile holds one.');
+    return;
   }
+  if (streamCount(ws) >= MAX_STREAMS) {
+    toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
+    return;
+  }
+  if (chosen.length === 1) {
+    addStream(registerChosen(chosen[0]), target);
+    return;
+  }
+  // Several files become one playlist, in episode order when the names have numbers.
+  const ordered = orderPlaylist(chosen.map((entry) => ({ entry, name: entry.file.name })));
+  const kept = ordered.slice(0, PLAYLIST_LIMIT).map(({ entry }) => entry);
+  const items = registerFiles(kept);
+  if (!items.length) return;
+  addStream(playlistInput(items), target, items[0].name);
+  if (ordered.length > kept.length) toast(`Only the first ${PLAYLIST_LIMIT} files were used.`);
+  else toast(`Playlist of ${items.length} episodes added.`);
 }
 
 async function pickFilesFor(target) {

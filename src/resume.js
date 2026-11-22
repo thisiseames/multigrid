@@ -80,10 +80,12 @@ function markPlayed(key) {
 }
 /** Whether something was played to the end. */
 export const isPlayed = (key) => readPlayed().includes(key);
-/** How far into something you are: { at, length }, or null. */
+/** How far into something you are: { at, length, saved }, or null. */
 export function placeOf(key) {
   const point = readAll()[key];
-  return point && Number.isFinite(point.at) ? { at: point.at, length: point.length || 0 } : null;
+  return point && Number.isFinite(point.at)
+    ? { at: point.at, length: point.length || 0, saved: Number(point.saved) || 0 }
+    : null;
 }
 
 /** A website tile's saved place (a series): { at, length, page }, or null. page is the episode it's on. */
@@ -95,9 +97,16 @@ export function embedPlace(input) {
 /** Continue watching: things part-watched that can be opened again, newest first. */
 export function listPlaces(limit = 10) {
   const all = readAll();
+  const seen = new Set();
   return Object.entries(all)
     .filter(([, point]) => point.input && point.name && point.length)
     .sort(([, a], [, b]) => (b.saved || 0) - (a.saved || 0))
+    // A playlist can have a place for every episode; show its newest one once.
+    .filter(([, point]) => {
+      if (seen.has(point.input)) return false;
+      seen.add(point.input);
+      return true;
+    })
     .slice(0, limit)
     .map(([key, point]) => ({ key, ...point }));
 }
@@ -193,5 +202,7 @@ export function rememberMedia(media, keyOf, holderOf, metaOf = () => null) {
     const key = keyOf();
     return key && Number.isFinite(media.duration) ? { key, at: Math.floor(media.currentTime), length: Math.round(media.duration) } : null;
   };
+  // A playlist changes the file behind the same video element; stop an old resume seek first.
+  keep.reset = () => { settling = null; };
   return keep;
 }
