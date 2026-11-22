@@ -39,6 +39,7 @@ Before proposing a feature or API, check `notes/product-map.md`. If the capabili
 ## How the owner wants things
 - Plain language, no jargon. Times like "2:00 pm". Dates like "Fri, Nov 20", never starting with the year.
 - Before building anything new, write a short plan that opens with: running cost per month (with how it's metered), every default you chose ("I decided X, change it?"), what you researched (with sources), and how you'll verify. Then wait for an explicit "go".
+- **Never work in silence.** Start a long job by saying the first checkpoint in one sentence. After at most **3 tool calls or 2 minutes** of tool work, stop and send a visible one-line update: what changed, what is still running, what is next. For anything longer, post a visible checkpoint with the `question` tool and wait. Tool output is not a message to the owner. Never say “added”, “ready” or “done” until it is live or visibly tested; say “built locally, not live yet” when that is the truth.
 - Build the plain thing that was asked, not something adjacent. No gimmicks (goal celebrations, score alerts and similar).
 - Put new lists inside existing structures (a Favorites folder tab, an existing section) rather than adding new space-eating sections.
 - Tickers go at the bottom, never the top.
