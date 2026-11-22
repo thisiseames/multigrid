@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSource, buildEmbedUrl, channelFavoriteInput, extractIframeSrc, isBlockedMixedContent, isYouTubeChannelPage, localInput } from '../src/sources.js';
+import { parseSource, buildEmbedUrl, channelFavoriteInput, extractIframeSrc, isBlockedMixedContent, isYouTubeChannelPage, localInput, orderPlaylist, playlistInput } from '../src/sources.js';
 
 const env = { hostname: 'thisiseames.github.io', origin: 'https://thisiseames.github.io', protocol: 'https:' };
 const embed = (input, opts = { muted: true, autoplay: true }) => {
@@ -45,6 +45,25 @@ test('youtube: live channel id and playlists', () => {
   const list = embed('https://www.youtube.com/playlist?list=PLxyz').url;
   assert.equal(list.pathname, '/embed/videoseries');
   assert.equal(list.searchParams.get('list'), 'PLxyz');
+});
+
+test('playlists keep file IDs in episode order', () => {
+  const files = [
+    { id: 'a', name: 'Silo S3E10.mp4', size: 30 },
+    { id: 'b', name: 'Silo S3E9.mp4', size: 20 },
+    { id: 'c', name: 'Silo S3E8.mp4', size: 10 },
+  ];
+  const ordered = orderPlaylist(files);
+  assert.deepEqual(ordered.map((item) => item.name), ['Silo S3E8.mp4', 'Silo S3E9.mp4', 'Silo S3E10.mp4']);
+  const source = parseSource(playlistInput(ordered));
+  assert.equal(source.ok, true);
+  assert.equal(source.kind, 'playlist');
+  assert.equal(source.items.length, 3);
+  assert.equal(source.items[0].size, 10);
+  assert.equal(source.label, '3 episodes');
+  assert.equal(parseSource('playlist:not-json').ok, false);
+  const unrelated = [{ id: 'a', name: 'Zebra.mp4' }, { id: 'b', name: 'Alpha.mp4' }];
+  assert.deepEqual(orderPlaylist(unrelated).map((item) => item.name), ['Zebra.mp4', 'Alpha.mp4']);
 });
 
 test('youtube: a saved channel plays its uploads feed', () => {

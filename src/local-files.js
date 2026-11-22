@@ -111,6 +111,15 @@ export function filesFromDrop(dataTransfer) {
 
 export const registerChosen = (chosen) => register(chosen);
 
+/** Registers every file in a playlist and returns the IDs the tile saves. */
+export function registerFiles(chosen) {
+  return chosen.map((entry) => {
+    const id = newId();
+    register(entry, id);
+    return { id, name: entry.file.name, size: entry.file.size };
+  });
+}
+
 /**
  * Finds a file for a tile. Resolves to one of:
  *   { file }                     ready to play

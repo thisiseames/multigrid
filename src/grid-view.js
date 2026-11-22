@@ -126,6 +126,8 @@ class TileView {
       env,
       // What this tile is, for Continue watching: its link and the name it shows.
       describe: () => ({ input: this.tile.input, page: this.page, name: this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label }),
+      // A playlist moving to its next episode keeps the tile's name in step.
+      onEpisode: (name) => this.grid.handlers.onEpisode?.(this.id, name),
       // The extension says when the page inside moves on, so a reload comes back to it.
       onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
       onError: (message) => {
@@ -435,7 +437,7 @@ class TileView {
       this.castButton.hidden = true;
     }
     // A file lives on this computer, so it can't be sent.
-    this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && handlers.onSendToPhone
+    this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && this.source.kind !== 'playlist' && handlers.onSendToPhone
       ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
     this.sendButton?.classList.add('strip-send');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));

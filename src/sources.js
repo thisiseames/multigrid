@@ -261,6 +261,41 @@ function parseLocal(input) {
   return { ok: true, input, kind: 'file', label: name, name, localId: match[1], openUrl: null };
 }
 
+export const PLAYLIST_LIMIT = 100;
+
+/** Episodes are put in filename order when every name has a number in it. */
+export function orderPlaylist(items) {
+  const list = [...items];
+  // Ignore the extension: the 4 in ".mp4" is not an episode number.
+  const stem = (name) => String(name).replace(/\.[a-z0-9]{2,5}$/i, '');
+  if (list.length < 2 || !list.every((item) => /\d/.test(stem(item.name)))) return list;
+  return list.sort((a, b) => new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare(a.name, b.name));
+}
+
+/** The stored form of a playlist: ordered file IDs and names, never the files themselves. */
+export const playlistInput = (items) => `playlist:${encodeURIComponent(JSON.stringify(items.slice(0, PLAYLIST_LIMIT)))}`;
+
+function parsePlaylist(input) {
+  let raw;
+  try {
+    raw = JSON.parse(decodeURIComponent(input.slice('playlist:'.length)));
+  } catch {
+    return fail(input, 'That playlist link is damaged. Add the files again.');
+  }
+  if (!Array.isArray(raw)) return fail(input, 'That playlist link has no files in it.');
+  const items = raw
+    .filter((item) => item && typeof item.id === 'string' && /^[\w-]+$/.test(item.id) && typeof item.name === 'string' && item.name.trim())
+    .slice(0, PLAYLIST_LIMIT)
+    .map((item) => ({
+      id: item.id,
+      name: item.name.trim().slice(0, 200),
+      ...(Number.isFinite(item.size) && item.size > 0 ? { size: item.size } : {}),
+    }));
+  if (!items.length) return fail(input, 'That playlist has no files in it.');
+  const label = items.length === 1 ? items[0].name : `${items.length} episodes`;
+  return { ok: true, input, kind: 'playlist', label, name: label, items, openUrl: null };
+}
+
 /** A Reader story: reader:<id>:<title>. Its text is fetched and unlocked when it plays. */
 function parseReader(input) {
   const match = input.match(/^reader:([a-f0-9]{16}):?(.*)$/s);
@@ -327,6 +362,7 @@ function parseKick(url, host, input) {
 export function parseSource(raw) {
   const input = String(raw ?? '').trim();
   if (!input) return fail(input, 'Paste a link or iframe code.');
+  if (input.startsWith('playlist:')) return parsePlaylist(input);
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);

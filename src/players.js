@@ -17,7 +17,7 @@ import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './
 import { el, iconButton } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 import { runBoxScore } from './boxscore.js';
-import { forgetPlace, notePlace, rememberMedia, resumePoint, showResumed } from './resume.js';
+import { forgetPlace, isPlayed, notePlace, placeOf, rememberMedia, resumePoint, showResumed } from './resume.js';
 
 const scripts = new Map();
 
@@ -1278,7 +1278,7 @@ function xPlayer(source, options) {
 
 const FILE_ACCESS_EVENT = 'multigrid:file-access';
 
-function filePlayer(source, options) {
+function videoFilesPlayer(items, options, { playlist = false } = {}) {
   const { muted, volume, autoplay, onError } = options;
   const holder = document.createElement('div');
   holder.className = 'player-fill';
@@ -1292,7 +1292,17 @@ function filePlayer(source, options) {
   let destroyed = false;
   // A file has no lasting address, so it's known by its name and size.
   let fileKey = '';
-  const keepPlace = rememberMedia(video, () => fileKey, () => holder, () => options.describe?.());
+  let index = 0;
+  let loadToken = 0;
+  let waiting = 0;
+  let started = false;
+  const item = () => items[index] || null;
+  const keyOf = (entry) => (entry ? `file:${entry.name}:${entry.size || 0}` : '');
+  const keepPlace = rememberMedia(video, () => fileKey, () => holder, () => {
+    const current = item();
+    const base = options.describe?.() || {};
+    return playlist && current ? { ...base, name: current.name } : base;
+  });
 
   const badFormat = "This browser can't play this file's format. MP4 with H.264 is the safest choice.";
   video.addEventListener('error', () => {
@@ -1307,8 +1317,19 @@ function filePlayer(source, options) {
     if (autoplay) video.play().catch(() => {});
   });
 
-  const play = (file) => {
-    keepPlace();
+  const counter = playlist && items.length > 1 ? el('span', { class: 'feed-count', textContent: '' }) : null;
+  const previous = counter ? iconButton('back', 'Previous episode', () => openIndex(index - 1)) : null;
+  const next = counter ? iconButton('next', 'Next episode', () => openIndex(index + 1)) : null;
+  const stripButtons = counter ? [previous, counter, next] : null;
+  const paintFeed = () => {
+    if (!counter) return;
+    counter.textContent = `${index + 1}/${items.length}`;
+    previous.hidden = index <= 0;
+    next.hidden = index >= items.length - 1;
+  };
+
+  const playFile = (file) => {
+    if (destroyed) return;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     fileKey = `file:${file.name}:${file.size}`;
     objectUrl = URL.createObjectURL(file);
@@ -1316,42 +1337,111 @@ function filePlayer(source, options) {
     holder.replaceChildren(video);
   };
 
-  const prompt = (message, buttonText, action) => {
-    const button = el('button', { type: 'button', textContent: buttonText, on: { click: action } });
+  const prompt = (message, actions) => {
+    video.pause();
     holder.replaceChildren(el('div', { class: 'tile-error' },
       el('p', { textContent: message }),
-      el('div', { class: 'tile-error-actions' }, button)));
+      el('div', { class: 'tile-error-actions' }, ...actions.map(({ text, action }) => el('button', {
+        type: 'button', textContent: text, on: { click: action },
+      })))));
   };
 
+  const canSkip = () => playlist && index < items.length - 1;
+  const skip = () => { if (canSkip()) openIndex(index + 1); };
+
   const askToChoose = (moved) => {
+    const current = item();
+    if (!current) return;
     const message = moved
-      ? `${source.name} isn't where it was. It may have moved or been renamed.`
-      : `${source.name} is on your computer and isn't loaded right now.`;
-    prompt(message, 'Choose the file', async () => {
-      const file = await chooseAgain(source.localId);
-      if (file && !destroyed) play(file);
-    });
+      ? `${current.name} isn't where it was. It may have moved or been renamed.`
+      : `${current.name} is on your computer and isn't loaded right now.`;
+    const actions = [{
+      text: 'Choose the file',
+      action: async () => {
+        const file = await chooseAgain(current.id);
+        if (file && !destroyed && item() === current) playFile(file);
+      },
+    }];
+    if (canSkip()) actions.push({ text: 'Skip episode', action: skip });
+    prompt(message, actions);
   };
 
   // Allowing one file can allow them all ("Allow on every visit"), so waiting tiles recheck.
-  const recheck = () => findFile(source.localId).then((result) => {
-    if (result.file) handle(result);
-  });
+  const recheck = () => {
+    const current = item();
+    if (!current) return;
+    const token = waiting;
+    findFile(current.id).then((result) => {
+      if (token !== waiting || destroyed || item() !== current) return;
+      if (result.file) handle(result);
+    });
+  };
 
   const handle = (result) => {
     if (destroyed) return;
+    const current = item();
+    if (!current) return;
     if (result.file) {
       window.removeEventListener(FILE_ACCESS_EVENT, recheck);
-      play(result.file);
+      playFile(result.file);
     } else if (result.needsClick) {
+      waiting = loadToken;
       window.addEventListener(FILE_ACCESS_EVENT, recheck);
-      prompt(`${source.name} is ready to reopen.`, 'Reopen file', async () => {
-        const next = await reopen(source.localId);
-        handle(next);
-        if (next.file) window.dispatchEvent(new Event(FILE_ACCESS_EVENT));
-      });
+      const actions = [{
+        text: 'Reopen file',
+        action: async () => {
+          const opened = await reopen(current.id);
+          if (item() !== current) return;
+          handle(opened);
+          if (opened.file) window.dispatchEvent(new Event(FILE_ACCESS_EVENT));
+        },
+      }];
+      if (canSkip()) actions.push({ text: 'Skip episode', action: skip });
+      prompt(`${current.name} is ready to reopen.`, actions);
     } else askToChoose(result.moved);
   };
+
+  const startingIndex = () => {
+    if (!playlist) return 0;
+    const spots = items
+      .map((entry, at) => ({ at, place: placeOf(keyOf(entry)) }))
+      .filter((spot) => spot.place?.at > 0);
+    if (spots.length) {
+      spots.sort((a, b) => b.place.saved - a.place.saved);
+      return spots[0].at;
+    }
+    const firstOpen = items.findIndex((entry) => !isPlayed(keyOf(entry)));
+    return firstOpen === -1 ? 0 : firstOpen;
+  };
+
+  function openIndex(nextIndex) {
+    if (destroyed || nextIndex < 0 || nextIndex >= items.length) return;
+    if (item()) keepPlace();
+    keepPlace.reset();
+    window.removeEventListener(FILE_ACCESS_EVENT, recheck);
+    index = nextIndex;
+    fileKey = '';
+    loadToken += 1;
+    const token = loadToken;
+    waiting = token;
+    paintFeed();
+    const chosen = item();
+    if (!chosen) return;
+    if (playlist) options.onEpisode?.(chosen.name);
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    findFile(chosen.id).then((result) => {
+      if (destroyed || token !== loadToken || item() !== chosen) return;
+      handle(result);
+    });
+  }
+
+  if (playlist) {
+    video.addEventListener('ended', () => {
+      if (index < items.length - 1) openIndex(index + 1);
+    });
+  }
 
   return {
     el: holder,
@@ -1359,8 +1449,11 @@ function filePlayer(source, options) {
     media: video,
     canMute: true,
     canVolume: levelWorks,
+    ...(stripButtons ? { stripButtons, stripLabels: ['Previous episode', 'Next episode'] } : {}),
     start() {
-      findFile(source.localId).then(handle);
+      if (started) return;
+      started = true;
+      openIndex(startingIndex());
     },
     setMuted(next) {
       video.muted = next;
@@ -1371,12 +1464,21 @@ function filePlayer(source, options) {
     destroy() {
       keepPlace();
       destroyed = true;
+      loadToken += 1;
       window.removeEventListener(FILE_ACCESS_EVENT, recheck);
       video.removeAttribute('src');
       video.load();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     },
   };
+}
+
+function filePlayer(source, options) {
+  return videoFilesPlayer([{ id: source.localId, name: source.name }], options);
+}
+
+function playlistPlayer(source, options) {
+  return videoFilesPlayer(source.items, options, { playlist: true });
 }
 
 function genericPlayer(source, options) {
@@ -1432,6 +1534,7 @@ const PLAYERS = {
   tiktok: tiktokPlayer,
   x: xPlayer,
   file: filePlayer,
+  playlist: playlistPlayer,
   hls: hlsPlayer,
   iframe: genericPlayer,
   reader: readerPlayer,
