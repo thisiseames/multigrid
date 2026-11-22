@@ -1412,6 +1412,8 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .addp-x-add:hover,
 .welcome-form .add-button:hover,
 body:not(.is-phone) #add-button.add-button:hover { background: #28282d; filter: none; border-color: var(--border); }
+/* On the phone, + Stream has no outline, like Search, Today and Sound beside it (same size: the border is only made invisible). */
+body.is-phone #add-button.add-button { border-color: transparent; }
 /* A name is all an X account needs, so it gets a field of its own. */
 .addp-x-row { flex: none; display: flex; align-items: stretch; gap: 8px; margin: 8px 16px 0; }
 .addp-x { flex: 1; min-width: 0; display: flex; align-items: center; min-height: 36px; margin: 0; padding: 0 14px; border: 0; box-shadow: inset 0 0 0 1px var(--border-strong); border-radius: 12px; background: var(--surface); }
