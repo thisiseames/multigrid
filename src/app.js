@@ -6289,10 +6289,12 @@ function transferDealRow(deal) {
   const main = el('span', { class: 'transfer-main' },
     el('span', { class: 'transfer-player', textContent: deal.player }),
     el('span', { class: 'transfer-meta', textContent: `${deal.kind}${deal.club ? ` · ${deal.direction === 'in' ? 'from' : 'to'} ${deal.club}` : ''}` }));
-  const date = el('span', { class: 'transfer-date', textContent: deal.date ? dayLabel(deal.date) : '' });
+  const right = el('span', { class: 'transfer-right' },
+    el('span', { class: 'transfer-fee', textContent: deal.fee || '—' }),
+    el('span', { class: 'transfer-date', textContent: deal.date ? dayLabel(deal.date) : '' }));
   return deal.link
-    ? el('a', { class: 'transfer-row', href: deal.link, target: '_blank', rel: 'noopener' }, main, date)
-    : el('div', { class: 'transfer-row' }, main, date);
+    ? el('a', { class: 'transfer-row', href: deal.link, target: '_blank', rel: 'noopener' }, main, right)
+    : el('div', { class: 'transfer-row' }, main, right);
 }
 
 function transferStoryRow(item) {
@@ -6319,8 +6321,15 @@ function transferSection(label, note, ...children) {
 
 function renderTransferDesk(body, desk, squad, readerItems) {
   const state = windowState(Date.now(), desk.next);
-  const ins = desk.united.filter((deal) => deal.direction === 'in');
-  const outs = desk.united.filter((deal) => deal.direction === 'out');
+  const feeValue = (deal) => {
+    const match = String(deal.fee ?? '').match(/£([\d.]+)\s*([MKB])/i);
+    if (!match) return -1;
+    const suffix = match[2].toUpperCase();
+    return Number(match[1]) * (suffix === 'B' ? 1000 : suffix === 'K' ? 0.001 : 1);
+  };
+  const byMoney = (a, b) => feeValue(b) - feeValue(a) || b.date - a.date;
+  const ins = desk.united.filter((deal) => deal.direction === 'in').sort(byMoney);
+  const outs = desk.united.filter((deal) => deal.direction === 'out').sort(byMoney);
   const shownIn = transferShowAll ? ins : ins.slice(0, 5);
   const shownOut = transferShowAll ? outs : outs.slice(0, 5);
   const groups = squadGroups(squad);
@@ -6351,6 +6360,11 @@ function renderTransferDesk(body, desk, squad, readerItems) {
         el('span', { class: 'transfer-squad-age', textContent: group.avgAge ? `avg ${group.avgAge}` : '' }))))),
 
     transferSection('Done', `${ins.length} in · ${outs.length} out`,
+      desk.spent || desk.received
+        ? el('div', { class: 'transfer-money' },
+          el('span', { textContent: `Spent ${desk.spent}` }),
+          el('span', { textContent: `Received ${desk.received}` }))
+        : null,
       el('h5', { class: 'transfer-sublabel', textContent: 'In' }),
       el('div', { class: 'transfer-list' }, ...(shownIn.length ? shownIn.map(transferDealRow) : [el('p', { class: 'transfer-empty', textContent: 'No confirmed arrivals.' })])),
       el('h5', { class: 'transfer-sublabel', textContent: 'Out' }),
@@ -6358,7 +6372,7 @@ function renderTransferDesk(body, desk, squad, readerItems) {
       doneCount > shownIn.length + shownOut.length
         ? el('button', { type: 'button', class: 'transfer-more', textContent: transferShowAll ? 'Show latest' : `Show all ${doneCount}`, on: { click() { transferShowAll = !transferShowAll; fillTransfers(); } } })
         : null,
-      el('p', { class: 'transfer-note transfer-fees', textContent: 'Fees are not in the official feed.' })),
+      el('p', { class: 'transfer-note transfer-fees', textContent: 'Reported fees, in pounds.' })),
 
     transferSection('United links', 'Reader',
       el('div', { class: 'transfer-stories' }, ...(stories.length

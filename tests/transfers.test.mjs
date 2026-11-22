@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  NEXT_WINDOW, leagueLatest, parseTransferPlaylist, sourceTier, squadGroups, transferNews, transferType, windowState,
+  NEXT_WINDOW, feeTotals, leagueLatest, mergeFees, parseTransferPlaylist, parseUnitedFees, sourceTier, squadGroups, transferNews, transferType, windowState,
 } from '../src/transfers.js';
 
 const item = (title, description, tag, date, link = '') => ({
@@ -76,6 +76,40 @@ test('United transfer stories are deduped, newest first, and other clubs are sep
   assert.deepEqual(transferNews(items, { exclude: new Set([first]) }).map((row) => row.title), ['Man Utd transfer latest']);
   assert.equal(sourceTier('BBC Sport'), 1);
   assert.equal(sourceTier('A Fan Blog'), 2);
+});
+
+test('reported pound fees match the player and direction, accents included', () => {
+  const wikitext = `
+==Transfers==
+===In===
+{| class="wikitable"
+|-
+| 13 July 2026 || MF || {{flagicon|BRA}} [[Andrey Santos]] || {{fbaicon|ENG}} [[Chelsea F.C|Chelsea]] || Undisclosed{{efn|Reported as £48&nbsp;million}} || ref
+|-
+| 14 July 2026 || GK || {{flagicon|WAL}} [[Karl Darlow]] || {{fbaicon|ENG}} [[Leeds United F.C.|Leeds]] || Free || ref
+|-
+| 25 August 2026 || MF || {{flagicon|CMR}} [[Carlos Baleba]] || {{fbaicon|ENG}} [[Brighton]] || £65&nbsp;million || ref
+===Out===
+{| class="wikitable"
+|-
+| 29 June 2026 || FW || {{flagicon|DEN}} [[Rasmus Højlund]] || {{fbaicon|ITA}} [[SSC Napoli|Napoli]] || Undisclosed{{efn|Reported as £43.2&nbsp;million}} || ref
+|-
+| 30 June 2026 || GK || {{flagicon|CZE}} [[Radek Vítek]] || {{fbaicon|ENG}} [[Middlesbrough]] || £7&nbsp;million || ref
+|}
+`;
+  const fees = parseUnitedFees(wikitext);
+  assert.equal(fees.rows.length, 5);
+  const merged = mergeFees([
+    { player: 'Andrey Santos', direction: 'in', kind: 'Signed' },
+    { player: 'Carlos Baleba', direction: 'in', kind: 'Signed' },
+    { player: 'Karl Darlow', direction: 'in', kind: 'Signed' },
+    { player: 'Rasmus Hojlund', direction: 'out', kind: 'Sold' },
+    { player: 'Radek Vitek', direction: 'out', kind: 'Sold' },
+    { player: 'Shea Lacey', direction: 'in', kind: 'Signed' },
+    { player: 'James Overy', direction: 'out', kind: 'Sold' },
+  ], { rows: [...fees.rows, { player: 'James Overy', direction: 'out', fee: 'Loan' }] });
+  assert.deepEqual(merged.map((deal) => deal.fee), ['£48m', '£65m', 'Free', '£43.2m', '£7m', '', '']);
+  assert.deepEqual(feeTotals(merged), { spent: '£113m', received: '£50.2m' });
 });
 
 test('the window countdown knows closed, open and expired', () => {

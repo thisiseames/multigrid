@@ -129,6 +129,57 @@ export function transferNews(items = [], { limit = 6, united = true, exclude = n
     .slice(0, limit);
 }
 
+const plainName = (name) => String(name ?? '')
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/ø/gi, 'o').replace(/ı/g, 'i').replace(/ß/g, 'ss')
+  .replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase();
+
+/** The club season page's transfer tables, reduced to player + direction + reported £ fee. */
+export function parseUnitedFees(wikitext = '') {
+  const rows = [];
+  const section = String(wikitext).split('==Transfers==')[1] ?? '';
+  const parts = section.split(/===\s*(In|Out)\s*===/);
+  for (let index = 1; index < parts.length; index += 2) {
+    const direction = parts[index] === 'In' ? 'in' : 'out';
+    const body = parts[index + 1] ?? '';
+    for (const row of body.split('\n|-')) {
+      const player = row.match(/\{\{flagicon\|[^}]+\}\}\s*\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/);
+      if (!player) continue;
+      const pounds = row.match(/£\s*([\d.]+)/);
+      const fee = pounds ? `£${pounds[1]}m` : /\bFree\b/.test(row) ? 'Free' : /\bLoan\b/.test(row) ? 'Loan' : '';
+      rows.push({ player: player[2] || player[1], direction, fee });
+    }
+  }
+  return { rows };
+}
+
+const poundsValue = (fee) => Number(String(fee).match(/^£([\d.]+)m$/)?.[1] ?? 0);
+
+/** The reported fees on each side, in pounds. Undisclosed and free deals add nothing. */
+export function feeTotals(deals = []) {
+  const total = (direction) => deals.filter((deal) => deal.direction === direction)
+    .reduce((sum, deal) => sum + poundsValue(deal.fee), 0);
+  const money = (amount) => `£${Number.isInteger(amount) ? amount : amount.toFixed(1)}m`;
+  return { spent: money(total('in')), received: money(total('out')) };
+}
+
+/** Add the reported fee to each Premier League deal, matching player and direction. */
+export function mergeFees(deals = [], fees = { rows: [] }) {
+  const map = new Map();
+  for (const row of fees.rows ?? []) {
+    const key = `${row.direction}|${plainName(row.player)}`;
+    if (!map.has(key)) map.set(key, row.fee);
+  }
+  return deals.map((deal) => {
+    const fee = map.get(`${deal.direction}|${plainName(deal.player)}`) ?? '';
+    const kind = String(deal.kind ?? '');
+    const compatible = !fee || fee.startsWith('£') || !kind
+      || (fee === 'Free' && /released|sold|signed/i.test(kind))
+      || (fee === 'Loan' && /loan/i.test(kind));
+    return { ...deal, fee: compatible ? fee : '' };
+  });
+}
+
 /** Whether the next window is open, and how many days until it opens or closes. */
 export function windowState(now = Date.now(), next = NEXT_WINDOW) {
   if (!next?.opens) return { open: false, opens: 0, closes: 0, days: 0 };
