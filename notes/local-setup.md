@@ -3,7 +3,7 @@
 Written Nov 20 from the owner's Mac so cloud sessions don't have to ask. No secrets here; see the bottom for where they live.
 
 ## Devices
-- **Laptop:** an Intel MacBook Pro with Google Chrome 158 (main profile "Default"). MULTIGRID is used at https://thisiseames.github.io/multigrid.
+- **Laptop:** an Intel MacBook Pro with Google Chrome 158 (main profile "Default"). MULTIGRID is used at https://multigrid.club (moved from thisiseames.github.io/multigrid on Nov 22, 2026).
 - **Phone:** an iPhone, Chrome and the home-screen app. Check every change at phone width (about 390 px).
 - **Browser: always Chrome** (laptop and phone). Safari only for brief developer checks. Never write instructions, tests or explanations around Safari.
 - The Mac's clock is set to Central time, so the laptop shows times an hour behind Toronto. The owner is in Toronto.

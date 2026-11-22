@@ -2,7 +2,7 @@
 
 Rules for every AI agent working on this repo: Claude (desktop or claude.ai/code), OpenCode, Codex. Several agents work on it, so read this first, every session.
 
-MULTIGRID is a personal multiview video app for one person (the owner), live at https://thisiseames.github.io/multigrid. It is plain ES modules with no build step. GitHub Pages serves `main`.
+MULTIGRID is a personal multiview video app for one person (the owner), live at https://multigrid.club (the old address, thisiseames.github.io/multigrid, forwards there). It is plain ES modules with no build step. GitHub Pages serves `main`.
 
 ## Every session
 0. Read `notes/owner-rules.md` (how the owner wants work done; cloud sessions don't get these rules any other way), read `notes/product-map.md` (the inventory of what already exists), and skim `notes/history.md` for the part you're touching (what was tried and what broke).
