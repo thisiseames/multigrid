@@ -1,5 +1,5 @@
 {
- "updated": 1795316287082,
+ "updated": 1795318866997,
  "games": {
   "401876396": {
    "league": "Ligue 1",
@@ -462,6 +462,11 @@
      "id": "Yg4Vbtko-Sw",
      "title": "EXTENDED: KINGS at LAKERS | FULL GAME HIGHLIGHTS | November 20, 2026",
      "rank": 3.5
+    },
+    {
+     "id": "cxhBhvHS5u0",
+     "title": "Ottawa Senators vs Los Angeles Kings | NHL Highlights",
+     "rank": 3
     }
    ]
   },
@@ -482,6 +487,59 @@
    "league": "NBA",
    "title": "Knicks 97–96 Trail Blazers",
    "start": 1795307400000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "f3lxi8E6P9M",
+     "title": "TRAIL BLAZERS at KNICKS | FULL GAME HIGHLIGHTS | November 21, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "8tEzmeii0Y0",
+     "title": "Game Highlights: Portland Trail Blazers 96, New York Knicks 97 | Nov. 21, 2026",
+     "rank": 2
+    },
+    {
+     "id": "81vunhLVyLA",
+     "title": "Donovan Clingan Highlights (22 Points, 13 Rebounds) | Trail Blazers 96, Knicks 97 | Nov. 21, 2026",
+     "rank": 0.5
+    }
+   ]
+  },
+  "401910025": {
+   "league": "NBA",
+   "title": "Mavericks 110–100 Clippers",
+   "start": 1795309200000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401910026": {
+   "league": "NBA",
+   "title": "Timberwolves 104–95 Grizzlies",
+   "start": 1795309200000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "h-d1ldEnZRg",
+     "title": "Isaiah Stewart Highlights vs Minnesota Timberwolves",
+     "rank": 0.5
+    },
+    {
+     "id": "pe09QoL5jog",
+     "title": "Ty Jerome Highlights vs Minnesota Timberwolves",
+     "rank": 0.5
+    },
+    {
+     "id": "urxeTeETCbY",
+     "title": "Cedric Coward Highlights vs Minnesota Timberwolves",
+     "rank": 0.5
+    }
+   ]
+  },
+  "401910027": {
+   "league": "NBA",
+   "title": "Spurs 114–91 Pelicans",
+   "start": 1795309200000,
    "sources": "feeds",
    "videos": []
   }
@@ -552,6 +610,11 @@
   "nba:1": "UCpfcwELvR1wtcRJ0UxNXHYw",
   "nba:30": "UCPhFI5lIFnSggz7HgY9UuuQ",
   "nba:18": "UC0hb8f0OXHEzDrJDUq-YVVw",
-  "nba:22": "UCXk66yyzXo7-2M1BMqLhltQ"
+  "nba:22": "UCXk66yyzXo7-2M1BMqLhltQ",
+  "nba:6": "UCZywaCS_y9YOSSAC9z3dIeg",
+  "nba:12": "UCoK6pw3iIVF9WAWnQd3hj-g",
+  "nba:16": "UCXWDN5NKVFgnPt25CMh98Cg",
+  "nba:29": "UCCK5EpWKYrAmILfaZThCV-Q",
+  "nba:24": "UCEZHE-0CoHqeL1LGFa2EmQw"
  }
 }
