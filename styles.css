@@ -2748,10 +2748,10 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 }
 .addp .addp-paste textarea:hover, .addp-x:hover, .addp-favs .favorites-search input:hover { background: #151517; }
 .addp .addp-paste textarea:focus, .addp-x:focus-within, .addp-favs .favorites-search input:focus { outline: none; background: #151517; box-shadow: inset 0 0 0 1px rgba(245, 245, 247, .55); }
-/* The Add buttons: white when there's something to add, quiet until then. */
-.addp .addp-pasteadd, .addp .addp-x-add { background: #f5f5f7; color: #0b0b0d; border: 0; font-weight: 700; }
-.addp .addp-pasteadd:hover, .addp .addp-x-add:hover { background: #fff; }
-.addp .addp-pasteadd:disabled, .addp .addp-x-add:disabled { background: #141416; color: rgba(255, 255, 255, .38); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+/* The paste and X Add buttons stay the dark raised button (owner's choice), set on the black. */
+.addp .addp-pasteadd, .addp .addp-x-add { background: #1c1c1f; color: var(--text); border: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.addp .addp-pasteadd:hover, .addp .addp-x-add:hover { background: #26262a; }
+.addp .addp-pasteadd:disabled, .addp .addp-x-add:disabled { background: #111113; color: var(--text-2); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
 /* Find a live channel, Play a file, PPV, Import, Add a note, and the Library's buttons. */
 .addp .addp-file { border: 0; background: #111113; color: rgba(255, 255, 255, .78); font-weight: 600; min-height: 44px; transition: background .15s ease, color .15s ease; }
 .addp .addp-file svg { opacity: .8; }
