@@ -38,10 +38,10 @@ test('Twitch never gets a card; a plain website with nothing known gets none', (
 });
 
 test('YouTube, files, series pages and accounts', () => {
-  const video = tileCard({ kind: 'youtube', name: 'MKBHD', player: { title: 'iPhone review', author: 'MKBHD', at: 60, length: 25 * 60 } });
-  assert.deepEqual([video.live, video.title, video.lines], [false, 'iPhone review', ['MKBHD', '24 min left']]);
-  const live = tileCard({ kind: 'youtube', name: 'Sky News', player: { title: 'Sky News live', author: 'Sky News', live: true } });
-  assert.deepEqual([live.live, live.title], [true, 'Sky News live']);
+  assert.equal(tileCard({ kind: 'youtube', name: 'MKBHD', player: { title: 'iPhone review', at: 60, length: 1500 } }), null);
+  const recording = tileCard({ kind: 'hls', name: 'Match replay', player: { title: '', at: 60, length: 25 * 60 } });
+  assert.deepEqual([recording.title, recording.lines], ['Match replay', ['24 min left']]);
+  assert.equal(tileCard({ kind: 'hls', name: 'CP24', player: { live: true } }).live, true);
   const file = tileCard({ kind: 'playlist', name: 'Succession', player: { title: 'S01E03.mkv', episode: 3, episodes: 10, at: 0, length: 3600 } });
   assert.deepEqual(file.lines, ['Episode 3 of 10', '1 hr left']);
   assert.deepEqual(tileCard({ kind: 'website', name: 'Black Doves', series: 'S2 E8 · 34 min in' }).lines, ['S2 E8 · 34 min in']);

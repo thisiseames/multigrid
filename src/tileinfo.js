@@ -25,7 +25,8 @@ const sideName = (side) => side?.abbr || side?.name || '';
  */
 export function tileCard(about = {}, now = Date.now()) {
   const { kind = '', name = '', match = null, guide = null, series = '', player = null } = about;
-  if (kind === 'twitch') return null;
+  // Twitch stops if anything covers it; YouTube shows its own title and time on hover.
+  if (kind === 'twitch' || kind === 'youtube') return null;
 
   if (match?.home && match?.away) {
     const state = match.state || 'pre';
