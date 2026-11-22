@@ -561,13 +561,31 @@ class TileView {
     this.cropInner = null;
     this.cropFrame = null;
     const { handlers } = this.grid;
+    // The stream's own picture, blurred behind it, so a failed tile still looks like that channel.
+    const art = handlers.onTileArt?.(this.id) ?? null;
+    const name = handlers.labelOf?.(this.id) || this.tile.title || (this.source?.ok ? this.source.label : '');
+    const [first, ...rest] = String(message).split(/(?<=\.)\s+/);
     const actions = el('div', { class: 'tile-error-actions' },
+      this.source?.ok && handlers.onFixStream ? el('button', { type: 'button', class: 'is-main', textContent: 'Fix stream', on: { click: () => handlers.onFixStream(this.id) } }) : null,
       el('button', { type: 'button', textContent: 'Replace', on: { click: () => handlers.onReplace(this.id) } }),
       this.source?.ok && this.source.openUrl ? el('a', { href: this.source.openUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Open on its site' }) : null,
-      el('button', { type: 'button', textContent: 'Remove', on: { click: () => handlers.onRemove(this.id) } }));
+      el('button', { type: 'button', class: 'is-quiet', textContent: 'Remove', on: { click: () => handlers.onRemove(this.id) } }));
     this.body.replaceChildren(el('div', { class: 'tile-error', role: 'alert' },
-      el('p', { textContent: message }),
-      actions));
+      el('div', { class: 'tile-error-back', aria: { hidden: 'true' } }),
+      el('div', { class: 'tile-error-card' },
+        art ? el('div', { class: 'tile-error-art' }, art) : null,
+        name ? el('b', { class: 'tile-error-name', textContent: name }) : null,
+        el('p', { textContent: first }),
+        rest.length ? el('small', { textContent: rest.join(' ') }) : null,
+        actions)));
+    // Once the stream's own picture has really loaded (not YouTube's grey stand-in), it fills the back, blurred.
+    const back = this.body.querySelector('.tile-error-back');
+    const fill = () => {
+      const img = art?.querySelector('img');
+      if (img?.complete && img.naturalWidth > 120 && !art.classList.contains('is-icon')) back.style.backgroundImage = `url("${img.currentSrc || img.src}")`;
+    };
+    art?.querySelector('img')?.addEventListener('load', () => setTimeout(fill, 50));
+    fill();
     this.syncControls();
   }
 

@@ -100,6 +100,14 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onFill: (id) => openSourceDialog({ mode: 'fill', id }),
   onReplace: (id) => openSourceDialog({ mode: 'replace', id }),
   onFixStream: (id) => openPalette({ repair: { id } }),
+  labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
+  onTileArt(id) {
+    const tile = tileById(id);
+    if (!tile) return null;
+    const favorite = listFavorites().find((item) => item.input === tile.input);
+    const name = labelOf(tile);
+    return favoriteArt({ name, input: tile.input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, parseSource(tile.input), true);
+  },
   onRemove: removeStream,
   onToggleMute: toggleMute,
   onPlayerChanged: () => renderSound(),
