@@ -1,5 +1,5 @@
 {
-  "updated": 1795398144000,
+  "updated": 1795430736000,
   "country": "ca",
   "shows": [
     {
@@ -58,6 +58,15 @@
     },
     {
       "rank": 7,
+      "id": "1537788786",
+      "name": "The Rest Is History",
+      "author": "Goalhanger",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/12/e4/4e/12e44e6e-f250-0621-75c4-668fda6c48a3/mza_9347628783012573828.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-rest-is-history/id1537788786",
+      "genre": "History"
+    },
+    {
+      "rank": 8,
       "id": "965818306",
       "name": "48 Hours",
       "author": "48 Hours",
@@ -66,25 +75,7 @@
       "genre": "True Crime"
     },
     {
-      "rank": 8,
-      "id": "1646101002",
-      "name": "The Mel Robbins Podcast",
-      "author": "Mel Robbins",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/ab/66/a5/ab66a5f5-b52b-c70a-227b-0721bd9dc660/mza_13546984924981879479.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-mel-robbins-podcast/id1646101002",
-      "genre": "Education"
-    },
-    {
       "rank": 9,
-      "id": "278981407",
-      "name": "Stuff You Should Know",
-      "author": "iHeartPodcasts",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/aa/82/91/aa82912f-23ee-6f6a-583c-a4e993164d0e/mza_12111158076643383507.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/stuff-you-should-know/id278981407",
-      "genre": "Society & Culture"
-    },
-    {
-      "rank": 10,
       "id": "1322200189",
       "name": "Crime Junkie",
       "author": "Audiochuck",
@@ -93,31 +84,40 @@
       "genre": "True Crime"
     },
     {
+      "rank": 10,
+      "id": "1646101002",
+      "name": "The Mel Robbins Podcast",
+      "author": "Mel Robbins",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/ab/66/a5/ab66a5f5-b52b-c70a-227b-0721bd9dc660/mza_13546984924981879479.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-mel-robbins-podcast/id1646101002",
+      "genre": "Education"
+    },
+    {
       "rank": 11,
+      "id": "278981407",
+      "name": "Stuff You Should Know",
+      "author": "iHeartPodcasts",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/aa/82/91/aa82912f-23ee-6f6a-583c-a4e993164d0e/mza_12111158076643383507.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/stuff-you-should-know/id278981407",
+      "genre": "Society & Culture"
+    },
+    {
+      "rank": 12,
+      "id": "201671138",
+      "name": "This American Life",
+      "author": "This American Life",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/fa/16/7d/fa167dfc-d04d-5676-fc83-ea4c2bc00e23/mza_16461113657293104053.png/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/this-american-life/id201671138",
+      "genre": "Society & Culture"
+    },
+    {
+      "rank": 13,
       "id": "1510240831",
       "name": "The MeidasTouch Podcast",
       "author": "MeidasTouch Network",
       "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts122/v4/73/32/80/733280d2-330a-2f24-c600-bc1088f9f899/mza_17833502176263457882.jpeg/600x600bb.jpg",
       "appleUrl": "https://podcasts.apple.com/ca/podcast/the-meidastouch-podcast/id1510240831",
       "genre": "News"
-    },
-    {
-      "rank": 12,
-      "id": "1536352412",
-      "name": "Giggly Squad",
-      "author": "Hannah Berner & Paige DeSorbo",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/e8/09/a6/e809a65d-03c3-82ce-383b-5586f49acc5b/mza_10887220202918113929.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/giggly-squad/id1536352412",
-      "genre": "Comedy"
-    },
-    {
-      "rank": 13,
-      "id": "1345682353",
-      "name": "Armchair Expert with Dax Shepard",
-      "author": "Armchair Umbrella",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f0/13/8f/f0138f4b-8bc3-0a64-2c11-ef566840f60f/mza_3062409012210474882.jpeg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/armchair-expert-with-dax-shepard/id1345682353",
-      "genre": "Comedy"
     },
     {
       "rank": 14,
@@ -130,21 +130,21 @@
     },
     {
       "rank": 15,
-      "id": "278657031",
-      "name": "World Report",
-      "author": "CBC",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts122/v4/82/1b/b4/821bb4d2-2ec3-e731-9ab0-40a79f69dc43/mza_5470566313026055939.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/world-report/id278657031",
-      "genre": "News"
+      "id": "1536352412",
+      "name": "Giggly Squad",
+      "author": "Hannah Berner & Paige DeSorbo",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/e8/09/a6/e809a65d-03c3-82ce-383b-5586f49acc5b/mza_10887220202918113929.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/giggly-squad/id1536352412",
+      "genre": "Comedy"
     },
     {
       "rank": 16,
-      "id": "679367618",
-      "name": "OverDrive",
-      "author": "TSN 1050 Radio",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/9d/ee/00/9dee00a4-00c7-fa37-67a1-df5f58449bba/mza_11985909601847748510.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/overdrive/id679367618",
-      "genre": "Sports"
+      "id": "1345682353",
+      "name": "Armchair Expert with Dax Shepard",
+      "author": "Armchair Umbrella",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f0/13/8f/f0138f4b-8bc3-0a64-2c11-ef566840f60f/mza_3062409012210474882.jpeg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/armchair-expert-with-dax-shepard/id1345682353",
+      "genre": "Comedy"
     },
     {
       "rank": 17,
@@ -157,15 +157,6 @@
     },
     {
       "rank": 18,
-      "id": "1537788786",
-      "name": "The Rest Is History",
-      "author": "Goalhanger",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/12/e4/4e/12e44e6e-f250-0621-75c4-668fda6c48a3/mza_9347628783012573828.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-rest-is-history/id1537788786",
-      "genre": "History"
-    },
-    {
-      "rank": 19,
       "id": "1795483480",
       "name": "Good Hang with Amy Poehler",
       "author": "The Ringer",
@@ -174,16 +165,16 @@
       "genre": "Comedy"
     },
     {
-      "rank": 20,
-      "id": "998568017",
-      "name": "Casefile True Crime",
-      "author": "Casefile Presents",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/32/81/a3/3281a345-6fa5-1d0d-b0bc-f02b0850a0ae/mza_17562537467118278179.jpeg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/casefile-true-crime/id998568017",
-      "genre": "True Crime"
+      "rank": 19,
+      "id": "679367618",
+      "name": "OverDrive",
+      "author": "TSN 1050 Radio",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/9d/ee/00/9dee00a4-00c7-fa37-67a1-df5f58449bba/mza_11985909601847748510.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/overdrive/id679367618",
+      "genre": "Sports"
     },
     {
-      "rank": 21,
+      "rank": 20,
       "id": "1364665348",
       "name": "The Most Wanted Olympian from Uncover",
       "author": "CBC",
@@ -192,22 +183,31 @@
       "genre": "True Crime"
     },
     {
+      "rank": 21,
+      "id": "278657031",
+      "name": "World Report",
+      "author": "CBC",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts122/v4/82/1b/b4/821bb4d2-2ec3-e731-9ab0-40a79f69dc43/mza_5470566313026055939.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/world-report/id278657031",
+      "genre": "News"
+    },
+    {
       "rank": 22,
+      "id": "998568017",
+      "name": "Casefile True Crime",
+      "author": "Casefile Presents",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/32/81/a3/3281a345-6fa5-1d0d-b0bc-f02b0850a0ae/mza_17562537467118278179.jpeg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/casefile-true-crime/id998568017",
+      "genre": "True Crime"
+    },
+    {
+      "rank": 23,
       "id": "1439621628",
       "name": "Front Burner",
       "author": "CBC",
       "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/b5/46/ed/b546edf2-9cd4-8464-850d-92af5b75e371/mza_1251446280715167527.jpg/600x600bb.jpg",
       "appleUrl": "https://podcasts.apple.com/ca/podcast/front-burner/id1439621628",
       "genre": "News"
-    },
-    {
-      "rank": 23,
-      "id": "1548604447",
-      "name": "The Ezra Klein Show",
-      "author": "New York Times Opinion",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/9d/ca/35/9dca35d8-e7d2-7e4f-63b5-c2ff4973a3f5/mza_16891544429738729361.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-ezra-klein-show/id1548604447",
-      "genre": "Society & Culture"
     },
     {
       "rank": 24,
@@ -220,17 +220,28 @@
     },
     {
       "rank": 25,
-      "id": "1615637724",
-      "name": "Betrayal Season 6",
-      "author": "iHeartPodcasts | Glass Podcasts",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/45/c0/ce/45c0cec7-f08f-a48c-505f-0796c7f75401/mza_6343213902657514244.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/betrayal-season-6/id1615637724",
-      "genre": "True Crime"
+      "id": "1548604447",
+      "name": "The Ezra Klein Show",
+      "author": "New York Times Opinion",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/9d/ca/35/9dca35d8-e7d2-7e4f-63b5-c2ff4973a3f5/mza_16891544429738729361.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-ezra-klein-show/id1548604447",
+      "genre": "Society & Culture"
     }
   ],
   "episodes": [
     {
       "rank": 1,
+      "id": "1000529274637",
+      "title": "The Psychopath Test",
+      "source": "This American Life",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/cf/98/b9/cf98b951-282f-ea3b-0c99-e785d7b13098/mza_8348672502774564268.jpg/600x600bb.jpg",
+      "audio": "https://pfx.vpixl.com/6qj4J/dts.podtrac.com/redirect.mp/pdst.fm/e/prefix.up.audio/s/npr.simplecastaudio.com/d3081dd9-fcaf-445a-977c-4f56c28f5a6e/episodes/cb3d614d-f743-413d-977f-ff4e8a6b95ca/audio/128/default.mp3?awCollectionId=d3081dd9-fcaf-445a-977c-4f56c28f5a6e&awEpisodeId=cb3d614d-f743-413d-977f-ff4e8a6b95ca&nocache",
+      "length": 3757,
+      "time": 1795395600000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-psychopath-test/id201671138?i=1000529274637&uo=4"
+    },
+    {
+      "rank": 2,
       "id": "1000803300267",
       "title": "Murder on the Menu",
       "source": "20/20",
@@ -241,7 +252,7 @@
       "appleUrl": "https://podcasts.apple.com/ca/podcast/murder-on-the-menu/id987967575?i=1000803300267&uo=4"
     },
     {
-      "rank": 2,
+      "rank": 3,
       "id": "1000803052523",
       "title": "Spittin' Chiclets Episode 686: Featuring Andrew Brunette & Zach Benson",
       "source": "Spittin Chiclets",
@@ -250,17 +261,6 @@
       "length": 10704,
       "time": 1795147747000,
       "appleUrl": "https://podcasts.apple.com/ca/podcast/spittin-chiclets-episode-686-featuring-andrew-brunette/id1112425552?i=1000803052523&uo=4"
-    },
-    {
-      "rank": 3,
-      "id": "1000803409618",
-      "title": "Sunday's top stories in 10 minutes",
-      "source": "World Report",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts122/v4/82/1b/b4/821bb4d2-2ec3-e731-9ab0-40a79f69dc43/mza_5470566313026055939.jpg/600x600bb.jpg",
-      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_WR_P/media/wr/wr-O31pzBoY-20261122.mp3",
-      "length": 608,
-      "time": 1795367400000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/sundays-top-stories-in-10-minutes/id278657031?i=1000803409618&uo=4"
     },
     {
       "rank": 4,
@@ -286,6 +286,50 @@
     },
     {
       "rank": 6,
+      "id": "1000802943916",
+      "title": "The Death of Captain Cook: At World’s End (Part 1)",
+      "source": "The Rest Is History",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/43/21/46/43214642-215c-3907-6886-490a52dd621e/mza_16522780405889739392.png/600x600bb.jpg",
+      "audio": "https://pdst.fm/e/traffic.megaphone.fm/GLT6692579488.mp3",
+      "length": 5158,
+      "time": 1795392300000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-death-of-captain-cook-at-worlds-end-part-1/id1537788786?i=1000802943916&uo=4"
+    },
+    {
+      "rank": 7,
+      "id": "1000803441965",
+      "title": "Yalta Redux, AI Stock Slump, Middle East Machinations",
+      "source": "Fareed Zakaria GPS",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/7b/6d/ec/7b6deca2-e1ef-bd33-6f8b-f9af9fbfe439/mza_3617658654711387260.jpeg/600x600bb.jpg",
+      "audio": "https://www.podtrac.com/pts/redirect.mp3/pdst.fm/e/swap.fm/track/2nzGkisFXQswLYT5s325/traffic.megaphone.fm/WMHY8118423612.mp3",
+      "length": 2568,
+      "time": 1795368060000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/yalta-redux-ai-stock-slump-middle-east-machinations/id377785090?i=1000803441965&uo=4"
+    },
+    {
+      "rank": 8,
+      "id": "1000803491974",
+      "title": "Latest ICE arrests at a Seattle Airport spark outrage",
+      "source": "Your World Tonight",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/90/06/07/9006079e-740f-7df5-9282-9831720e2787/mza_9368552318938823240.jpg/600x600bb.jpg",
+      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_W6_P/media/w6/w6-o0Xrj99R-20261123.mp3",
+      "length": 1778,
+      "time": 1795390800000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/latest-ice-arrests-at-a-seattle-airport-spark-outrage/id250083757?i=1000803491974&uo=4"
+    },
+    {
+      "rank": 9,
+      "id": "1000803264760",
+      "title": "Selects: How Buffets Work",
+      "source": "Stuff You Should Know",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/aa/82/91/aa82912f-23ee-6f6a-583c-a4e993164d0e/mza_12111158076643383507.jpg/600x600bb.jpg",
+      "audio": "https://podtrac.com/pts/redirect.mp3/pscrb.fm/rss/p/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/a91018a4-ea4f-4130-bf55-ae270180c327/fba36340-c6cf-4b3b-91fa-b505013fef8a/audio.mp3?utm_source=Podcast&in_playlist=44710ecc-10bb-48d1-93c7-ae270180c33e",
+      "length": 3455,
+      "time": 1795255200000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/selects-how-buffets-work/id278981407?i=1000803264760&uo=4"
+    },
+    {
+      "rank": 10,
       "id": "1000803407677",
       "title": "A Thanksgiving Dinner for $100? Yes, It’s Possible (and Delicious).",
       "source": "The Daily",
@@ -294,50 +338,6 @@
       "length": 1954,
       "time": 1795345200000,
       "appleUrl": "https://podcasts.apple.com/ca/podcast/a-thanksgiving-dinner-for-%24100-yes-its-possible/id1200361736?i=1000803407677&uo=4"
-    },
-    {
-      "rank": 7,
-      "id": "1000802823594",
-      "title": "\"Jason Sudeikis – LIVE at The Hollywood Bowl\"",
-      "source": "SmartLess",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/b1/93/5f/b1935f9f-35be-9144-e813-626bd8dabfb4/mza_4132654708551836825.jpg/600x600bb.jpg",
-      "audio": "https://mgln.ai/e/2/dts.podtrac.com/redirect.mp3/stitcher.simplecastaudio.com/559b7461-a7b0-4341-b142-0ae492cb0a65/episodes/255adb22-a09e-4b28-897d-5d3c8a3528d9/audio/128/default.mp3?aid=rss_feed&awCollectionId=559b7461-a7b0-4341-b142-0ae492cb0a65&awEpisodeId=255adb22-a09e-4b28-897d-5d3c8a3528d9&feed=hNaFxXpO",
-      "length": 3791,
-      "time": 1795075200000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/jason-sudeikis-live-at-the-hollywood-bowl/id1521578868?i=1000802823594&uo=4"
-    },
-    {
-      "rank": 8,
-      "id": "1000803205753",
-      "title": "Anthropic Goes Public, Nvidia in Crisis, Markets Tank, Open Source Crackdown?",
-      "source": "All-In with Chamath, Jason, Sacks & Friedberg",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/84/c5/cd/84c5cd5f-bffd-23b8-d0b8-055449563151/mza_13996811906640283744.png/600x600bb.jpg",
-      "audio": "https://dts.podtrac.com/redirect.mp3/traffic.libsyn.com/secure/allinchamathjason/ALLIN-E298_Ch.mp3?dest-id=1928300",
-      "length": 4601,
-      "time": 1795212840000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/anthropic-goes-public-nvidia-in-crisis-markets-tank/id1502871393?i=1000803205753&uo=4"
-    },
-    {
-      "rank": 9,
-      "id": "1000803192561",
-      "title": "Giggling about microneedling, mental load, and storylines",
-      "source": "Giggly Squad",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/2e/27/d4/2e27d434-3bcb-dd30-43f4-8ea676c21b7b/mza_10156865377978643288.jpg/600x600bb.jpg",
-      "audio": "https://mgln.ai/e/2/dts.podtrac.com/redirect.mp3/stitcher.simplecastaudio.com/b46f75bd-4f1c-40c4-b4e8-38059bb77e29/episodes/62124842-e699-4ed2-bffd-0c516dafa51e/audio/128/default.mp3?aid=rss_feed&awCollectionId=b46f75bd-4f1c-40c4-b4e8-38059bb77e29&awEpisodeId=62124842-e699-4ed2-bffd-0c516dafa51e&feed=6J0Ivoq9",
-      "length": 2662,
-      "time": 1795207720000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/giggling-about-microneedling-mental-load-and-storylines/id1536352412?i=1000803192561&uo=4"
-    },
-    {
-      "rank": 10,
-      "id": "1000803320090",
-      "title": "Anthropic, Elon, and a Lead filled Thanksgiving",
-      "source": "The Tim Dillon Show",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/73/1b/ba/731bbab0-a8d8-9b96-c03f-c18be40b9c6f/mza_12234844671725707702.jpg/600x600bb.jpg",
-      "audio": "https://clrtpod.com/m/pscrb.fm/rss/p/dts.podtrac.com/redirect.mp3/audioboom.com/posts/8979754.mp3?modified=1795273475&sid=5093219&source=rss",
-      "length": 4484,
-      "time": 1795280400000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/anthropic-elon-and-a-lead-filled-thanksgiving/id1135137367?i=1000803320090&uo=4"
     }
   ]
 }
