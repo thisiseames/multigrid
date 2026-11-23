@@ -390,3 +390,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - A phone with no favorites hid the whole Favorites section in Add stream, which also hid the only **Sync** button on the phone. Favorites now always shows there, with “No favorites yet. Tap Sync to bring them from another device.” and the Sync control.
 - Fixed a stray “null” in the Sync dialog when there was no Continue watching row to show (`show()` now filters empty parts).
 - Verified at 390: fresh phone shows Favorites + Sync, the dialog has no “null”, entering a code from a laptop paired it, and the laptop’s favorite appeared in the phone’s Add stream; no overflow. 373 tests.
+
+## Nov 23 — Remote pairs inside the Home Screen app
+- iOS cannot make a scanned or tapped link open in a Home Screen web app; it always opens Safari. The phone’s **Remote** tab now opens **Connect remote** with a paste field and **Paste** button, instead of wrongly starting a host QR dialog. Pair once there; the phone reconnects by itself on later opens. The QR path remains for Safari users.
+- The laptop’s Phone remote note now says scanning opens Safari and points Home Screen users to Remote → paste.
+- Verified at 390: a fresh phone showed Connect remote (no QR), a pasted link saved `multigrid.remotepair.v1` and opened the remote screen; the laptop still showed its QR and host dialog. 373 tests.

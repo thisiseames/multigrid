@@ -11913,7 +11913,7 @@ async function drawRemoteDialog() {
     el('p', { class: 'remote-lead', textContent: 'Point your iPhone camera at this code and tap the link. Your phone becomes a remote for this screen, on the same Wi-Fi.' }),
     qr,
     status,
-    el('p', { class: 'remote-note', textContent: "On the Home Screen app, paste the link into Add stream instead. Next time, the phone reconnects by itself while this page is open." }),
+    el('p', { class: 'remote-note', textContent: "Scanning opens Safari. To use the Home Screen app, tap Remote there and paste the copied link. Next time, the phone reconnects by itself while this page is open." }),
     el('div', { class: 'dialog-actions' },
       el('button', { type: 'button', class: 'plain-button', textContent: 'Copy link', on: { click() { navigator.clipboard?.writeText(pairLink(pairing)).then(() => toast('Remote link copied.'), () => toast("Couldn't copy. Scan the code instead.")); } } }),
       el('button', { type: 'button', class: 'plain-button is-danger', textContent: 'Turn off remote', on: { async click() { await stopRemoteHost(); box.close(); toast('Remote turned off. Your phone has been unpaired.'); } } })));
@@ -11924,10 +11924,67 @@ async function drawRemoteDialog() {
   }
 }
 
+/** A phone that is not paired yet: paste the computer's remote link here, once. */
+function openRemoteConnect() {
+  const box = $('remote-dialog');
+  const input = el('input', { type: 'text', class: 'remote-link-input', placeholder: 'Paste the remote link', autocomplete: 'off', autocapitalize: 'off', spellcheck: false, aria: { label: 'Remote link' } });
+  const message = el('p', { class: 'remote-connect-note', textContent: 'On the computer: More → Phone remote → Copy link. Send it to this phone, then paste it here.' });
+  const paste = el('button', {
+    type: 'button', class: 'plain-button', textContent: 'Paste',
+    on: {
+      async click() {
+        try {
+          input.value = await navigator.clipboard.readText();
+          input.focus();
+        } catch {
+          toast('Press and hold the box, then tap Paste.');
+        }
+      },
+    },
+  });
+  const connect = el('button', {
+    type: 'button', class: 'add-button', textContent: 'Connect',
+    on: {
+      click() {
+        const text = input.value.trim();
+        if (!text) {
+          message.textContent = 'Paste the link from the computer first.';
+          message.classList.add('is-error');
+          input.focus();
+          return;
+        }
+        if (!receiveRemotePairing(text)) {
+          message.textContent = "That isn't a remote link. On the computer, open More → Phone remote → Copy link.";
+          message.classList.add('is-error');
+          input.focus();
+          return;
+        }
+        box.close();
+      },
+    },
+  });
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter') connect.click(); });
+  box.replaceChildren(
+    el('div', { class: 'help-head' }, el('h2', { textContent: 'Connect remote' }), iconButton('close', 'Close', () => box.close())),
+    el('p', { class: 'remote-lead', textContent: 'The link is made on the computer you want to control. Paste it once; this app reconnects by itself next time.' }),
+    el('div', { class: 'remote-link-row' }, input, paste),
+    message,
+    el('div', { class: 'dialog-actions' },
+      el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel'),
+      connect));
+  openDialog(box);
+  input.focus();
+}
+
 async function openRemoteDialog() {
   // A phone that's already a remote opens its controls instead.
   if (controllerPairing()) {
     openRemoteScreen();
+    return;
+  }
+  // A phone pairs as the controller; it should never start hosting a remote.
+  if (onPhoneScreen()) {
+    openRemoteConnect();
     return;
   }
   hostPairing(true);

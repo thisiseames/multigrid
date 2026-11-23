@@ -1834,6 +1834,12 @@ body.is-phone .resume-note button { height: 44px; padding: 0 16px; font-size: 14
 .remote-status.is-off { color: #ff8a8d; }
 .remote-status.is-off .remote-dot { background: #e5484d; animation: none; }
 .remote-note { margin: 6px 0 4px; font-size: 12px; color: var(--text-2); line-height: 1.45; text-align: center; }
+.remote-link-row { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; }
+.remote-link-input { flex: 1; min-width: 0; height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+.remote-link-input:focus { outline: none; border-color: var(--accent); }
+.remote-link-row .plain-button { flex: none; height: 46px; padding: 0 14px; }
+.remote-connect-note { margin: 8px 0 0; font-size: 12px; color: var(--text-2); line-height: 1.45; }
+.remote-connect-note.is-error { color: #ff8a8d; }
 .plain-button.is-danger { color: #ff8a8d; }
 
 /* Phone remote: the remote screen */
