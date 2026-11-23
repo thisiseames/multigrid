@@ -37,7 +37,7 @@ import { isStingOn, playSting, setStingOn } from './sting.js';
 import { applyMove, isOldHome, moveLink, NEW_HOME, readMove } from './move.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
-import { getCinema, getFootball } from './crop.js';
+import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
 import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint, watchedTitles } from './resume.js';
 import { bringBack as bringBackPopOut, canPopOutGrid, isGridPoppedOut, isPoppedOut, popOutGrid } from './popout.js';
@@ -136,6 +136,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
+  onFootballLayout: (id) => useFootballLayout(id),
   onTune: (id) => { tunedId = id; renderPhoneBar(); },
   onNoteText: (id, text) => {
     const tile = tileById(id);
@@ -337,7 +338,7 @@ function buildStreamMenu(id) {
   const actions = [
     bigButton('crown', tile.primary ? 'Primary' : 'Make primary', then(() => togglePrimary(id)), { on: Boolean(tile.primary) }),
     view.cinemaButton ? bigButton('film', 'Cinema', then(() => view.toggleCinema()), { on: Boolean(getCinema(tile.input)) }) : null,
-    view.footballButton ? bigButton('pitch', 'Football', then(() => view.toggleFootball()), { on: Boolean(getFootball(tile.input)) }) : null,
+    view.footballButton ? bigButton('pitch', 'Football layout', then(() => useFootballLayout(id))) : null,
     view.cropButton ? bigButton('crop', 'Crop', then(() => view.editCrop())) : null,
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
     feed && !feed[0].hidden ? bigButton('back', feedLabels[0], () => feed[0].click()) : null,
@@ -11185,6 +11186,17 @@ function buildLayoutMenu() {
 }
 
 /** Switches the screen to a layout, from the menu or the phone remote. Returns the "some are hidden" note, if any. */
+/** Switches the wall to the Football layout with this match in the big 16:9 tile. */
+function useFootballLayout(id = null) {
+  const tile = id ? tileById(id) : tunedTile();
+  if (tile) setPrimary(ws, tile.id, true);
+  for (const item of ws.tiles) grid.viewFor(item.id)?.root.classList.remove('maximized');
+  if (fullscreen.element()) fullscreen.exit();
+  makeBig(null, false);
+  const note = chooseLayout('football');
+  toast(note || 'Football layout: the match is in the big 16:9 tile.');
+}
+
 function chooseLayout(presetId) {
   const preset = presetById(presetId);
   if (!preset) return '';
@@ -11755,7 +11767,6 @@ function remoteState() {
         primary: Boolean(tile.primary),
         pipSwap: Boolean(pipOther(tile.id)),
         cinema: Boolean(getCinema(tile.input)),
-        football: Boolean(getFootball(tile.input)),
         surfable: surfPool(tile).length > 1,
       };
     }),
@@ -11827,12 +11838,6 @@ function remoteCommand(cmd) {
     case 'surf':
       if (tile && (cmd.step === 1 || cmd.step === -1)) {
         surfChannels(cmd.step, tile.id);
-        remoteSync();
-      }
-      break;
-    case 'football':
-      if (tile && Boolean(cmd.value) !== Boolean(getFootball(tile.input))) {
-        grid.viewFor(tile.id)?.toggleFootball();
         remoteSync();
       }
       break;
@@ -12208,7 +12213,6 @@ function remoteTileCard(tile) {
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
       tile.pipSwap ? el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'swapPip', id: tile.id }) } }, icon('pip'), 'Swap screens') : null,
       el('button', { type: 'button', class: `rm-pill${tile.cinema ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.cinema)) }, on: { click: () => remoteSend({ type: 'cinema', id: tile.id, value: !tile.cinema }) } }, icon('film'), tile.cinema ? 'Cinema on' : 'Cinema'),
-      el('button', { type: 'button', class: `rm-pill${tile.football ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.football)) }, on: { click: () => remoteSend({ type: 'football', id: tile.id, value: !tile.football }) } }, icon('pitch'), tile.football ? 'Football on' : 'Football'),
       tile.surfable ? el('span', { class: 'rm-surf-pair' },
         el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'surf', id: tile.id, step: -1 }) } }, icon('back'), 'Prev channel'),
         el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'surf', id: tile.id, step: 1 }) } }, icon('next'), 'Next channel')) : null,

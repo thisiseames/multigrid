@@ -56,9 +56,7 @@ export function cropBox(crop) {
    film (the big spot, when the layout allows) that means the whole film with no bars; in a
    normal tile, a little of each side is trimmed. Remembered on this device for its link. */
 const CINEMA_STORE = 'multigrid.cinema.v1';
-const FOOTBALL_STORE = 'multigrid.football.v1';
 export const FILM_SHAPE = 2.39;
-export const FOOTBALL_SHAPE = 16 / 9;
 const VIDEO_SHAPE = 16 / 9;
 
 const readCinema = () => {
@@ -84,34 +82,6 @@ export function setCinema(input, shape) {
   else delete all[input];
   try {
     localStorage.setItem(CINEMA_STORE, JSON.stringify(all));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const readFootball = () => {
-  try {
-    const all = JSON.parse(localStorage.getItem(FOOTBALL_STORE) || '{}');
-    return all && typeof all === 'object' ? all : {};
-  } catch {
-    return {};
-  }
-};
-
-/** The 16:9 broadcast shape when Football is on for this link, or null. */
-export function getFootball(input) {
-  if (!input) return null;
-  return readFootball()[input] ? FOOTBALL_SHAPE : null;
-}
-
-export function setFootball(input, on) {
-  if (!input) return false;
-  const all = readFootball();
-  if (on) all[input] = true;
-  else delete all[input];
-  try {
-    localStorage.setItem(FOOTBALL_STORE, JSON.stringify(all));
     return true;
   } catch {
     return false;

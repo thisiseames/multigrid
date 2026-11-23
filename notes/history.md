@@ -419,7 +419,7 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Remote cards now show **Prev channel / Next channel** when that stream has at least two favorites to surf. It calls the same `surfChannels` as the laptop: it stays in the tile’s folder (or uses all favorites when unfiled), replaces the stream in place, and updates the card’s label.
 - Verified over a real phone-to-laptop remote connection with Alpha/Beta in News and Gamma in Sports: Next changed Alpha to Beta on both the laptop and the remote; Prev returned to Alpha. 373 tests.
 
-## Nov 23 — Football shape
-- New per-link **Football** toggle (pitch icon in the tile strip, the stream menu, and each remote card): a 16:9 broadcast frame that fills the tile with no black bars. It is separate from Cinema; turning one on turns the other off.
-- It **fits** the whole broadcast: the tile body becomes a 16:9 box and the picture is never trimmed. On a normal 16:9 grid tile that fills exactly; on a taller 4:3/maximized screen the black stays outside the 16:9 body. Cinema is still the fill/crop mode.
-- Verified on an 800×600 maximized tile: body and picture 800×450 (1.778), `cropped: false`, `multigrid.football.v1` set; the remote pill read Football on and cleared it again. 373 tests.
+## Nov 23 — Football layout
+- **Football** is a real layout, not a video mode: a big 16:9 match tile on the left with two 16:9 streams stacked beside it (3 columns × 2 rows). The wall switches to it from the pitch icon on a tile, the stream menu, Layout, or the remote’s layout carousel. The current match becomes primary and takes the big tile; nothing is cropped or stretched.
+- This replaces the short-lived per-tile Football/Cinema-style fit. Cinema remains the film mode.
+- Verified at 1344×521 with Alpha/Beta/Gamma: the pitch shortcut changed the saved preset from single to football, Alpha moved to the big tile, Beta/Gamma to the right column; the big picture is 16:9 and the whole wall uses the side space instead of cropping the match. 373 tests.
