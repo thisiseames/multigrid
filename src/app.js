@@ -521,17 +521,19 @@ function openYouTubeImport() {
   openDialog(box);
 }
 
-/** One Import action, with the two list importers behind it. */
+/** The Import chooser: X, YouTube and TikTok lists, all in the same place. */
 function openImportChooser() {
   const box = $('import-box');
   if (box.open) return;
-  const choice = (iconName, title, note, run) => el('button', {
+  const choice = (iconName, title, note, run, immediate = false) => el('button', {
     type: 'button',
     class: 'import-choice',
     on: {
       click() {
         box.close();
-        setTimeout(run, 0);
+        // A file picker has to open inside the tap, or iPad browsers block it.
+        if (immediate) run();
+        else setTimeout(run, 0);
       },
     },
   },
@@ -543,7 +545,8 @@ function openImportChooser() {
     el('p', { class: 'x-list-note', textContent: 'Choose what to bring into Favorites.' }),
     el('div', { class: 'import-choices' },
       choice('chat', 'Import an X list', 'Paste or choose a list of X accounts', openXListBox),
-      choice('play', 'Import YouTube subscriptions', 'From a Google Takeout zip or CSV', openYouTubeImport)),
+      choice('play', 'Import YouTube subscriptions', 'From a Google Takeout zip or CSV', openYouTubeImport),
+      choice('phone', 'Import TikTok following', 'From a TikTok Following.txt or JSON export', pickFollowingFile, true)),
     el('div', { class: 'dialog-actions' },
       el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel')));
   openDialog(box);
@@ -2179,6 +2182,7 @@ function openFollowingPicker() {
         }
         for (const name of drop) removeFavorite(`https://www.tiktok.com/@${name}`);
         box.close();
+        refreshFavorites();
         toast(chosen.length ? `${chosen.length} account${chosen.length === 1 ? '' : 's'} in the menu and Favorites.` : 'Cleared the picked accounts from the menu and Favorites.');
       },
     },
