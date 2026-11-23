@@ -826,6 +826,27 @@ export class GridView {
       this.gridEl.style.width = `${box.width}px`;
       this.gridEl.style.height = `${box.height}px`;
       this.gridEl.style.gridTemplateRows = template(this.ws.rows);
+      // A football-shaped top tile grows its row to the chosen shape, taking height from
+      // the rows below; the phone column keeps its own width.
+      const phone = phoneTile(this.ws);
+      const videoCols = this.ws.cols.length - 1;
+      const top = this.ws.tiles.find((tile) => tile.place && tile.place.r === 0 && tile.place.c === 0 && tile.place.cs === videoCols);
+      const shape = top ? getFootballShape(top.input) : null;
+      if (phone && shape && this.ws.rows.length > 1) {
+        const topView = this.viewFor(top.id);
+        const width = topView?.root.getBoundingClientRect().width || 0;
+        if (width > 80) {
+          const strip = stripHeight();
+          const desired = width / shape + strip;
+          const minRest = Math.max(70, (this.ws.rows.length - 1) * (strip + 50));
+          const topHeight = Math.min(box.height - minRest, Math.max(strip + 50, desired));
+          const restUnits = this.ws.rows.slice(1);
+          const total = restUnits.reduce((sum, units) => sum + units, 0) || 1;
+          const rest = Math.max(0, box.height - topHeight);
+          this.gridEl.style.gridTemplateRows = `${topHeight}px ${restUnits.map((units) => `${(rest * units) / total}px`).join(' ')}`;
+        }
+      }
+      for (const view of this.views.values()) view.fitFootball();
       return;
     }
     const box = this.stageEl.getBoundingClientRect();
