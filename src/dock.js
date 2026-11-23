@@ -3,6 +3,7 @@
 //   1. pinned favorites, in pin order
 //   2. the favorites opened most in the last 30 days
 //   3. then recent streams (Recently watched, Continue watching) while there's room
+//   4. then the rest of the favorites, in their own order, so the dock is always full
 // Stored as multigrid.dock.v1 = { pins: [input…], opens: { input: [time…] } }.
 
 export const DOCK_SIZE = 12;
@@ -53,6 +54,7 @@ export function dockItems(data, favorites, recent = [], now = Date.now(), size =
     .sort((a, b) => b[1] - a[1]);
   for (const [input] of counts) add(input);
   for (const input of recent) add(input);
+  for (const item of favorites ?? []) add(item?.input);
   return picked;
 }
 

@@ -3024,13 +3024,14 @@ function placeDockEdge() {
   const width = window.innerWidth;
   const twitch = ws.tiles.filter((tile) => isVisible(tile) && parseSource(tile.input).kind === 'twitch')
     .map((tile) => grid.viewFor(tile.id)?.root.getBoundingClientRect()).filter(Boolean)
-    .filter((rect) => rect.bottom >= window.innerHeight - dockBottom() - 8)
+    .filter((rect) => rect.bottom >= window.innerHeight - 8)
     .map((rect) => [Math.max(0, rect.left), Math.min(width, rect.right)]).sort((a, b) => a[0] - b[0]);
   const gaps = [];
   let from = 0;
   for (const [left, right] of twitch) { if (left > from) gaps.push([from, left]); from = Math.max(from, right); }
   if (from < width) gaps.push([from, width]);
-  edge.style.bottom = `${dockBottom()}px`;
+  // Always the very bottom of the screen (over the ticker's edge when it's on).
+  edge.style.bottom = '0px';
   edge.replaceChildren(...gaps.map(([left, right]) => el('span', { style: `left:${left}px;width:${right - left}px` })));
 }
 
@@ -3076,8 +3077,11 @@ function dockItem(item) {
     aria: { label: `${item.name}${listing?.current ? `, on now: ${listing.current.title}` : ''}` },
   }, favoriteArt(item, source), live ? el('span', { class: 'dock-live', textContent: 'LIVE' }) : null, el('span', { class: 'dock-name', textContent: item.name }));
   // Press and drag onto a tile to swap it, or just click to add.
+  button.addEventListener('dragstart', (event) => event.preventDefault());
   button.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
+    // Pictures would start the browser's own image drag, which cancels this one.
+    event.preventDefault();
     const startX = event.clientX;
     const startY = event.clientY;
     let dragging = false;
@@ -3092,7 +3096,7 @@ function dockItem(item) {
       const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest('.tile');
       if (under !== target) { target?.classList.remove('dock-target'); target = under; target?.classList.add('dock-target'); }
     };
-    const up = () => {
+    const up = (upEvent) => {
       button.removeEventListener('pointermove', move);
       button.removeEventListener('pointerup', up);
       button.removeEventListener('pointercancel', up);
@@ -3104,7 +3108,8 @@ function dockItem(item) {
         const tile = target ? ws.tiles.find((candidate) => grid.viewFor(candidate.id)?.root === target) : null;
         if (tile) addStream(item.input, { mode: tile.input ? 'replace' : 'fill', id: tile.id });
         hideDockSoon();
-      } else {
+      } else if (upEvent.type === 'pointerup') {
+        // A press without a drag is a click: add it. A cancelled press does nothing.
         addStream(item.input);
       }
     };

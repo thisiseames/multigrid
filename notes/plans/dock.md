@@ -19,7 +19,7 @@ Never opens while a divider/tile is being dragged.
 ## Order of items
 1. Pinned favorites (in pin order). 2. Favorites opened most in the last 30 days (new counter,
 counted when a stream is added via `addStream`). 3. Fill from Recently watched (`listRecent`) and
-Continue watching (`listPlaces`) when still short. Max 12. Hidden favorites (podcast shows,
+Continue watching (`listPlaces`) when still short. 4. Then the rest of the favorites in their own order, so it's always full. Max 12. Hidden favorites (podcast shows,
 local files) excluded.
 
 ## Pinning
@@ -46,5 +46,10 @@ bounce), white LIVE text. No new colours (never periwinkle).
 - [x] drag onto tile / empty slot with outline
 - [x] styles (laptop only; above ticker)
 - [x] index.html files list + CSP hash; tests pass
-- [ ] Chrome check 1280: reveal, click add, drag onto YouTube + embed tile, empty slot, pin/unpin, hide, ticker on; 390: no dock
+- [x] Chrome check 1280: reveal, click add, drag onto YouTube + embed tile, empty slot, pin/unpin, hide, ticker on; 390: no dock
 - [ ] push main + branch; verify on multigrid.club; notes/history.md entry; tick this list
+
+
+## Gotchas found while building
+- Pictures inside a dock item start Chrome's own image drag, which fires pointercancel and kills the custom drag: pointerdown calls preventDefault, dragstart is blocked, images have -webkit-user-drag:none and pointer-events:none, and a cancelled press is NOT treated as a click.
+- The opening edge is always the very bottom of the window (over the ticker's edge when it's on); the dock itself sits above the ticker.

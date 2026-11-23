@@ -22,7 +22,9 @@ test('order: pins first, then most opened in 30 days, then recent; only favorite
   data = noteOpen(data, 'https://not-a-favorite.example', now);
   data = { ...data, opens: { ...data.opens, [at(11)]: [now - 40 * day, now - 41 * day, now - 42 * day, now - 43 * day] } };
   const items = dockItems(data, favs, [at(3), at(9), at(4)], now);
-  assert.deepEqual(items.map((item) => item.name), ['F5', 'F2', 'F9', 'F7', 'F3', 'F4']);
+  assert.deepEqual(items.slice(0, 6).map((item) => item.name), ['F5', 'F2', 'F9', 'F7', 'F3', 'F4']);
+  assert.deepEqual(items.slice(6, 9).map((item) => item.name), ['F0', 'F1', 'F6']);
+  assert.equal(items.length, DOCK_SIZE);
   assert.equal(items[0].pinned, true);
   assert.equal(items[2].pinned, false);
   const full = dockItems(dockData(null), favs, favs.map((f) => f.input), now);
