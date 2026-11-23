@@ -3217,6 +3217,8 @@ function filmsCached(key, make) {
   }).catch(() => null);
 }
 const askWikidata = (query) => fetch(sparqlUrl(query)).then((answer) => (answer.ok ? answer.json() : null));
+/** Wikipedia's API answers "too many requests" now and then: one retry after a pause. */
+const wikiJson = (url) => fetch(url).then((answer) => (answer.status === 429 ? new Promise((done) => setTimeout(done, 1500)).then(() => fetch(url)) : answer)).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null);
 const filmSummary = (page) => (page ? filmsCached(`wiki:${page}`, () => fetch(wikiSummaryUrl(page)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? parseWikiSummary(answer) : null))) : Promise.resolve(null));
 
 /** X-Ray's Scores section: IMDb with its vote count, Rotten Tomatoes when the Top 10 has it. */
@@ -3321,10 +3323,10 @@ async function xrayPerson(tile, who) {
   const person = id ? await filmsCached(`person:${id}`, () => Promise.all([askWikidata(personInfoQuery(id)), askWikidata(personWorksQuery(id))]).then(([info, works]) => (info && works ? parsePerson(info, works, id) : null))) : null;
   if (!person) return [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${who.name} yet.` })];
   // Their Wikipedia intro names the roles they're known for.
-  const intro = person.wiki ? await filmsCached(`intro:${person.wiki}`, () => fetch(wikiIntroUrl(person.wiki)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? parseIntro(answer) || null : null))) : '';
+  const intro = person.wiki ? await filmsCached(`intro:${person.wiki}`, () => wikiJson(wikiIntroUrl(person.wiki)).then((answer) => (answer ? parseIntro(answer) || null : null))) : '';
   const { known, more } = knownFor(person.titles, intro || '');
   const pages = [...known, ...more].map((title) => title.wiki).filter(Boolean);
-  const posters = pages.length ? new Map(Object.entries(await filmsCached(`posters:${id}`, () => fetch(wikiImagesUrl(pages)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? Object.fromEntries(parseWikiImages(answer)) : null))) || {})) : new Map();
+  const posters = pages.length ? new Map(Object.entries(await filmsCached(`posters:${id}`, () => wikiJson(wikiImagesUrl(pages)).then((answer) => (answer ? Object.fromEntries(parseWikiImages(answer)) : null))) || {})) : new Map();
   const photo = person.photo || who.photo || '';
   const parts = [el('div', { class: 'xr-hero xr-who' },
     photo ? el('img', { class: 'xr-portrait', src: photo, alt: '', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
