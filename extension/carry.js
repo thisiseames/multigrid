@@ -9,6 +9,25 @@
   const OLD = (location.hostname === 'thisiseames.github.io' && location.pathname.startsWith('/multigrid')) || location.host === 'localhost:5190';
   const NEW = location.hostname === 'multigrid.club' || location.hostname === 'www.multigrid.club' || location.host === '127.0.0.1:5190';
   if (!OLD && !NEW) return;
+
+  // The page cannot call JustWatch itself (no CORS). The background can, so the page asks
+  // through this one small bridge. Only a title and kind cross over; no history or account.
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || !event.data?.multigridSimilar) return;
+    const ask = event.data.multigridSimilar;
+    const id = typeof ask.id === 'string' ? ask.id.slice(0, 80) : '';
+    const title = typeof ask.title === 'string' ? ask.title.trim().slice(0, 200) : '';
+    if (!id || !title) return;
+    const kind = ask.kind === 'film' ? 'film' : 'show';
+    chrome.runtime.sendMessage({ multigrid: 'similar', id, title, kind }, (reply) => {
+      if (chrome.runtime.lastError) {
+        window.postMessage({ multigridSimilarReply: { id, error: chrome.runtime.lastError.message } }, '*');
+        return;
+      }
+      window.postMessage({ multigridSimilarReply: { id, ...(reply || {}) } }, '*');
+    });
+  });
+
   const PREFIX = 'multigrid.';
   // Caches that rebuild themselves stay behind.
   const SKIP = /^multigrid\.(avatars|trends|polymarket|weather|posters|moviePosters|x\.feeds|x\.videos|tiktok\.accounts|matches|standings|page)\b/;
