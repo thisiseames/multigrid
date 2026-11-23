@@ -3,7 +3,7 @@
 // saving in storage.js and drawing in grid-view.js.
 
 import {
-  MAX_STREAMS, PRESETS, applyPreset, emptyWorkspace, enterCustom, fitToStreams, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
+  MAX_STREAMS, PRESETS, applyPreset, primaryTile, emptyWorkspace, enterCustom, fitToStreams, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
   phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
@@ -67,6 +67,7 @@ import {
   gamesOnNow, mergeGames, resolveGameSources, sameGame, sourceIdentity, sourcesForChannel,
 } from './game-links.js';
 import { leftText, tileCard } from './tileinfo.js';
+import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -2593,6 +2594,121 @@ function muteOthers(id) {
   }
   mutePodcastForStream();
 }
+
+/* RedZone (laptop): with several games on the grid, the game with the biggest moment right now
+   gets the big slot and the sound, from ESPN's live scoreboards every 15 seconds. The rules are
+   in redzone.js. Clicking a tile yourself pauses it for 5 minutes. Switching it off puts the
+   layout, the primary tile and the sound back as they were. */
+const REDZONE_KEY = 'multigrid.redzone.v1';
+const BIG_SLOT_PRESETS = new Set(['featured', 'focus', 'trio', 'overtwo', 'duo', 'pinwheel', 'phoneBottom', 'phoneSide', 'pip', 'pip2']);
+const ESPN_SITE = 'https://site.api.espn.com/apis/site/v2/sports';
+var rz = { timer: null, big: null, pausedUntil: 0, history: new Map() }; // eslint-disable-line no-var
+const readRedZone = () => { try { return JSON.parse(localStorage.getItem(REDZONE_KEY) || '{}') || {}; } catch { return {}; } };
+const writeRedZone = (value) => { try { localStorage.setItem(REDZONE_KEY, JSON.stringify(value)); } catch { /* not remembered */ } };
+function isRedZoneOn() { return readRedZone().on === true && !onPhoneScreen(); }
+const gameTiles = () => ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && tile.event?.label);
+
+function toggleRedZone() {
+  if (isRedZoneOn()) {
+    const { before } = readRedZone();
+    writeRedZone({ on: false });
+    stopRedZone();
+    if (before) {
+      if (before.presetId && before.presetId !== ws.presetId) { forgetPrevious(ws); applyPreset(ws, before.presetId); }
+      for (const tile of ws.tiles) tile.primary = false;
+      if (before.primary && tileById(before.primary)) setPrimary(ws, before.primary, true);
+      for (const tile of muteableTiles()) {
+        if (!(tile.id in (before.muted ?? {}))) continue;
+        tile.muted = before.muted[tile.id];
+        grid.viewFor(tile.id)?.setMuted(tile.muted);
+      }
+      commit();
+    }
+    toast('RedZone off. Your layout and sound are back.');
+    return;
+  }
+  if (gameTiles().length < 2) {
+    toast('RedZone needs at least two games on the grid. Open games from Sports or Search, or tag a tile with Fix stream.');
+    return;
+  }
+  const before = { presetId: ws.presetId, primary: primaryTile(ws)?.id ?? null, muted: Object.fromEntries(muteableTiles().map((tile) => [tile.id, Boolean(tile.muted)])) };
+  writeRedZone({ on: true, before });
+  // A layout with one big slot that fits the streams without empty boxes.
+  if (!BIG_SLOT_PRESETS.has(ws.presetId)) {
+    const count = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile)).length;
+    forgetPrevious(ws);
+    applyPreset(ws, count <= 2 ? 'pip' : count === 3 ? 'trio' : count === 4 ? 'focus' : 'featured');
+    commit();
+  }
+  toast('RedZone on: the biggest moment gets the big screen and the sound.');
+  startRedZone();
+}
+
+function startRedZone() {
+  clearInterval(rz.timer);
+  rz.big = primaryTile(ws) ? { id: primaryTile(ws).id, since: Date.now() } : null;
+  rz.timer = setInterval(redZoneTick, 15_000);
+  redZoneTick();
+}
+
+function stopRedZone() {
+  clearInterval(rz.timer);
+  rz.timer = null;
+  rz.big = null;
+  rz.pausedUntil = 0;
+  for (const tile of ws.tiles) grid.viewFor(tile.id)?.setCornerTag?.('');
+}
+
+async function redZoneTick() {
+  if (!isRedZoneOn()) { stopRedZone(); return; }
+  // The first look waits for today's games, so RedZone acts at once rather than 15 seconds later.
+  if (!tileScores.length) {
+    tileScores = await todaysGames().then((groups) => (groups ?? []).flatMap((group) => group.games ?? [])).catch(() => []);
+    tileScoresAt = Date.now();
+  }
+  const now = Date.now();
+  const tiles = gameTiles().map((tile) => ({ tile, match: espnMatchFor(tile.event) })).filter((item) => item.match);
+  const paths = [...new Set(tiles.map((item) => item.match.sport))];
+  const boards = new Map(await Promise.all(paths.map((path) => fetch(`${ESPN_SITE}/${path}/scoreboard`, { cache: 'no-store' })
+    .then((answer) => (answer.ok ? answer.json() : null)).catch(() => null).then((board) => [path, board]))));
+  if (!isRedZoneOn()) return;
+  const candidates = tiles.map(({ tile, match }) => {
+    const event = boards.get(match.sport)?.events?.find((item) => String(item.id) === String(match.id));
+    if (!event) return { id: tile.id, moment: null, kind: parseSource(tile.input).kind };
+    const game = liveGame(event, match.sport);
+    const history = rz.history.get(game.id) ?? [];
+    const moment = momentOf(game, history, now);
+    rz.history.set(game.id, noteChance(history, game, now));
+    return { id: tile.id, moment, kind: parseSource(tile.input).kind };
+  });
+  // The reason a game is big shows in its corner (never over Twitch, which stops if covered).
+  for (const item of candidates) grid.viewFor(item.id)?.setCornerTag?.(item.moment && item.kind !== 'twitch' ? item.moment.tag : '');
+  if (now < rz.pausedUntil) return;
+  const pick = pickBig(candidates, rz.big, now);
+  if (pick) makeRedZoneBig(pick);
+}
+
+function makeRedZoneBig(id) {
+  const tile = tileById(id);
+  if (!tile) return;
+  setPrimary(ws, id, true);
+  for (const other of muteableTiles()) {
+    const muted = other.id !== id;
+    if (other.muted === muted) continue;
+    other.muted = muted;
+    if (!muted && other.volume === 0) other.volume = 50;
+    grid.viewFor(other.id)?.setMuted(muted);
+  }
+  rz.big = { id, since: Date.now() };
+  commit();
+}
+
+// Choosing a tile yourself pauses RedZone for 5 minutes.
+$('grid').addEventListener('pointerdown', (event) => {
+  if (!event.isTrusted || !isRedZoneOn() || !event.target.closest?.('.tile')) return;
+  if (Date.now() >= rz.pausedUntil) toast('RedZone paused for 5 minutes while you choose.');
+  rz.pausedUntil = Date.now() + PAUSE_MS;
+}, true);
 
 /* Game mode: live scores beside the grid, on the laptop in a column of its own (so it never
    covers a stream) and on a phone in the bottom ticker. Only on when switched on. */
@@ -10310,6 +10426,7 @@ function buildMoreMenu() {
     switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
+    onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
     row(audible ? 'Mute all' : 'Unmute all', audible ? 'muted' : 'sound', () => { muteAll(); buildMoreMenu(); }),
     canFullscreen ? el('div', { class: 'more-sep' }) : null,
     canFullscreen ? row(fullscreen.element() ? 'Exit fullscreen' : 'Fullscreen', 'expand', then(() => {
@@ -10441,6 +10558,8 @@ setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
 prepareAutoplaySound();
 render();
+// RedZone stays on across a reload.
+if (isRedZoneOn()) startRedZone();
 receiveReaderKey();
 receiveFavorites();
 

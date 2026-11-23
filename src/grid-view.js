@@ -67,6 +67,14 @@ class TileView {
     if (card) this.root.append(el('div', { class: 'tile-info', aria: { hidden: 'true' } }, card));
   }
 
+  /** RedZone's reason for making this game big ("Red zone · 3rd & 6"), or '' to clear it. */
+  setCornerTag(text) {
+    let tag = this.root.querySelector(':scope > .rz-tag');
+    if (!text) { tag?.remove(); return; }
+    if (!tag) { tag = el('span', { class: 'rz-tag' }); this.root.append(tag); }
+    tag.textContent = text;
+  }
+
   noteCard(card) {
     this.root.querySelector('.tune-note')?.remove();
     const note = el('div', { class: 'tune-note is-card' }, card);

@@ -3492,3 +3492,7 @@ body.is-phone .tile-info { display: none; }
 .gnow-play:hover { background: #f5f5f7; color: #0b0b0d; }
 .gnow-play svg { width: 14px; height: 14px; }
 .gnow-play svg { margin-left: 2px; }
+
+/* RedZone's tag in the corner of a game with a big moment. */
+.rz-tag { position: absolute; top: calc(var(--strip) + 10px); right: 10px; z-index: 6; padding: 4px 8px; border-radius: 6px; background: rgba(0, 0, 0, .78); color: #f5f5f7; font: 700 11px/1.2 var(--font); letter-spacing: .02em; pointer-events: none; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+body.is-phone .rz-tag { display: none; }
