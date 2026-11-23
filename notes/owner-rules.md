@@ -39,6 +39,11 @@ When adding or changing any control in an existing bar, menu, row or list, open 
 **Why:** the phone Home button was added as a 44 px icon-only square beside 48–58 px labelled columns. Its icon was 21 px, it sat lower than the other icons, and it had no text underneath. When the owner said the icon was not the same, I changed only the number to 24 px and shipped it still on the wrong line with no label. He had to point out basic alignment twice. “The icon is 24 px” is not the same as “the control matches the row.”
 **How to apply:** if the owner names one symptom, fix the whole control, not just the symptom. Before replying, take a 390 px screenshot and check the new control against its neighbour: same line, same icon size, same label and label line, same height, no overflow. If any of those differ, it is not done. Do not call it fixed from a single measurement.
 
+## No housekeeping features (Nov 23)
+Do not pitch housekeeping, library management, cleanup, organisation or settings as a brainstorm: bulk select/move/remove, Tidy up, folder management, sync setup, link health, import/export, backups, profiles or account controls. These are chores, not features. Pitch only things that change what he watches.
+**Why:** after a run of viewing ideas, I pitched Favorites Select mode (bulk move/star/remove for 342 favourites). He answered: “Stop fucking suggesting fucking house cleaning.”
+**How to apply:** before a brainstorm, name what the idea changes about watching. If the honest answer is “it makes managing favourites or settings easier,” drop it.
+
 ## MULTIGRID-specific preferences
 
 
