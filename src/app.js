@@ -1561,6 +1561,8 @@ function openPalette(options = {}) {
   const loaded = { catalog: false, zlive: false, daddy: false, matchora: false, sports: false, sportsAll: false, guide: false };
   let items = [];
   let active = 0;
+  let lastInputAt = 0;
+  let gamesTimer = 0;
   const input = el('input', {
     type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false',
     placeholder: repair ? `Find another source for ${label}` : 'Find a channel, game or action',
@@ -1646,17 +1648,32 @@ function openPalette(options = {}) {
     { label: 'Help', sub: 'How MULTIGRID works', icon: 'help', run: () => $('help-button').click() },
   ].map((item) => ({ group: 'Actions', ...item, run: () => closeAnd(item.run) }));
   const has = (text, query) => text.toLocaleLowerCase().includes(query);
+  let paintTimer = 0;
+  // Typing stays instant; the heavy search and result rebuild wait for a short pause.
+  const schedulePaint = () => {
+    clearTimeout(paintTimer);
+    paintTimer = setTimeout(() => {
+      paintTimer = 0;
+      if (box.open) paint();
+    }, 140);
+  };
+  const flushPaint = () => {
+    if (!paintTimer) return;
+    clearTimeout(paintTimer);
+    paintTimer = 0;
+    paint();
+  };
   const addLive = (key, promise, save) => {
     if (loaded[key]) return;
     loaded[key] = true;
     livePending += 1;
     promise.then(save).catch(() => {}).finally(() => {
       livePending -= 1;
-      if (box.open) paint();
+      if (box.open) { scheduleGames(); schedulePaint(); }
     });
   };
-  const ensureLive = () => {
-    if (!repair && input.value.trim().length < 2) return;
+  const ensureLive = (force = false) => {
+    if (!repair && !force && input.value.trim().length < 2) return;
     addLive('catalog', loadJob('live-channels.json'), (data) => {
       catalog = Array.isArray(data?.channels) ? data.channels : [];
     });
@@ -1672,6 +1689,24 @@ function openPalette(options = {}) {
   const rebuildGames = () => {
     games = mergeGames({ sports: sportsAll, matchora, ppv, daddy, guide: guideRows });
   };
+  // A merge touches every provider list, so never do it while the person is typing.
+  const scheduleGames = () => {
+    // Only Fix stream needs the fully merged games list; normal search uses Sports and matches.
+    if (!repair) return;
+    clearTimeout(gamesTimer);
+    const run = () => {
+      const idle = Date.now() - lastInputAt;
+      if (box.open && idle < 500) {
+        gamesTimer = setTimeout(run, 500 - idle);
+        return;
+      }
+      gamesTimer = 0;
+      if (!box.open) return;
+      rebuildGames();
+      schedulePaint();
+    };
+    gamesTimer = setTimeout(run, 300);
+  };
   const linkedGameNow = () => {
     const event = repairEvent || tileById(repair?.id)?.event || null;
     if (!event) return null;
@@ -1685,7 +1720,6 @@ function openPalette(options = {}) {
   const paint = () => {
     const query = input.value.trim().toLocaleLowerCase();
     const rank = (text) => (text.toLocaleLowerCase().startsWith(query) ? 0 : 1);
-    rebuildGames();
     const showNormal = !repair || query.length >= 2;
     const favoritePool = listFavorites().filter((item) => !isPodcastShowInput(item.input));
     const favorites = showNormal
@@ -1704,7 +1738,7 @@ function openPalette(options = {}) {
     let sportsItems = [];
     let gameItems = [];
     if (query.length >= 2) {
-      const live = searchLiveSources({ catalog, zlive, daddy, ppv, matchora, sports, games }, query);
+      const live = searchLiveSources({ catalog, zlive, daddy, ppv, matchora, sports, games: repair ? games : [] }, query);
       liveChannels = live.channels.map((group) => {
         const providers = [...new Set(group.sources.map((source) => source.label))];
         const feeds = group.sources.length > providers.length ? `${group.sources.length} feeds` : '';
@@ -1962,19 +1996,25 @@ function openPalette(options = {}) {
     buttons.forEach((button, index) => button.classList.toggle('is-on', index === active));
     buttons[active]?.scrollIntoView({ block: 'nearest' });
   };
-  input.addEventListener('input', () => { active = 0; ensureLive(); paint(); });
+  input.addEventListener('input', () => { active = 0; lastInputAt = Date.now(); ensureLive(); schedulePaint(); });
   input.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown') { event.preventDefault(); active = Math.min(items.length - 1, active + 1); mark(); }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); active = Math.max(0, active - 1); mark(); }
-    else if (event.key === 'Enter') { event.preventDefault(); items[active]?.run(); }
+    if (event.key === 'ArrowDown') { event.preventDefault(); flushPaint(); active = Math.min(items.length - 1, active + 1); mark(); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); flushPaint(); active = Math.max(0, active - 1); mark(); }
+    else if (event.key === 'Enter') { event.preventDefault(); flushPaint(); items[active]?.run(); }
   });
   box.replaceChildren(...[title, input, results, hint].filter(Boolean));
   openDialog(box);
-  if (repair) ensureLive();
+  box.addEventListener('close', () => {
+    clearTimeout(paintTimer);
+    clearTimeout(gamesTimer);
+    paintTimer = 0;
+    gamesTimer = 0;
+  }, { once: true });
+  if (repair) ensureLive(true);
   paint();
   input.focus();
   // Fresh scores redraw the results once they arrive, while the box is open.
-  const repaint = () => { if (box.open) paint(); else scoreWatchers.delete(repaint); };
+  const repaint = () => { if (box.open) schedulePaint(); else scoreWatchers.delete(repaint); };
   scoreWatchers.add(repaint);
   if (repairTile && !repairTile.event) {
     detectTileGame(repairTile).then((game) => {

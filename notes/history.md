@@ -405,3 +405,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - The phone remote header now has **Guide**. It lists now/next on the screen’s TV channels (using the favorites the screen sent) and **Watch** sends that channel to the screen as an add. It uses the existing guide data; no new source or key.
 - PiP and PiP×2 remote cards now show **Swap screens** when the tile has a partner. The command calls the same `swapPip` used by the laptop’s sound row, so the main and inset swap in place and the remote state updates.
 - Verified over a real phone-to-laptop remote connection with a PiP workspace: Guide opened with “Live MNF: Brentford v Everton — Sky Sports Premier League · until 6:00 pm — Next: Moyes Moments” and a Watch button; Swap screens changed the main from Alpha/Beta to Beta/Alpha. 373 tests.
+
+## Nov 23 — Search typing stays responsive
+- Universal Search was rebuilding the full merged games list on every keystroke (`mergeGames` in game-links.js), causing multi-second long tasks. The palette now paints on a 140 ms debounce, flushes immediately on Enter/arrow keys, loads live data in the background, and does **not** build the merged games list for normal search. Sports and live-match results still cover team searches; Fix stream keeps the merged list for repair. The duplicate Games group in normal search is gone.
+- The merge is cached and only scheduled for Fix stream, after typing is idle.
+- Verified at 390 with 342 favorites and 4× CPU throttling: typing “Manchester United” took ~1.0 s (was ~2.7 s), the longest task fell from 6.7 s to ~150 ms, the favorite and Sports games appeared, and Enter opened the active result. 373 tests.
