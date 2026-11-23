@@ -106,6 +106,13 @@ let ws = loadCurrent();
 let roomReturn = null;
 let roomToken = 0;
 let homeOpen = false;
+// Desk: the wall and one panel side by side. Declared with var so the Game mode / X-Ray
+// functions defined earlier can read it without a temporal-dead-zone crash.
+var deskOn = false;
+var deskWidth = 380;
+var deskPanel = 'today';
+var deskSport = 'games';
+var deskMoving = false;
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
 const pendingSound = new Set(); // tiles saved with sound, held until the first real click
@@ -1537,7 +1544,15 @@ async function chooseGameSources(game) {
 /** One search box for favourites, live channels and matches, sports, layouts and actions. */
 function openPalette(options = {}) {
   const box = $('palette');
+  const desk = Boolean(options?.desk);
   const repair = options?.repair && typeof options.repair === 'object' ? options.repair : null;
+  // Fix stream is always its own modal, even if Desk's search panel is open.
+  if (!desk && box.classList.contains('is-desk-panel')) {
+    box.classList.remove('is-desk-panel');
+    if (box.open) box.close();
+    document.body.append(box);
+    if (deskOn) showDeskPanel('today');
+  }
   if (box.open) {
     if (!repair) { box.querySelector('.palette-input')?.focus(); return; }
     box.close();
@@ -1573,12 +1588,14 @@ function openPalette(options = {}) {
     class: 'palette-hint',
     textContent: repair
       ? (phone ? 'Tap a source to replace the tile' : '↑↓ to move · Enter to replace · Esc to close')
-      : (phone ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close'),
+      : desk
+        ? '↑↓ to move · Enter to open'
+        : (phone ? 'Tap an item to open' : '↑↓ to move · Enter to open · Esc to close'),
   });
   const title = repair ? el('div', { class: 'palette-title' },
     el('b', { textContent: 'Fix stream' }),
     el('small', { textContent: label })) : null;
-  const closeAnd = (run) => { box.close(); run(); };
+  const closeAnd = (run) => { if (!desk) box.close(); run(); };
   const favoriteKind = (item) => {
     const source = parseSource(item.input);
     if (item.group) return item.group;
@@ -2003,7 +2020,8 @@ function openPalette(options = {}) {
     else if (event.key === 'Enter') { event.preventDefault(); flushPaint(); items[active]?.run(); }
   });
   box.replaceChildren(...[title, input, results, hint].filter(Boolean));
-  openDialog(box);
+  if (desk) box.show();
+  else openDialog(box);
   box.addEventListener('close', () => {
     clearTimeout(paintTimer);
     clearTimeout(gamesTimer);
@@ -2844,6 +2862,7 @@ function xrayHolder() {
 function openXRay(id) {
   const tile = tileById(id);
   if (!tile) return;
+  if (deskOn) setDesk(false);
   xr.id = id;
   xr.people = [];
   clearInterval(xr.timer);
@@ -2908,7 +2927,7 @@ function paintRoom() {
   const bar = $('roombar');
   const room = ws.room;
   if (!bar) return;
-  if (!room || onPhoneScreen() || xr.id) { bar.hidden = true; return; }
+  if (!room || onPhoneScreen() || xr.id || deskOn) { bar.hidden = true; return; }
   const feeds = roomFeeds();
   const main = feeds.find((tile) => tile.primary) || feeds[0] || null;
   const head = el('div', { class: 'gamebar-head roombar-head' },
@@ -2983,6 +3002,7 @@ function saveRoomNow() {
 async function openEventRoom(id) {
   const tile = tileById(id);
   if (!tile) return;
+  if (deskOn) setDesk(false);
   const input = tile.input;
   const token = ++roomToken;
   closePopovers();
@@ -3701,6 +3721,7 @@ function setGameOn(on) {
 function toggleGameMode() {
   try { localStorage.setItem(GAME_KEY, isGameOn() ? 'off' : 'on'); } catch { /* not remembered */ }
   toast(isGameOn() ? 'Game mode on: live scores for your leagues.' : 'Game mode off.');
+  if (isGameOn() && deskOn) setDesk(false);
   syncGameMode();
   commit();
 }
@@ -3829,7 +3850,7 @@ async function refreshGames() {
 }
 
 function syncGameMode() {
-  const column = isGameOn() && !onPhoneScreen() && !ws.room;
+  const column = isGameOn() && !onPhoneScreen() && !ws.room && !deskOn;
   if (column === !$('gamebar').hidden) return;
   $('gamebar').hidden = !column;
   clearTimeout(gameTimer);
@@ -7049,7 +7070,8 @@ const manUtdCard = ({ item, show, next }) => {
 };
 
 function watchChannel(item) {
-  $('guide-dialog').close();
+  const inDesk = deskOn && $('guide-dialog').classList.contains('is-desk-panel');
+  if (!inDesk) $('guide-dialog').close();
   addStream(item.input);
 }
 
@@ -7350,7 +7372,10 @@ async function openGuide() {
   }
 }
 
-$('guide-button').addEventListener('click', openGuide);
+$('guide-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('guide');
+  else openGuide();
+});
 $('guide-dialog').addEventListener('click', (event) => {
   if (event.target === $('guide-dialog')) $('guide-dialog').close();
 });
@@ -7986,14 +8011,24 @@ function openSports(panel) {
     $(panel === 'standings' ? 'standings-button' : panel === 'transfers' ? 'transfers-button' : panel === 'team' ? 'team-button' : 'matches-button').click();
     return;
   }
+  if (deskOn) { showDeskPanel('sports', panel); return; }
   const menu = panel === 'standings' ? $('standings-menu') : panel === 'transfers' ? $('transfers-menu') : panel === 'team' ? $('team-menu') : $('matches-menu');
   togglePopover($('sports-button'), menu, panel === 'standings' ? buildStandings : panel === 'transfers' ? buildTransfers : panel === 'team' ? buildTeam : buildMatches);
 }
 
 $('sports-button').addEventListener('click', () => openSports('games'));
-$('standings-button').addEventListener('click', () => togglePopover($('standings-button'), $('standings-menu'), buildStandings));
-$('transfers-button').addEventListener('click', () => togglePopover($('sports-button'), $('transfers-menu'), buildTransfers));
-$('team-button').addEventListener('click', () => togglePopover($('sports-button'), $('team-menu'), buildTeam));
+$('standings-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('sports', 'standings');
+  else togglePopover($('standings-button'), $('standings-menu'), buildStandings);
+});
+$('transfers-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('sports', 'transfers');
+  else togglePopover($('sports-button'), $('transfers-menu'), buildTransfers);
+});
+$('team-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('sports', 'team');
+  else togglePopover($('sports-button'), $('team-menu'), buildTeam);
+});
 
 /* ---------- Reader ---------- */
 
@@ -8165,7 +8200,10 @@ function buildReader() {
   }, 5 * 60 * 1000);
 }
 
-$('reader-button').addEventListener('click', () => togglePopover($('reader-button'), $('reader-menu'), buildReader));
+$('reader-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('reader');
+  else togglePopover($('reader-button'), $('reader-menu'), buildReader);
+});
 
 /** The Reader's unlock link, opened or pasted into Add stream. */
 function unlockReader(key) {
@@ -10476,7 +10514,10 @@ function buildToday() {
 }
 let marketsTimer = null;
 
-$('today-button').addEventListener('click', () => togglePopover($('today-button'), $('today-menu'), buildToday));
+$('today-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('today');
+  else togglePopover($('today-button'), $('today-menu'), buildToday);
+});
 
 /* ---------- Favorites on another device ---------- */
 
@@ -11016,11 +11057,15 @@ $('home-button').addEventListener('click', () => {
   homeOpen = !homeOpen;
   render();
 });
-$('palette-button').addEventListener('click', () => openPalette());
+$('palette-button').addEventListener('click', () => {
+  if (deskOn) showDeskPanel('search');
+  else openPalette();
+});
 document.addEventListener('keydown', (event) => {
   if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLocaleLowerCase() !== 'k') return;
   event.preventDefault();
-  openPalette();
+  if (deskOn) showDeskPanel('search');
+  else openPalette();
 });
 // A phone held upright: what the Layout button held is in Add stream (saved layouts are a Favorites tab).
 for (const [id, target] of [['source-help', 'help-button'], ['source-fullscreen', 'fullscreen-button']]) {
@@ -11548,6 +11593,7 @@ function buildMoreMenu() {
     switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
+    onPhoneScreen() ? null : switchRow('Desk', 'desk', deskOn, () => { setDesk(!deskOn); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
     !onPhoneScreen() && canPopOutGrid() && streamCount(ws) ? row(isGridPoppedOut() ? 'Bring grid back' : 'Pop out grid', 'popout', then(popOutWholeGrid)) : null,
     row(audible ? 'Mute all' : 'Unmute all', audible ? 'muted' : 'sound', () => { muteAll(); buildMoreMenu(); }),
@@ -11663,6 +11709,235 @@ $('help-button').addEventListener('click', () => openDialog($('help-dialog')));
 $('help-close').addEventListener('click', () => $('help-dialog').close());
 $('parent-host').textContent = env.hostname;
 
+/* ---------- Desk: the wall and one panel side by side ---------- */
+
+const DESK_KEY = 'multigrid.desk.v1';
+const DESK_PANELS = new Set(['today', 'reader', 'sports', 'guide', 'search']);
+const DESK_SPORTS = new Set(['games', 'standings', 'transfers', 'team']);
+const deskPanels = new Set();
+
+function readDeskState() {
+  try {
+    const value = JSON.parse(localStorage.getItem(DESK_KEY) || 'null');
+    return value && typeof value === 'object' ? value : {};
+  } catch { return {}; }
+}
+
+function saveDeskState() {
+  try {
+    localStorage.setItem(DESK_KEY, JSON.stringify({
+      on: deskOn,
+      width: deskWidth,
+      panel: deskPanel,
+      sport: deskSport,
+    }));
+  } catch { /* the choice just isn't remembered */ }
+}
+
+function deskMaxWidth() {
+  return Math.max(300, Math.min(620, Math.round(window.innerWidth * 0.55), window.innerWidth - 560));
+}
+
+function applyDeskWidth(width) {
+  deskWidth = Math.max(300, Math.min(deskMaxWidth(), Math.round(Number(width) || 380)));
+  const desk = $('desk');
+  if (desk) desk.style.width = `${deskWidth}px`;
+}
+
+function setDeskTab(panel) {
+  for (const tab of document.querySelectorAll('.desk-tab')) {
+    const on = tab.dataset.desk === panel;
+    tab.classList.toggle('is-on', on);
+    tab.setAttribute('aria-selected', String(on));
+  }
+}
+
+/** Takes the active panel out of Desk and puts it back in the page, ready for a normal popover. */
+function clearDeskPanel() {
+  deskMoving = true;
+  for (const panel of [...deskPanels]) {
+    panel.classList.remove('is-desk-panel');
+    if (panel.tagName === 'DIALOG') {
+      if (panel.open) panel.close();
+    } else {
+      panel.hidden = true;
+    }
+    if (panel.parentElement === $('desk-body')) document.body.append(panel);
+    deskPanels.delete(panel);
+  }
+  deskMoving = false;
+  $('desk-body').replaceChildren();
+}
+
+function mountDeskPopover(menu, build) {
+  if (!menu) return;
+  build();
+  menu.hidden = false;
+  menu.classList.add('is-desk-panel');
+  $('desk-body').append(menu);
+  deskPanels.add(menu);
+}
+
+function showDeskPanel(kind, sport = null) {
+  if (!deskOn) return;
+  const panel = DESK_PANELS.has(kind) ? kind : 'today';
+  deskPanel = panel;
+  if (panel === 'sports' && DESK_SPORTS.has(sport)) deskSport = sport;
+  saveDeskState();
+  setDeskTab(panel);
+  clearDeskPanel();
+  if (panel === 'today') {
+    mountDeskPopover($('today-menu'), buildToday);
+  } else if (panel === 'reader') {
+    mountDeskPopover($('reader-menu'), buildReader);
+  } else if (panel === 'sports') {
+    const sub = DESK_SPORTS.has(deskSport) ? deskSport : 'games';
+    const menu = sub === 'standings' ? $('standings-menu')
+      : sub === 'transfers' ? $('transfers-menu')
+        : sub === 'team' ? $('team-menu') : $('matches-menu');
+    const build = sub === 'standings' ? buildStandings
+      : sub === 'transfers' ? buildTransfers
+        : sub === 'team' ? buildTeam : buildMatches;
+    mountDeskPopover(menu, build);
+  } else if (panel === 'guide') {
+    openDeskGuide();
+  } else if (panel === 'search') {
+    openDeskSearch();
+  }
+  requestAnimationFrame(() => grid.fit());
+}
+
+function setDesk(on, options = {}) {
+  if (on && onPhoneScreen()) {
+    toast('Desk is for the laptop. On the phone, Today, Reader and Sports open as sheets.');
+    return;
+  }
+  if (on && window.innerWidth < 1000) {
+    toast('Desk needs a wider window. Make it wider or use Today, Reader and Sports on their own.');
+    return;
+  }
+  const next = Boolean(on);
+  if (next === deskOn) {
+    if (next && options.panel) showDeskPanel(options.panel, options.sport);
+    return;
+  }
+  deskOn = next;
+  document.body.classList.toggle('is-desk', deskOn);
+  const desk = $('desk');
+  if (desk) desk.hidden = !deskOn;
+  if (deskOn) {
+    closePopovers();
+    if (xr.id) closeXRay();
+    syncGameMode();
+    paintRoom();
+    applyDeskWidth(deskWidth);
+    showDeskPanel(options.panel || deskPanel || 'today', options.sport || deskSport);
+  } else {
+    clearDeskPanel();
+    setDeskTab('');
+    syncGameMode();
+    paintRoom();
+    requestAnimationFrame(() => grid.fit());
+  }
+  saveDeskState();
+  if (!$('more-menu').hidden) buildMoreMenu();
+}
+
+/** The Guide is a dialog; Desk shows it non-modally so the wall keeps playing behind it. */
+async function openDeskGuide() {
+  if (!deskOn) return;
+  const box = $('guide-dialog');
+  if (box.open && !box.classList.contains('is-desk-panel')) box.close();
+  box.classList.add('is-desk-panel');
+  $('desk-body').append(box);
+  deskPanels.add(box);
+  guideFolder = '';
+  guideQuery = '';
+  guideSearchInput.value = '';
+  guideSearchClear.hidden = true;
+  box.querySelector('.gbody')?.remove();
+  renderGuide();
+  if (!box.open) box.show();
+  clearInterval(guideTimer);
+  guideTimer = setInterval(() => {
+    if (!deskOn || !box.open || !box.classList.contains('is-desk-panel')) return clearInterval(guideTimer);
+    loadGuide().then(renderGuide);
+  }, 60 * 1000);
+  if (await loadGuide()) {
+    if (!deskOn || !box.open || !box.classList.contains('is-desk-panel')) return;
+    box.querySelector('.gbody')?.remove();
+    renderGuide();
+  }
+}
+
+/** Search is a dialog too; Desk runs it non-modally in the column. */
+function openDeskSearch() {
+  if (!deskOn) return;
+  const box = $('palette');
+  if (box.open && !box.classList.contains('is-desk-panel')) box.close();
+  box.classList.add('is-desk-panel');
+  $('desk-body').append(box);
+  deskPanels.add(box);
+  if (box.open) { box.querySelector('.palette-input')?.focus(); return; }
+  openPalette({ desk: true });
+}
+
+// A closed Guide or Search returns the Desk to Today instead of leaving an empty column.
+$('guide-dialog').addEventListener('close', () => {
+  if (!deskMoving && deskOn && $('guide-dialog').classList.contains('is-desk-panel')) showDeskPanel('today');
+});
+$('palette').addEventListener('close', () => {
+  if (!deskMoving && deskOn && $('palette').classList.contains('is-desk-panel')) showDeskPanel('today');
+});
+
+for (const tab of document.querySelectorAll('.desk-tab')) {
+  tab.addEventListener('click', () => showDeskPanel(tab.dataset.desk));
+}
+$('desk-close').addEventListener('click', () => setDesk(false));
+
+// Drag the left edge to choose how much wall you keep.
+let deskDrag = null;
+const endDeskDrag = (event) => {
+  if (!deskDrag) return;
+  deskDrag = null;
+  document.body.classList.remove('is-desk-resizing');
+  saveDeskState();
+  try { $('desk-resize').releasePointerCapture?.(event.pointerId); } catch { /* already released */ }
+  grid.fit();
+};
+$('desk-resize').addEventListener('pointerdown', (event) => {
+  if (!deskOn) return;
+  event.preventDefault();
+  deskDrag = { x: event.clientX, width: $('desk').getBoundingClientRect().width };
+  document.body.classList.add('is-desk-resizing');
+  try { $('desk-resize').setPointerCapture?.(event.pointerId); } catch { /* not needed */ }
+});
+$('desk-resize').addEventListener('pointermove', (event) => {
+  if (!deskDrag) return;
+  applyDeskWidth(deskDrag.width - (event.clientX - deskDrag.x));
+});
+$('desk-resize').addEventListener('pointerup', endDeskDrag);
+$('desk-resize').addEventListener('pointercancel', endDeskDrag);
+
+window.addEventListener('resize', () => {
+  if (!deskOn) return;
+  applyDeskWidth(deskWidth);
+  requestAnimationFrame(() => grid.fit());
+});
+
+function initDesk() {
+  const saved = readDeskState();
+  deskWidth = Number(saved.width) || 380;
+  deskPanel = DESK_PANELS.has(saved.panel) ? saved.panel : 'today';
+  deskSport = DESK_SPORTS.has(saved.sport) ? saved.sport : 'games';
+  applyDeskWidth(deskWidth);
+  if (saved.on === true && !onPhoneScreen()) setDesk(true, { panel: deskPanel, sport: deskSport });
+  else {
+    $('desk').hidden = true;
+    document.body.classList.remove('is-desk');
+  }
+}
+
 hydrateIcons();
 restorePodcast();
 
@@ -11681,6 +11956,7 @@ setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
 prepareAutoplaySound();
 render();
+initDesk();
 // RedZone stays on across a reload.
 if (isRedZoneOn()) startRedZone();
 // The Dock's opening edge, once the grid is drawn.

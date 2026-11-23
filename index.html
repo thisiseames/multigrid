@@ -112,6 +112,22 @@
       <div id="starters" class="starters"></div>
     </section>
   </main>
+  <aside id="desk" class="desk" aria-label="Desk" hidden>
+    <div id="desk-resize" class="desk-resize" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
+    <div class="desk-shell">
+      <header class="desk-head">
+        <div class="desk-tabs" role="tablist" aria-label="Desk panels">
+          <button type="button" class="desk-tab" role="tab" data-desk="today">Today</button>
+          <button type="button" class="desk-tab" role="tab" data-desk="reader">Reader</button>
+          <button type="button" class="desk-tab" role="tab" data-desk="sports">Sports</button>
+          <button type="button" class="desk-tab" role="tab" data-desk="guide">Guide</button>
+          <button type="button" class="desk-tab" role="tab" data-desk="search">Search</button>
+        </div>
+        <button id="desk-close" class="desk-close" type="button" aria-label="Close Desk" title="Close Desk"><span data-icon="close"></span></button>
+      </header>
+      <div id="desk-body" class="desk-body"></div>
+    </div>
+  </aside>
   <aside id="gamebar" class="gamebar" aria-label="Live scores" hidden></aside>
   <aside id="xray" class="gamebar xray" aria-label="X-Ray" hidden></aside>
   <aside id="roombar" class="gamebar roombar" aria-label="Event Room" hidden></aside>

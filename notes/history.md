@@ -418,3 +418,10 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 ## Nov 23 — Surf on the remote
 - Remote cards now show **Prev channel / Next channel** when that stream has at least two favorites to surf. It calls the same `surfChannels` as the laptop: it stays in the tile’s folder (or uses all favorites when unfiled), replaces the stream in place, and updates the card’s label.
 - Verified over a real phone-to-laptop remote connection with Alpha/Beta in News and Gamma in Sports: Next changed Alpha to Beta on both the laptop and the remote; Prev returned to Alpha. 373 tests.
+
+## Nov 23 — Desk
+- **More → Desk** turns the laptop into a two-pane workspace: the wall stays on the left and one real panel opens on the right — Today, Reader, Sports (Games, Standings, Transfers, Team), Guide or Search. Drag the divider (300–620 px); the open state, width and last panel are remembered. The phone keeps its sheets.
+- The panels are the existing elements, not copies: the Today/Reader/Sports popovers move into the column, and the Guide and Search dialogs are shown non-modally. Actions keep Desk open: a story/game/channel opens on the wall, Guide Watch keeps the guide, and Search stays open after a result (its hint drops “Esc to close”).
+- One right column at a time: opening Desk hides Game mode, X-Ray and Event Room; opening X-Ray or Event Room, or turning Game mode on, closes Desk; closing Desk restores the column. A Twitch tile is never covered.
+- `index.html` shell, `src/app.js` Desk controller, `styles.css`, `notes/plans/desk.md`. No new source, job, key, account or service; $0.
+- Verified at 1440 and 1280 with four streams and a Twitch tile: all five panels, top-bar routing, drag 380→480 and reload restore, normal Today/Search after closing, Game mode handoff, and no Twitch overlap. At 390 Desk is hidden and Today still opens as a sheet. 373 tests.

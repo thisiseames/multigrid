@@ -2437,6 +2437,51 @@ button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(-
 /* Game mode: live scores in a column of their own on the right, beside the grid (never over it). */
 .stage-row { flex: 1; min-height: 0; display: flex; }
 .stage-row > .stage { min-width: 0; }
+
+/* Desk: the wall and one real panel side by side. The panel is the same element the
+   popover uses, moved into this column and shown non-modally. */
+.desk { position: relative; flex: none; width: 380px; min-width: 300px; max-width: min(620px, 55vw); display: flex; flex-direction: column; min-height: 0; background: var(--chrome); border-left: 1px solid var(--border-strong); }
+.desk[hidden] { display: none; }
+.desk-resize { position: absolute; z-index: 6; left: -4px; top: 0; bottom: 0; width: 9px; cursor: col-resize; touch-action: none; }
+.desk-resize::after { content: ''; position: absolute; top: 50%; left: 4px; width: 1px; height: 48px; transform: translateY(-50%); background: var(--border-strong); opacity: .32; transition: opacity .12s; }
+.desk-resize:hover::after, body.is-desk-resizing .desk-resize::after { opacity: 1; }
+body.is-desk-resizing { cursor: col-resize; user-select: none; }
+body.is-desk-resizing iframe { pointer-events: none; }
+.desk-shell { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.desk-head { flex: none; display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-bottom: 1px solid var(--border); }
+.desk-tabs { flex: 1; min-width: 0; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.desk-tabs::-webkit-scrollbar { display: none; }
+.desk-tab { flex: none; height: 32px; padding: 0 10px; border-radius: 8px; color: var(--text-2); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.desk-tab:hover { color: var(--text); background: var(--hover); }
+.desk-tab.is-on { color: var(--text); background: var(--hover); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.desk-close { flex: none; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text-2); }
+.desk-close:hover { color: var(--text); background: var(--hover); }
+.desk-body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+.desk-body > .popover.is-desk-panel,
+.desk-body > dialog.is-desk-panel {
+  position: relative !important;
+  inset: auto !important; top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
+  width: 100% !important; max-width: none !important; height: 100%; max-height: none !important;
+  margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  background: #141416 !important; display: flex; flex-direction: column; flex: 1; overflow: hidden;
+}
+.desk-body > .popover.is-desk-panel { overflow-y: auto; }
+.desk-body > dialog.is-desk-panel { min-height: 0; }
+.desk-body > .popover.is-desk-panel > .matches-body,
+.desk-body > .popover.is-desk-panel > .gbody { flex: 1; min-height: 0; }
+.desk-body .gbody, .desk-body .matches-body { min-height: 0; }
+/* The Guide is built for a wide dialog; in Desk it stacks its head. */
+.desk-body .guide .ghead { flex-wrap: wrap; row-gap: 8px; padding: 10px 10px 8px 14px; }
+.desk-body .guide .ghead-title { flex: 1 1 100%; }
+.desk-body .guide .ghead > button[aria-label="Close"] { display: none; }
+.desk-body .guide .gviews { flex: none; }
+.desk-body .guide .gtwitch-card { width: 220px; }
+.desk-body .guide .gnow-list { padding-left: 12px; padding-right: 12px; }
+/* Search fills the column instead of floating over the wall. */
+.desk-body > dialog.palette.is-desk-panel { padding: 10px; }
+.desk-body > dialog.palette .palette-results { flex: 1; min-height: 0; max-height: none; }
+body.is-phone .desk { display: none !important; }
+
 .gamebar { flex: none; width: 330px; display: flex; flex-direction: column; min-height: 0; background: var(--chrome); border-left: 1px solid var(--border-strong); }
 .gamebar[hidden] { display: none; }
 .gamebar-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--border); }

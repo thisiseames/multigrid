@@ -46,6 +46,7 @@ const ICON_PATHS = {
   remote: '<rect x="5" y="1.8" width="6" height="12.4" rx="1.6"/><circle cx="8" cy="5.2" r="1.2"/><path d="M7 8.6h2M7 10.6h2"/>',
   home: '<path d="M2.5 7.3 8 2.7l5.5 4.6v6.2h-4V9.8h-3v3.7h-4z"/>',
   tiles: '<rect x="2.3" y="2.3" width="5" height="5" rx="1.2"/><rect x="8.7" y="2.3" width="5" height="5" rx="1.2"/><rect x="2.3" y="8.7" width="5" height="5" rx="1.2"/><rect x="8.7" y="8.7" width="5" height="5" rx="1.2"/>',
+  desk: '<rect x="1.8" y="3" width="7.2" height="10" rx="1.2"/><rect x="10.2" y="3" width="4" height="10" rx="1.2"/>',
   more: '<path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.4"/>',
   pip: '<rect x="2" y="2.5" width="8.5" height="6.5" rx="1.2"/><rect x="5.5" y="7" width="8.5" height="6.5" rx="1.2" fill="var(--chrome, #0d0d10)"/>',
   cast: '<path d="M2.5 6V4.5A1.5 1.5 0 0 1 4 3h8a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 12 13H9.5"/><path d="M2.5 8.6a4.4 4.4 0 0 1 4.4 4.4M2.5 10.8a2.2 2.2 0 0 1 2.2 2.2"/><path d="M2.5 13h.01" stroke-width="2"/>',
