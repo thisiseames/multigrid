@@ -111,3 +111,33 @@ test('a room marker travels with its saved workspace', () => {
   const back = listsOf(stamp(items, {}, 20), { favorites: [], layouts: [] });
   assert.deepEqual(back.layouts[0].workspace.room, room);
 });
+
+test('the X folder never leaves its device, and never arrives from another one', () => {
+  const here = lists([fav('https://x.test/mine', 'Mine', 'x'), fav('https://a.test/1', 'CP24', 'NEWS')]);
+  const items = itemsOf(here);
+  assert.deepEqual(Object.keys(items), ['f:https://a.test/1']);
+  assert.deepEqual(Object.keys(itemsOf(lists([fav('https://x.test/two', 'Two', ' X ')]))), []);
+
+  const doc = {
+    'f:https://x.test/theirs': { t: 5, v: { name: 'Theirs', group: 'X' } },
+    'f:https://x.test/mine': { t: 6, v: null },
+    'f:https://a.test/1': { t: 5, v: { name: 'CP24!', group: 'NEWS' } },
+  };
+  const out = listsOf(doc, here);
+  assert.deepEqual(out.favorites.map((item) => item.input), ['https://x.test/mine', 'https://a.test/1']);
+  assert.equal(out.favorites[0].name, 'Mine', 'a remote removal does not delete the local X folder');
+  assert.equal(out.favorites[1].name, 'CP24!', 'other favorites still sync');
+});
+
+test('a local X favorite wins over a stale synced copy, even with a different folder', () => {
+  const doc = { 'f:https://x.test/mine': { t: 8, v: { name: 'Mine!', group: 'News' } } };
+  const out = listsOf(doc, lists([fav('https://x.test/mine', 'Mine', 'X')]));
+  assert.deepEqual(out.favorites[0], fav('https://x.test/mine', 'Mine', 'X'));
+});
+
+test('a favorite moved into X does not become a removal for the other device', () => {
+  const seen = seenOf(stamp(itemsOf(lists([fav('https://a.test/1', 'One', 'News')])), {}, 10));
+  const xHere = lists([fav('https://a.test/1', 'One', 'X')]);
+  assert.deepEqual(stamp(itemsOf(xHere), seen, 20, new Set(['f:https://a.test/1'])), {});
+  assert.deepEqual(stamp(itemsOf(xHere), seen, 20), { 'f:https://a.test/1': { t: 20, v: null } });
+});

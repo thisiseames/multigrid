@@ -20,11 +20,17 @@ const FORGET_DELETED = 90 * 24 * 3600 * 1000;
 const MAX_PLACES = 100;
 const PLACE_FIELDS = ['at', 'length', 'input', 'name', 'from', 'page'];
 
-/** Every favorite, saved layout and Continue watching place as keyed items. Files on this device stay here. */
+// The X folder holds account feeds that belong to one device. It never travels through sync;
+// each device keeps whatever it has there, even if another paired device removes its own.
+const isXFolder = (group) => String(group || '').trim().toLocaleLowerCase() === 'x';
+const isLocalEntry = (entry) => Boolean(entry?.v) && isXFolder(entry.v.group);
+const withoutLocalEntries = (items) => Object.fromEntries(Object.entries(items || {}).filter(([, entry]) => !isLocalEntry(entry)));
+
+/** Every favorite, saved layout and Continue watching place as keyed items. Files and the X folder stay here. */
 export function itemsOf({ favorites, layouts, places = {} }) {
   const items = {};
   for (const { input, name, group, logo, poster, sources } of favorites) {
-    if (input.startsWith('local:')) continue;
+    if (input.startsWith('local:') || isXFolder(group)) continue;
     items[`f:${input}`] = {
       name, group: group || '',
       ...(logo ? { logo } : {}),
@@ -42,14 +48,14 @@ export function itemsOf({ favorites, layouts, places = {} }) {
 }
 
 /** What changed since last time: new, edited and removed items, each stamped with now. */
-export function stamp(items, seen, now) {
+export function stamp(items, seen, now, keep = null) {
   const changes = {};
   for (const [key, value] of Object.entries(items)) {
     const h = JSON.stringify(value);
     if (seen[key]?.h !== h) changes[key] = { t: now, v: value };
   }
   for (const [key, known] of Object.entries(seen)) {
-    if (!(key in items) && known.h !== null) changes[key] = { t: now, v: null };
+    if (!(key in items) && known.h !== null && !keep?.has(key)) changes[key] = { t: now, v: null };
   }
   return changes;
 }
@@ -71,9 +77,13 @@ export const seenOf = (doc) => Object.fromEntries(Object.entries(doc).map(([key,
 /** The favorites and layouts lists a doc stands for. Existing ones keep their place; files stay. */
 export function listsOf(doc, { favorites, layouts }) {
   const live = (prefix) => Object.entries(doc).filter(([key, entry]) => key.startsWith(prefix) && entry.v !== null);
-  const favs = new Map(live('f:').map(([key, entry]) => [key.slice(2), entry.v]));
-  const kept = favorites.filter((item) => item.input.startsWith('local:') || favs.has(item.input))
-    .map((item) => (item.input.startsWith('local:') ? item : { input: item.input, ...favs.get(item.input) }));
+  // Incoming X entries are ignored; a local X favorite stays even when the doc says it was removed.
+  const favs = new Map(live('f:').filter(([, entry]) => !isLocalEntry(entry)).map(([key, entry]) => [key.slice(2), entry.v]));
+  const kept = favorites.filter((item) => item.input.startsWith('local:') || isXFolder(item.group) || favs.has(item.input))
+    .map((item) => {
+      if (item.input.startsWith('local:') || isXFolder(item.group) || !favs.has(item.input)) return item;
+      return { input: item.input, ...favs.get(item.input) };
+    });
   const have = new Set(kept.map((item) => item.input));
   const added = [...favs].filter(([input]) => !have.has(input)).map(([input, value]) => ({ input, ...value }));
   const lays = live('l:').map(([key, entry]) => ({ name: key.slice(2), savedAt: entry.v.savedAt, workspace: entry.v.workspace }))
@@ -226,13 +236,15 @@ export async function startSync(store, onApplied) {
   const { sign, lock } = await keysFor(fromB64(state.secret));
   const { getPublicKey } = await nostr();
   const author = getPublicKey(sign);
-  let doc = state.doc || {};
+  let doc = withoutLocalEntries(state.doc);
   let lastSent = '';
   let newest = 0;
   let timer = null;
   let sentAt = 0;
 
   const save = (extra = {}) => writeState({ ...readState(), doc, seen: seenOf(doc), ...extra });
+  // Old sync docs may already carry X entries; drop them here so they stop travelling.
+  if (JSON.stringify(doc) !== JSON.stringify(state.doc || {})) save();
   const send = async () => {
     const body = JSON.stringify(doc);
     if (body === lastSent) return;
@@ -245,7 +257,10 @@ export async function startSync(store, onApplied) {
     relays.publish(finalizeEvent({ kind: KIND, created_at: at, tags: [['d', DOC_TAG]], content }, sign));
   };
   const local = () => {
-    const changes = stamp(itemsOf(store.read()), readState()?.seen || {}, Date.now());
+    const lists = store.read();
+    // A favorite moved into X leaves the shared set, but must not become a removal.
+    const keep = new Set(lists.favorites.filter((item) => isXFolder(item.group)).map((item) => `f:${item.input}`));
+    const changes = stamp(itemsOf(lists), readState()?.seen || {}, Date.now(), keep);
     if (!Object.keys(changes).length) return false;
     doc = merge(doc, changes);
     save();
@@ -256,8 +271,9 @@ export async function startSync(store, onApplied) {
     newest = Math.max(newest, event.created_at || 0);
     const note = await unseal(event.content, lock);
     if (!note || typeof note.items !== 'object') return;
+    const incoming = withoutLocalEntries(note.items);
     local();
-    const merged = merge(doc, note.items);
+    const merged = merge(doc, incoming);
     const changedHere = JSON.stringify(merged) !== JSON.stringify(doc);
     doc = merged;
     save({ lastSynced: Date.now() });
@@ -267,7 +283,7 @@ export async function startSync(store, onApplied) {
     }
     if (note.by && note.by !== state.device) otherWatchers.forEach((watch) => watch());
     // The other side was missing something this device has: send the full set back.
-    if (JSON.stringify(note.items) !== JSON.stringify(doc)) send();
+    if (JSON.stringify(incoming) !== JSON.stringify(doc)) send();
     else lastSent = JSON.stringify(doc);
   };
   const relays = openRelays({ kinds: [KIND], authors: [author], '#d': [DOC_TAG] }, onEvent, () => {

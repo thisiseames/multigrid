@@ -10517,7 +10517,7 @@ function openSyncBox(view = '') {
     let code;
     try {
       code = await offerCode(syncStore, syncCameIn, () => {
-        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts.'), actions(button('Done', close, true)));
+        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts. The X folder stays on the device it is on.'), actions(button('Done', close, true)));
         refreshFavorites();
       });
     } catch {
@@ -10538,7 +10538,7 @@ function openSyncBox(view = '') {
       status.textContent = 'Pairing…';
       const ok = await joinWithCode(input.value, syncStore, syncCameIn).catch(() => false);
       if (ok) {
-        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other.'), actions(button('Done', close, true)));
+        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other. The X folder stays on the device it is on.'), actions(button('Done', close, true)));
         refreshFavorites();
       } else {
         go.disabled = false;
@@ -10553,7 +10553,7 @@ function openSyncBox(view = '') {
   if (isSyncing()) {
     const when = lastSynced();
     show(head('Synced devices'),
-      note(`Favorites and saved layouts stay the same on every paired device.${when ? ` Last synced ${clock(when)}.` : ''}`),
+      note(`Favorites and saved layouts stay the same on every paired device. The X folder stays on this device.${when ? ` Last synced ${clock(when)}.` : ''}`),
       actions(
         button('Stop syncing here', () => { stopSync(); toast('This device stopped syncing. Its favorites stay as they are.'); refreshFavorites(); close(); }),
         button('Add a device', showCode, true)));
