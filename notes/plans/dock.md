@@ -40,11 +40,11 @@ tile drag does.
 Black glass (rgba(0,0,0,.72) + blur), items 52 px high art tiles, slight scale on hover (no
 bounce), white LIVE text. No new colours (never periwinkle).
 
-## Checklist
+## Checklist (built pieces are on branch claude/jolly-edison-567o0y until the Chrome check passes)
 - [x] src/dock.js (pure): pick/order items, pin/unpin, note opens, 30-day pruning + tests/dock.test.mjs
-- [ ] app wiring: counter in addStream; dock element + bottom-edge reveal/hide; click to add; ⋯ pin menu; favorite card "Add to Dock"
-- [ ] drag onto tile / empty slot with outline
-- [ ] styles (laptop only; above ticker)
-- [ ] index.html files list + CSP hash; tests pass
+- [x] app wiring: counter in addStream; dock element + bottom-edge reveal/hide; click to add; ⋯ pin menu; favorite card "Add to Dock"
+- [x] drag onto tile / empty slot with outline
+- [x] styles (laptop only; above ticker)
+- [x] index.html files list + CSP hash; tests pass
 - [ ] Chrome check 1280: reveal, click add, drag onto YouTube + embed tile, empty slot, pin/unpin, hide, ticker on; 390: no dock
 - [ ] push main + branch; verify on multigrid.club; notes/history.md entry; tick this list

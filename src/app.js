@@ -70,6 +70,7 @@ import {
 import { leftText, tileCard } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
 import { findScore, scoreLine, shardKey, votesText } from './scores.js';
+import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
@@ -2217,6 +2218,7 @@ function commit() {
   if (!saveCurrent(ws)) toast("Couldn't save. This browser's storage may be full or turned off.");
   render();
   trackRecentGrid();
+  placeDockEdge();
 }
 
 /* Recent grids: a grid that stays on screen for 10 minutes is remembered (the last ten, this
@@ -2983,6 +2985,152 @@ function endReplay() {
   commit();
 }
 
+/* The Dock (laptop): move the mouse to the very bottom edge and a slim bar of favorites slides up.
+   Click one to add it; drag it onto a tile to swap that tile to it, or onto an empty slot to fill
+   it. Pinned favorites first, then the most opened in the last 30 days, then recent streams
+   (dock.js). The drag works like dragging a tile: pointer capture plus elementFromPoint, so it
+   passes over streams without covering them. Hand-off notes: notes/plans/dock.md. */
+var dockHideTimer = null; // eslint-disable-line no-var
+var dockDragging = false; // eslint-disable-line no-var
+
+function dockElements() {
+  let dock = document.getElementById('dock');
+  if (!dock) {
+    dock = el('div', { id: 'dock', class: 'dock', hidden: true, role: 'toolbar', aria: { label: 'Dock: your favorites' } });
+    dock.addEventListener('mouseenter', () => clearTimeout(dockHideTimer));
+    dock.addEventListener('mouseleave', () => { if (!dockDragging) hideDockSoon(); });
+    document.body.append(dock);
+    // The edge that opens it: a thin strip along the bottom, cut around Twitch tiles (anything
+    // over a Twitch picture stops it).
+    const edge = el('div', { id: 'dock-edge', class: 'dock-edge' });
+    edge.addEventListener('mouseenter', () => showDock());
+    document.body.append(edge);
+  }
+  return dock;
+}
+
+function dockBottom() {
+  const ticker = $('ticker');
+  return ticker && !ticker.hidden ? ticker.getBoundingClientRect().height : 0;
+}
+
+/** The opening edge: along the bottom, in pieces that skip Twitch tiles. */
+function placeDockEdge() {
+  dockElements();
+  const edge = $('dock-edge');
+  const off = onPhoneScreen() || !streamCount(ws);
+  edge.hidden = off;
+  if (off) return;
+  const width = window.innerWidth;
+  const twitch = ws.tiles.filter((tile) => isVisible(tile) && parseSource(tile.input).kind === 'twitch')
+    .map((tile) => grid.viewFor(tile.id)?.root.getBoundingClientRect()).filter(Boolean)
+    .filter((rect) => rect.bottom >= window.innerHeight - dockBottom() - 8)
+    .map((rect) => [Math.max(0, rect.left), Math.min(width, rect.right)]).sort((a, b) => a[0] - b[0]);
+  const gaps = [];
+  let from = 0;
+  for (const [left, right] of twitch) { if (left > from) gaps.push([from, left]); from = Math.max(from, right); }
+  if (from < width) gaps.push([from, width]);
+  edge.style.bottom = `${dockBottom()}px`;
+  edge.replaceChildren(...gaps.map(([left, right]) => el('span', { style: `left:${left}px;width:${right - left}px` })));
+}
+
+function showDock() {
+  if (onPhoneScreen() || document.querySelector('dialog[open]')) return;
+  clearTimeout(dockHideTimer);
+  const dock = dockElements();
+  drawDock();
+  if (!dock.children.length) return;
+  dock.style.bottom = `${dockBottom() + 10}px`;
+  dock.hidden = false;
+  requestAnimationFrame(() => dock.classList.add('is-open'));
+}
+
+function hideDockSoon() {
+  clearTimeout(dockHideTimer);
+  dockHideTimer = setTimeout(() => {
+    const dock = document.getElementById('dock');
+    if (!dock || dockDragging) return;
+    dock.classList.remove('is-open');
+    dock.querySelector('.dock-menu')?.remove();
+    setTimeout(() => { if (!dock.classList.contains('is-open')) dock.hidden = true; }, 160);
+  }, 1000);
+}
+
+function drawDock() {
+  const dock = document.getElementById('dock');
+  if (!dock) return;
+  const favorites = listFavorites().filter((item) => !isPodcastShowInput(item.input) && !item.input.startsWith('local:'));
+  const recent = [...listRecent().map((item) => item.input), ...listPlaces(12).map((place) => place.input)];
+  const items = dockItems(loadDock(), favorites, recent);
+  dock.replaceChildren(...items.map((item) => dockItem(item)));
+}
+
+function dockItem(item) {
+  const source = parseSource(item.input);
+  const listing = nowAndNext(item.name, source);
+  const live = Boolean(listing?.current?.live);
+  const button = el('button', {
+    type: 'button',
+    class: `dock-item${item.pinned ? ' is-pinned' : ''}`,
+    title: [item.name, listing?.current?.title].filter(Boolean).join(' · '),
+    aria: { label: `${item.name}${listing?.current ? `, on now: ${listing.current.title}` : ''}` },
+  }, favoriteArt(item, source), live ? el('span', { class: 'dock-live', textContent: 'LIVE' }) : null, el('span', { class: 'dock-name', textContent: item.name }));
+  // Press and drag onto a tile to swap it, or just click to add.
+  button.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let dragging = false;
+    let target = null;
+    const ghost = el('div', { class: 'dock-ghost' }, favoriteArt(item, source));
+    button.setPointerCapture(event.pointerId);
+    const move = (moveEvent) => {
+      if (!dragging && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 6) return;
+      if (!dragging) { dragging = true; dockDragging = true; coverage.add(); document.body.append(ghost); }
+      ghost.style.left = `${moveEvent.clientX}px`;
+      ghost.style.top = `${moveEvent.clientY}px`;
+      const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest('.tile');
+      if (under !== target) { target?.classList.remove('dock-target'); target = under; target?.classList.add('dock-target'); }
+    };
+    const up = () => {
+      button.removeEventListener('pointermove', move);
+      button.removeEventListener('pointerup', up);
+      button.removeEventListener('pointercancel', up);
+      target?.classList.remove('dock-target');
+      ghost.remove();
+      if (dragging) {
+        coverage.remove();
+        dockDragging = false;
+        const tile = target ? ws.tiles.find((candidate) => grid.viewFor(candidate.id)?.root === target) : null;
+        if (tile) addStream(item.input, { mode: tile.input ? 'replace' : 'fill', id: tile.id });
+        hideDockSoon();
+      } else {
+        addStream(item.input);
+      }
+    };
+    button.addEventListener('pointermove', move);
+    button.addEventListener('pointerup', up);
+    button.addEventListener('pointercancel', up);
+  });
+  button.addEventListener('contextmenu', (event) => { event.preventDefault(); dockMenu(button, item); });
+  const more = el('button', { type: 'button', class: 'dock-more', title: `Options for ${item.name}`, aria: { label: `Options for ${item.name}` }, on: { click(event) { event.stopPropagation(); dockMenu(button, item); } } }, icon('more', 12));
+  return el('div', { class: 'dock-slot' }, button, more);
+}
+
+function dockMenu(button, item) {
+  const dock = document.getElementById('dock');
+  dock.querySelector('.dock-menu')?.remove();
+  const pinned = isDockPinned(loadDock(), item.input);
+  const menu = el('div', { class: 'dock-menu' },
+    el('button', { type: 'button', textContent: pinned ? 'Unpin from Dock' : 'Pin to Dock', on: { click() { saveDock(pinned ? dockUnpin(loadDock(), item.input) : dockPin(loadDock(), item.input)); menu.remove(); drawDock(); } } }));
+  const rect = button.getBoundingClientRect();
+  const box = dock.getBoundingClientRect();
+  menu.style.left = `${rect.left - box.left + rect.width / 2}px`;
+  dock.append(menu);
+}
+
+window.addEventListener('resize', () => placeDockEdge());
+
 /* Game mode: live scores beside the grid, on the laptop in a column of its own (so it never
    covers a stream) and on a phone in the bottom ticker. Only on when switched on. */
 const GAME_KEY = 'multigrid.gamemode.v1';
@@ -3159,6 +3307,7 @@ function syncTicker(hasStreams) {
     loadScores: () => (isGameOn() ? gameTickerScores() : tickerScores()),
   });
   ticker.show(want);
+  setTimeout(placeDockEdge, 50);
 }
 
 function toggleTicker() {
@@ -3298,6 +3447,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   const added = tileById(addedId);
   if (added) {
     noteRecent(input, labelOf(added));
+    saveDock(noteDockOpen(loadDock(), input));
     rememberTileSource(added, { input: added.input, name: title || favoriteName(input) || labelOf(added) });
     if (oldSource) rememberTileSource(added, oldSource);
     if (!eventLink && (source.kind === 'iframe' || source.kind === 'hls')) {
@@ -5932,9 +6082,11 @@ function favoriteCard(item, holder, { plain = false } = {}) {
       if (cls) button.classList.add(cls);
       return button;
     };
+    const pinned = isDockPinned(loadDock(), item.input);
     const normal = () => box.replaceChildren(
       el('span', { class: 'fcard-ask', textContent: item.name }),
       action('pencil', `Edit ${item.name}`, '', () => { closeMenu(); editFavorite(item.input, item.name, card); }),
+      action('saved', pinned ? `Remove ${item.name} from the Dock` : `Add ${item.name} to the Dock`, pinned ? 'is-on' : '', () => { saveDock(pinned ? dockUnpin(loadDock(), item.input) : dockPin(loadDock(), item.input)); closeMenu(); toast(pinned ? `${item.name} is off the Dock.` : `${item.name} is on the Dock.`); drawDock(); }),
       action('trash', `Remove ${item.name}`, 'is-danger', confirm),
       action('close', 'Cancel', 'is-quiet', closeMenu));
     const confirm = () => box.replaceChildren(
@@ -10898,6 +11050,8 @@ prepareAutoplaySound();
 render();
 // RedZone stays on across a reload.
 if (isRedZoneOn()) startRedZone();
+// The Dock's opening edge, once the grid is drawn.
+setTimeout(placeDockEdge, 500);
 // The Top 10 file carries Rotten Tomatoes scores for favorites and X-Ray, so it's read at once.
 loadJob('top10.json');
 receiveReaderKey();
