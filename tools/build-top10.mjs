@@ -26,11 +26,13 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 let old = {};
 try { old = JSON.parse(readFileSync(FILE, 'utf8')); } catch { /* first run */ }
 const charts = Object.fromEntries((old.charts ?? []).map((chart) => [chart.id, chart]));
+// A list saved before scores were added (no entry has 'imdb' or 'rt') is fetched again once.
+const scored = (chart) => (chart?.entries ?? []).some((entry) => 'imdb' in entry || 'rt' in entry);
 
 async function netflix() {
   const had = charts.netflix;
   const weekEnds = had?.week ? Date.parse(`${had.week}T12:00:00Z`) : 0;
-  if (!force && had && (now - weekEnds < 8.5 * 24 * HOUR || now - (had.checked || 0) < 6 * HOUR)) return had;
+  if (!force && had && scored(had) && (now - weekEnds < 8.5 * 24 * HOUR || now - (had.checked || 0) < 6 * HOUR)) return had;
   const response = await fetch(NETFLIX, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(120000) });
   if (!response.ok) throw new Error(`Netflix answered ${response.status}`);
   const found = netflixWeek(await response.text(), 'CA', 'TV');
@@ -73,7 +75,7 @@ const QUESTION = `query($country: Country!, $language: Language!) {
 
 async function trending() {
   const had = charts.trending;
-  if (!force && had && now - (had.checked || 0) < 20 * HOUR) return had;
+  if (!force && had && scored(had) && now - (had.checked || 0) < 20 * HOUR) return had;
   const entries = justWatchTitles(await justWatch(QUESTION));
   if (entries.length < 5) throw new Error('JustWatch sent back too few titles');
   return { id: 'trending', name: 'Trending', source: 'JustWatch · most popular in Canada', week: new Date(now).toISOString().slice(0, 10), checked: now, entries };
