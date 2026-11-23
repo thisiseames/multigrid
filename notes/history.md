@@ -317,3 +317,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - src/xray.js, tests/xray.test.mjs, fixtures xray-*.json. ESPN's clip server and the Atlantic page aren't reachable from the test machine: the replay was tested with a stand-in 4-second clip routed in place of ESPN's file.
 - Nov 23: Phone Add stream: X account field, Find a live channel and Import a list hidden; order Browse PPV events, Play a video file, paste box (laptop unchanged).
 - Nov 23: Phone X-Ray: a replay now plays at the top of the X-Ray sheet (owner: having to close X-Ray to watch it in the tile was clumsy); tiles muted while it plays, player gone at the end/close/error and sound restored; closing the sheet ends it. Laptop still plays replays in a tile beside the game.
+- Nov 23: small "X-RAY" label in the bottom-right corner of the hover card (white on hover); the whole card still opens X-Ray.

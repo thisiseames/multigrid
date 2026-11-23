@@ -3561,3 +3561,8 @@ body.is-phone #file-zone { order: 1; }
 .xr-player video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
 .xr-player-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 6px 8px 12px; background: #141416; }
 .xr-player-bar b { min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f5f5f7; }
+/* The hover card's X-Ray label: bottom-right, small; the whole card opens X-Ray. */
+.ti-card { position: relative; }
+.ti-xray { position: absolute; right: -2px; bottom: -3px; padding: 2px 6px; border-radius: 5px; background: rgba(255, 255, 255, .1); color: rgba(245, 245, 247, .7); font: 700 9.5px/1.2 var(--font); letter-spacing: .08em; text-transform: uppercase; }
+.tile-info .ti-card:hover .ti-xray { background: #f5f5f7; color: #0b0b0d; }
+.tile-info .ti-text > :last-child { padding-right: 52px; }

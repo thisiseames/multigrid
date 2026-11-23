@@ -67,6 +67,7 @@ class TileView {
     if (!card) return;
     // Clicking the card opens X-Ray for this tile.
     card.title = 'X-Ray: more about this';
+    card.append(el('span', { class: 'ti-xray', aria: { hidden: 'true' } }, 'X-Ray'));
     card.addEventListener('click', (event) => { event.stopPropagation(); this.grid.handlers.onXRay?.(this.id); });
     this.root.append(el('div', { class: 'tile-info' }, card));
   }
