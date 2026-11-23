@@ -88,6 +88,16 @@ Build, brainstorm, curate and design MULTIGRID as if it's the signature product 
 ## MULTIGRID is NOT a sports app
 Nov 23, owner, furious: "Get it through your head that MULTIGRID is not a sports app." It's multiview for everything he watches: news (CP24, CNN, Sky News), series (Atlantic), YouTube, X accounts, TikTok, podcasts, his film/TV library, the Reader, and sport. Not picked Nov 23: Fight Night (UFC card tracking). Pitch for the whole product; never another run of sports-only ideas.
 
+## The six-question test (every pitch must pass all six before he sees it)
+From the X-Ray vs Split sound essay (Nov 23). X-Ray passed all six; Split sound (not picked) failed five.
+1. Does it answer a question or need he has every time he watches, not a rare situation?
+2. Does the screen visibly get richer, rather than a setting changing?
+3. Does it work for every kind of tile with no setup or special hardware?
+4. Would Netflix/Apple/Prime/DAZN market it, rather than bury it in a help page?
+5. Can I promise it works because I've already checked the data and code, rather than gambling?
+6. Does it build on something he's already responded to (hover card, X-Ray, Replays, RedZone, Pop out grid)?
+Start from the experience of watching, never from "what can the browser/code do".
+
 ## Check every piece of a pitch in the code first
 Nov 22: I pitched "live channel cards" (show title, progress bar, what's next), Reader pictures and a drifting banner as upgrades; all three already exist (favorite cards' On now line, Guide Now cards, readerHero/readerPicture, hero-drift). He was furious: "Understand the website before you pitch things." Before any idea: grep src/app.js and styles.css for every element the idea describes, and open the real screen. Each pitch must say what exists today and only the part that doesn't.
 Pitch to his bar: makes his life easier, wows him, elevates an existing feature's look/feel/use, and makes MULTIGRID look like a product from Netflix, Apple TV, DAZN or Fubo. No gimmicks, no filler to make a list of three.
