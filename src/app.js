@@ -6713,7 +6713,7 @@ function addSearchBox(holder) {
   return holder.addSearch;
 }
 
-/** The folder pills, with buttons to rename or delete the folder that's chosen. */
+/** The folder pills; the selected folder's own bar holds Rename and Delete. */
 function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
@@ -6739,10 +6739,7 @@ function addFolderPills(holder, folders) {
     });
     // Recent comes straight after All: it's the quickest way back to a stream.
     row.replaceChildren(...['', ...(listRecent().length ? [RECENT] : []), ...sorted].map(tab),
-      ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []),
-      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT && addFolder !== LIBRARY
-        ? [iconButton('pencil', `Rename ${addFolder}`, rename), iconButton('trash', `Delete ${addFolder}`, remove)]
-        : []));
+      ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');
@@ -6752,23 +6749,35 @@ function addFolderPills(holder, folders) {
       if (tab.left < box.left || tab.right > box.right) row.scrollLeft += tab.left - box.left - 16;
     });
   };
-  const remove = () => {
-    const count = listFavorites().filter((item) => item.group && item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase()).length;
-    row.replaceChildren(...folderDeleteParts(addFolder, count, pills, true));
+  pills();
+  return row;
+}
+
+/** The selected folder's own bar: its count, Rename and Delete, always above its cards. */
+function addFolderTools() {
+  const folder = addFolder;
+  const count = listFavorites().filter((item) => item.group && item.group.toLocaleLowerCase() === folder.toLocaleLowerCase()).length;
+  const row = el('div', { class: 'addp-folder-tools' });
+  const showNormal = () => {
+    row.replaceChildren(
+      el('span', { class: 'addp-folder-name' }, el('b', { textContent: folder }), el('small', { textContent: `${count} ${count === 1 ? 'favorite' : 'favorites'}` })),
+      el('span', { class: 'addp-folder-actions' },
+        el('button', { type: 'button', class: 'text-button', textContent: 'Rename', on: { click: showRename } }),
+        el('button', { type: 'button', class: 'text-button', textContent: 'Delete', on: { click: showDelete } })));
   };
-  const rename = () => {
-    const input = el('input', { type: 'text', value: addFolder, maxLength: 40, class: 'addp-rename', aria: { label: 'Folder name' } });
+  const showRename = () => {
+    const input = el('input', { type: 'text', value: folder, maxLength: 40, class: 'addp-rename', aria: { label: 'Folder name' } });
     let finished = false;
     const finish = (save) => {
       if (finished) return;
       finished = true;
       const name = input.value.trim();
-      if (save && name && name !== addFolder) {
-        if (!renameFolder(addFolder, name)) toast(STORAGE_FULL);
-        addFolder = listFolders().find((folder) => folder.toLocaleLowerCase() === name.toLocaleLowerCase()) ?? name;
+      if (save && name && name !== folder) {
+        if (!renameFolder(folder, name)) toast(STORAGE_FULL);
+        addFolder = listFolders().find((item) => item.toLocaleLowerCase() === name.toLocaleLowerCase()) ?? name;
         refreshFavorites();
       } else {
-        pills();
+        showNormal();
       }
     };
     input.addEventListener('keydown', (event) => {
@@ -6779,7 +6788,8 @@ function addFolderPills(holder, folders) {
     row.replaceChildren(input);
     input.select();
   };
-  pills();
+  const showDelete = () => row.replaceChildren(...folderDeleteParts(folder, count, showNormal, true));
+  showNormal();
   return row;
 }
 
@@ -6811,7 +6821,8 @@ function fillAddFavorites(holder) {
   const shows = query && !libraryOpen ? podShows().filter(matches) : [];
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
-  const grid = el('div', { class: 'addp-grid-wrap' },
+  const tools = !query && !libraryOpen && !podcasts && !layouts && !recent && addFolder ? addFolderTools() : null;
+  const grid = el('div', { class: 'addp-grid-wrap' }, tools,
     libraryOpen ? libraryView(holder, query)
       : podcasts ? podcastsView(holder)
         // Recent grids are a laptop thing; the phone's Layouts tab shows saved layouts only.

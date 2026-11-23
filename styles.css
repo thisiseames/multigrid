@@ -862,6 +862,8 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   :root { --strip: 32px; }
   .strip-actions button, .strip-actions a { width: 28px; height: 28px; }
   .row-actions button { width: 32px; height: 32px; }
+  .addp-folder-actions .text-button { min-height: 44px; padding: 0 10px; }
+  .addp-folder-tools .favorite-confirm-action { min-height: 44px; padding: 0 10px; }
   .favorite-box input, .favorites .saved-row input { font-size: 16px; }
   .channel-mute { width: 32px; height: 32px; }
   .channel { height: 34px; }
@@ -1610,6 +1612,14 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .addp-pills .matches-tab.is-on::after { content: ''; position: absolute; left: 0; right: 0; bottom: 4px; height: 2px; border-radius: 1px; background: var(--text); }
 .addp-pills .icon-button, .addp-pills > button:not(.matches-tab) { flex: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-2); }
 .addp-pills > button:not(.matches-tab):hover { background: var(--hover); color: var(--text); }
+.addp-folder-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 32px; margin: 0 0 10px; padding: 0 2px; }
+.addp-folder-name { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 7px; overflow: hidden; }
+.addp-folder-name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 650; }
+.addp-folder-name small { flex: none; font-size: 11.5px; color: var(--text-2); }
+.addp-folder-actions { flex: none; display: flex; align-items: center; gap: 12px; }
+.addp-folder-actions .text-button { font-size: 12px; }
+.addp-folder-tools .folder-confirm { padding: 0 2px; }
+.addp-folder-tools .favorite-confirm-action { padding: 6px 8px; }
 .addp-rename { height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--accent); color: var(--text); font: inherit; font-size: 13px; }
 .addp-grid-wrap { flex: 1 1 auto; min-height: 0; max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; padding: 10px 16px 12px; }
 .addp-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
