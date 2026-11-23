@@ -2175,10 +2175,11 @@ function openFollowingPicker() {
         const drop = following.filter((name) => added.has(name) && !chosenSet.has(name));
         addTikTokAccounts(chosen.filter((name) => !added.has(name)));
         removeTikTokAccounts(drop);
-        // A tick is a favorite too, so the account is saved in Favorites as well.
+        // A tick is a favorite too, filed in TikTok so it is visible in Favorites.
+        // Existing ones are moved into the folder without losing a renamed title.
         for (const name of chosen) {
           const link = `https://www.tiktok.com/@${name}`;
-          if (favoriteName(link) === null) saveFavorite(link, `@${name}`);
+          saveFavorite(link, favoriteName(link) ?? `@${name}`, 'TikTok');
         }
         for (const name of drop) removeFavorite(`https://www.tiktok.com/@${name}`);
         box.close();
