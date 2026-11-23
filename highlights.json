@@ -1,5 +1,5 @@
 {
- "updated": 1795395851034,
+ "updated": 1795397439657,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -134,7 +134,13 @@
    "title": "Broncos 38–24 Raiders",
    "start": 1795382700000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "i13fzifkiE8",
+     "title": "Las Vegas Raiders vs Denver Broncos Game Highlights | 2026 NFL Season Week 11",
+     "rank": 3.5
+    }
+   ]
   },
   "401873076": {
    "league": "NFL",
@@ -919,6 +925,13 @@
      "rank": 3.5
     }
    ]
+  },
+  "401910030": {
+   "league": "NBA",
+   "title": "Heat 123–113 Thunder",
+   "start": 1795388400000,
+   "sources": "feeds",
+   "videos": []
   }
  },
  "clubs": {
@@ -1035,7 +1048,8 @@
   "nfl:7": "UCDGdBexlDZA8T7hnweWWyow",
   "nfl:13": "",
   "nfl:19": "UCk2FqoG8dN5EAz5WU3A0D7A",
-  "nfl:30": "UCsGacW6z0GedR-Wv45SBRZg"
+  "nfl:30": "UCsGacW6z0GedR-Wv45SBRZg",
+  "nba:14": "UC8bZbiKoPNRi3taABIaFeBw"
  },
  "club": {
   "360": [
