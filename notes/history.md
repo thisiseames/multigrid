@@ -421,5 +421,5 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 
 ## Nov 23 — Football shape
 - New per-link **Football** toggle (pitch icon in the tile strip, the stream menu, and each remote card): a 16:9 broadcast frame that fills the tile with no black bars. It is separate from Cinema; turning one on turns the other off.
-- On a normal 16:9 grid tile it fits exactly. On a taller 4:3/maximized tile it fills by trimming the outer edges (a 16:9 picture cannot fill a narrower tile without either bars or cropping). It does not change the tile’s grid cell.
-- Verified on an 800×600 maximized tile: frame 800×574, inner 1020×574 (covers, no bars), `multigrid.football.v1` set; the remote pill read Football on and cleared it again. 373 tests.
+- It **fits** the whole broadcast: the tile body becomes a 16:9 box and the picture is never trimmed. On a normal 16:9 grid tile that fills exactly; on a taller 4:3/maximized screen the black stays outside the 16:9 body. Cinema is still the fill/crop mode.
+- Verified on an 800×600 maximized tile: body and picture 800×450 (1.778), `cropped: false`, `multigrid.football.v1` set; the remote pill read Football on and cleared it again. 373 tests.

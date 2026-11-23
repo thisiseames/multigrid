@@ -334,11 +334,18 @@ class TileView {
     if (!this.cropInner) return;
     const film = getCinema(this.tile.input);
     const football = getFootball(this.tile.input);
-    const shape = football || film;
-    this.root.classList.toggle('is-cinema', Boolean(shape));
+    this.root.classList.toggle('is-football', Boolean(football));
+    this.root.classList.toggle('is-cinema', Boolean(film || football));
     this.cinemaButton?.classList.toggle('is-on', Boolean(film));
     this.footballButton?.classList.toggle('is-on', Boolean(football));
-    if (!shape) {
+    if (football) {
+      // Football fits the whole 16:9 broadcast; the tile body is the 16:9 box.
+      Object.assign(this.cropInner.style, { left: '0', top: '0', width: '100%', height: '100%' });
+      this.root.classList.remove('is-cropped');
+      this.cropButton?.classList.remove('is-on');
+      return;
+    }
+    if (!film) {
       this.applyCrop(getCrop(this.tile.input));
       return;
     }

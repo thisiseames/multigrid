@@ -419,6 +419,8 @@ body.is-phone .note-area { font-size: 16px; }
 .strip-actions button.is-on { color: var(--text); }
 
 .tile-body { flex: 1; min-height: 0; position: relative; background: #000; }
+/* Football: a true 16:9 tile body, so a 4:3 window gets black around the tile instead of bars across the broadcast. */
+.tile.is-football .tile-body { flex: none; width: 100%; height: auto; aspect-ratio: 16 / 9; margin: auto 0; }
 .tile-body iframe, .tile-body video, .player-fill, .player-fill iframe {
   position: absolute;
   inset: 0;
