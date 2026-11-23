@@ -3556,3 +3556,8 @@ body.is-phone #source-continue, body.is-phone #source-favorites { order: 4; }
 body.is-phone #source-form > :not(.addp-head):not(.addp-actions):not(.addp-top):not(#source-message):not(#source-continue):not(#source-favorites) { order: 5; }
 body.is-phone #ppv-find { order: 0; }
 body.is-phone #file-zone { order: 1; }
+/* A replay playing in the phone's X-Ray sheet. */
+.xr-player { flex: none; margin: 12px 16px 0; border-radius: 12px; overflow: hidden; background: #000; }
+.xr-player video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.xr-player-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 6px 8px 12px; background: #141416; }
+.xr-player-bar b { min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f5f5f7; }

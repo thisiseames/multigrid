@@ -2785,6 +2785,7 @@ function openXRay(id) {
 }
 
 function closeXRay() {
+  document.querySelector('#xray-box .xr-player')?.dispatchEvent(new Event('replay-done'));
   xr.id = null;
   clearInterval(xr.timer);
   $('xray').hidden = true;
@@ -2812,7 +2813,8 @@ async function drawXRay() {
   if (xr.id !== id) return;
   const scroll = holder.querySelector('.xr-body')?.scrollTop ?? 0;
   const fresh = el('div', { class: 'xr-body' }, ...(parts.length ? parts : [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${name} yet.` })]));
-  holder.replaceChildren(head, fresh);
+  // A replay playing in the sheet (phone) stays put while the rest refreshes.
+  holder.replaceChildren(...[head, holder.querySelector('.xr-player'), fresh].filter(Boolean));
   fresh.scrollTop = scroll;
 }
 
@@ -2897,6 +2899,8 @@ async function xrayGame(tile, name) {
 
 /** A replay plays in a tile of its own beside the game, with the sound; it closes itself at the end. */
 function playReplay(gameId, clip) {
+  // On the phone the replay plays right in the X-Ray sheet, so you never leave it.
+  if (onPhoneScreen()) { playReplayInSheet(clip); return; }
   if (xr.replay) endReplay();
   const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.id, Boolean(tile.muted)]));
   const id = addStream(clip.url, { mode: 'add' }, clip.title);
@@ -2925,6 +2929,34 @@ function playReplay(gameId, clip) {
     video.addEventListener('error', () => { if (xr.replay?.id === id) { endReplay(); toast("That replay couldn't play."); } }, { once: true });
   };
   hook();
+}
+
+function playReplayInSheet(clip) {
+  const holder = xrayHolder();
+  holder.querySelector('.xr-player')?.dispatchEvent(new Event('replay-done'));
+  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.id, Boolean(tile.muted)]));
+  for (const tile of muteableTiles()) if (!tile.muted) { tile.muted = true; grid.viewFor(tile.id)?.setMuted(true); }
+  const video = el('video', { src: clip.url, autoplay: true, playsInline: true, controls: true, poster: clip.thumb || '' });
+  const player = el('div', { class: 'xr-player' }, video,
+    el('div', { class: 'xr-player-bar' }, el('b', { textContent: clip.title }), iconButton('close', 'Close replay', () => player.dispatchEvent(new Event('replay-done')))));
+  let done = false;
+  player.addEventListener('replay-done', () => {
+    if (done) return;
+    done = true;
+    video.pause();
+    player.remove();
+    for (const tile of ws.tiles.filter(isStream)) {
+      if (!(tile.id in mutes) || tile.muted === mutes[tile.id]) continue;
+      tile.muted = mutes[tile.id];
+      grid.viewFor(tile.id)?.setMuted(tile.muted);
+    }
+    commit();
+  });
+  video.addEventListener('ended', () => player.dispatchEvent(new Event('replay-done')), { once: true });
+  video.addEventListener('error', () => { player.dispatchEvent(new Event('replay-done')); toast("That replay couldn't play."); }, { once: true });
+  holder.querySelector('.xr-head')?.after(player);
+  holder.querySelector('.xr-body')?.scrollTo({ top: 0 });
+  video.play().catch(() => {});
 }
 
 function endReplay() {
