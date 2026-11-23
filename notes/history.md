@@ -425,3 +425,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - One right column at a time: opening Desk hides Game mode, X-Ray and Event Room; opening X-Ray or Event Room, or turning Game mode on, closes Desk; closing Desk restores the column. A Twitch tile is never covered.
 - `index.html` shell, `src/app.js` Desk controller, `styles.css`, `notes/plans/desk.md`. No new source, job, key, account or service; $0.
 - Verified locally at 1440, 1280 and 390 with four streams and a Twitch tile: all five panels, top-bar routing, drag 380→480 and reload restore, normal Today/Search after closing, Game mode handoff, and no Twitch overlap. At 390 Desk is hidden and Today still opens as a sheet. Verified live on multigrid.club at 1440 and 390. 373 tests.
+- Nov 23: Phone top bar: the Home/Streams icon is 24 px, matching Search, Today, Sound and Stream (was 21 px).

@@ -1924,7 +1924,7 @@ body.remote-open { overflow: hidden; }
   #sports-button, #more-button { display: none !important; }
   #today-button { display: inline-flex !important; width: 44px; height: 44px; padding: 0; border-radius: 12px; }
   body.is-phone #home-button { display: inline-flex !important; flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 12px; }
-  body.is-phone #home-button svg { width: 21px; height: 21px; }
+  body.is-phone #home-button svg { width: 24px; height: 24px; }
   #today-button { order: 2; } #mixer-button { order: 3; } .topbar .add-button { order: 4; }
   #today-button svg { width: 21px; height: 21px; }
   #today-button .wide-only { display: none; }
