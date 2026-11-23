@@ -37,5 +37,10 @@ if (!source?.ok) {
     player.start();
     // Closing the window keeps the place, so the tile picks up from there.
     window.addEventListener('pagehide', () => player.destroy());
+    // A stream in the floating grid is given or loses the sound by MULTIGRID, without restarting.
+    window.addEventListener('message', (event) => {
+      if (event.origin !== location.origin || event.data?.type !== 'mg-mute') return;
+      player.setMuted?.(Boolean(event.data.muted));
+    });
   }
 }

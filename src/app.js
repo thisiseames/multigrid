@@ -40,7 +40,7 @@ import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
 import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint } from './resume.js';
-import { isPoppedOut } from './popout.js';
+import { bringBack as bringBackPopOut, canPopOutGrid, isGridPoppedOut, isPoppedOut, popOutGrid } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
@@ -2709,6 +2709,33 @@ $('grid').addEventListener('pointerdown', (event) => {
   if (Date.now() >= rz.pausedUntil) toast('RedZone paused for 5 minutes while you choose.');
   rz.pausedUntil = Date.now() + PAUSE_MS;
 }, true);
+
+/* Pop out grid (laptop Chrome): the whole grid floats in an always-on-top window, laid out the
+   same. A stream's corner speaker gives it the sound. Files, notes, box scores and Reader stories
+   stay on the page (only this page can play a file). */
+const GRID_POP_SKIP = new Set(['file', 'playlist', 'note', 'boxscore', 'reader']);
+function popOutWholeGrid() {
+  if (isGridPoppedOut()) { bringBackPopOut(); return; }
+  const tracks = (list) => list.map((size) => `minmax(0, ${size}fr)`).join(' ');
+  const tiles = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile))
+    .map((tile) => ({ tile, view: grid.viewFor(tile.id) }))
+    .filter(({ tile, view }) => view?.source?.ok && !GRID_POP_SKIP.has(parseSource(tile.input).kind))
+    .map(({ tile, view }) => ({
+      view, name: labelOf(tile), muted: Boolean(tile.muted), volume: tile.volume ?? 100,
+      area: `${tile.place.r + 1} / ${tile.place.c + 1} / span ${tile.place.rs} / span ${tile.place.cs}`,
+    }));
+  if (!tiles.length) { toast('Nothing here can float: files, notes and box scores stay on the page.'); return; }
+  popOutGrid(tiles, {
+    cols: tracks(ws.cols),
+    rows: tracks(ws.rows),
+    onSound(id) {
+      for (const tile of ws.tiles) if (isStream(tile)) tile.muted = tile.id !== id;
+      saveCurrent(ws);
+    },
+    onClosed() { commit(); },
+  }).then(() => { if (tiles.length > 4) toast('Floating grid: drag its corner to make it bigger. It works best with up to 4 streams.'); })
+    .catch(() => toast("Couldn't pop the grid out. Try again."));
+}
 
 /* Game mode: live scores beside the grid, on the laptop in a column of its own (so it never
    covers a stream) and on a phone in the bottom ticker. Only on when switched on. */
@@ -10427,6 +10454,7 @@ function buildMoreMenu() {
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
+    !onPhoneScreen() && canPopOutGrid() && streamCount(ws) ? row(isGridPoppedOut() ? 'Bring grid back' : 'Pop out grid', 'popout', then(popOutWholeGrid)) : null,
     row(audible ? 'Mute all' : 'Unmute all', audible ? 'muted' : 'sound', () => { muteAll(); buildMoreMenu(); }),
     canFullscreen ? el('div', { class: 'more-sep' }) : null,
     canFullscreen ? row(fullscreen.element() ? 'Exit fullscreen' : 'Fullscreen', 'expand', then(() => {
