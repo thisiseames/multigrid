@@ -3696,3 +3696,17 @@ body.is-phone .roombar { display: none; }
 
 /* Saved rooms carry a small marker in the saved layouts list. */
 .saved-room { display: inline-block; margin-right: 6px; padding: 1px 5px; border-radius: 4px; background: #f5f5f7; color: #0b0b0d; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; vertical-align: 1px; }
+
+/* X-Ray: real JustWatch neighbours for the show you're watching. */
+.xr-similar-reason { margin: -8px 0 10px; font-size: 12px; line-height: 1.4; color: var(--text-2); }
+.xr-similar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.xr-similar-row { width: 100%; display: flex; align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); text-align: left; font-family: inherit; cursor: pointer; }
+.xr-similar-row:hover, .xr-similar-row:focus-visible { background: var(--hover); }
+.xr-similar-row:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #f5f5f7; }
+.xr-similar-art { flex: none; width: 72px; height: 42px; object-fit: cover; border-radius: 6px; background: #141417; }
+.xr-similar-art.is-empty { display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+.xr-similar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.xr-similar-text b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 650; }
+.xr-similar-text small { font-size: 11px; color: var(--text-2); }
+.xr-similar-text .score { margin-top: 2px; }
+.xr-similar-open { flex: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--text-2); }

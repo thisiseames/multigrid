@@ -63,6 +63,7 @@ import { BANNER_PARTS, bannerShows, homeLayout, loadHomeLayout, moveRow as moveH
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
+import { similarFor } from './similar.js';
 import { searchLiveSources } from './live-search.js';
 import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
@@ -2998,6 +2999,45 @@ async function retuneRoom({ silent = false } = {}) {
 
 const xrSection = (title, ...body) => el('section', { class: 'xr-section' }, el('h3', { class: 'xr-h', textContent: title }), ...body.filter(Boolean));
 
+/** A JustWatch neighbour as a compact X-Ray row. */
+function similarRow(item) {
+  const atlantic = atlanticTarget(item.title, listFavorites());
+  return el('li', {}, el('button', {
+    type: 'button',
+    class: 'xr-similar-row',
+    title: atlantic?.label || 'Open in Atlantic',
+    on: { click: () => { if (atlantic) openLink(atlantic.url); } },
+  },
+  item.image
+    ? el('img', {
+      class: 'xr-similar-art', src: item.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer',
+      on: { error(event) { event.currentTarget.replaceWith(el('span', { class: 'xr-similar-art is-empty' }, icon('film', 16))); } },
+    })
+    : el('span', { class: 'xr-similar-art is-empty' }, icon('film', 16)),
+  el('span', { class: 'xr-similar-text' },
+    el('b', { textContent: item.title }),
+    el('small', { textContent: [item.year || '', item.kind === 'film' ? 'Film' : 'Series'].filter(Boolean).join(' · ') }),
+    scoreChip(item)),
+  el('span', { class: 'xr-similar-open' }, icon('open', 13), el('span', { textContent: 'Atlantic' }))));
+}
+
+/** Hidden until JustWatch answers, so a missing extension never leaves a gap. */
+function similarSection(tile, title) {
+  const list = el('ul', { class: 'xr-similar-list' });
+  const section = el('section', { class: 'xr-section', style: 'display:none' },
+    el('h3', { class: 'xr-h', textContent: 'More like this' }),
+    el('p', { class: 'xr-similar-reason', textContent: `Because you're watching ${title}` }),
+    list);
+  const show = (items) => {
+    if (!items?.length || xr.id !== tile.id) return;
+    if (!section.isConnected) { setTimeout(() => show(items), 30); return; }
+    list.replaceChildren(...items.map(similarRow));
+    section.style.display = '';
+  };
+  similarFor({ title, kind: 'show' }).then(show).catch(() => {});
+  return section;
+}
+
 async function drawXRay() {
   const id = xr.id;
   const tile = tileById(id);
@@ -3053,6 +3093,7 @@ async function xrayShow(tile, name, source) {
   // Scores: IMDb (from scores/) with its vote count, and Rotten Tomatoes when the Top 10 has it.
   const scores = xrayScores(title, await imdbScore(title, { kind: listing && !show ? '' : 'show' }).catch(() => null));
   if (scores) parts.push(scores);
+  if (show && !listing) parts.push(similarSection(tile, show.name));
   const story = listing?.current?.about || show?.summary || '';
   if (episode && show) {
     const [now, before] = await Promise.all([
