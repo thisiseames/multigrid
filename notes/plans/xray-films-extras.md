@@ -1,4 +1,4 @@
-# X-Ray for films + "tap any face" + Extras — plan (owner said "go" Nov 23; building)
+# X-Ray for films + "tap any face" + Extras — plan — DONE, live Nov 23
 
 Any agent can pick this up: do the steps in order, tick each box, commit after each step
 (see the push loop in notes/history.md / the Dock plan). Rules: notes/owner-rules.md.
@@ -46,7 +46,7 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - [x] 4. YouTube extras play like Replays: laptop tile with an end/err hook through the YouTube player's state; phone in-sheet YouTube player.
 - [x] 5. tools/build-extras.mjs → extras.json (titles from top10/charts/movies/setup-data; checked YouTube clips; weekly re-search cache). Add to guide.yml. Tests for the clip checks.
 - [x] 6. Extras row in X-Ray (shows + films), falling back to the Wikidata trailer.
-- [ ] 7. Look check at 1280 + 390 (both themes, no periwinkle, nothing over a Twitch tile), push, verify live, history.md entry, owner-rules job-owned list += extras.json.
+- [x] 7. Look check at 1280 + 390 (both themes, no periwinkle, nothing over a Twitch tile), push, verify live, history.md entry, owner-rules job-owned list += extras.json.
 
 ## Gotchas found while building
 - Wikidata queries need a fixed User-Agent from Node (a random one got an HTML error page). Browsers send their own; fine.
@@ -65,3 +65,8 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - Clip rules (tools/extras-pick.mjs): the whole name as a phrase; one-word names need the service named, or a verified channel writing "Name | …"/"Name — …"; shows never take "movie"/"(2020)" clips; foreign-language copies and keyword-stuffed titles are dropped; this season's trailer beats other versions; re-uploads (same first two "|" parts) count once.
 - A title whose searches mostly came back empty is not saved, so it's tried again next run instead of waiting a week.
 - Wikipedia's action API (intros, posters) answers 429 to this cloud test machine's shared address after many requests; the app retries once after 1.5 s and never caches a failure. Live check of Known for may need a quiet period.
+
+## Verified live (multigrid.club, Nov 23, 1280 + 390)
+- Dune: Part Two X-Ray: poster, 2024 · 2 hr 45 min · Action · Adventure, director, story, IMDb 8.4, trailer, cast. Zendaya → her page; Challengers → Play added atlantic.bz/movie/937287; back arrow; Black Doves → Keira Knightley's page. Phone: Play closes the sheet; trailer plays in the sheet.
+- First job run on GitHub: 25 titles, 93 clips, 5 min; Black Doves' Extras live at both widths.
+- Not seen live from the test machine: Known for ranked by the Wikipedia intro (Wikipedia's API rate-limits this machine's address; same code verified locally with real answers). Real YouTube playback/ending (YouTube won't play here; wiring tested with stand-ins).
