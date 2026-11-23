@@ -414,3 +414,7 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 ## Nov 23 — Cinema on the remote
 - Every phone remote card now has **Cinema**. It toggles the same per-link Cinema shape (2.39:1) as the laptop’s film button; the pill changes to **Cinema on** and back, and the laptop tile gets `is-cinema`. Crop remains laptop-only.
 - Verified over a real phone-to-laptop remote connection: Cinema wrote `https://example.com/a: 2.39` to `multigrid.cinema.v1`, the laptop tile gained `is-cinema`, the remote showed Cinema on, and tapping again cleared both. 373 tests.
+
+## Nov 23 — Surf on the remote
+- Remote cards now show **Prev channel / Next channel** when that stream has at least two favorites to surf. It calls the same `surfChannels` as the laptop: it stays in the tile’s folder (or uses all favorites when unfiled), replaces the stream in place, and updates the card’s label.
+- Verified over a real phone-to-laptop remote connection with Alpha/Beta in News and Gamma in Sports: Next changed Alpha to Beta on both the laptop and the remote; Prev returned to Alpha. 373 tests.

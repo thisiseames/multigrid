@@ -11728,6 +11728,13 @@ var bigTileId = null; // eslint-disable-line no-var
 
 /** Everything the remote needs to draw: the streams, the switches and the favorites. */
 function remoteState() {
+  const favoriteList = listFavorites().filter((item) => !isPodcastShowInput(item.input)).sort(byName);
+  const surfPool = (tile) => {
+    const current = favoriteList.find((item) => item.input === tile.input);
+    return current?.group
+      ? favoriteList.filter((item) => item.group && item.group.toLocaleLowerCase() === current.group.toLocaleLowerCase())
+      : favoriteList;
+  };
   return {
     v: 1,
     tiles: ws.tiles.filter((tile) => isVisible(tile) && isStream(tile)).map((tile) => {
@@ -11747,15 +11754,14 @@ function remoteState() {
         primary: Boolean(tile.primary),
         pipSwap: Boolean(pipOther(tile.id)),
         cinema: Boolean(getCinema(tile.input)),
+        surfable: surfPool(tile).length > 1,
       };
     }),
     oneSound: isOneSound(),
     ticker: isTickerOn(),
     layout: ws.presetId,
     full: streamCount(ws) >= MAX_STREAMS,
-    favorites: listFavorites()
-      .filter((item) => !isPodcastShowInput(item.input))
-      .map(({ input, name, group }) => ({ input, name, group })),
+    favorites: favoriteList.map(({ input, name, group }) => ({ input, name, group })),
   };
 }
 
@@ -11813,6 +11819,12 @@ function remoteCommand(cmd) {
     case 'cinema':
       if (tile && Boolean(cmd.value) !== Boolean(getCinema(tile.input))) {
         grid.viewFor(tile.id)?.toggleCinema();
+        remoteSync();
+      }
+      break;
+    case 'surf':
+      if (tile && (cmd.step === 1 || cmd.step === -1)) {
+        surfChannels(cmd.step, tile.id);
         remoteSync();
       }
       break;
@@ -12188,6 +12200,9 @@ function remoteTileCard(tile) {
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
       tile.pipSwap ? el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'swapPip', id: tile.id }) } }, icon('pip'), 'Swap screens') : null,
       el('button', { type: 'button', class: `rm-pill${tile.cinema ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.cinema)) }, on: { click: () => remoteSend({ type: 'cinema', id: tile.id, value: !tile.cinema }) } }, icon('film'), tile.cinema ? 'Cinema on' : 'Cinema'),
+      tile.surfable ? el('span', { class: 'rm-surf-pair' },
+        el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'surf', id: tile.id, step: -1 }) } }, icon('back'), 'Prev channel'),
+        el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'surf', id: tile.id, step: 1 }) } }, icon('next'), 'Next channel')) : null,
       el('button', { type: 'button', class: 'rm-pill', on: { click() { remoteSend({ type: 'reload', id: tile.id }); toast(`Reloading ${tile.label}.`); } } }, icon('reload'), 'Reload'),
       el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
