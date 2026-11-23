@@ -2670,8 +2670,8 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hcard-text small { font-size: 12.5px; color: rgba(255, 255, 255, .6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Phone home: the same rows, sized for a phone and the bottom tabs. */
-body.is-phone .home-hero { height: min(52vh, 460px); min-height: 300px; }
-body.is-phone .hero-info { left: 18px; right: 18px; bottom: 78px; width: auto; gap: 7px; }
+body.is-phone .home-hero { height: min(36vh, 320px); min-height: 230px; }
+body.is-phone .hero-info { left: 16px; right: 16px; bottom: 52px; width: auto; gap: 6px; }
 body.is-phone .hero-label { font-size: 10.5px; }
 body.is-phone .hero-title { font-size: clamp(28px, 8vw, 38px); }
 body.is-phone .hero-meta { font-size: 12.5px; }

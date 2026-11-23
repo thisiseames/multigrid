@@ -398,5 +398,5 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 
 ## Nov 23 — Home on the phone
 - The phone top bar now has a **Home/Streams** icon (44 px) that opens the same home screen as the laptop: Continue watching, The Multigrid Ten, Top 10 and Trending, with the billboard and rows. An empty phone still starts on the wall/splash; Home is available whenever they want it. The desktop Home/Streams behaviour is unchanged.
-- Phone layout: shorter billboard (52vh, min 300), 16 px gutters, 44vw cards capped at 190, smaller rank numbers and copy; the Sound button narrowed to 48 px so the 44 px Home button fits at 390 without overflow.
-- Verified at 390 with a stream and Continue watching: Home icon 44×44, home opened with the billboard and four rows (31 cards), no horizontal overflow, Streams returned to the grid. 373 tests.
+- Phone layout: shorter billboard (36vh, max 320, min 230), 16 px gutters, 44vw cards capped at 190, smaller rank numbers and copy; the Sound button narrowed to 48 px so the 44 px Home button fits at 390 without overflow.
+- Verified at 390 with a stream and Continue watching: Home icon 44×44, home opened with the four rows and 31 cards, no horizontal overflow, Streams returned to the grid. The banner is 304 px on 390×844 and 240 px on 390×667; the title and Resume fit inside both. 373 tests.
