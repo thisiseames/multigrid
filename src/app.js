@@ -4,7 +4,7 @@
 
 import {
   MAX_STREAMS, PRESETS, applyPreset, primaryTile, emptyWorkspace, enterCustom, fitToStreams, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
-  phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles,
+  phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles, visualOrder,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
@@ -62,6 +62,7 @@ import { linkLabel, nextName, tidyIssues } from './tidy.js';
 import { BANNER_PARTS, bannerShows, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
+import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
 import { searchLiveSources } from './live-search.js';
 import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
@@ -101,6 +102,8 @@ const STARTERS = [
 ];
 
 let ws = loadCurrent();
+let roomReturn = null;
+let roomToken = 0;
 let homeOpen = false;
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
@@ -345,6 +348,7 @@ function buildStreamMenu(id) {
     ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     bigButton('help', 'X-Ray', then(() => openXRay(id))),
+    bigButton('calendar', 'Event Room', then(() => openEventRoom(id))),
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
@@ -1755,6 +1759,13 @@ function openPalette(options = {}) {
         || favoriteName(tile.input) || tile.title || labelOf(tile);
       const linked = linkedGameNow();
       if (linked) {
+        repairItems.push({
+          group: 'This game',
+          label: 'Event Room',
+          sub: `Every feed for ${linked.label}`,
+          icon: 'calendar',
+          run: () => closeAnd(() => openEventRoom(repair.id)),
+        });
         const resolved = resolveGameSources(linked, { favorites: listFavorites(), catalog, zlive });
         const exactKey = channelKey(currentName);
         const family = channelFamily(currentName);
@@ -2366,10 +2377,10 @@ function render() {
 
   const custom = ws.presetId === 'custom';
   const preset = presetById(ws.presetId) ?? presetById('equal');
-  $('layout-name').textContent = custom ? 'Custom' : preset.name;
+  $('layout-name').textContent = ws.room ? 'Event Room' : custom ? 'Custom' : preset.name;
   const current = ws.started ? currentDiagram() : presetDiagram(preset);
   $('layout-icon').replaceChildren(layoutDiagram(grid.isStacked ? PHONE_STACK : current, 18, 13));
-  $('layout-button').title = 'Choose a layout';
+  $('layout-button').title = ws.room ? 'Event Room' : 'Choose a layout';
 
   const homeButton = $('home-button');
   const hasStreams = streamCount(ws) > 0;
@@ -2390,6 +2401,7 @@ function render() {
   if (hidden === 0 && !$('hidden-menu').hidden) closePopovers();
 
   renderSound();
+  paintRoom();
 }
 
 function currentDiagram() {
@@ -2784,6 +2796,7 @@ function openXRay(id) {
   if (onPhoneScreen()) { if (!holder.open) openDialog(holder); } else {
     holder.hidden = false;
     $('gamebar').hidden = true;
+    $('roombar').hidden = true;
   }
   drawXRay();
   // A live game keeps its score and clips current while X-Ray is open.
@@ -2799,9 +2812,188 @@ function closeXRay() {
   $('xray').replaceChildren();
   const box = document.getElementById('xray-box');
   if (box?.open) box.close();
-  // Game mode comes back if it's on.
+  // The room keeps the column when it is open; otherwise Game mode comes back.
+  if (ws.room && !onPhoneScreen()) {
+    $('gamebar').hidden = true;
+    paintRoom();
+    return;
+  }
   $('gamebar').hidden = !(isGameOn() && !onPhoneScreen());
   if (!$('gamebar').hidden) { drawGamebar(); refreshGames(); }
+}
+
+/* ---------- Event Rooms ---------- */
+
+const roomFeeds = () => visualOrder(ws).filter((tile) => tile.input && isStream(tile));
+
+function roomFeedLive(tile) {
+  if (!tile) return false;
+  const match = tile.event ? tileMatch(tile) : null;
+  if (match) return match.state === 'in';
+  return Boolean(nowAndNext(labelOf(tile), parseSource(tile.input))?.current?.live);
+}
+
+function roomEventMeta(room) {
+  if (room.notLive) return 'Not live · saved feeds';
+  if (room.kind === 'game') {
+    const match = espnMatchFor({ label: room.label, starts: room.starts });
+    if (match) {
+      const score = `${match.home.abbreviation || match.home.name} ${match.home.score}–${match.away.score} ${match.away.abbreviation || match.away.name}`;
+      return [score, match.state === 'in' ? shortClock(match.detail) || match.detail : match.detail].filter(Boolean).join(' · ');
+    }
+    if (room.starts > Date.now()) return `Starts ${clock(room.starts)}`;
+    return room.starts && Date.now() - room.starts > 4 * 3600000 ? 'Ended' : 'Live';
+  }
+  if (room.starts > Date.now()) return `Starts ${clock(room.starts)}`;
+  if (room.ends > Date.now()) return `On now · until ${clock(room.ends)}`;
+  return 'Ended';
+}
+
+function paintRoom() {
+  const bar = $('roombar');
+  const room = ws.room;
+  if (!bar) return;
+  if (!room || onPhoneScreen() || xr.id) { bar.hidden = true; return; }
+  const feeds = roomFeeds();
+  const main = feeds.find((tile) => tile.primary) || feeds[0] || null;
+  const head = el('div', { class: 'gamebar-head roombar-head' },
+    el('span', { class: 'gamebar-title', textContent: 'Event Room' }),
+    iconButton('close', 'Close Event Room', () => exitRoom()));
+  const body = el('div', { class: 'roombar-body' },
+    el('div', { class: 'room-event' },
+      el('p', { class: 'room-kicker', textContent: room.kind === 'game' ? 'Game' : room.starts > Date.now() ? 'Next' : 'On now' }),
+      el('h2', { class: 'room-title', textContent: room.label }),
+      el('p', { class: 'room-meta', textContent: roomEventMeta(room) }),
+      el('p', { class: 'room-count', textContent: `${feeds.length} ${feeds.length === 1 ? 'feed' : 'feeds'}${main ? ` · Main: ${labelOf(main)}` : ''}` })),
+    el('ul', { class: 'room-feeds' }, ...feeds.map((tile) => {
+      const active = main?.id === tile.id;
+      return el('li', {}, el('button', {
+        type: 'button',
+        class: `room-feed${active ? ' is-main' : ''}`,
+        title: `Make ${labelOf(tile)} main`,
+        on: { click: () => roomMain(tile.id) },
+      },
+      el('span', { class: `room-dot${roomFeedLive(tile) ? ' is-live' : ''}`, aria: { hidden: 'true' } }),
+      el('span', { class: 'room-feed-text' },
+        el('b', { textContent: labelOf(tile) }),
+        el('small', { textContent: active ? 'Main · Sound' : tile.muted ? 'Muted' : 'Sound' })),
+      active ? icon('crown', 14) : !tile.muted ? icon('sound', 14) : null));
+    })),
+    el('div', { class: 'room-actions' },
+      el('button', { type: 'button', class: 'room-action', on: { click: () => retuneRoom() } }, icon('refresh', 14), el('span', { textContent: 'Re-tune' })),
+      el('button', {
+        type: 'button', class: 'room-action', disabled: feeds.length >= 4,
+        title: feeds.length >= 4 ? 'A room holds four feeds' : 'Add a feed',
+        on: { click: () => addRoomFeed() },
+      }, icon('plus', 14), el('span', { textContent: 'Add feed' })),
+      el('button', { type: 'button', class: 'room-action is-quiet', on: { click: () => exitRoom() } }, icon('back', 14), el('span', { textContent: 'Exit room' }))),
+    el('p', { class: 'room-note', textContent: room.notLive ? 'The event is not live. These are the saved feeds.' : 'Click a feed to make it main and give it the sound.' }));
+  bar.replaceChildren(head, body);
+  bar.hidden = false;
+  $('gamebar').hidden = true;
+  $('xray').hidden = true;
+}
+
+function roomMain(id) {
+  const tile = tileById(id);
+  if (!tile || !isStream(tile)) return;
+  setPrimary(ws, id);
+  for (const other of roomFeeds()) {
+    const muted = other.id !== id;
+    if (other.muted === muted) continue;
+    other.muted = muted;
+    const view = grid.viewFor(other.id);
+    view?.setMuted(muted);
+    view?.syncControls();
+  }
+  mutePodcastForStream();
+  commit();
+  saveRoomNow();
+}
+
+function addRoomFeed() {
+  if (!ws.room) return;
+  if (roomFeeds().length >= 4) { toast('A room holds four feeds.'); return; }
+  closePopovers();
+  openSourceDialog({ mode: 'add' });
+}
+
+function saveRoomNow() {
+  const room = ws.room;
+  if (!room) return false;
+  const existing = listSaved().find((item) => item.workspace.room?.key === room.key);
+  return saveNamed(existing?.name || roomName(room), fitToStreams(ws));
+}
+
+async function openEventRoom(id) {
+  const tile = tileById(id);
+  if (!tile) return;
+  const input = tile.input;
+  const token = ++roomToken;
+  closePopovers();
+  const data = await loadGameData().catch(() => null);
+  if (!data) { toast("Couldn't read the feeds right now."); return; }
+  const current = tileById(id);
+  if (token !== roomToken || !current || current.input !== input) return;
+  const name = favoriteName(current.input) || current.title || labelOf(current);
+  const room = roomForTile({
+    name, input: current.input, title: current.title || '', event: current.event,
+    tiles: ws.tiles, favorites: listFavorites(), data,
+  });
+  if (!room) {
+    toast('No other feeds found for this event. Add another feed to the wall, then try again.');
+    return;
+  }
+  if (xr.id) closeXRay();
+  roomReturn = JSON.parse(JSON.stringify(ws));
+  ws = workspaceForRoom(room);
+  commit();
+  const saved = saveRoomNow();
+  toast(saved ? 'Event Room opened.' : "Event Room opened, but this browser couldn't save it.", { label: 'Undo', run() { exitRoom(); } });
+}
+
+function exitRoom() {
+  if (!ws.room) return;
+  roomToken += 1;
+  const back = roomReturn;
+  roomReturn = null;
+  if (back) ws = back;
+  else delete ws.room;
+  commit();
+  toast(back ? 'Back to your wall.' : 'Room closed.');
+}
+
+async function retuneRoom({ silent = false } = {}) {
+  const room = ws.room;
+  if (!room) return;
+  const token = ++roomToken;
+  const data = await loadGameData().catch(() => null);
+  if (!data) { if (!silent) toast("Couldn't read the feeds right now."); return; }
+  if (token !== roomToken || !ws.room || ws.room.key !== room.key) return;
+  const mainInput = (roomFeeds().find((tile) => tile.primary) || roomFeeds()[0])?.input || '';
+  let next = null;
+  if (room.kind === 'game') {
+    const game = data.games.find((item) => item.key === room.key)
+      || data.games.find((item) => sameGame(item, { label: room.label, starts: room.starts }));
+    if (game) next = roomForGame(game, data, { favorites: listFavorites(), tiles: ws.tiles, mainInput });
+  } else {
+    const row = data.guide.find((item) => titleKey(item.title) === titleKey(room.label)
+      && Math.abs(Number(item.start) - Number(room.starts)) < 30 * 60000);
+    if (row) next = roomForShow(row, data, { favorites: listFavorites(), tiles: ws.tiles, mainInput });
+  }
+  if (!next) {
+    ws.room = { ...room, notLive: true };
+    commit();
+    if (!silent) toast('No live feeds found. The saved feeds stay.');
+    return;
+  }
+  const previousPreset = ws.presetId;
+  const previousReturn = roomReturn;
+  ws = workspaceForRoom(next, { presetId: previousPreset });
+  roomReturn = previousReturn;
+  commit();
+  saveRoomNow();
+  if (!silent) toast(`Room updated · ${next.label}`);
 }
 
 const xrSection = (title, ...body) => el('section', { class: 'xr-section' }, el('h3', { class: 'xr-h', textContent: title }), ...body.filter(Boolean));
@@ -3512,7 +3704,7 @@ async function refreshGames() {
 }
 
 function syncGameMode() {
-  const column = isGameOn() && !onPhoneScreen();
+  const column = isGameOn() && !onPhoneScreen() && !ws.room;
   if (column === !$('gamebar').hidden) return;
   $('gamebar').hidden = !column;
   clearTimeout(gameTimer);
@@ -3675,6 +3867,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   }
   ws.started = true;
   commit();
+  if (ws.room) saveRoomNow();
   const added = tileById(addedId);
   if (added) {
     noteRecent(input, labelOf(added));
@@ -3707,6 +3900,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
 function removeStream(id) {
   removeTile(ws, id);
   commit();
+  if (ws.room) saveRoomNow();
 }
 
 /* ---------- Channel surf ---------- */
@@ -3726,6 +3920,7 @@ let tileScoresAt = 0;
 const scoreWatchers = new Set(); // redraw these when fresh scores arrive
 scoreWatchers.add(() => grid.refreshInfo?.());
 scoreWatchers.add(() => renderPhoneBar());
+scoreWatchers.add(() => paintRoom());
 
 /** Today's ESPN games, fetched at most every 30 seconds and only when something asks. */
 function espnScores() {
@@ -10819,7 +11014,7 @@ $('hidden-button').addEventListener('click', () => togglePopover($('hidden-butto
 
 function savedSummary(item) {
   const count = item.workspace.tiles.filter((tile) => tile.input).length;
-  return `${count} ${count === 1 ? 'stream' : 'streams'}`;
+  return `${count} ${count === 1 ? 'stream' : 'streams'}${item.workspace.room ? ' · Room' : ''}`;
 }
 
 function restore(item) {
@@ -10828,12 +11023,16 @@ function restore(item) {
     toast("This saved layout couldn't be read.");
     return;
   }
+  const previous = ws;
+  roomToken += 1;
   // A layout saved with empty boxes (before saving fitted it) opens with just its streams.
   ws = fitToStreams(next);
+  roomReturn = ws.room ? JSON.parse(JSON.stringify(previous)) : null;
   closePopovers();
   // Opened from the Saved layouts tab in Add stream.
   if ($('source-dialog').open) $('source-dialog').close();
   commit();
+  if (ws.room) retuneRoom({ silent: true });
   toast(`Opened ${item.name}.`);
 }
 
@@ -10846,7 +11045,7 @@ function buildSavedRow(item) {
         class: 'saved-open',
         title: `Open ${item.name}`,
         on: { click: () => restore(item) },
-      }, el('b', { textContent: item.name }), el('small', { textContent: savedSummary(item) })),
+      }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: savedSummary(item) })),
       el('span', { class: 'row-actions' },
         iconButton('update', 'Replace with what is on screen now', () => {
           saveNamed(item.name, fitToStreams(ws));
@@ -11018,7 +11217,7 @@ function buildSavedDrop() {
         on: { click() { closePopovers(); restore(item); } },
       },
       el('span', { class: 'sdrop-shape' }, layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, 40, 26)),
-      el('span', { class: 'sdrop-text' }, el('b', { textContent: item.name }), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
+      el('span', { class: 'sdrop-text' }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
     recentGridRows(3),

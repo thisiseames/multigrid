@@ -3639,3 +3639,36 @@ body.is-phone .dock-edge, body.is-phone .dock { display: none !important; }
 .dock-ghost .fart { width: 100%; height: 100%; border-radius: 0; }
 .dock-ghost .fart img { width: 100%; height: 100%; object-fit: cover; }
 .tile.dock-target { outline: 2px solid #f5f5f7; outline-offset: -2px; }
+
+/* Event Room: the Game mode/X-Ray column becomes one event's feeds and controls. */
+.roombar { width: 360px; }
+.roombar[hidden] { display: none; }
+.roombar-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 12px 16px; }
+.room-event { padding: 2px 2px 14px; border-bottom: 1px solid var(--border); }
+.room-kicker { margin: 0 0 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); }
+.room-title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.15; letter-spacing: -.02em; color: var(--text); }
+.room-meta { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.room-count { margin: 4px 0 0; font-size: 11.5px; color: var(--text-2); }
+.room-feeds { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.room-feed { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); text-align: left; font-family: inherit; cursor: pointer; }
+.room-feed:hover, .room-feed:focus-visible { background: var(--hover); }
+.room-feed:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #f5f5f7; }
+.room-feed.is-main { border-color: rgba(255, 255, 255, .34); background: rgba(255, 255, 255, .075); }
+.room-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-2); }
+.room-dot.is-live { background: #e50914; }
+.room-feed-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.room-feed-text b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 650; }
+.room-feed-text small { font-size: 11px; color: var(--text-2); }
+.room-feed > svg { flex: none; color: var(--text-2); }
+.room-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.room-action { width: 100%; height: 36px; display: flex; align-items: center; gap: 9px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: 600 12.5px/1 var(--font); text-align: left; cursor: pointer; }
+.room-action:hover:not(:disabled), .room-action:focus-visible:not(:disabled) { background: var(--hover); }
+.room-action:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #f5f5f7; }
+.room-action:disabled { opacity: .4; cursor: default; }
+.room-action.is-quiet { color: var(--text-2); }
+.room-action svg { flex: none; }
+.room-note { margin: 10px 2px 0; font-size: 11px; line-height: 1.45; color: var(--text-2); }
+body.is-phone .roombar { display: none; }
+
+/* Saved rooms carry a small marker in the saved layouts list. */
+.saved-room { display: inline-block; margin-right: 6px; padding: 1px 5px; border-radius: 4px; background: #f5f5f7; color: #0b0b0d; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; vertical-align: 1px; }

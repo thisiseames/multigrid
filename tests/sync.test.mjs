@@ -102,3 +102,12 @@ test('Continue watching places sync, newest 100, without files or the local save
   assert.equal(kept.length, 100);
   assert.ok(kept.includes('p:yt:129') && !kept.includes('p:yt:0'));
 });
+
+test('a room marker travels with its saved workspace', () => {
+  const room = { key: 'sports:1', label: 'Liverpool vs Man Utd', kind: 'game', starts: 1000, ends: 0 };
+  const workspace = { v: 1, presetId: 'row', cols: [1, 1], rows: [1], tiles: [], room };
+  const items = itemsOf({ favorites: [], layouts: [{ name: 'Room · Liverpool vs Man Utd', savedAt: 10, workspace }] });
+  assert.deepEqual(items['l:Room · Liverpool vs Man Utd'].workspace.room, room);
+  const back = listsOf(stamp(items, {}, 20), { favorites: [], layouts: [] });
+  assert.deepEqual(back.layouts[0].workspace.room, room);
+});
