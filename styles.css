@@ -2398,6 +2398,12 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .sync-input { display: block; width: 100%; height: 48px; margin: 4px 0; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 22px; font-weight: 700; letter-spacing: .1em; text-align: center; text-transform: uppercase; }
 .sync-box .dialog-actions { flex-wrap: wrap; align-items: center; }
 .sync-box .dialog-actions .add-button, .sync-box .dialog-actions .plain-button { width: auto; height: 40px; padding: 0 16px; margin: 0; white-space: nowrap; }
+.football-shape-box { width: min(430px, calc(100vw - 24px)); }
+.football-shapes { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.football-shape { height: 40px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--text); font-size: 13px; font-weight: 600; }
+.football-shape:hover { background: var(--hover); }
+.football-shape.is-on { background: #f5f5f7; color: #0b0b0d; border-color: #f5f5f7; }
+@media (hover: none) { .football-shape { min-height: 44px; } }
 .sync-social { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
 .sync-social input { flex: none; width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--text); }
 .sync-social span { display: flex; flex-direction: column; gap: 2px; }

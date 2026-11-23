@@ -10,7 +10,7 @@ import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
 import { castWay, startCast, watchAirPlay } from './cast.js';
-import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop, wholePicture } from './crop.js';
+import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, getFootballShape, setCinema, setCrop, wholePicture } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
@@ -332,10 +332,19 @@ class TileView {
   /** Cinema if it's on for this stream, otherwise any crop. */
   applyFraming() {
     if (!this.cropInner) return;
-    const shape = getCinema(this.tile.input);
-    this.root.classList.toggle('is-cinema', Boolean(shape));
-    this.cinemaButton?.classList.toggle('is-on', Boolean(shape));
-    if (!shape) {
+    const film = getCinema(this.tile.input);
+    const football = getFootballShape(this.tile.input);
+    this.root.classList.toggle('is-football', Boolean(football));
+    this.root.classList.toggle('is-cinema', Boolean(film));
+    this.cinemaButton?.classList.toggle('is-on', Boolean(film));
+    this.footballButton?.classList.toggle('is-on', Boolean(football));
+    if (football) {
+      Object.assign(this.cropInner.style, { left: '0', top: '0', width: '100%', height: '100%' });
+      this.root.classList.remove('is-cropped');
+      this.cropButton?.classList.remove('is-on');
+      return;
+    }
+    if (!film) {
       this.applyCrop(getCrop(this.tile.input));
       return;
     }
@@ -354,6 +363,37 @@ class TileView {
     this.applyFraming();
     // The big spot may change shape, so the whole grid is redrawn.
     this.grid.render(this.grid.ws);
+  }
+
+  /** Resize this tile inside its current cell to the chosen broadcast shape. */
+  fitFootball() {
+    const shape = getFootballShape(this.tile.input);
+    const root = this.root;
+    if (!shape || !this.strip || !this.body) {
+      root.style.width = '';
+      root.style.height = '';
+      root.style.alignSelf = '';
+      root.style.justifySelf = '';
+      return;
+    }
+    if (root.classList.contains('maximized')) {
+      root.style.width = '';
+      root.style.height = '';
+      return;
+    }
+    root.style.width = '';
+    root.style.height = '';
+    root.style.alignSelf = '';
+    root.style.justifySelf = '';
+    const cell = root.getBoundingClientRect();
+    const strip = this.strip.getBoundingClientRect().height;
+    const width = Math.min(cell.width - 2, (cell.height - strip - 2) * shape);
+    if (!(width > 24)) return;
+    const height = width / shape + strip;
+    root.style.width = `${width}px`;
+    root.style.height = `${height}px`;
+    root.style.alignSelf = 'center';
+    root.style.justifySelf = 'center';
   }
 
   applyCrop(crop) {
@@ -465,7 +505,7 @@ class TileView {
     this.cropButton = this.source.ok && !isNote ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     this.cinemaButton = this.source.ok && !isNote ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
-    this.footballButton = this.source.ok && !isNote ? iconButton('pitch', 'Football layout: this match in a 16:9 tile with two streams beside it', () => handlers.onFootballLayout?.(this.id)) : null;
+    this.footballButton = this.source.ok && !isNote ? iconButton('pitch', 'Football shape: resize this tile to the broadcast without cropping', () => handlers.onFootballShape?.(this.id)) : null;
     this.footballButton?.classList.add('strip-football');
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
@@ -794,6 +834,7 @@ export class GridView {
     this.gridEl.style.width = `${size.width}px`;
     this.gridEl.style.height = `${size.height}px`;
     this.gridEl.style.gridTemplateRows = size.rows ? template(size.rows) : template(this.ws.rows);
+    for (const view of this.views.values()) view.fitFootball();
   }
 
   /** Dividers are percentages of the grid, so they follow any window size. */

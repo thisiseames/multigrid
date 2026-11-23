@@ -423,3 +423,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - **Football** is a real layout, not a video mode: a big 16:9 match tile on the left with two 16:9 streams stacked beside it (3 columns × 2 rows). The wall switches to it from the pitch icon on a tile, the stream menu, Layout, or the remote’s layout carousel. The current match becomes primary and takes the big tile; nothing is cropped or stretched.
 - This replaces the short-lived per-tile Football/Cinema-style fit. Cinema remains the film mode.
 - Verified at 1344×521 with Alpha/Beta/Gamma: the pitch shortcut changed the saved preset from single to football, Alpha moved to the big tile, Beta/Gamma to the right column; the big picture is 16:9 and the whole wall uses the side space instead of cropping the match. 373 tests.
+
+
+## Nov 23 — Football shape (per tile)
+- The pitch icon and the stream menu now open **Football shape**: 16:9, 2:1, 2.2:1, 21:9 or Off. The **tile itself resizes inside its current cell** — custom layouts included — and the picture is contained at that shape, never cropped. Cinema remains the film mode. A separate **Football layout** (big 16:9 match + two side streams) remains in Layout.
+- Verified at 1344×521 in the single layout: 2:1 made the tile 727×390 (body 727×364, ratio 2.0), 16:9 made it 724×433, Off restored 729×435; `cropped: false` throughout and `multigrid.football.v1` stored 2 / 1.778. In a custom 3-unit/1-unit layout, 21:9 shrank the MUTV tile from 998×205 to 413×203 inside its existing cell, no crop. 373 tests.
