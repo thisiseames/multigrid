@@ -1,4 +1,4 @@
-# The Dock — plan and hand-off (owner said "go" Nov 23)
+# The Dock — plan and hand-off (owner said "go" Nov 23) — DONE, live Nov 23
 
 If you are picking this up: read this file, then `notes/owner-rules.md` (standing rules) and
 `AGENTS.md`. Tick the checklist as you go and commit after each step. Push to `main` and to
@@ -47,7 +47,7 @@ bounce), white LIVE text. No new colours (never periwinkle).
 - [x] styles (laptop only; above ticker)
 - [x] index.html files list + CSP hash; tests pass
 - [x] Chrome check 1280: reveal, click add, drag onto YouTube + embed tile, empty slot, pin/unpin, hide, ticker on; 390: no dock
-- [ ] push main + branch; verify on multigrid.club; notes/history.md entry; tick this list
+- [x] push main + branch; verify on multigrid.club; notes/history.md entry; tick this list
 
 
 ## Gotchas found while building
