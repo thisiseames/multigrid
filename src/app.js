@@ -10590,6 +10590,25 @@ function openSyncBox(view = '') {
       el('span', {}, el('b', { textContent: 'Sync YouTube and TikTok follows' }),
         el('small', { textContent: 'Uncheck for someone else’s device: their follows stay here.' })));
   };
+  const clearPlacesRow = () => {
+    const count = Object.entries(allPlaces()).filter(([key, point]) => !key.startsWith('file:') && point?.input).length;
+    if (!count) return null;
+    const row = el('div', { class: 'sync-clear' });
+    const showNormal = () => row.replaceChildren(el('button', {
+      type: 'button', class: 'text-button', textContent: `Clear Continue watching on this device (${count})`,
+      on: { click: showConfirm },
+    }));
+    const showConfirm = () => row.replaceChildren(
+      el('span', { class: 'sync-clear-text', textContent: `Clear ${count} item${count === 1 ? '' : 's'}? Your other devices keep theirs.` }),
+      el('button', { type: 'button', class: 'text-button', textContent: 'Clear', on: { click: () => {
+        replacePlaces({});
+        toast('Continue watching cleared on this device.');
+        openSyncBox();
+      } } }),
+      el('button', { type: 'button', class: 'favorite-confirm-action', textContent: 'Keep', on: { click: showNormal } }));
+    showNormal();
+    return row;
+  };
   const showCode = async () => {
     show(head('Sync favorites'), note('Making a code…'));
     let code;
@@ -10641,6 +10660,7 @@ function openSyncBox(view = '') {
   show(head('Sync favorites'),
     note('Keep favorites and saved layouts the same on your laptop and phone. Pair once with a code. The X folder always stays on this device.'),
     socialRow(),
+    clearPlacesRow(),
     actions(button('Enter a code', enterCode), button('Show a code', showCode, true)));
 }
 

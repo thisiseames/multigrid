@@ -867,6 +867,7 @@ code { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text);
   .addp-folder-actions .text-button { min-height: 44px; padding: 0 10px; }
   .follow-select .text-button { min-height: 44px; padding: 0 8px; }
   .sync-social { min-height: 44px; }
+  .sync-clear .text-button, .sync-clear .favorite-confirm-action { min-height: 44px; padding: 0 8px; }
   .sync-social input { width: 20px; height: 20px; }
   .addp-folder-tools .favorite-confirm-action { min-height: 44px; padding: 0 10px; }
   .favorite-box input, .favorites .saved-row input { font-size: 16px; }
@@ -2383,6 +2384,10 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .sync-social span { display: flex; flex-direction: column; gap: 2px; }
 .sync-social b { font-size: 13px; font-weight: 550; }
 .sync-social small { font-size: 11.5px; line-height: 1.35; color: var(--text-2); }
+.sync-clear { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+.sync-clear .text-button { font-size: 12px; }
+.sync-clear-text { flex: 1; min-width: 0; font-size: 12px; line-height: 1.35; color: var(--text-2); }
+.sync-clear .favorite-confirm-action { padding: 4px 8px; border-radius: 4px; }
 /* This week's games have no scores yet, so phones have room for the channel. */
 @media (max-width: 480px) { .week-games .mrow-tv { display: block; max-width: 74px; } }
 /* Add stream selects itself when it opens on a phone; the box shows no outline for that. */
