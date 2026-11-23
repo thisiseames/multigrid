@@ -75,7 +75,7 @@ import { findScore, normTitle, scoreLine, shardKey, votesText } from './scores.j
 import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { atlanticLink, atlanticTitle, castQuery, filmQuery, knownFor, parseCast, parseFilm, parseIntro, parsePerson, parsePersonId, parseSummary as parseWikiSummary, parseWikiImages, personByNameQuery, personInfoQuery, personWorksQuery, runtimeText, sparqlUrl, wikiImagesUrl, wikiIntroUrl, wikiSummaryUrl } from './films.js';
-import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
+import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, restartSync, setSyncsSocial, startSync, stopSync, syncsSocial } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
 } from './ui.js';
@@ -449,7 +449,7 @@ function openYouTubeImport() {
       el('li', {}, 'On ', el('a', { href: TAKEOUT_URL, target: '_blank', rel: 'noopener', textContent: 'Google Takeout' }), ', untick everything except YouTube. Under YouTube, untick everything except subscriptions.'),
       el('li', { textContent: 'Create the export. Google emails you a download link, usually within minutes.' }),
       el('li', { textContent: 'Download it, then choose it here. The .zip is fine; no need to open it.' })),
-    el('p', { class: 'x-list-note', textContent: 'These channels stay on this device; the YouTube folder is not synced.' }));
+    el('p', { class: 'x-list-note', textContent: 'These channels follow your Sync setting: sync them, or keep them on this device.' }));
   const showList = () => {
     const list = el('ul', { class: 'yt-import-list' }, ...channels.map(({ id, title }) => {
       const already = have.has(id);
@@ -2151,6 +2151,10 @@ function openFollowingPicker() {
     submit.textContent = chosen ? `Add ${chosen} selected` : already ? 'Remove all' : 'Add selected';
     submit.disabled = !chosen && !already;
   };
+  const select = (on) => {
+    for (const { check } of rows) check.checked = on;
+    refresh();
+  };
   list.addEventListener('change', refresh);
   filter.addEventListener('input', () => {
     const query = filter.value.trim().toLowerCase();
@@ -2180,10 +2184,14 @@ function openFollowingPicker() {
     },
   },
   el('h2', { textContent: 'Choose followed accounts' }),
-  el('p', { class: 'follow-note', textContent: `${following.length} accounts from your TikTok export. Tick the ones you want in the menu.` }),
+  el('p', { class: 'follow-note', textContent: `${following.length} accounts from your TikTok export. Tick the ones you want in the menu. They follow your Sync setting: sync them, or keep them on this device.` }),
   filter,
   list,
-  el('div', { class: 'follow-foot' }, count, reimport),
+  el('div', { class: 'follow-foot' }, count,
+    el('span', { class: 'follow-select' },
+      el('button', { type: 'button', class: 'text-button', on: { click: () => select(true) } }, 'Select all'),
+      el('button', { type: 'button', class: 'text-button', on: { click: () => select(false) } }, 'Select none')),
+    reimport),
   el('div', { class: 'dialog-actions' },
     el('button', { type: 'button', class: 'plain-button', on: { click: () => box.close() } }, 'Cancel'),
     submit)));
@@ -10561,12 +10569,33 @@ function openSyncBox(view = '') {
     box.replaceChildren(...parts);
     if (!box.open) openDialog(box);
   };
+  const socialText = () => (syncsSocial()
+    ? 'YouTube and TikTok follows sync with your other devices.'
+    : 'YouTube and TikTok follows stay on this device.');
+  const socialRow = () => {
+    const tick = el('input', { type: 'checkbox', checked: syncsSocial() });
+    tick.addEventListener('change', async () => {
+      setSyncsSocial(tick.checked);
+      if (isSyncing()) {
+        try {
+          await restartSync(syncStore, syncCameIn);
+        } catch {
+          toast("Couldn't change that right now. Try again.");
+          return;
+        }
+      }
+      toast(tick.checked ? 'YouTube and TikTok follows will sync with your other devices.' : 'YouTube and TikTok follows will stay on this device.');
+    });
+    return el('label', { class: 'sync-social' }, tick,
+      el('span', {}, el('b', { textContent: 'Sync YouTube and TikTok follows' }),
+        el('small', { textContent: 'Uncheck for someone else’s device: their follows stay here.' })));
+  };
   const showCode = async () => {
     show(head('Sync favorites'), note('Making a code…'));
     let code;
     try {
       code = await offerCode(syncStore, syncCameIn, () => {
-        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts. The X and YouTube folders and TikTok follows stay on the device they are on.'), actions(button('Done', close, true)));
+        show(head('Paired'), note(`This device and the other one now keep the same favorites and saved layouts. The X folder always stays on this device. ${socialText()}`), actions(button('Done', close, true)));
         refreshFavorites();
       });
     } catch {
@@ -10587,7 +10616,7 @@ function openSyncBox(view = '') {
       status.textContent = 'Pairing…';
       const ok = await joinWithCode(input.value, syncStore, syncCameIn).catch(() => false);
       if (ok) {
-        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other. The X and YouTube folders and TikTok follows stay on the device they are on.'), actions(button('Done', close, true)));
+        show(head('Paired'), note(`Favorites and saved layouts from both devices are now on each. Changes on either show up on the other. The X folder always stays on this device. ${socialText()}`), actions(button('Done', close, true)));
         refreshFavorites();
       } else {
         go.disabled = false;
@@ -10602,14 +10631,16 @@ function openSyncBox(view = '') {
   if (isSyncing()) {
     const when = lastSynced();
     show(head('Synced devices'),
-      note(`Favorites and saved layouts stay the same on every paired device. The X and YouTube folders and TikTok follows stay on this device.${when ? ` Last synced ${clock(when)}.` : ''}`),
+      note(`Favorites and saved layouts stay the same on every paired device. The X folder always stays on this device.${when ? ` Last synced ${clock(when)}.` : ''}`),
+      socialRow(),
       actions(
         button('Stop syncing here', () => { stopSync(); toast('This device stopped syncing. Its favorites stay as they are.'); refreshFavorites(); close(); }),
         button('Add a device', showCode, true)));
     return;
   }
   show(head('Sync favorites'),
-    note('Keep favorites and saved layouts the same on your laptop and phone. Pair once with a code.'),
+    note('Keep favorites and saved layouts the same on your laptop and phone. Pair once with a code. The X folder always stays on this device.'),
+    socialRow(),
     actions(button('Enter a code', enterCode), button('Show a code', showCode, true)));
 }
 

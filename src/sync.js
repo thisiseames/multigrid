@@ -6,6 +6,7 @@
 // Each favorite and layout carries the time it last changed, so the newest change wins.
 
 const STATE_KEY = 'multigrid.sync.v1';
+const SOCIAL_KEY = 'multigrid.sync.social.v1';
 const RELAYS = ['wss://relay.primal.net', 'wss://relay.snort.social', 'wss://nos.lol', 'wss://relay.damus.io'];
 const KIND = 30078; // Nostr's kind for an app's own data
 const DOC_TAG = 'multigrid-sync';
@@ -20,22 +21,32 @@ const FORGET_DELETED = 90 * 24 * 3600 * 1000;
 const MAX_PLACES = 100;
 const PLACE_FIELDS = ['at', 'length', 'input', 'name', 'from', 'page'];
 
-// The X and YouTube folders and TikTok follows belong to one device. They never travel through
-// sync; each device keeps whatever it has there, even if another paired device removes its own.
-const LOCAL_FOLDERS = new Set(['x', 'youtube']);
-const isLocalFolder = (group) => LOCAL_FOLDERS.has(String(group || '').trim().toLocaleLowerCase());
+// The X folder always belongs to one device. YouTube subscriptions and TikTok follows can either
+// sync or stay local, chosen on each device (off is for setting up someone else's MG).
+const isXFolder = (group) => String(group || '').trim().toLocaleLowerCase() === 'x';
+const isSocialFolder = (group) => String(group || '').trim().toLocaleLowerCase() === 'youtube';
 const TIKTOK_FOLLOW = /^https?:\/\/(?:www\.)?tiktok\.com\/@[^/?#]+\/?(?:[?#].*)?$/i;
-const isLocalInput = (input) => TIKTOK_FOLLOW.test(String(input || ''));
-const isLocalFavorite = (favorite) => String(favorite?.input || '').startsWith('local:')
-  || isLocalFolder(favorite?.group) || isLocalInput(favorite?.input);
-const isLocalEntry = (key, entry) => Boolean(entry?.v) && (isLocalFolder(entry.v.group) || isLocalInput(key.slice(2)));
-const withoutLocalEntries = (items) => Object.fromEntries(Object.entries(items || {}).filter(([key, entry]) => !isLocalEntry(key, entry)));
+const isTikTokFollow = (input) => TIKTOK_FOLLOW.test(String(input || ''));
+const isLocalFavorite = (favorite, social = true) => String(favorite?.input || '').startsWith('local:')
+  || isXFolder(favorite?.group)
+  || (!social && (isSocialFolder(favorite?.group) || isTikTokFollow(favorite?.input)));
+const isLocalEntry = (key, entry, social = true) => Boolean(entry?.v)
+  && (isXFolder(entry.v.group) || (!social && (isSocialFolder(entry.v.group) || isTikTokFollow(key.slice(2)))));
+const withoutLocalEntries = (items, social = true) => Object.fromEntries(Object.entries(items || {}).filter(([key, entry]) => !isLocalEntry(key, entry, social)));
+
+/** Whether YouTube and TikTok follows sync; true unless this device was set up for someone else. */
+export function syncsSocial() {
+  try { return localStorage.getItem(SOCIAL_KEY) !== 'local'; } catch { return true; }
+}
+export function setSyncsSocial(on) {
+  try { localStorage.setItem(SOCIAL_KEY, on ? 'sync' : 'local'); } catch { /* not kept */ }
+}
 
 /** Every favorite, saved layout and Continue watching place as keyed items. Local items stay here. */
-export function itemsOf({ favorites, layouts, places = {} }) {
+export function itemsOf({ favorites, layouts, places = {} }, { social = true } = {}) {
   const items = {};
   for (const { input, name, group, logo, poster, sources } of favorites) {
-    if (isLocalFavorite({ input, group })) continue;
+    if (isLocalFavorite({ input, group }, social)) continue;
     items[`f:${input}`] = {
       name, group: group || '',
       ...(logo ? { logo } : {}),
@@ -80,14 +91,14 @@ export function merge(a, b, now = Date.now()) {
 export const seenOf = (doc) => Object.fromEntries(Object.entries(doc).map(([key, { t, v }]) => [key, { t, h: v === null ? null : JSON.stringify(v) }]));
 
 /** The favorites and layouts lists a doc stands for. Existing ones keep their place; files stay. */
-export function listsOf(doc, { favorites, layouts }) {
+export function listsOf(doc, { favorites, layouts }, { social = true } = {}) {
   const live = (prefix) => Object.entries(doc).filter(([key, entry]) => key.startsWith(prefix) && entry.v !== null);
   // Incoming local-only entries are ignored; a device's own X/YouTube/TikTok items stay even
   // when the doc says they were removed.
-  const favs = new Map(live('f:').filter(([key, entry]) => !isLocalEntry(key, entry)).map(([key, entry]) => [key.slice(2), entry.v]));
-  const kept = favorites.filter((item) => isLocalFavorite(item) || favs.has(item.input))
+  const favs = new Map(live('f:').filter(([key, entry]) => !isLocalEntry(key, entry, social)).map(([key, entry]) => [key.slice(2), entry.v]));
+  const kept = favorites.filter((item) => isLocalFavorite(item, social) || favs.has(item.input))
     .map((item) => {
-      if (isLocalFavorite(item) || !favs.has(item.input)) return item;
+      if (isLocalFavorite(item, social) || !favs.has(item.input)) return item;
       return { input: item.input, ...favs.get(item.input) };
     });
   const have = new Set(kept.map((item) => item.input));
@@ -242,14 +253,15 @@ export async function startSync(store, onApplied) {
   const { sign, lock } = await keysFor(fromB64(state.secret));
   const { getPublicKey } = await nostr();
   const author = getPublicKey(sign);
-  let doc = withoutLocalEntries(state.doc);
+  const social = syncsSocial();
+  let doc = withoutLocalEntries(state.doc, social);
   let lastSent = '';
   let newest = 0;
   let timer = null;
   let sentAt = 0;
 
   const save = (extra = {}) => writeState({ ...readState(), doc, seen: seenOf(doc), ...extra });
-  // Old sync docs may already carry X entries; drop them here so they stop travelling.
+  // Old sync docs may already carry local-only entries; drop them here so they stop travelling.
   if (JSON.stringify(doc) !== JSON.stringify(state.doc || {})) save();
   const send = async () => {
     const body = JSON.stringify(doc);
@@ -264,9 +276,9 @@ export async function startSync(store, onApplied) {
   };
   const local = () => {
     const lists = store.read();
-    // A favorite moved into X/YouTube or a TikTok follow leaves the shared set, but must not become a removal.
-    const keep = new Set(lists.favorites.filter(isLocalFavorite).map((item) => `f:${item.input}`));
-    const changes = stamp(itemsOf(lists), readState()?.seen || {}, Date.now(), keep);
+    // A favorite that is local-only on this device leaves the shared set, but must not become a removal.
+    const keep = new Set(lists.favorites.filter((item) => isLocalFavorite(item, social)).map((item) => `f:${item.input}`));
+    const changes = stamp(itemsOf(lists, { social }), readState()?.seen || {}, Date.now(), keep);
     if (!Object.keys(changes).length) return false;
     doc = merge(doc, changes);
     save();
@@ -277,14 +289,14 @@ export async function startSync(store, onApplied) {
     newest = Math.max(newest, event.created_at || 0);
     const note = await unseal(event.content, lock);
     if (!note || typeof note.items !== 'object') return;
-    const incoming = withoutLocalEntries(note.items);
+    const incoming = withoutLocalEntries(note.items, social);
     local();
     const merged = merge(doc, incoming);
     const changedHere = JSON.stringify(merged) !== JSON.stringify(doc);
     doc = merged;
     save({ lastSynced: Date.now() });
     if (changedHere) {
-      store.write(listsOf(doc, store.read()));
+      store.write(listsOf(doc, store.read(), { social }));
       onApplied?.();
     }
     if (note.by && note.by !== state.device) otherWatchers.forEach((watch) => watch());
@@ -308,6 +320,13 @@ export async function startSync(store, onApplied) {
   // Leaving the page or switching away: whatever is waiting goes now.
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && timer) soon(); });
   engine = { relays, sign, lock, stop: () => { relays.stop(); clearTimeout(timer); } };
+}
+
+/** Restarts the running engine after this device's YouTube/TikTok choice changes. */
+export async function restartSync(store, onApplied) {
+  engine?.stop();
+  engine = null;
+  await startSync(store, onApplied);
 }
 
 export function stopSync() {

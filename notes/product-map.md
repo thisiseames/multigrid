@@ -24,7 +24,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Paste** a URL, iframe code, playlist, local file, note, box score, reader link, or audio link. Add. The Add button disables at 16 streams. The paste Add and X account Add are the normal dark raised buttons; tabs/chips and focus use white/near-white, never periwinkle.
 - **X account** field (fixed `x.com/@` prefix, 1–15 characters) with Add; it auto-saves to the Twitter folder.
 - **Action row** is Find a live channel, Play a video file from this computer/phone, Browse PPV events, and Import a list — four across on a wide laptop, 2×2 under 980px, one column on phone.
-- **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The channels land in the YouTube folder, which stays on this device and is not synced. The old stacked links are gone.
+- **Import a list** opens a chooser: Import an X list; Import YouTube subscriptions (Google Takeout `.zip` or `.csv`, 1,500-channel cap, already-saved channels disabled). The channels land in the YouTube folder. They sync unless this device has **Sync YouTube and TikTok follows** switched off. The old stacked links are gone.
 - **Files:** one file becomes one tile; several files become one episode playlist in filename order (100-file cap), with auto-advance, Previous/Next, per-episode resume, one Continue watching card. Chrome keeps file handles; Safari asks again after reload.
 - **On touch phones** Add a note is hidden in Add stream; Find a live channel stays in the top action row. Channel Finder is also reachable from Search actions.
 - **Find a live channel:** the dialog has two sources: **Catalog** (the job-built verified IPTV list; 566 channels in the current file) and **Zlive** (277 live channels from `zlive.st/embed/manifest.json`, CORS-open, no key). Zlive rows show flag, region, category and quality; search and region/category chips; adding uses its clean player with white controls, the app background and no Zlive title/branding. Every Zlive link is normalized on play too, including manually pasted ones and older favorites, so the purple frame becomes the clean white player; Zlive iframes also hide the player page’s purple scrollbars. Links can stop working.
@@ -34,7 +34,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 - **Continue watching:** part-watched streams/podcasts/files, newest first; playlist places dedupe to one card. Progress bars are white/near-white, including YouTube, never periwinkle.
 - **Favorites:** 342 in the owner's current setup across Sports, Series, Twitter, Entertainment, YouTube, News, TikTok, X, Streaming and unfiled. Folder tabs are All, Recent (last 10), user folders A–Z, Podcasts, Library (Chrome desktop) and Saved layouts on phone. Search covers favorites, podcast shows and the library. Cards have add, ••• Edit/Remove with a second confirm, folder rename with merge; selecting a folder shows its own bar with Rename and Delete, and Delete removes the whole folder and its favorites after a count-bearing confirm, with Undo. Favorites and Library show cards are five across on a wide laptop, three at 1100px, two at 820px and two on the phone; movie cards stay six across. TikTok/X account feeds are kept out of All. Sync/Synced button; no CSV/JSON export button (Sync is the path), though legacy `#fav1=` transfer links are still accepted.
 - **Notes:** text tile that saves with the layout.
-- **Sync favorites:** pairing code, encrypted favorites/layouts/places via Nostr relays. Everything travels except the **X folder**, **YouTube folder** and **TikTok follows**, which stay on the device they are on: they are never sent, never added from another device, and never deleted by another device’s sync. A newly paired device therefore has no X folder, no YouTube subscriptions and no TikTok follows. A normal YouTube video saved outside the YouTube folder still syncs; a TikTok video link still syncs, only profile follows are local.
+- **Sync favorites:** pairing code, encrypted favorites/layouts/places via Nostr relays. **Sync YouTube and TikTok follows** is a per-device checkbox, on by default: checked, the YouTube folder and TikTok profile follows travel and a new device receives them; unchecked (for setting up someone else’s MG), they stay on the device they are on, are never sent or added from another device, and are not deleted by another device’s sync. The **X folder always stays local** either way. A normal YouTube video saved outside the YouTube folder and a TikTok video link still sync; only profile follows are controlled by the checkbox.
 
 ## Sources and players
 
@@ -83,7 +83,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 371 tests as of Nov 23.
+`node --test tests/*.test.mjs` — 373 tests as of Nov 23.
 
 ## Not built yet — do not describe as existing
 
@@ -125,7 +125,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 ## Platform limits and rules that shape proposals
 
 - The iPhone home-screen web app has separate storage from Safari. A link opened from Mail/Safari does not share the home-screen app's favorites; use Sync or the transfer link. The Chrome extension does not exist in Safari or the home-screen app.
-- The X and YouTube folders and TikTok profile follows are deliberately local to each device. A paired device not showing the other device’s X/YouTube folders or TikTok follows, or keeping its own after the other removes them, is correct, not a sync failure. Folder names are matched exactly (any capitals). Moving a favorite out of X/YouTube makes it sync again; a TikTok profile link is local, but a TikTok video link is a normal favorite.
+- The X folder is always local to each device. The YouTube folder and TikTok profile follows are local only on a device where **Sync YouTube and TikTok follows** is unchecked; otherwise they sync normally. A paired device not showing the other device’s X folder, or its YouTube/TikTok items when the checkbox is off, is correct, not a sync failure. Folder names are matched exactly (any capitals). Moving a favorite out of X/YouTube makes it sync again when the checkbox is on; a TikTok profile link is controlled by the checkbox, but a TikTok video link is a normal favorite.
 - The local TV/movie library and persistent local file handles are Chrome-laptop only. Safari asks for local files again after a reload. iPhones can play direct audio/video links but not a local folder library.
 - Twitch stops playback when anything covers its player. No overlay, toast or menu may sit on a Twitch picture; use the bars/sheets. Twitch needs roughly 400×300.
 - On iPhone the mixer volume sliders have no effect; the phone's own buttons set volume. Upright phones stack every layout into one column; sideways phones use the normal presets.

@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { itemsOf, stamp, merge, seenOf, listsOf, newCode, cleanCode, keysFor, pairKeysFor, seal, unseal } = await import('../src/sync.js');
+const local = new Map();
+globalThis.localStorage = {
+  getItem: (key) => (local.has(key) ? local.get(key) : null),
+  setItem: (key, value) => local.set(key, String(value)),
+  removeItem: (key) => local.delete(key),
+};
+const { itemsOf, stamp, merge, seenOf, listsOf, newCode, cleanCode, keysFor, pairKeysFor, seal, unseal, syncsSocial, setSyncsSocial } = await import('../src/sync.js');
 
 const fav = (input, name, group = '') => ({ input, name, group });
 const lists = (favorites, layouts = []) => ({ favorites, layouts });
@@ -151,7 +157,7 @@ test('the YouTube folder and TikTok follows stay on their own device', () => {
     fav('https://www.youtube.com/watch?v=abc', 'A YouTube video', 'Videos'),
     fav('https://a.test/keep', 'Keep', 'News'),
   ]);
-  const items = itemsOf(here);
+  const items = itemsOf(here, { social: false });
   assert.deepEqual(Object.keys(items).sort(), [
     'f:https://a.test/keep',
     'f:https://www.tiktok.com/@person/video/123',
@@ -163,12 +169,41 @@ test('the YouTube folder and TikTok follows stay on their own device', () => {
     'f:https://www.tiktok.com/@other': { t: 5, v: { name: '@other', group: '' } },
     'f:https://a.test/keep': { t: 5, v: { name: 'Keep!', group: 'News' } },
   };
-  const received = listsOf(doc, here);
+  const received = listsOf(doc, here, { social: false });
   assert.ok(received.favorites.some((item) => item.input === 'UC1234567890123456789012' && item.name === 'A Channel'), 'the local YouTube channel is kept');
   assert.ok(received.favorites.some((item) => item.input === 'https://www.tiktok.com/@person' && item.name === '@person'), 'the local TikTok follow is kept');
   assert.equal(received.favorites.some((item) => item.input === 'https://www.tiktok.com/@other'), false, 'another device’s TikTok follow never arrives');
   assert.equal(received.favorites.find((item) => item.input === 'https://a.test/keep').name, 'Keep!', 'normal favorites still sync');
 
-  const fresh = listsOf(doc, lists([]));
+  const fresh = listsOf(doc, lists([]), { social: false });
   assert.deepEqual(fresh.favorites.map((item) => item.input), ['https://a.test/keep'], 'a new device gets neither YouTube nor TikTok follows');
+});
+
+
+test('YouTube and TikTok follows sync when the device is set to sync them', () => {
+  const here = lists([
+    fav('UC1234567890123456789012', 'A Channel', 'YouTube'),
+    fav('https://www.tiktok.com/@person', '@person'),
+    fav('https://a.test/keep', 'Keep', 'News'),
+  ]);
+  const items = itemsOf(here);
+  assert.deepEqual(Object.keys(items).sort(), [
+    'f:UC1234567890123456789012',
+    'f:https://a.test/keep',
+    'f:https://www.tiktok.com/@person',
+  ]);
+  const doc = {
+    'f:UCabcdefghijklmnopqrstuv': { t: 1, v: { name: 'Other Channel', group: 'YouTube' } },
+    'f:https://www.tiktok.com/@other': { t: 1, v: { name: '@other', group: '' } },
+  };
+  const received = listsOf(doc, lists([]));
+  assert.deepEqual(received.favorites.map((item) => item.input).sort(), ['UCabcdefghijklmnopqrstuv', 'https://www.tiktok.com/@other']);
+});
+
+test('the YouTube and TikTok choice is on by default and is remembered', () => {
+  assert.equal(syncsSocial(), true);
+  setSyncsSocial(false);
+  assert.equal(syncsSocial(), false);
+  setSyncsSocial(true);
+  assert.equal(syncsSocial(), true);
 });
