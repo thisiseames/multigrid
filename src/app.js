@@ -22,7 +22,7 @@ import { TABS as MATCH_TABS, crest, formationRows, isMine, loadDetails, loadTab,
 import { dangerMan, formOf, lastMeeting, lastResult } from './programme.js';
 import { KEY_PREFIX, ago, hasKey, keyFromText, loadIndex, markAllRead, markRead, readIds, saveKey, sourceColor } from './reader.js';
 import { sourceTier, transferNews, windowState } from './transfers.js';
-import { availability, contractSummary, contractText, teamNews } from './team.js';
+import { availability, contractSummary, contractText, teamNews, valueInPounds } from './team.js';
 import { chooseFiles, filesFromDrop, registerChosen, registerFiles } from './local-files.js';
 import { chooseLibrary, clearMoviePosters, fileForEntry, forgetLibrary, librarySupported, loadLibrary, moviePoster, refreshLibrary } from './library.js';
 import { episodeMeta, loadMovieMeta, loadShowMeta } from './library-meta.js';
@@ -6984,13 +6984,14 @@ function teamGroupTable(players, body, desk) {
   const rows = players.filter((player) => player.group === teamGroup);
   return el('div', { class: 'tdesk-table' },
     el('div', { class: 'tdesk-thead' },
-      el('span', { textContent: 'Player' }), el('span', { textContent: 'Contract' }), el('span', { textContent: 'Min' }), el('span', { textContent: 'Pts' }), el('span', { textContent: 'Status' })),
+      el('span', { textContent: 'Player' }), el('span', { textContent: 'Value' }), el('span', { textContent: 'Contract' }), el('span', { textContent: 'Min' }), el('span', { textContent: 'Pts' }), el('span', { textContent: 'Status' })),
     ...rows.map((player) => el('div', { class: 'tdesk-row' },
       el('span', { class: 'tdesk-player' },
         teamAvatar(player, 'is-row'),
         el('span', { class: 'tdesk-player-info' },
           el('b', { textContent: player.name }),
           el('span', { textContent: `${player.position || player.group} · ${player.age || '—'}` }))),
+      el('span', { class: 'tdesk-value', textContent: valueInPounds(player.value, desk.fx) || player.value || '—', title: player.value || '' }),
       el('span', { class: 'tdesk-cell', textContent: contractText(player.contract) || '—' }),
       el('span', { class: 'tdesk-cell', textContent: String(player.minutes) }),
       el('span', { class: 'tdesk-cell', textContent: String(player.points) }),
@@ -7073,7 +7074,7 @@ function renderTeamDesk(body, desk) {
       }, clubMarkNode(loan.club), el('b', { textContent: loan.player }), el('span', { textContent: loan.club }))))
       : el('p', { class: 'xd-quiet', textContent: 'No loans out.' }),
 
-    el('p', { class: 'xd-foot', textContent: 'Contracts from Transfermarkt; availability and form from FPL.' }));
+    el('p', { class: 'xd-foot', textContent: 'Contracts and values from Transfermarkt; availability and form from FPL. GBP values are approximate at today’s rate.' }));
 }
 
 async function fillTeam() {

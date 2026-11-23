@@ -86,6 +86,16 @@ export function availability(player) {
   return { label: 'Fit', tone: 'fit' };
 }
 
+/** Transfermarkt's euro value, shown in pounds at the day's rate. */
+export function valueInPounds(value, rate) {
+  const match = String(value ?? '').match(/€([\d.]+)([MK])/);
+  const fx = Number(rate);
+  if (!match || !Number.isFinite(fx) || fx <= 0) return '';
+  const amount = Number(match[1]) * (match[2].toUpperCase() === 'K' ? 0.001 : 1) * fx;
+  const rounded = amount >= 10 ? Math.round(amount) : Math.round(amount * 10) / 10;
+  return `≈£${rounded}m`;
+}
+
 export function contractText(date) {
   if (!date) return '';
   return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));

@@ -302,6 +302,9 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - **Transfer desk** is no longer a 30-row wall. One lead card (the biggest fee, player photo, club and fee), a spent/received bar with net spend, a three-in/three-out Done table with club marks and fees, the three strongest Reader links, and a five-card league strip. “See all 30” and “Around the league” open a full-screen list.
 - **Team desk** is no longer 30 players plus seven news rows in one column. A club-crest snapshot with a GK/DEF/MID/FWD depth bar, three availability cards with player photos, position tabs that show one table at a time, contract-year pills with names, and a five-card loans strip. The default tab is DEF and the default contract year is 2027; the full team news and loans open in a sheet.
 - Data is unchanged; player photos come from FPL, clubs use monograms where no crest is available. Verified locally at 1280 and 390, no overflow or console errors; 305 tests.
+## Nov 22 — Team values and readable type
+- The Team table now has a **Value** column: Transfermarkt’s market value shown as **≈GBP** at the ECB rate (`fx` in `team.json`; the euro figure is in the hover title). The table is six columns — Player / Value / Contract / Min / Pts / Status — with names at 14px, cells 12.5px, headers 10.5px, availability news 11.5px, tabs 12px and loans 13px. Status pills use compact labels (INJ/SUSP/DOUBT) in the table; the cards keep the full words. 305 tests.
+
 - Nov 23: Guide play buttons made subtle (owner: too white): 32px translucent grey circle, light icon; white only on hover.
 
 ## Nov 23 — RedZone mode (laptop)
