@@ -54,7 +54,7 @@ import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpi
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
-  loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
+  deleteFolder, loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
   saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceFavorites, replaceSynced, syncedLists,
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
@@ -4196,7 +4196,35 @@ function favoriteRow(item, getTarget) {
   return row;
 }
 
-/** One folder: its name opens and closes it, and the edit button renames it in place. */
+/** A folder's delete confirmation, with Undo. Returns the row's children. */
+function folderDeleteParts(folder, count, onCancel, closeDialog = false) {
+  const before = listFavorites();
+  const plural = count === 1 ? 'favorite' : 'favorites';
+  return [
+    el('span', { class: 'favorite-confirm folder-confirm', textContent: `Delete ${folder} and ${count} ${plural}?`, title: `Delete ${folder} and its ${count} ${plural}` }),
+    el('button', {
+      type: 'button',
+      class: 'text-button favorite-confirm-action',
+      textContent: 'Delete',
+      on: {
+        click() {
+          const removed = deleteFolder(folder);
+          if (!removed) { toast(STORAGE_FULL); onCancel(); return; }
+          // Add stream's dialog sits above the toast, so leave it before offering Undo.
+          if (closeDialog && $('source-dialog').open) $('source-dialog').close();
+          refreshFavorites();
+          toast(`Deleted ${folder} and ${removed} ${removed === 1 ? 'favorite' : 'favorites'}.`, {
+            label: 'Undo',
+            run() { if (!replaceFavorites(before)) toast(STORAGE_FULL); refreshFavorites(); },
+          });
+        },
+      },
+    }),
+    el('button', { type: 'button', class: 'favorite-confirm-action', textContent: 'Keep', on: { click: onCancel } }),
+  ];
+}
+
+/** One folder: its name opens and closes it, and the edit buttons rename or delete it in place. */
 function folderSection(folder, items, getTarget, searching = false) {
   const list = el('ul', { class: 'saved-list favorites-list' }, ...items.map((item) => favoriteRow(item, getTarget)));
   const head = el('div', { class: 'saved-row folder-head' });
@@ -4220,8 +4248,11 @@ function folderSection(folder, items, getTarget, searching = false) {
         },
       },
     }, icon('chevron', 14), el('b', { textContent: folder }), el('small', { textContent: String(items.length) }));
-    head.replaceChildren(toggle, el('span', { class: 'row-actions' }, iconButton('pencil', 'Rename folder', showRename)));
+    head.replaceChildren(toggle, el('span', { class: 'row-actions' },
+      iconButton('pencil', 'Rename folder', showRename),
+      iconButton('trash', `Delete ${folder}`, showDelete)));
   };
+  const showDelete = () => head.replaceChildren(...folderDeleteParts(folder, items.length, showNormal));
   const showRename = () => {
     const input = el('input', { type: 'text', value: folder, maxLength: 40, aria: { label: 'Folder name' } });
     let finished = false;
@@ -6682,7 +6713,7 @@ function addSearchBox(holder) {
   return holder.addSearch;
 }
 
-/** The folder pills, with a pencil to rename the folder that's chosen. */
+/** The folder pills, with buttons to rename or delete the folder that's chosen. */
 function addFolderPills(holder, folders) {
   const row = el('div', { class: 'matches-tabs addp-pills' });
   const pills = () => {
@@ -6709,7 +6740,9 @@ function addFolderPills(holder, folders) {
     // Recent comes straight after All: it's the quickest way back to a stream.
     row.replaceChildren(...['', ...(listRecent().length ? [RECENT] : []), ...sorted].map(tab),
       ...(layoutsTab() ? [el('span', { class: 'addp-divider', aria: { hidden: 'true' } }), tab(LAYOUTS)] : []),
-      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT && addFolder !== LIBRARY ? [iconButton('pencil', `Rename ${addFolder}`, rename)] : []));
+      ...(addFolder && addFolder !== PODCASTS && addFolder !== LAYOUTS && addFolder !== RECENT && addFolder !== LIBRARY
+        ? [iconButton('pencil', `Rename ${addFolder}`, rename), iconButton('trash', `Delete ${addFolder}`, remove)]
+        : []));
     // The chosen tab is always in view, even when it's past the edge on a phone.
     requestAnimationFrame(() => {
       const on = row.querySelector('.is-on');
@@ -6718,6 +6751,10 @@ function addFolderPills(holder, folders) {
       const tab = on.getBoundingClientRect();
       if (tab.left < box.left || tab.right > box.right) row.scrollLeft += tab.left - box.left - 16;
     });
+  };
+  const remove = () => {
+    const count = listFavorites().filter((item) => item.group && item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase()).length;
+    row.replaceChildren(...folderDeleteParts(addFolder, count, pills, true));
   };
   const rename = () => {
     const input = el('input', { type: 'text', value: addFolder, maxLength: 40, class: 'addp-rename', aria: { label: 'Folder name' } });

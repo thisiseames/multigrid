@@ -10,7 +10,7 @@ globalThis.localStorage = {
 };
 
 const {
-  favoriteName, favoriteSources, findSaved, folderForCategory, isFolderClosed, listFavorites, listFolders,
+  deleteFolder, favoriteName, favoriteSources, findSaved, folderForCategory, isFolderClosed, listFavorites, listFolders,
   openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder,
   saveCurrent, saveFavorite, saveNamed, setFolderClosed,
 } = await import('../src/storage.js');
@@ -290,4 +290,24 @@ test('the room marker travels with the current wall and a saved room', () => {
   const normal = { ...ws, room: undefined };
   saveCurrent(normal);
   assert.equal('room' in loadCurrent(), false);
+});
+
+test('deleting a folder removes its favorites and leaves everything else', () => {
+  saveFavorite('a', 'A', 'News');
+  saveFavorite('b', 'B', 'news');
+  saveFavorite('c', 'C', 'Sports');
+  saveFavorite('d', 'D', '');
+  assert.equal(deleteFolder('NEWS'), 2);
+  assert.deepEqual(listFolders(), ['Sports']);
+  assert.deepEqual(listFavorites().map((item) => item.input).sort(), ['c', 'd']);
+  assert.equal(deleteFolder('Missing'), 0);
+  assert.equal(deleteFolder('   '), 0);
+});
+
+test('deleting a folder opens it if it was closed', () => {
+  saveFavorite('a', 'A', 'News');
+  setFolderClosed('News', true);
+  assert.equal(isFolderClosed('News'), true);
+  deleteFolder('News');
+  assert.equal(isFolderClosed('News'), false);
 });

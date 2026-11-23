@@ -291,6 +291,18 @@ export function removeFavoriteSource(input, sourceInput) {
   return write(FAVORITES_KEY, list);
 }
 
+/** Deletes a folder and every favorite in it. Returns how many favorites went with it. */
+export function deleteFolder(folder) {
+  const name = cleanFolder(folder);
+  if (!name) return 0;
+  const list = listFavorites();
+  const left = list.filter((item) => !(item.group && sameFolder(item.group, name)));
+  const removed = list.length - left.length;
+  if (!removed || !write(FAVORITES_KEY, left)) return 0;
+  setFolderClosed(name, false);
+  return removed;
+}
+
 /** Renaming onto another folder's name puts the two together. */
 export function renameFolder(from, to) {
   const typed = cleanFolder(to);
