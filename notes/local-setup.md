@@ -9,11 +9,21 @@ Written Nov 20 from the owner's Mac so cloud sessions don't have to ask. No secr
 - The Mac's clock is set to Central time, so the laptop shows times an hour behind Toronto. The owner is in Toronto.
 
 ## The MULTIGRID Sound extension (Chrome)
-- Source: `extension/` in this repo (version 1.6 as of Nov 21). Chrome loads it from `~/MULTIGRID-extension/extension`, a clone of this repo kept on `main`; the old path `~/MULTIGRID Sound` is now a link to that folder, so Chrome's registration (extension id elagochopcmcnhjbicjnacnaimnagfak) didn't change.
+- Source: `extension/` in this repo (version 1.16 as of Nov 23). Chrome loads it from `~/MULTIGRID-extension/extension`, a clone of this repo kept on `main`; the old path `~/MULTIGRID Sound` is now a link to that folder, so Chrome's registration (extension id elagochopcmcnhjbicjnacnaimnagfak) didn't change.
 - Updates: the launchd job `~/Library/LaunchAgents/com.eames.multigrid-extension.plist` runs `git -C ~/MULTIGRID-extension pull --ff-only` every 5 minutes and at login, logging to `~/Library/Logs/multigrid-extension.log`.
 - What it does: lets MULTIGRID control sound in embedded players it can't otherwise reach, plus play/pause, the "resume where you left off" place inside embeds (stored in the frame as `multigrid.places.v1`), and progress messages back to the app.
 - After changing it: push to `main` with a new version number, then ask the owner: "Reload MULTIGRID Sound in chrome://extensions (in a few minutes), then reload MULTIGRID." Nobody copies files by hand any more. Chrome blocks automation on chrome://extensions, and a Chrome restart would lose his tabs (Chrome isn't set to reopen them), so that reload is his one click.
 - Check it's loaded: on the MULTIGRID page, `document.documentElement.dataset.multigridPage === '1'` (set by version 1.6 and later).
+
+### Installing MULTIGRID Sound on someone else's laptop
+1. On that laptop, download the repo ZIP: `https://github.com/thisiseames/multigrid/archive/refs/heads/main.zip`.
+2. Unzip it and find the **`extension`** folder inside `multigrid-main`. Move that folder somewhere permanent (Documents is fine); Chrome loads from that path and breaks if it is deleted.
+3. In Chrome, open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked**, and choose the **`extension`** folder itself — the one containing `manifest.json`, not the repo root.
+4. Pin **MULTIGRID Sound** from the puzzle icon, then reload `https://multigrid.club`.
+5. Chrome warns that it can read and change data on all websites. That is required to control players inside streams and fetch JustWatch for X-Ray; the extension needs no account or key.
+6. There is no Chrome Web Store auto-update on that laptop. After extension changes, download the ZIP again, replace the `extension` folder contents, click the reload arrow on its `chrome://extensions` card, and reload MULTIGRID.
+
+The extension is Chrome-desktop only; iPhones and the home-screen app cannot install it. Without it, MULTIGRID still works, but embed sound/pause/resume and X-Ray's **More like this** stay unavailable.
 
 ## Chrome extensions that can affect playback
 - **uBlock Origin Lite:** can block parts of embedded players or their ads.
