@@ -68,6 +68,7 @@ import {
 } from './game-links.js';
 import { leftText, tileCard } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
+import { findScore, scoreLine, shardKey, votesText } from './scores.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
@@ -2833,6 +2834,15 @@ async function xrayShow(tile, name, source) {
       el('span', { class: 'xr-kicker', textContent: listing?.current ? `On ${name} now` : show?.network || name }),
       el('b', { class: 'xr-name', textContent: title }),
       listing?.current ? el('small', { textContent: `Until ${clock(listing.current.end)} · ${leftText((listing.current.end - Date.now()) / 1000)}` }) : null)));
+  // Scores: IMDb (from scores/) with its vote count, and Rotten Tomatoes when the Top 10 has it.
+  const imdb = await imdbScore(title, { kind: listing && !show ? '' : 'show' }).catch(() => null);
+  const top = topScoresFor(title);
+  if (imdb || Number.isFinite(top.rt)) {
+    parts.push(xrSection('Scores', el('div', { class: 'xr-scores' },
+      scoreChip({ imdb: top.imdb ?? imdb?.rating ?? null, rt: top.rt ?? null, fresh: top.fresh }),
+      imdb ? el('small', { textContent: `${votesText(imdb.votes)} IMDb ratings${top.fresh ? ' · Certified Fresh' : ''}` }) : null,
+      imdb ? el('a', { class: 'xr-more', href: `https://www.imdb.com/title/${imdb.id}/`, target: '_blank', rel: 'noopener noreferrer', textContent: 'IMDb page' }) : null)));
+  }
   const story = listing?.current?.about || show?.summary || '';
   if (episode && show) {
     const [now, before] = await Promise.all([
@@ -4552,6 +4562,8 @@ function libraryShowCard(show) {
   });
   const next = nextUpForShow(show);
   const seasons = show.seasons.length;
+  const scoreLine = el('small', { class: 'fcard-score' });
+  attachScore(scoreLine, show.name, { kind: 'show' });
   return el('li', { class: 'fcard' }, el('button', {
     type: 'button',
     class: 'fcard-main',
@@ -4568,6 +4580,7 @@ function libraryShowCard(show) {
   art,
   el('span', { class: 'fcard-text' },
     el('b', { textContent: show.name, title: show.name }),
+    scoreLine,
     el('small', {},
       el('span', { class: 'fcard-kind', textContent: `${seasons} season${seasons === 1 ? '' : 's'}` }),
       el('span', {
@@ -4679,6 +4692,8 @@ function libraryMovieCard(movie) {
       art.replaceChildren(icon('film', 20));
     }, true);
   });
+  const scoreLine = el('small', { class: 'fcard-score' });
+  attachScore(scoreLine, movie.title, { kind: 'film', year: movie.year || 0 });
   return el('li', { class: 'fcard movie-card' }, el('button', {
     type: 'button',
     class: 'fcard-main',
@@ -4688,6 +4703,7 @@ function libraryMovieCard(movie) {
   art,
   el('span', { class: 'fcard-text' },
     el('b', { textContent: movie.title, title: movie.title }),
+    scoreLine,
     el('small', {},
       el('span', { class: 'fcard-kind', textContent: movie.year ? String(movie.year) : 'Movie' }),
       el('span', { class: 'fcard-now', textContent: libraryMovieState(movie) })))),
@@ -5519,7 +5535,7 @@ function homeCard(item) {
   return el('li', { class: 'hcard' }, remove, el('button', {
     type: 'button', class: 'hcard-main', title: item.title,
     on: { click: () => item.play(), mouseenter: () => showHero(item, { hold: true }), focus: () => showHero(item, { hold: true }) },
-  }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null)));
+  }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null, item.scores ? scoreChip(item.scores) : null)));
 }
 
 const homeRow = (title, items) => (items.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: title }), el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
@@ -5664,8 +5680,9 @@ async function drawHome() {
     const atlantic = atlanticTarget(entry.title, favorites);
     const item = {
       key: `t:${id}:${entry.rank}:${entry.title}`, label: `#${entry.rank} · ${label}`, title: entry.title, rank: entry.rank,
-      meta: topLine(entry),
+      meta: [topLine(entry), scoreLine(entry)].filter(Boolean).join(' · '),
       cardMeta: topLine(entry, { withService: id !== 'netflix' }) || entry.service,
+      scores: entry,
       desc: entry.desc,
       backdrop: entry.image,
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
@@ -5816,6 +5833,53 @@ function seriesProgress(input) {
   return [episode ? `S${episode.season} E${episode.episode}` : '', minutes >= 1 ? `${minutes} min in` : ''].filter(Boolean).join(' · ');
 }
 
+/* Scores: IMDb ratings from scores/ (a weekly job builds it from IMDb's own files) for any film or
+   show, and Rotten Tomatoes where the Top 10 job has it. Pieces are fetched once per visit. */
+const scoreShards = new Map();
+function scoreShard(key) {
+  if (!scoreShards.has(key)) scoreShards.set(key, fetch(`scores/${key}.json`).then((answer) => (answer.ok ? answer.json() : [])).catch(() => []));
+  return scoreShards.get(key);
+}
+/** A favorite's or file's name as a title: "Dune (2021)" → { title: "Dune", year: 2021 }. */
+function titleOf(name) {
+  const text = String(name || '').trim();
+  const year = Number(text.match(/\((\d{4})\)\s*$/)?.[1] || text.match(/\b(19\d{2}|20\d{2})\s*$/)?.[1] || 0);
+  return { title: text.replace(/\s*\(\d{4}\)\s*$/, '').replace(/\s+(19\d{2}|20\d{2})\s*$/, '').replace(/\s*[-·:]\s*season \d+.*$/i, '').trim(), year };
+}
+async function imdbScore(name, { year = 0, kind = '' } = {}) {
+  const parsed = titleOf(name);
+  if (!parsed.title) return null;
+  return findScore(await scoreShard(shardKey(parsed.title)), parsed.title, { year: year || parsed.year, kind });
+}
+/** Rotten Tomatoes (and IMDb) for a title in this week's Top 10 data, if it's there. */
+var lastTop10 = null; // eslint-disable-line no-var
+function topScoresFor(title) {
+  const want = String(title || '').toLowerCase().trim();
+  for (const chart of topCharts(lastTop10)) {
+    const entry = chart.entries.find((item) => item.title.toLowerCase() === want);
+    if (entry) return { imdb: entry.imdb, rt: entry.rt, fresh: entry.fresh };
+  }
+  return {};
+}
+/** The score mark: the IMDb logo with the rating, and Rotten Tomatoes when known. */
+function scoreChip({ imdb = null, rt = null, fresh = false } = {}) {
+  if (!imdb && !Number.isFinite(rt)) return null;
+  return el('span', { class: 'score', title: [imdb ? `IMDb ${Number(imdb).toFixed(1)}/10` : '', Number.isFinite(rt) ? `Rotten Tomatoes ${rt}%${fresh ? ' · Certified Fresh' : ''}` : ''].filter(Boolean).join(' · ') },
+    imdb ? el('span', { class: 'score-imdb' }, el('b', { textContent: 'IMDb' }), el('span', { textContent: Number(imdb).toFixed(1) })) : null,
+    Number.isFinite(rt) ? el('span', { class: `score-rt${rt >= 60 ? ' is-fresh' : ''}` }, el('i', { aria: { hidden: 'true' } }), el('span', { textContent: `${rt}%` })) : null);
+}
+/** Adds the score mark to an element once it's known (nothing if the title has no score). */
+function attachScore(into, name, options = {}, known = {}) {
+  imdbScore(name, options).then((found) => {
+    const chip = scoreChip({ imdb: known.imdb ?? found?.rating ?? null, rt: known.rt ?? topScoresFor(name).rt ?? null, fresh: known.fresh });
+    if (chip && into.isConnected !== false) into.append(chip);
+  });
+}
+/** Favorites that are films or shows: anything in a series/films folder, or a series page. */
+function isTitleFavorite(item, source) {
+  return isSeriesFolder(item.group || '') || /\b(movies?|films?|cinema)\b/i.test(item.group || '') || Boolean(episodeOf(source?.url || ''));
+}
+
 function favoriteCard(item, holder, { plain = false } = {}) {
   const source = parseSource(item.input);
   const card = el('li', { class: 'fcard' });
@@ -5869,6 +5933,11 @@ function favoriteCard(item, holder, { plain = false } = {}) {
           nowText ? el('span', { class: 'fcard-now', textContent: nowText, title: nowText }) : null);
       })())),
     ...(plain ? [] : [el('button', { type: 'button', class: 'fcard-more', title: `More for ${item.name}`, aria: { label: `More for ${item.name}` }, on: { click: menu } }, icon('more', 16))]));
+  if (isTitleFavorite(item, source)) {
+    const line = el('small', { class: 'fcard-score' });
+    card.querySelector('.fcard-text')?.append(line);
+    attachScore(line, item.name, { kind: /\b(movies?|films?)\b/i.test(item.group || '') ? 'film' : '' });
+  }
   if (source.kind === 'twitch' && source.twitch?.type === 'channel') {
     const line = el('small', { class: 'fcard-twitch' });
     card.querySelector('.fcard-text')?.append(line);
@@ -8612,7 +8681,10 @@ function movieDay(date) {
 async function loadJob(file) {
   try {
     const response = await fetch(file, { cache: 'no-cache' });
-    return response.ok ? await response.json() : null;
+    const data = response.ok ? await response.json() : null;
+    // The Top 10 file also carries Rotten Tomatoes scores that Scores uses anywhere a title shows.
+    if (file === 'top10.json' && data) lastTop10 = data;
+    return data;
   } catch {
     return null;
   }
@@ -8642,6 +8714,7 @@ function premiereRow(show) {
     top: el('span', { textContent: [movieDay(show.date), show.service].filter(Boolean).join(' · ') }),
     title: show.name,
     sub: [premiereKind(show), show.trailer ? 'Play the trailer' : ''].filter(Boolean).join(' · '),
+    score: { name: show.name, kind: 'show' },
     onClick() {
       closePopovers();
       // The trailer plays in a tile; without one, the show's TVmaze page opens.
@@ -8659,6 +8732,7 @@ function movieRow(movie) {
     top: el('span', { textContent: `${movieDay(movie.date)} · ${movie.kind === 'cinema' ? 'In cinemas' : `On ${movie.service}`}` }),
     title: movie.title,
     sub: movie.trailer ? 'Play the trailer' : '',
+    score: { name: movie.title, kind: 'film', year: Number(String(movie.date || '').slice(0, 4)) || 0 },
     onClick() {
       closePopovers();
       // The trailer plays in a tile; without one, the film's Wikipedia page opens.
@@ -8748,7 +8822,8 @@ function topRow(entry, list) {
     : el('span', { class: 'fart is-icon chart-cover is-wide' }, icon('film', 18)),
   el('span', { class: 'trow-text' },
     el('span', { class: 'trow-title', textContent: entry.title }),
-    el('span', { class: 'trow-sub', textContent: topLine(entry) })));
+    el('span', { class: 'trow-sub', textContent: topLine(entry) }),
+    scoreChip(entry)));
   return el('li', { class: 'trow' }, main, actions);
 }
 
@@ -8771,10 +8846,12 @@ function chartsView(data, { top = false } = {}) {
   let at = saved < charts.length ? saved : 0;
   const list = el('ul', { class: 'rlist chart-list' });
   const note = el('p', { class: 'chart-week' });
+  let byScore = false;
   const draw = () => {
     const chart = charts[at];
+    const titles = byScore ? [...chart.entries].sort((a, b) => (b.imdb ?? 0) - (a.imdb ?? 0)) : chart.entries;
     list.replaceChildren(...(chart.kind === 'title'
-      ? chart.entries.map((entry) => topRow(entry, list))
+      ? titles.map((entry) => topRow(entry, list))
       : chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list))));
     note.textContent = chartNote(chart);
   };
@@ -8799,7 +8876,12 @@ function chartsView(data, { top = false } = {}) {
     },
   })));
   draw();
-  return el('div', { class: 'chart-box' }, tabs, list, note);
+  // The Top 10s can be read by popularity (their own order) or best rated (IMDb).
+  const sorter = top ? el('div', { class: 'chart-sort' }, ...[['Popular', false], ['Best rated', true]].map(([label, value]) => el('button', {
+    type: 'button', class: `chart-sort-btn${byScore === value ? ' is-on' : ''}`, textContent: label,
+    on: { click(event) { byScore = value; for (const other of event.currentTarget.parentNode.children) other.classList.toggle('is-on', other === event.currentTarget); draw(); } },
+  }))) : null;
+  return el('div', { class: 'chart-box' }, ...[tabs, sorter, list, note].filter(Boolean));
 }
 
 /* Flight deals from Toronto: seven routes, the cheapest nonstop one-way fare found on the
@@ -9327,13 +9409,13 @@ function continueTodayRow(item) {
   });
 }
 
-function todayRow({ art, top, title, sub, live = false, onClick }) {
-  return el('li', { class: 'trow' }, el('button', { type: 'button', class: 'trow-main', on: { click: onClick } },
-    art,
-    el('span', { class: 'trow-text' },
-      el('span', { class: 'trow-top' }, live ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE') : null, top),
-      el('span', { class: 'trow-title', textContent: title }),
-      sub ? el('span', { class: 'trow-sub', textContent: sub }) : null)));
+function todayRow({ art, top, title, sub, live = false, onClick, score = null }) {
+  const text = el('span', { class: 'trow-text' },
+    el('span', { class: 'trow-top' }, live ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE') : null, top),
+    el('span', { class: 'trow-title', textContent: title }),
+    sub ? el('span', { class: 'trow-sub', textContent: sub }) : null);
+  if (score) attachScore(text, score.name, { kind: score.kind, year: score.year });
+  return el('li', { class: 'trow' }, el('button', { type: 'button', class: 'trow-main', on: { click: onClick } }, art, text));
 }
 
 let ppvTodayTimer = null;
@@ -10830,6 +10912,8 @@ prepareAutoplaySound();
 render();
 // RedZone stays on across a reload.
 if (isRedZoneOn()) startRedZone();
+// The Top 10 file carries Rotten Tomatoes scores for favorites and X-Ray, so it's read at once.
+loadJob('top10.json');
 receiveReaderKey();
 receiveFavorites();
 

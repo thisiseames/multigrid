@@ -39,7 +39,7 @@ async function netflix() {
   for (const entry of found.entries) {
     // Its picture, story and own page, from JustWatch; a Netflix search if JustWatch can't say.
     const extra = await justWatch(SEARCH, { query: entry.title }).then((answer) => netflixMatch(answer, entry.title)).catch(() => null);
-    entries.push({ ...entry, service: 'Netflix', url: extra?.url || `https://www.netflix.com/search?q=${encodeURIComponent(entry.title)}`, image: extra?.image || '', desc: extra?.desc || '' });
+    entries.push({ ...entry, service: 'Netflix', url: extra?.url || `https://www.netflix.com/search?q=${encodeURIComponent(entry.title)}`, image: extra?.image || '', desc: extra?.desc || '', ...(extra?.scores ?? {}) });
     await pause(400);
   }
   return { id: 'netflix', name: 'Netflix', source: 'Netflix Top 10 · Canada', week: found.week, checked: now, entries };
@@ -60,14 +60,14 @@ async function justWatch(query, variables = {}) {
 const SEARCH = `query($country: Country!, $language: Language!, $query: String!) {
   searchTitles(source: "multigrid", country: $country, first: 4, filter: { searchQuery: $query, objectTypes: [SHOW], packages: ["nfx"] }) { edges { node {
     ... on MovieOrShow {
-      content(country: $country, language: $language) { title shortDescription backdrops { backdropUrl } }
+      content(country: $country, language: $language) { title shortDescription backdrops { backdropUrl } scoring { imdbScore imdbVotes tomatoMeter certifiedFresh } }
       offers(country: $country, platform: WEB) { standardWebURL }
     } } } } }`;
 
 const QUESTION = `query($country: Country!, $language: Language!) {
   popularTitles(country: $country, first: 10, filter: {}) { edges { node { objectType
     ... on MovieOrShow {
-      content(country: $country, language: $language) { title originalReleaseYear shortDescription fullPath backdrops { backdropUrl } }
+      content(country: $country, language: $language) { title originalReleaseYear shortDescription fullPath backdrops { backdropUrl } scoring { imdbScore imdbVotes tomatoMeter certifiedFresh } }
       offers(country: $country, platform: WEB) { monetizationType standardWebURL package { clearName } }
     } } } } }`;
 

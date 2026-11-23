@@ -1,0 +1,36 @@
+# Refreshes scores/ once a week: IMDb ratings for every film and show with 1,000+ votes, from
+# IMDb's own free files (datasets.imdbws.com), split into small pieces by the first two letters
+# of the title. No key or account. If IMDb doesn't answer, scores/ is left as it was.
+name: scores
+
+on:
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scores
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-scores.mjs
+      - name: Save the new scores
+        run: |
+          git config user.name "multigrid-scores"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scores
+          git diff --cached --quiet && exit 0
+          git commit -m "Update IMDb scores"
+          git pull --rebase
+          git push

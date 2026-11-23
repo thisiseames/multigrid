@@ -3569,3 +3569,23 @@ body.is-phone #file-zone { order: 1; }
 .ti-xray { position: absolute; right: -2px; bottom: -3px; padding: 2px 6px; border-radius: 5px; background: rgba(255, 255, 255, .1); color: rgba(245, 245, 247, .7); font: 700 9.5px/1.2 var(--font); letter-spacing: .08em; text-transform: uppercase; }
 .tile-info .ti-card:hover .ti-xray { background: #f5f5f7; color: #0b0b0d; }
 .tile-info .ti-text > :last-child { padding-right: 52px; }
+
+/* Scores: the IMDb logo with the rating, Rotten Tomatoes with its tomato. Brand colours only inside the logos. */
+.score { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; font: 600 11.5px/1 var(--font); color: rgba(245, 245, 247, .85); font-variant-numeric: tabular-nums; }
+.score-imdb { display: inline-flex; align-items: center; gap: 5px; }
+.score-imdb b { padding: 2px 4px; border-radius: 3px; background: #f5c518; color: #000; font: 900 9.5px/1 var(--font); letter-spacing: -.01em; }
+.score-rt { display: inline-flex; align-items: center; gap: 4px; }
+.score-rt i { width: 10px; height: 10px; border-radius: 50%; background: #9a9aa0; }
+.score-rt.is-fresh i { background: #fa320a; }
+.fcard-score { display: flex; min-height: 0; }
+.fcard-score:empty { display: none; }
+.fcard-score .score { margin-top: 2px; }
+.trow-text .score { margin-top: 5px; }
+.chart-sort { display: flex; gap: 6px; margin: 2px 0 8px; }
+.chart-sort-btn { height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: #1c1c1f; color: rgba(245, 245, 247, .7); font: 600 12px/1 var(--font); cursor: pointer; }
+.chart-sort-btn.is-on { background: #f5f5f7; color: #0b0b0d; }
+.xr-scores { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.xr-scores .score { font-size: 15px; gap: 12px; }
+.xr-scores .score-imdb b { font-size: 12px; padding: 3px 5px; }
+.xr-scores .score-rt i { width: 13px; height: 13px; }
+.xr-scores small { font-size: 12px; color: var(--text-2); }

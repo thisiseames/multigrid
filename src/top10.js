@@ -25,6 +25,10 @@ export function topCharts(data) {
           image: /^https:\/\/images\.justwatch\.com\//.test(entry.image || '') ? entry.image : '',
           desc: String(entry.desc || ''),
           trailer: VIDEO.test(entry.trailer || '') ? entry.trailer : '',
+          imdb: Number.isFinite(entry.imdb) && entry.imdb > 0 && entry.imdb <= 10 ? entry.imdb : null,
+          imdbVotes: Number.isFinite(entry.imdbVotes) ? entry.imdbVotes : 0,
+          rt: Number.isInteger(entry.rt) && entry.rt >= 0 && entry.rt <= 100 ? entry.rt : null,
+          fresh: entry.fresh === true,
         }))
         .sort((a, b) => a.rank - b.rank)
         .slice(0, 10),

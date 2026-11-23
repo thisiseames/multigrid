@@ -72,8 +72,20 @@ export function justWatchTitles(answer) {
         : content.fullPath ? `https://www.justwatch.com${content.fullPath}` : '',
       image: backdrop ? `https://images.justwatch.com${backdrop.replace('{profile}', 's1440').replace('{format}', 'jpg')}` : '',
       desc: String(content.shortDescription || '').trim(),
+      ...scoresOf(content),
     };
   }).filter((entry) => entry.title);
+}
+
+/** JustWatch's scores for a title: { imdb, imdbVotes, rt, fresh }, only the ones it has. */
+export function scoresOf(content) {
+  const scoring = content?.scoring ?? {};
+  const out = {};
+  if (Number.isFinite(scoring.imdbScore) && scoring.imdbScore > 0) out.imdb = Math.round(scoring.imdbScore * 10) / 10;
+  if (Number.isFinite(scoring.imdbVotes) && scoring.imdbVotes > 0) out.imdbVotes = scoring.imdbVotes;
+  if (Number.isFinite(scoring.tomatoMeter)) out.rt = scoring.tomatoMeter;
+  if (scoring.certifiedFresh) out.fresh = true;
+  return out;
 }
 
 const plain = (text) => String(text || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -99,5 +111,6 @@ export function netflixMatch(answer, title) {
     image: backdrop ? `https://images.justwatch.com${backdrop.replace('{profile}', 's1440').replace('{format}', 'jpg')}` : '',
     desc: String(node.content.shortDescription || '').trim(),
     url: page || '',
+    scores: scoresOf(node.content),
   };
 }

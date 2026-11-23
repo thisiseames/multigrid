@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { justWatchTitles, netflixMatch, netflixWeek, serviceName } from '../tools/top10-rows.mjs';
+import { justWatchTitles, netflixMatch, netflixWeek, scoresOf, serviceName } from '../tools/top10-rows.mjs';
 import { atlanticTarget, openLabel, topCharts, topLine } from '../src/top10.js';
 
 const HEAD = 'country_name\tcountry_iso2\tweek\tcategory\tweekly_rank\tshow_title\tseason_title\tcumulative_weeks_in_top_10';
@@ -107,9 +107,15 @@ test("a Netflix title in JustWatch's search: the same name first, else one that 
   const node = (title, id, backdrop = '') => ({ node: { content: { title, shortDescription: `About ${title}`, backdrops: backdrop ? [{ backdropUrl: backdrop }] : [] }, offers: [{ standardWebURL: 'https://www.crave.ca/x' }, { standardWebURL: `https://www.netflix.com/title/${id}` }] } });
   const answer = (...edges) => ({ data: { searchTitles: { edges } } });
   assert.deepEqual(netflixMatch(answer(node('Bodies', 1), node('The Body', 2, '/backdrop/9/{profile}/the-body.{format}')), 'The Body'), {
-    image: 'https://images.justwatch.com/backdrop/9/s1440/the-body.jpg', desc: 'About The Body', url: 'https://www.netflix.com/title/2',
+    image: 'https://images.justwatch.com/backdrop/9/s1440/the-body.jpg', desc: 'About The Body', url: 'https://www.netflix.com/title/2', scores: {},
   });
   assert.equal(netflixMatch(answer(node('WWE Raw', 3), node('Raw Weekly Recap', 4)), 'Raw').url, 'https://www.netflix.com/title/3');
   assert.equal(netflixMatch(answer(node('Black Lightning', 5)), 'Black Doves'), null);
   assert.equal(netflixMatch({ errors: [] }, 'Raw'), null);
+});
+
+test("JustWatch's scores: IMDb, votes, Rotten Tomatoes and Certified Fresh, only the ones it has", () => {
+  assert.deepEqual(scoresOf({ scoring: { imdbScore: 7.24, imdbVotes: 82156, tomatoMeter: 94, certifiedFresh: true } }), { imdb: 7.2, imdbVotes: 82156, rt: 94, fresh: true });
+  assert.deepEqual(scoresOf({ scoring: { imdbScore: 6.6, tomatoMeter: null } }), { imdb: 6.6 });
+  assert.deepEqual(scoresOf({}), {});
 });
