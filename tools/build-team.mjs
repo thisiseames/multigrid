@@ -44,15 +44,30 @@ async function main() {
     get(FX, true, 15000),
   ]);
   const transfermarkt = parseTransfermarktSquad(transfermarktText ?? '');
-  const fx = Number(fxAnswer?.rates?.GBP) || 0;
+  const fx = Number(fxAnswer?.rates?.GBP) || Number(previous.fx) || 0;
   let transfers = {};
   try { transfers = JSON.parse(fs.readFileSync(TRANSFERS, 'utf8')); } catch { /* the transfer job hasn't run yet */ }
+
+  // A failed Transfermarkt or FX fetch must not wipe the last good contracts and values.
+  const before = new Map((previous.players ?? []).map((player) => [player.name.toLowerCase(), player]));
+  const fresh = mergeSquad(elements, transfermarkt);
+  const players = fresh.map((player) => {
+    if (player.contract && player.value) return player;
+    const old = before.get(player.name.toLowerCase());
+    return old ? {
+      ...player,
+      contract: player.contract || old.contract,
+      value: player.value || old.value,
+      age: player.age || old.age,
+      position: player.position || old.position,
+    } : player;
+  });
 
   const data = {
     updated: now,
     team: team.name,
     fx,
-    players: mergeSquad(elements, transfermarkt),
+    players,
     loans: loansFromTransfers(transfers),
   };
   const next = `${JSON.stringify(data, null, 1)}\n`;
