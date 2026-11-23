@@ -212,20 +212,26 @@ export function knownFor(titles, intro = '', max = 24) {
   return { known, more: rest.slice(0, Math.max(0, max - known.length)) };
 }
 
-/** Where a title plays in Atlantic: films by TMDB number, shows from S1 E1. */
+/**
+ * Where a title plays in Atlantic: a film at /watch/<TMDB number>, a show from S1 E1 at
+ * /watch/<number>/1/1. (Atlantic has no /movie/ page: that address is its 404.)
+ */
 export function atlanticLink(title) {
   if (!title?.tmdb || !/^\d+$/.test(title.tmdb)) return '';
-  return title.kind === 'film' ? `https://atlantic.bz/movie/${title.tmdb}` : `https://atlantic.bz/watch/${title.tmdb}/1/1`;
+  return title.kind === 'film' ? `https://atlantic.bz/watch/${title.tmdb}` : `https://atlantic.bz/watch/${title.tmdb}/1/1`;
 }
 
-/** The TMDB number and kind in an Atlantic link: /movie/693134 → film; /watch/95396/1/1 → show. */
+/**
+ * The TMDB number and kind in an Atlantic link: /watch/95396/1/1 (season and episode) → show;
+ * /watch/693134 (no episode) → film. Old /movie/ and /title/ links are read too.
+ */
 export function atlanticTitle(input) {
   const text = String(input || '');
   if (!/atlantic\.bz/i.test(text)) return null;
-  const film = text.match(/\/movie\/(\d+)/);
-  if (film) return { kind: 'film', tmdb: film[1] };
-  const show = text.match(/\/(?:watch|tv)\/(\d+)/);
-  return show ? { kind: 'show', tmdb: show[1] } : null;
+  const show = text.match(/\/(?:watch|embed\/tv)\/(\d+)\/\d+\/\d+/) || text.match(/\/title\/tv\/(\d+)/);
+  if (show) return { kind: 'show', tmdb: show[1] };
+  const film = text.match(/\/(?:watch|movie|embed\/movie|title\/movie)\/(\d+)(?![\d/])/);
+  return film ? { kind: 'film', tmdb: film[1] } : null;
 }
 
 /** "2 hr 45 min". */

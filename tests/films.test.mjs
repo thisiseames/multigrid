@@ -98,11 +98,16 @@ test('known for: the roles their Wikipedia intro names, one per franchise, minor
 });
 
 test('Atlantic links both ways', () => {
-  assert.equal(atlanticLink({ kind: 'film', tmdb: '693134' }), 'https://atlantic.bz/movie/693134');
+  // Atlantic plays a film at /watch/<id>; /movie/<id> is its 404 page (Nov 23, owner's report).
+  assert.equal(atlanticLink({ kind: 'film', tmdb: '693134' }), 'https://atlantic.bz/watch/693134');
+  assert.equal(atlanticLink({ kind: 'film', tmdb: '583406' }), 'https://atlantic.bz/watch/583406');
   assert.equal(atlanticLink({ kind: 'show', tmdb: '85552' }), 'https://atlantic.bz/watch/85552/1/1');
   assert.equal(atlanticLink({ kind: 'film', tmdb: '' }), '');
   assert.equal(atlanticLink({ kind: 'film', tmdb: 'x1' }), '');
+  assert.deepEqual(atlanticTitle('https://atlantic.bz/watch/693134'), { kind: 'film', tmdb: '693134' });
   assert.deepEqual(atlanticTitle('https://atlantic.bz/movie/693134'), { kind: 'film', tmdb: '693134' });
+  assert.deepEqual(atlanticTitle('https://atlantic.bz/title/tv/95396'), { kind: 'show', tmdb: '95396' });
+  assert.deepEqual(atlanticTitle('https://atlantic.bz/watch/95396/2/1'), { kind: 'show', tmdb: '95396' });
   assert.deepEqual(atlanticTitle('https://atlantic.bz/watch/68407/1/3'), { kind: 'show', tmdb: '68407' });
   assert.equal(atlanticTitle('https://www.youtube.com/watch?v=x'), null);
 });
