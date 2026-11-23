@@ -395,3 +395,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - iOS cannot make a scanned or tapped link open in a Home Screen web app; it always opens Safari. The phone’s **Remote** tab now opens **Connect remote** with a paste field and **Paste** button, instead of wrongly starting a host QR dialog. Pair once there; the phone reconnects by itself on later opens. The QR path remains for Safari users.
 - The laptop’s Phone remote note now says scanning opens Safari and points Home Screen users to Remote → paste.
 - Verified at 390: a fresh phone showed Connect remote (no QR), a pasted link saved `multigrid.remotepair.v1` and opened the remote screen; the laptop still showed its QR and host dialog. 373 tests.
+
+## Nov 23 — Home on the phone
+- The phone top bar now has a **Home/Streams** icon (44 px) that opens the same home screen as the laptop: Continue watching, The Multigrid Ten, Top 10 and Trending, with the billboard and rows. An empty phone still starts on the wall/splash; Home is available whenever they want it. The desktop Home/Streams behaviour is unchanged.
+- Phone layout: shorter billboard (52vh, min 300), 16 px gutters, 44vw cards capped at 190, smaller rank numbers and copy; the Sound button narrowed to 48 px so the 44 px Home button fits at 390 without overflow.
+- Verified at 390 with a stream and Continue watching: Home icon 44×44, home opened with the billboard and four rows (31 cards), no horizontal overflow, Streams returned to the grid. 373 tests.

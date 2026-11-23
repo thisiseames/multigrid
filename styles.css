@@ -321,7 +321,6 @@ body.is-phone #stage.is-empty-wall {
   background-repeat: no-repeat;
 }
 body.is-phone #stage.is-empty-wall::after { content: none; }
-body.is-phone #home-button { display: none; }
 @media (orientation: portrait) {
   body.is-phone #stage.is-empty-wall {
     background-color: var(--bg);
@@ -1913,7 +1912,9 @@ body.remote-open { overflow: hidden; }
   #remote-button, #saved-button, #help-button, #fullscreen-button,
   #sports-button, #more-button { display: none !important; }
   #today-button { display: inline-flex !important; width: 44px; height: 44px; padding: 0; border-radius: 12px; }
-  #today-button { order: 1; } #mixer-button { order: 2; } .topbar .add-button { order: 3; }
+  body.is-phone #home-button { display: inline-flex !important; flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 12px; }
+  body.is-phone #home-button svg { width: 21px; height: 21px; }
+  #today-button { order: 2; } #mixer-button { order: 3; } .topbar .add-button { order: 4; }
   #today-button svg { width: 21px; height: 21px; }
   #today-button .wide-only { display: none; }
   #today-button .narrow-only { display: inline-flex; }
@@ -2278,6 +2279,7 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 @media (max-width: 640px) {
   /* Same look as the bottom tabs: a 24 pt icon, 3 pt gap, then the label at its natural line height. */
   #today-button, #mixer-button, #palette-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; padding: 0; }
+  body.is-phone #mixer-button { width: 48px; min-width: 48px; }
   #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
   #today-button svg, #mixer-button svg, #palette-button svg { width: 24px; height: 24px; }
   #mixer-button:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
@@ -2666,6 +2668,26 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hcard-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0 2px; }
 .hcard-text b { font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hcard-text small { font-size: 12.5px; color: rgba(255, 255, 255, .6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Phone home: the same rows, sized for a phone and the bottom tabs. */
+body.is-phone .home-hero { height: min(52vh, 460px); min-height: 300px; }
+body.is-phone .hero-info { left: 18px; right: 18px; bottom: 78px; width: auto; gap: 7px; }
+body.is-phone .hero-label { font-size: 10.5px; }
+body.is-phone .hero-title { font-size: clamp(28px, 8vw, 38px); }
+body.is-phone .hero-meta { font-size: 12.5px; }
+body.is-phone .hero-desc { font-size: 13px; -webkit-line-clamp: 2; }
+body.is-phone .hero-play, body.is-phone .hero-more { height: 42px; font-size: 14px; }
+body.is-phone .home-rows { margin-top: -38px; padding-bottom: 24px; }
+body.is-phone .home-title, body.is-phone .home-note { padding: 0 16px; }
+body.is-phone .home-title { margin-bottom: 8px; font-size: 12px; }
+body.is-phone .home-note { margin-top: -4px; margin-bottom: 8px; }
+body.is-phone .hrow { gap: 10px; padding: 2px 16px 6px; scroll-padding-inline: 16px; }
+body.is-phone .hcard { width: min(44vw, 190px); }
+body.is-phone .hcard-art { border-radius: 8px; }
+body.is-phone .hcard-text b { font-size: 13px; }
+body.is-phone .hcard-text small { font-size: 11.5px; }
+body.is-phone .hcard-rank { left: 7px; font-size: 38px; }
+body.is-phone .home-edit { padding-bottom: 24px; }
 
 /* A game: the two teams' colours, crests large. */
 .teams-art { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8%;

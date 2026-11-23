@@ -2379,7 +2379,7 @@ function render() {
   $('welcome').hidden = !showWelcome;
   $('grid').hidden = showWelcome;
   const emptyWall = !showWelcome && streamCount(ws) === 0;
-  const showHome = !showWelcome && !onPhoneScreen() && (homeOpen || emptyWall);
+  const showHome = !showWelcome && (homeOpen || (emptyWall && !onPhoneScreen()));
   // The laptop's empty screen plays MULTIGRID's opening sound as the wordmark draws together.
   if (emptyWall && !$('stage').classList.contains('is-empty-wall') && !onPhoneScreen()) playSting();
   $('stage').classList.toggle('is-empty-wall', emptyWall);
@@ -2399,7 +2399,7 @@ function render() {
 
   const homeButton = $('home-button');
   const hasStreams = streamCount(ws) > 0;
-  homeButton.hidden = !hasStreams || onPhoneScreen();
+  homeButton.hidden = onPhoneScreen() ? false : !hasStreams;
   homeButton.title = homeOpen ? 'Back to streams' : 'Home';
   homeButton.setAttribute('aria-label', homeButton.title);
   homeButton.querySelector('.home-icon').hidden = homeOpen;
