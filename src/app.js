@@ -11193,26 +11193,9 @@ function moveRow() {
     el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Copy move link' }), el('small', { textContent: 'Everything on this device, for multigrid.club' }))));
     return holder;
   }
-  const row = el('div', { class: 'sdrop-save' });
-  const showButton = () => row.replaceChildren(el('button', { type: 'button', class: 'sdrop-row', on: { click: showForm } },
-    el('span', { class: 'sdrop-shape' }, icon('download', 18)),
-    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Paste move link' }), el('small', { textContent: 'Brings everything over from the old address' }))));
-  function showForm() {
-    const input = el('input', { type: 'text', placeholder: 'Paste the move link', autocomplete: 'off', autocapitalize: 'off', spellcheck: false, aria: { label: 'Move link' } });
-    const go = el('button', { type: 'submit', class: 'add-button', textContent: 'Move' });
-    row.replaceChildren(el('form', {
-      class: 'sdrop-form',
-      on: {
-        async submit(event) {
-          event.preventDefault();
-          if (!(await receiveMove(input.value))) { toast("That isn't a move link. Copy it again at the old address."); input.focus(); }
-        },
-      },
-    }, input, go));
-    input.focus();
-  }
-  showButton();
-  return row;
+  // The move to multigrid.club is done (the old address forwards here), so the menu no longer
+  // offers "Paste move link". A move link opened directly (#move=…) still works.
+  return null;
 }
 
 /** "Clear all streams" in the MULTIGRID drop-down: everything off the screen at once, with Undo. */
