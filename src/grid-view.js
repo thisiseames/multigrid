@@ -10,7 +10,7 @@ import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
 import { parseSource } from './sources.js';
 import { castWay, startCast, watchAirPlay } from './cast.js';
-import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop, wholePicture } from './crop.js';
+import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, getFootball, setCinema, setCrop, setFootball, wholePicture } from './crop.js';
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
@@ -332,9 +332,12 @@ class TileView {
   /** Cinema if it's on for this stream, otherwise any crop. */
   applyFraming() {
     if (!this.cropInner) return;
-    const shape = getCinema(this.tile.input);
+    const film = getCinema(this.tile.input);
+    const football = getFootball(this.tile.input);
+    const shape = football || film;
     this.root.classList.toggle('is-cinema', Boolean(shape));
-    this.cinemaButton?.classList.toggle('is-on', Boolean(shape));
+    this.cinemaButton?.classList.toggle('is-on', Boolean(film));
+    this.footballButton?.classList.toggle('is-on', Boolean(football));
     if (!shape) {
       this.applyCrop(getCrop(this.tile.input));
       return;
@@ -349,9 +352,18 @@ class TileView {
 
   toggleCinema() {
     const on = !getCinema(this.tile.input);
+    if (on) setFootball(this.tile.input, false);
     setCinema(this.tile.input, on ? FILM_SHAPE : null);
     this.applyFraming();
     // The big spot may change shape, so the whole grid is redrawn.
+    this.grid.render(this.grid.ws);
+  }
+
+  toggleFootball() {
+    const on = !getFootball(this.tile.input);
+    if (on) setCinema(this.tile.input, null);
+    setFootball(this.tile.input, on);
+    this.applyFraming();
     this.grid.render(this.grid.ws);
   }
 
@@ -464,6 +476,8 @@ class TileView {
     this.cropButton = this.source.ok && !isNote ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     this.cinemaButton = this.source.ok && !isNote ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
+    this.footballButton = this.source.ok && !isNote ? iconButton('pitch', 'Football: fill the tile with a 16:9 broadcast, no black bars', () => this.toggleFootball()) : null;
+    this.footballButton?.classList.add('strip-football');
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
     this.moreButton.classList.add('strip-more');
@@ -486,6 +500,7 @@ class TileView {
       this.primaryButton,
       this.starButton,
       this.cinemaButton,
+      this.footballButton,
       this.cropButton,
       this.muteButton,
       this.fullButton,
@@ -527,6 +542,7 @@ class TileView {
 
   syncControls() {
     this.root.classList.toggle('is-primary', Boolean(this.tile.primary && isStream(this.tile)));
+    this.footballButton?.classList.toggle('is-on', Boolean(getFootball(this.tile.input)));
     if (!this.muteButton) return;
     if (this.primaryButton) {
       const primaryLabel = this.tile.primary ? 'Primary stream: always in the biggest spot. Click to stop' : 'Make primary: always in the biggest spot';
@@ -643,6 +659,7 @@ class TileView {
     this.starButton = null;
     this.cropButton = null;
     this.cinemaButton = null;
+    this.footballButton = null;
     this.popButton = null;
     this.sendButton = null;
     this.resizeWatch?.disconnect();
@@ -784,7 +801,7 @@ export class GridView {
       return;
     }
     const box = this.stageEl.getBoundingClientRect();
-    const cinema = this.isCustom ? null : cinemaSpot(this.ws, (tile) => getCinema(tile.input));
+    const cinema = this.isCustom ? null : cinemaSpot(this.ws, (tile) => getFootball(tile.input) || getCinema(tile.input));
     const size = fitStage(this.ws, box.width, box.height, stripHeight(), cinema);
     this.gridEl.style.width = `${size.width}px`;
     this.gridEl.style.height = `${size.height}px`;

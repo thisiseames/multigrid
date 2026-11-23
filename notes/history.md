@@ -418,3 +418,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 ## Nov 23 — Surf on the remote
 - Remote cards now show **Prev channel / Next channel** when that stream has at least two favorites to surf. It calls the same `surfChannels` as the laptop: it stays in the tile’s folder (or uses all favorites when unfiled), replaces the stream in place, and updates the card’s label.
 - Verified over a real phone-to-laptop remote connection with Alpha/Beta in News and Gamma in Sports: Next changed Alpha to Beta on both the laptop and the remote; Prev returned to Alpha. 373 tests.
+
+## Nov 23 — Football shape
+- New per-link **Football** toggle (pitch icon in the tile strip, the stream menu, and each remote card): a 16:9 broadcast frame that fills the tile with no black bars. It is separate from Cinema; turning one on turns the other off.
+- On a normal 16:9 grid tile it fits exactly. On a taller 4:3/maximized tile it fills by trimming the outer edges (a 16:9 picture cannot fill a narrower tile without either bars or cropping). It does not change the tile’s grid cell.
+- Verified on an 800×600 maximized tile: frame 800×574, inner 1020×574 (covers, no bars), `multigrid.football.v1` set; the remote pill read Football on and cleared it again. 373 tests.
