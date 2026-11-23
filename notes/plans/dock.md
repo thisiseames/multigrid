@@ -41,7 +41,7 @@ Black glass (rgba(0,0,0,.72) + blur), items 52 px high art tiles, slight scale o
 bounce), white LIVE text. No new colours (never periwinkle).
 
 ## Checklist
-- [ ] src/dock.js (pure): pick/order items, pin/unpin, note opens, 30-day pruning + tests/dock.test.mjs
+- [x] src/dock.js (pure): pick/order items, pin/unpin, note opens, 30-day pruning + tests/dock.test.mjs
 - [ ] app wiring: counter in addStream; dock element + bottom-edge reveal/hide; click to add; ⋯ pin menu; favorite card "Add to Dock"
 - [ ] drag onto tile / empty slot with outline
 - [ ] styles (laptop only; above ticker)
