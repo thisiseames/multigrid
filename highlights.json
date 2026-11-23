@@ -1,5 +1,5 @@
 {
- "updated": 1795403782441,
+ "updated": 1795405359564,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -879,12 +879,12 @@
      "rank": 3.5
     },
     {
-     "id": "-xTQiZP7Ai4",
+     "id": "CWA0nOxfFOI",
      "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
      "rank": 2
     },
     {
-     "id": "CWA0nOxfFOI",
+     "id": "-xTQiZP7Ai4",
      "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
      "rank": 2
     }
@@ -1010,6 +1010,11 @@
      "rank": 3.5
     },
     {
+     "id": "r7Dn_36ZhYo",
+     "title": "Nikola Jokić Delivers A MASTERCLASS | Game Highlights DEN vs. CHI",
+     "rank": 2
+    },
+    {
      "id": "UxtB4QET7i0",
      "title": "Nuggets DOMINATE Overtime Denver Nuggets vs. Chicago Bulls | OT Highlights 📺",
      "rank": 1.5
@@ -1026,8 +1031,20 @@
      "id": "HiWq0b23dbk",
      "title": "MAVERICKS at JAZZ | FULL GAME HIGHLIGHTS | November 22, 2026",
      "rank": 3.5
+    },
+    {
+     "id": "CWA0nOxfFOI",
+     "title": "Mavericks Highlights vs. Utah Jazz | November 22, 2026",
+     "rank": 1.5
     }
    ]
+  },
+  "401910034": {
+   "league": "NBA",
+   "title": "Knicks 113–106 Pacers",
+   "start": 1795395600000,
+   "sources": "feeds",
+   "videos": []
   }
  },
  "clubs": {
