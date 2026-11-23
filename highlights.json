@@ -1,5 +1,5 @@
 {
- "updated": 1795394287737,
+ "updated": 1795395851034,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -36,6 +36,13 @@
      "rank": 1.5
     }
    ]
+  },
+  "401873069": {
+   "league": "NFL",
+   "title": "Giants 23–18 Jaguars",
+   "start": 1795382700000,
+   "sources": "feeds",
+   "videos": []
   },
   "401873070": {
    "league": "NFL",
@@ -121,6 +128,13 @@
      "rank": 1.5
     }
    ]
+  },
+  "401873075": {
+   "league": "NFL",
+   "title": "Broncos 38–24 Raiders",
+   "start": 1795382700000,
+   "sources": "feeds",
+   "videos": []
   },
   "401873076": {
    "league": "NFL",
@@ -1017,7 +1031,11 @@
   "ligue1:176": "",
   "ligue1:2697": "",
   "nfl:24": "UCUyz_gEY_N-KBU4zjt2s-uQ",
-  "nfl:20": "UCROj9vBjc4ZW3AL4cd_BjHg"
+  "nfl:20": "UCROj9vBjc4ZW3AL4cd_BjHg",
+  "nfl:7": "UCDGdBexlDZA8T7hnweWWyow",
+  "nfl:13": "",
+  "nfl:19": "UCk2FqoG8dN5EAz5WU3A0D7A",
+  "nfl:30": "UCsGacW6z0GedR-Wv45SBRZg"
  },
  "club": {
   "360": [
@@ -1113,7 +1131,7 @@
    },
    {
     "id": "60dXs1w3mrU",
-    "title": "Mauricio Pochettino reacts to Man Utd's 4-0 defeat to Liverpool in his first game in charge",
+    "title": "Mauricio Pochettino reflects on Man Utd's 4-0 defeat to Liverpool in his first game in charge",
     "published": 1795375865000,
     "source": "Sky Sports Premier League"
    },
