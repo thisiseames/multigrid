@@ -385,3 +385,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Phones still hide Add stream → Import a list by the owner’s Nov 23 request; laptop and iPad show it.
 - Imported follows are saved in the **TikTok** folder, not left unfiled (account feeds are hidden from All, so unfiled ones looked missing). An existing TikTok folder is reused whatever its capitals, and a renamed account keeps its name. Re-running Select all → Add files earlier unfiled imports into the folder.
 - Verified at 1280 and 768: the chooser has all three imports, `Following.txt` with two accounts opens the picker, Select all → Add 2 selected adds both into the TikTok folder, the folder pill shows both cards, an existing lower-case `tiktok` folder is reused, and a renamed account keeps its name; no overflow. 373 tests.
+
+## Nov 23 — Sync reachable on a fresh phone
+- A phone with no favorites hid the whole Favorites section in Add stream, which also hid the only **Sync** button on the phone. Favorites now always shows there, with “No favorites yet. Tap Sync to bring them from another device.” and the Sync control.
+- Fixed a stray “null” in the Sync dialog when there was no Continue watching row to show (`show()` now filters empty parts).
+- Verified at 390: fresh phone shows Favorites + Sync, the dialog has no “null”, entering a code from a laptop paired it, and the laptop’s favorite appeared in the phone’s Add stream; no overflow. 373 tests.

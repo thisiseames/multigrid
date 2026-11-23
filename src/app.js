@@ -6847,7 +6847,7 @@ function fillAddFavorites(holder) {
             return favoriteCard(favorite ?? { input: seen.input, name: seen.name, group: '' }, holder, { plain: !favorite });
           }))
             : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
-              : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : 'No favorites here' }));
+              : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : addFolder ? 'No favorites here' : 'No favorites yet. Tap Sync to bring them from another device.' }));
   const pills = (folders.length || podEpisodes.length || followedShows().length || layoutsTab() || listRecent().length || libraryAvailable()) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
   if (oldPills) oldPills.replaceWith(pills ?? el('div', { class: 'addp-pills', hidden: true }));
@@ -6857,7 +6857,8 @@ function fillAddFavorites(holder) {
 }
 
 function renderAddFavorites(holder, getTarget) {
-  holder.hidden = listFavorites().length === 0 && !libraryAvailable();
+  // Keep Favorites visible on a fresh phone: its Sync button is the only way to pair.
+  holder.hidden = false;
   holder.getTarget = getTarget;
   loadPodcasts(holder);
   const { wrap } = addSearchBox(holder);
@@ -10571,7 +10572,7 @@ function openSyncBox(view = '') {
   const actions = (...buttons) => el('div', { class: 'dialog-actions' }, ...buttons);
   const button = (text, onClick, main = false) => el('button', { type: 'button', class: main ? 'add-button' : 'plain-button', textContent: text, on: { click: onClick } });
   const show = (...parts) => {
-    box.replaceChildren(...parts);
+    box.replaceChildren(...parts.filter(Boolean));
     if (!box.open) openDialog(box);
   };
   const socialText = () => (syncsSocial()
