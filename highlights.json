@@ -1,5 +1,5 @@
 {
- "updated": 1795402173207,
+ "updated": 1795403782441,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -882,6 +882,11 @@
      "id": "-xTQiZP7Ai4",
      "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
      "rank": 2
+    },
+    {
+     "id": "CWA0nOxfFOI",
+     "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
+     "rank": 2
     }
    ]
   },
@@ -985,6 +990,11 @@
      "id": "NU0cFKUTJdY",
      "title": "POSTGAME HIGHLIGHTS: ORLANDO MAGIC VS. WASHINGTON WIZARDS 11.22.26 PRESENTED BY PLANET FITNESS",
      "rank": 2
+    },
+    {
+     "id": "1_Whs7_gdUg",
+     "title": "FULL GAME HIGHLIGHTS: ORLANDO MAGIC VS. WASHINGTON WIZARDS 11.22.26",
+     "rank": 2
     }
    ]
   },
@@ -993,14 +1003,31 @@
    "title": "Bulls 145–151 Nuggets",
    "start": 1795392000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "fku0QvOiRm8",
+     "title": "NUGGETS at BULLS | FULL GAME HIGHLIGHTS | November 22, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "UxtB4QET7i0",
+     "title": "Nuggets DOMINATE Overtime Denver Nuggets vs. Chicago Bulls | OT Highlights 📺",
+     "rank": 1.5
+    }
+   ]
   },
   "401910033": {
    "league": "NBA",
    "title": "Jazz 114–116 Mavericks",
    "start": 1795392000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "HiWq0b23dbk",
+     "title": "MAVERICKS at JAZZ | FULL GAME HIGHLIGHTS | November 22, 2026",
+     "rank": 3.5
+    }
+   ]
   }
  },
  "clubs": {
