@@ -3064,6 +3064,11 @@ async function xrayShow(tile, name, source) {
   } else if (story) {
     parts.push(xrSection('The story', el('p', { class: 'xr-text', textContent: story })));
   }
+  // Extras: trailers, recaps, promos and interviews.
+  if (show) {
+    const extras = extrasSection(tile, await extrasFor(show.name));
+    if (extras) parts.push(extras);
+  }
   if (show?.cast.length) {
     parts.push(xrSection('Cast',
       castList(show.cast.map((role) => ({ name: role.name, photo: role.photo, character: role.character }))),
@@ -3240,6 +3245,28 @@ function extraClip(tile, clip) {
     el('span', { class: 'xr-clip-text' }, el('b', { textContent: clip.title }), clip.note ? el('small', { textContent: clip.note }) : null)));
 }
 
+/* Extras: trailers, recaps, promos and cast interviews for the shows and films in the Top 10s,
+   Today and Favorites, found on YouTube by a job (tools/build-extras.mjs → extras.json). */
+var extrasLoad = null; // eslint-disable-line no-var
+function extrasFor(title) {
+  if (!extrasLoad || Date.now() - extrasLoad.at > 3600000) {
+    extrasLoad = { at: Date.now(), data: fetch('extras.json', { cache: 'no-cache' }).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null) };
+  }
+  return extrasLoad.data.then((data) => data?.titles?.[normTitle(titleOf(title).title)]?.clips ?? []);
+}
+const clipLength = (total) => (total ? `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}` : '');
+/** The Extras section; a film's official trailer from Wikidata leads when the job found no trailer. */
+function extrasSection(tile, clips, trailer = null) {
+  const list = [...clips];
+  if (trailer && !list.some((clip) => clip.id === trailer.id || clip.kind === 'Trailer')) list.unshift(trailer);
+  if (!list.length) return null;
+  return xrSection('Extras', el('ul', { class: 'xr-clips' }, ...list.map((clip) => extraClip(tile, {
+    id: clip.id,
+    title: clip.title,
+    note: clip.note || [clip.kind, clip.channel, clipLength(clip.seconds)].filter(Boolean).join(' · '),
+  }))));
+}
+
 /** A film: poster, year, runtime, director, the story, scores, the trailer and the cast. */
 async function xrayFilm(tile, name, ref, listing) {
   const film = await filmsCached(`film:${ref.tmdb || ref.imdb}`, () => askWikidata(filmQuery(ref)).then(parseFilm));
@@ -3267,7 +3294,8 @@ async function xrayFilm(tile, name, ref, listing) {
     parts.push(xrSection('The story', el('p', { class: 'xr-text', textContent: story.trim() }),
       film.wiki ? el('a', { class: 'xr-more', href: `https://en.wikipedia.org/wiki/${film.wiki}`, target: '_blank', rel: 'noopener noreferrer', textContent: 'More on Wikipedia' }) : null));
   }
-  if (film.trailer) parts.push(xrSection('Trailer', el('ul', { class: 'xr-clips' }, extraClip(tile, { id: film.trailer, title: `${film.name}: official trailer`, note: 'YouTube' }))));
+  const extras = extrasSection(tile, await extrasFor(film.name), film.trailer ? { id: film.trailer, title: `${film.name}: official trailer`, note: 'Trailer · YouTube' } : null);
+  if (extras) parts.push(extras);
   if (cast?.length) parts.push(xrSection('Cast', castList(cast.slice(0, 12))));
   return parts;
 }

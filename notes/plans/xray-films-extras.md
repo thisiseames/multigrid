@@ -44,8 +44,8 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - [x] 2. X-Ray for films in app.js (xrayFilm): hero with poster, runtime, director, year, story (Wikipedia summary), Scores, Cast, Trailer. 7-day cache (multigrid.films.v1).
 - [x] 3. Tappable cast in X-Ray (shows and films) → person page inside X-Ray, back arrow, Known for + all titles with scores and Play (Atlantic link / resume from favorites). Phone + laptop.
 - [x] 4. YouTube extras play like Replays: laptop tile with an end/err hook through the YouTube player's state; phone in-sheet YouTube player.
-- [ ] 5. tools/build-extras.mjs → extras.json (titles from top10/charts/movies/setup-data; checked YouTube clips; weekly re-search cache). Add to guide.yml. Tests for the clip checks.
-- [ ] 6. Extras row in X-Ray (shows + films), falling back to the Wikidata trailer.
+- [x] 5. tools/build-extras.mjs → extras.json (titles from top10/charts/movies/setup-data; checked YouTube clips; weekly re-search cache). Add to guide.yml. Tests for the clip checks.
+- [x] 6. Extras row in X-Ray (shows + films), falling back to the Wikidata trailer.
 - [ ] 7. Look check at 1280 + 390 (both themes, no periwinkle, nothing over a Twitch tile), push, verify live, history.md entry, owner-rules job-owned list += extras.json.
 
 ## Gotchas found while building
@@ -61,3 +61,6 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - YouTube can't play on the cloud test machine (stays "unstarted"). The trailer end was tested with a stand-in iframe_api (fires state 0 after 5 s) and a stand-in embed page (posts onStateChange 0): scratchpad trailer.mjs pattern. Turn a tile's sound on with its own Unmute button in tests: the saved copy can say "sound" while the page itself has muted it on load.
 - Cast photos and many posters come from thumb.wikimedia.org (allowed in the test environment Nov 23).
 - The YouTube player exposes `player.onEnded` (src/players.js) for X-Ray extras.
+- YouTube search pages carry everything in `ytInitialData` (title, channel, length, verified badge), so no oEmbed calls are needed. Pages are ~1.5 MB: 30 s timeout + one retry; most "empty" results in the first test were timeouts.
+- Clip rules (tools/extras-pick.mjs): the whole name as a phrase; one-word names need the service named, or a verified channel writing "Name | …"/"Name — …"; shows never take "movie"/"(2020)" clips; foreign-language copies and keyword-stuffed titles are dropped; this season's trailer beats other versions; re-uploads (same first two "|" parts) count once.
+- A title whose searches mostly came back empty is not saved, so it's tried again next run instead of waiting a week.
