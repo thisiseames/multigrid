@@ -1,6 +1,6 @@
 # MULTIGRID Desk
 
-**Status:** built locally; browser-verified; not live yet.
+**Status:** DONE, live Nov 23, 2026 (commit ba5261d).
 
 ## Running cost
 
@@ -35,7 +35,7 @@ $0/month. No new service, no metered API, no server. It reuses the existing pane
 6. [x] Game mode/X-Ray/Event Room yield the right column.
 7. [x] Node tests, Playwright at 1440 and 390, screenshots.
 8. [x] `notes/history.md` and `notes/product-map.md`.
-9. [ ] Commit, push, live check.
+9. [x] Commit, push, live check.
 
 ## Gotchas
 
@@ -49,6 +49,6 @@ $0/month. No new service, no metered API, no server. It reuses the existing pane
 
 ## Verification (built locally)
 
-- 1440×900 and 1280×800: all five panels; top-bar buttons route into Desk; drag 380→480 and reload restores; normal Today/Search after close; Game mode takes the column and closes Desk; Twitch tile stays left of Desk with no overlap.
+- Live on multigrid.club at 1440×900 and 390×844; local also at 1280×800: all five panels; top-bar buttons route into Desk; drag 380→480 and reload restores; normal Today/Search after close; Game mode takes the column and closes Desk; Twitch tile stays left of Desk with no overlap.
 - 390×844: Desk hidden; Today opens as the normal sheet.
 - 373 tests pass.
