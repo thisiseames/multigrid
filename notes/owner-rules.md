@@ -82,6 +82,9 @@ Nov 21, MULTIGRID: asked to brainstorm features, I pitched small sports tweaks (
 - Live chat (Twitch/YouTube chat tiles or anything like it). Owner, Nov 22: never suggest it again.
 - Podcast queues/auto-next of any kind. Owner, Nov 22: does not care about a podcast queue; never suggest one again.
 
+## The vision (Nov 23, owner's words, standing brief)
+Build, brainstorm, curate and design MULTIGRID as if it's the signature product of a multi-billion-dollar company aggressively competing with Netflix, Prime Video, DAZN and Apple TV, and set to blow them out of the water because it does everything better: it has the features every paying subscriber of those platforms wishes they had. Millions of subscribers paying $19.99–$59.99 a month. Every idea, screen and detail must meet that level of design, curation and premium feel. Pitch signature features (the kind those companies market), not tweaks; no "add a logo here" rounds.
+
 ## Check every piece of a pitch in the code first
 Nov 22: I pitched "live channel cards" (show title, progress bar, what's next), Reader pictures and a drifting banner as upgrades; all three already exist (favorite cards' On now line, Guide Now cards, readerHero/readerPicture, hero-drift). He was furious: "Understand the website before you pitch things." Before any idea: grep src/app.js and styles.css for every element the idea describes, and open the real screen. Each pitch must say what exists today and only the part that doesn't.
 Pitch to his bar: makes his life easier, wows him, elevates an existing feature's look/feel/use, and makes MULTIGRID look like a product from Netflix, Apple TV, DAZN or Fubo. No gimmicks, no filler to make a list of three.
