@@ -35,3 +35,4 @@ Each needs a full plan and your "go" before building.
 - [x] (done Nov 22) **Transfer desk**: third Sports tab with Premier League done deals, ESPN squad counts, Reader United links, league summary, reported £ fees and the Winter 2027 countdown. 292 tests.
 - [x] (done Nov 22) **Team desk and matchday programme**: FPL availability/form + Transfermarkt contracts + loans in a fourth Sports tab; ESPN opposition form, danger man, last meeting and last XI in a programme from the matchday card. 305 tests.
 - [x] (done Nov 22) **Curated Sports desks**: Transfer lead card, money bar, six-row Done table, three links, league strip and all-30 sheet; Team snapshot, depth bar, three availability cards, position tabs, contract pills and loans strip. 305 tests.
+- [x] (done Nov 22) **Team value and type**: Value column in ≈GBP from Transfermarkt, euro value in the title; Team table cells and labels increased to readable sizes; compact INJ/SUSP/DOUBT pills. 305 tests.

@@ -10,6 +10,7 @@ const OUT = new URL('../team.json', import.meta.url);
 const TRANSFERS = new URL('../transfers.json', import.meta.url);
 const FPL = 'https://fantasy.premierleague.com/api/bootstrap-static/';
 const TM = 'https://r.jina.ai/https://www.transfermarkt.co.uk/manchester-united/kader/verein/985/plus/1';
+const FX = 'https://api.frankfurter.app/latest?from=EUR&to=GBP';
 const HOUR = 3600000;
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36';
 
@@ -38,20 +39,27 @@ async function main() {
     if (player.status === 'u' && /loan/i.test(news)) return false;
     return true;
   });
-  const transfermarkt = parseTransfermarktSquad(await get(TM, false, 45000) ?? '');
+  const [transfermarktText, fxAnswer] = await Promise.all([
+    get(TM, false, 45000),
+    get(FX, true, 15000),
+  ]);
+  const transfermarkt = parseTransfermarktSquad(transfermarktText ?? '');
+  const fx = Number(fxAnswer?.rates?.GBP) || 0;
   let transfers = {};
   try { transfers = JSON.parse(fs.readFileSync(TRANSFERS, 'utf8')); } catch { /* the transfer job hasn't run yet */ }
 
   const data = {
     updated: now,
     team: team.name,
+    fx,
     players: mergeSquad(elements, transfermarkt),
     loans: loansFromTransfers(transfers),
   };
   const next = `${JSON.stringify(data, null, 1)}\n`;
   if (JSON.stringify(previous.players) === JSON.stringify(data.players)
     && JSON.stringify(previous.loans) === JSON.stringify(data.loans)
-    && previous.team === data.team) return;
+    && previous.team === data.team
+    && previous.fx === data.fx) return;
 
   fs.writeFileSync(OUT, next);
   const out = data.players.filter((player) => player.status !== 'a').length;

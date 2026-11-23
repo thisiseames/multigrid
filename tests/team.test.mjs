@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  availability, contractSummary, contractText, loansFromTransfers, mergeSquad, parseTransfermarktSquad, teamNews,
+  availability, contractSummary, contractText, loansFromTransfers, mergeSquad, parseTransfermarktSquad, teamNews, valueInPounds,
 } from '../src/team.js';
 
 const tm = `
@@ -74,6 +74,9 @@ test('contracts group by year and team news puts injuries first', () => {
   ]);
   assert.deepEqual(teamNews(players).map((player) => player.name), ['Leny Yoro', 'Karl Darlow']);
   assert.equal(contractText('2031-06-30'), 'Jun 2031');
+  assert.equal(valueInPounds('€65.00M', 0.83735), '≈£54m');
+  assert.equal(valueInPounds('€200.0K', 0.83735), '≈£0.2m');
+  assert.equal(valueInPounds('', 0.8), '');
 });
 
 test('loans come from the transfer desk and only include loans out', () => {
