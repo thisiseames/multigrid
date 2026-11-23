@@ -1,5 +1,5 @@
 {
- "updated": 1795400585794,
+ "updated": 1795402173207,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -124,6 +124,11 @@
      "id": "8oWgHgf_c_w",
      "title": "Tennessee Titans vs Dallas Cowboys Game Highlights | 2026 NFL Season Week 11",
      "rank": 3.5
+    },
+    {
+     "id": "Q_FwFQPkW34",
+     "title": "Javonte Williams' Best plays from 2-TD game vs. Titans | Week 11 Highlights",
+     "rank": 2
     }
    ]
   },
@@ -968,6 +973,31 @@
   "401910031": {
    "league": "NBA",
    "title": "Wizards 116–96 Magic",
+   "start": 1795392000000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "6LGBQv5bPz8",
+     "title": "MAGIC at WIZARDS | FULL GAME HIGHLIGHTS | November 22, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "NU0cFKUTJdY",
+     "title": "POSTGAME HIGHLIGHTS: ORLANDO MAGIC VS. WASHINGTON WIZARDS 11.22.26 PRESENTED BY PLANET FITNESS",
+     "rank": 2
+    }
+   ]
+  },
+  "401910032": {
+   "league": "NBA",
+   "title": "Bulls 145–151 Nuggets",
+   "start": 1795392000000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401910033": {
+   "league": "NBA",
+   "title": "Jazz 114–116 Mavericks",
    "start": 1795392000000,
    "sources": "feeds",
    "videos": []
