@@ -410,3 +410,7 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Universal Search was rebuilding the full merged games list on every keystroke (`mergeGames` in game-links.js), causing multi-second long tasks. The palette now paints on a 140 ms debounce, flushes immediately on Enter/arrow keys, loads live data in the background, and does **not** build the merged games list for normal search. Sports and live-match results still cover team searches; Fix stream keeps the merged list for repair. The duplicate Games group in normal search is gone.
 - The merge is cached and only scheduled for Fix stream, after typing is idle.
 - Verified at 390 with 342 favorites and 4× CPU throttling: typing “Manchester United” took ~1.0 s (was ~2.7 s), the longest task fell from 6.7 s to ~150 ms, the favorite and Sports games appeared, and Enter opened the active result. 373 tests.
+
+## Nov 23 — Cinema on the remote
+- Every phone remote card now has **Cinema**. It toggles the same per-link Cinema shape (2.39:1) as the laptop’s film button; the pill changes to **Cinema on** and back, and the laptop tile gets `is-cinema`. Crop remains laptop-only.
+- Verified over a real phone-to-laptop remote connection: Cinema wrote `https://example.com/a: 2.39` to `multigrid.cinema.v1`, the laptop tile gained `is-cinema`, the remote showed Cinema on, and tapping again cleared both. 373 tests.

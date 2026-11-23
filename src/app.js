@@ -11746,6 +11746,7 @@ function remoteState() {
         big: bigTileId === tile.id,
         primary: Boolean(tile.primary),
         pipSwap: Boolean(pipOther(tile.id)),
+        cinema: Boolean(getCinema(tile.input)),
       };
     }),
     oneSound: isOneSound(),
@@ -11808,6 +11809,12 @@ function remoteCommand(cmd) {
       break;
     case 'primary':
       if (tile) togglePrimary(tile.id, Boolean(cmd.value));
+      break;
+    case 'cinema':
+      if (tile && Boolean(cmd.value) !== Boolean(getCinema(tile.input))) {
+        grid.viewFor(tile.id)?.toggleCinema();
+        remoteSync();
+      }
       break;
     case 'reload':
       if (tile) { grid.viewFor(tile.id)?.reload(); toast(`Reloaded ${labelOf(tile)}.`); }
@@ -12180,6 +12187,7 @@ function remoteTileCard(tile) {
       el('button', { type: 'button', class: `rm-pill${tile.primary ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.primary)) }, on: { click: () => remoteSend({ type: 'primary', id: tile.id, value: !tile.primary }) } }, icon('crown'), tile.primary ? 'Primary' : 'Make primary'),
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
       tile.pipSwap ? el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'swapPip', id: tile.id }) } }, icon('pip'), 'Swap screens') : null,
+      el('button', { type: 'button', class: `rm-pill${tile.cinema ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.cinema)) }, on: { click: () => remoteSend({ type: 'cinema', id: tile.id, value: !tile.cinema }) } }, icon('film'), tile.cinema ? 'Cinema on' : 'Cinema'),
       el('button', { type: 'button', class: 'rm-pill', on: { click() { remoteSend({ type: 'reload', id: tile.id }); toast(`Reloading ${tile.label}.`); } } }, icon('reload'), 'Reload'),
       el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
