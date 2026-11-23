@@ -1,5 +1,5 @@
 {
- "updated": 1795391150488,
+ "updated": 1795392718200,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -101,6 +101,19 @@
      "id": "8oWgHgf_c_w",
      "title": "Tennessee Titans vs Dallas Cowboys Game Highlights | 2026 NFL Season Week 11",
      "rank": 3.5
+    }
+   ]
+  },
+  "401873074": {
+   "league": "NFL",
+   "title": "Chargers 24–27 Jets",
+   "start": 1795381500000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "gvZYsXcr_6g",
+     "title": "New York Jets vs. Los Angeles Chargers Highlights | NFL 2026 Season Week 11",
+     "rank": 2
     }
    ]
   },
@@ -997,7 +1010,9 @@
   "laliga:2922": "",
   "laliga:1068": "UCuzKFwdh7z2GHcIOX_tXgxA",
   "ligue1:176": "",
-  "ligue1:2697": ""
+  "ligue1:2697": "",
+  "nfl:24": "UCUyz_gEY_N-KBU4zjt2s-uQ",
+  "nfl:20": "UCROj9vBjc4ZW3AL4cd_BjHg"
  },
  "club": {
   "360": [
