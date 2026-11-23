@@ -53,6 +53,8 @@ export function parseSimilar(nodes, { title = '', kind = 'show', limit = LIMIT, 
     if (!image) continue;
     const scores = scoresOf(content);
     if (!scores.imdb && !Number.isFinite(scores.rt)) continue;
+    const quality = Math.max((Number(scores.imdb) || 0) * 10, Number.isFinite(scores.rt) ? scores.rt : 0);
+    if (quality < 60) continue;
     seen.add(key);
     out.push({
       title: name,

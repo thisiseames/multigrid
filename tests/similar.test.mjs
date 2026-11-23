@@ -70,7 +70,21 @@ test('a show with four genres only keeps neighbours that share three of them', (
     { objectType: 'SHOW', content: { title: 'Rings of Power', genres: [{ shortName: 'act' }, { shortName: 'drm' }], backdrops: [{ backdropUrl: '/b/2/{profile}/b.{format}' }], scoring: { imdbScore: 6.8 } } },
     { objectType: 'SHOW', content: { title: 'Lupin', genres: [{ shortName: 'act' }, { shortName: 'crm' }, { shortName: 'drm' }, { shortName: 'trl' }], backdrops: [{ backdropUrl: '/b/3/{profile}/c.{format}' }], scoring: { imdbScore: 7.5 } } },
     { objectType: 'SHOW', content: { title: 'North of North', genres: [{ shortName: 'cmy' }], backdrops: [{ backdropUrl: '/b/4/{profile}/d.{format}' }], scoring: { imdbScore: 7 } } },
+    { objectType: 'SHOW', content: { title: 'Weak Match', genres: [{ shortName: 'act' }, { shortName: 'crm' }, { shortName: 'drm' }], backdrops: [{ backdropUrl: '/b/5/{profile}/e.{format}' }], scoring: { imdbScore: 5.6, tomatoMeter: 59 } } },
   ];
   const items = parseSimilar(nodes, { title: 'Black Doves', kind: 'show', seedGenres: ['act', 'crm', 'drm', 'trl'] });
   assert.deepEqual(items.map((item) => item.title), ['Blue Lights', 'Lupin']);
+});
+
+test('a neighbour needs a real score: IMDb 6.0 or RT 60, not 5.9 or 59', () => {
+  const card = (title, scoring) => ({ objectType: 'SHOW', content: { title, backdrops: [{ backdropUrl: `/b/${title}.{profile}.{format}` }], scoring } });
+  const nodes = [
+    card('Just Under', { imdbScore: 5.9, tomatoMeter: 59 }),
+    card('Imdb Edge', { imdbScore: 6 }),
+    card('Rt Edge', { tomatoMeter: 60 }),
+    card('Imdb Only Weak', { imdbScore: 5.1 }),
+    card('Rt Good', { imdbScore: 5.5, tomatoMeter: 71 }),
+  ];
+  const items = parseSimilar(nodes, { title: 'Black Doves', kind: 'show' });
+  assert.deepEqual(items.map((item) => item.title), ['Imdb Edge', 'Rt Edge', 'Rt Good']);
 });
