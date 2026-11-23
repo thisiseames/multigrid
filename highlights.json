@@ -1,5 +1,5 @@
 {
- "updated": 1795429237376,
+ "updated": 1795430825925,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1249,6 +1249,12 @@
  "club": {
   "360": [
    {
+    "id": "ThQxfjxmSyY",
+    "title": "Man Utd 4-0 Loss: Pochettino's Heated Post-Match Analysis",
+    "published": 1795430730000,
+    "source": "Stretford Paddock"
+   },
+   {
     "id": "o6kxkwyWBM0",
     "title": "We Need To Have A Conversation About This Matchweek.. | THE ULTIMATE WEEKEND ROUND UP.",
     "published": 1795422620000,
@@ -1610,7 +1616,7 @@
    },
    {
     "id": "cjIK-Mr_WN4",
-    "title": "What have we learnt from Mauricio Pochettino’s first  few days as Man Utd boss? | Paper Talk",
+    "title": "What have we learnt from Mauricio Pochettino’s first few days as Man Utd boss? | Paper Talk",
     "published": 1795215885000,
     "source": "Sky Sports News"
    },

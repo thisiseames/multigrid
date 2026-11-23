@@ -1,5 +1,5 @@
 {
- "updated": 1795426098361,
+ "updated": 1795430878726,
  "window": {
   "name": "Summer 2026",
   "playlist": "4658365"
@@ -300,27 +300,19 @@
   },
   {
    "club": "Arsenal",
-   "player": "Ethan Nwaneri",
+   "player": "Tommy Setford",
    "direction": "out",
    "kind": "Loan out",
-   "date": 1788286560000,
-   "link": "https://www.arsenal.com/news/ethan-nwaneri-joins-borussia-dortmund-on-loan-aQN7v3e8JvAT"
+   "date": 1788298440000,
+   "link": "https://www.arsenal.com/news/tommy-setford-joins-stevenage-on-loan-aBk1F9b663o9"
   },
   {
-   "club": "Everton",
-   "player": "Beto",
-   "direction": "out",
-   "kind": "Sold",
-   "date": 1788283260000,
-   "link": "https://www.evertonfc.com/news/2026/september/01/beto-departs-everton/"
-  },
-  {
-   "club": "Tottenham Hotspur",
-   "player": "Kota Takai",
+   "club": "Liverpool",
+   "player": "Harvey Elliott",
    "direction": "out",
    "kind": "Loan out",
-   "date": 1788202980000,
-   "link": "https://www.tottenhamhotspur.com/news/1087933/takai-joins-sint-truidense-vv-on-loan"
+   "date": 1788278940000,
+   "link": "https://www.liverpoolfc.com/news/harvey-elliott-joins-valencia-loan-2026-27"
   },
   {
    "club": "Newcastle",
@@ -340,51 +332,51 @@
   },
   {
    "club": "Ipswich",
-   "player": "Julio Enciso",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1786978020000,
-   "link": "https://www.itfc.co.uk/news/2026/august/17/julio-returns-to-town/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Nottingham Forest",
-   "player": "Steven Benda",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1786446300000,
-   "link": "https://www.nottinghamforest.co.uk/news/2026/august/15/steven-benda-joins-forest/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Sunderland",
-   "player": "Arthur Masuaku",
+   "player": "Ben Johnson",
    "direction": "out",
-   "kind": "Sold",
-   "date": 1786383060000,
-   "link": "https://www.safc.com/news/2026/august/10/masuaku-makes-turkish-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "kind": "Loan out",
+   "date": 1787310840000,
+   "link": "https://www.itfc.co.uk/news/2026/august/21/loan-move-for-ben/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
    "club": "Coventry City",
-   "player": "Miguel Angel Brau",
-   "direction": "out",
-   "kind": "Loan out",
-   "date": 1785840000000,
-   "link": "https://www.ccfc.co.uk/news/2026/august/28/miguel--ngel-brau-joins-academico-de-viseu-on-loan/"
-  },
-  {
-   "club": "Chelsea",
-   "player": "Ishe Samuels-Smith",
-   "direction": "out",
-   "kind": "Loan out",
-   "date": 1785781680000,
-   "link": "https://www.chelseafc.com/en/news/article/ishe-samuels-smith-heads-out-on-loan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "player": "Stephen Mfuni",
+   "direction": "in",
+   "kind": "Loan in",
+   "date": 1787139840000,
+   "link": "https://www.ccfc.co.uk/news/2026/august/30/coventry-city-sign-stephen-mfuni-on-loan-from-manchester-city/"
   },
   {
    "club": "Aston Villa",
-   "player": "Joe Gauci",
+   "player": "Evann Guessand",
    "direction": "out",
    "kind": "Loan out",
-   "date": 1785249360000,
-   "link": "https://www.avfc.co.uk/news/2026/july/28/news-gauci-in-lincoln-loan-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1786527840000,
+   "link": "https://www.avfc.co.uk/news/2026/august/12/news-guessand-rejoins-palace/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Sunderland",
+   "player": "Leo Hjelde",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1786460700000,
+   "link": "https://www.safc.com/news/2026/august/11/hjelde-makes-kv-mechelen-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Everton",
+   "player": "Brennan Johnson",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1786441260000,
+   "link": "https://www.evertonfc.com/news/2026/august/11/everton-sign-johnson-as-mcneil-/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Brentford",
+   "player": "El Hadji Malick Diouf",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1785600540000,
+   "link": "https://www.brentfordfc.com/en/news/article/first-team-brentford-el-hadji-malick-diouf-west-ham-united-transfer"
   },
   {
    "club": "AFC Bournemouth",
@@ -396,11 +388,11 @@
   },
   {
    "club": "Brighton & Hove Albion",
-   "player": "Costinha",
-   "direction": "in",
-   "kind": "Signed",
+   "player": "Caylan Vickers",
+   "direction": "out",
+   "kind": "Sold",
    "date": 1781545140000,
-   "link": "https://www.brightonandhovealbion.com/media-article/mft-transfer-news-costinha-olympiacos-june-2026?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "link": "https://www.brightonandhovealbion.com/media-article/mu21-transfer-news-caylan-vickers-burton-albion-august-2026"
   },
   {
    "club": "Leeds United",
@@ -411,36 +403,44 @@
    "link": "https://www.leedsunited.com/en/news/jack-harrison-completes-move-to-new-england-revolution?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
+   "club": "Chelsea",
+   "player": "Maxence Lacroix",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1781286060000,
+   "link": "https://www.chelseafc.com/en/news/article/maxence-lacroix-signs-for-chelsea?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Nottingham Forest",
+   "player": "Elliot Anderson",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1781285520000,
+   "link": "https://www.nottinghamforest.co.uk/news/2026/july/02/forest-agree-transfer-of-elliot-anderson-to-manchester-city/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
    "club": "Fulham",
-   "player": "Oliver Mayer",
+   "player": "Harry Wilson",
    "direction": "out",
    "kind": "Released",
    "date": 1780923060000,
-   "link": "https://www.fulhamfc.com/news/2026/june/08/player-contract-updates/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "link": "https://www.fulhamfc.com/news/2026/july/08/harry-wilson-leaves-fulham/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Tottenham Hotspur",
+   "player": "Martin Dubravka",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1780661700000,
+   "link": "https://www.tottenhamhotspur.com/news/1074879/dubravka-deal-completed?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
    "club": "Hull City",
-   "player": "Thimothee Lo-Tutala",
-   "direction": "out",
-   "kind": "Loan out",
-   "date": 1770732420000,
-   "link": "https://www.wearehullcity.co.uk/news/2026/august/06/lo-tutala-joins-colchester-on-loan/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Brentford",
-   "player": "Jannik Schuster",
+   "player": "George Goodman",
    "direction": "in",
    "kind": "Signed",
-   "date": 1770077640000,
-   "link": "https://www.brentfordfc.com/en/news/article/first-team-brentford-jannik-schuster-red-bull-salzburg-transfer?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Liverpool",
-   "player": "Kareem Ahmed",
-   "direction": "out",
-   "kind": "Released",
-   "date": 1769947380000,
-   "link": "https://www.liverpoolfc.com/news/liverpool-confirm-premier-league-retained-list?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1770732420000,
+   "link": "https://www.wearehullcity.co.uk/news/2026/august/14/goodman-signs-for-hull-city-academy/"
   }
  ],
  "spent": "£152m",
