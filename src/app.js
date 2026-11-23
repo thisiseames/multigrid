@@ -37,7 +37,7 @@ import { isStingOn, playSting, setStingOn } from './sting.js';
 import { applyMove, isOldHome, moveLink, NEW_HOME, readMove } from './move.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
-import { FOOTBALL_SHAPES, getCinema, getFootballShape, setFootballShape } from './crop.js';
+import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
 import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint, watchedTitles } from './resume.js';
 import { bringBack as bringBackPopOut, canPopOutGrid, isGridPoppedOut, isPoppedOut, popOutGrid } from './popout.js';
@@ -136,7 +136,6 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onLayoutAdjusted: commit,
   onTogglePrimary: (id) => togglePrimary(id),
-  onFootballShape: (id) => openFootballShape(id),
   onTune: (id) => { tunedId = id; renderPhoneBar(); },
   onNoteText: (id, text) => {
     const tile = tileById(id);
@@ -338,7 +337,6 @@ function buildStreamMenu(id) {
   const actions = [
     bigButton('crown', tile.primary ? 'Primary' : 'Make primary', then(() => togglePrimary(id)), { on: Boolean(tile.primary) }),
     view.cinemaButton ? bigButton('film', 'Cinema', then(() => view.toggleCinema()), { on: Boolean(getCinema(tile.input)) }) : null,
-    view.footballButton ? bigButton('pitch', 'Football shape…', then(() => openFootballShape(id))) : null,
     view.cropButton ? bigButton('crop', 'Crop', then(() => view.editCrop())) : null,
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(tile.input, labelOf(tile), null)), { on: favorite }) : null,
     feed && !feed[0].hidden ? bigButton('back', feedLabels[0], () => feed[0].click()) : null,
@@ -11186,53 +11184,6 @@ function buildLayoutMenu() {
 }
 
 /** Switches the screen to a layout, from the menu or the phone remote. Returns the "some are hidden" note, if any. */
-/** Switches the wall to the Football layout with this match in the big 16:9 tile. */
-function useFootballLayout(id = null) {
-  const tile = id ? tileById(id) : tunedTile();
-  if (tile) setPrimary(ws, tile.id, true);
-  for (const item of ws.tiles) grid.viewFor(item.id)?.root.classList.remove('maximized');
-  if (fullscreen.element()) fullscreen.exit();
-  makeBig(null, false);
-  const note = chooseLayout('football');
-  toast(note || 'Football layout: the match is in the big 16:9 tile.');
-}
-
-/** Pick the broadcast shape for this tile; the tile resizes inside its current layout. */
-function openFootballShape(id) {
-  const tile = tileById(id);
-  if (!tile) return;
-  const box = el('dialog', { class: 'dialog football-shape-box', aria: { label: 'Football shape' } });
-  const close = () => box.close();
-  const current = getFootballShape(tile.input);
-  const choice = (shape, label) => el('button', {
-    type: 'button',
-    class: `football-shape${shape && current === shape ? ' is-on' : ''}`,
-    textContent: label,
-    on: {
-      click() {
-        if (!setFootballShape(tile.input, shape)) { toast(STORAGE_FULL); return; }
-        box.close();
-        grid.viewFor(id)?.applyFraming();
-        grid.fit();
-        toast(shape ? `Football shape: ${label}. The tile resized without cropping.` : 'Football shape off.');
-      },
-    },
-  });
-  box.replaceChildren(
-    el('div', { class: 'help-head' }, el('h2', { textContent: 'Football shape' }), iconButton('close', 'Close', close)),
-    el('p', { class: 'x-list-note', textContent: 'Pick the shape that matches the broadcast. The tile resizes in place; the picture is never cropped.' }),
-    el('div', { class: 'football-shapes' },
-      choice(FOOTBALL_SHAPES[0], '16:9'),
-      choice(FOOTBALL_SHAPES[1], '2:1'),
-      choice(FOOTBALL_SHAPES[2], '2.2:1'),
-      choice(FOOTBALL_SHAPES[3], '21:9'),
-      choice(null, 'Off')),
-    el('div', { class: 'dialog-actions' }, el('button', { type: 'button', class: 'plain-button', on: { click: close } }, 'Cancel')));
-  box.addEventListener('close', () => box.remove(), { once: true });
-  document.body.append(box);
-  openDialog(box);
-}
-
 function chooseLayout(presetId) {
   const preset = presetById(presetId);
   if (!preset) return '';

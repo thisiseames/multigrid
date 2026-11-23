@@ -142,11 +142,6 @@ export const PRESETS = [
   { id: 'grid4', name: '4 × 4', fixed: 16, build: () => cells(4, 4) },
   { id: 'featured', name: 'Featured', hint: 'One big, the rest small', sample: 6, build: featured },
   { id: 'focus', name: 'Focus and row', sample: 4, build: focusRow },
-  { id: 'football', name: 'Football', hint: 'A 16:9 match with two streams beside it', fixed: 3, build: () => ({
-    cols: units(3),
-    rows: units(2),
-    slots: [{ c: 0, r: 0, cs: 2, rs: 2 }, { c: 2, r: 0, cs: 1, rs: 1 }, { c: 2, r: 1, cs: 1, rs: 1 }],
-  }) },
   { id: 'trio', name: 'One and two', fixed: 3, build: () => ({
     cols: [2, 1],
     rows: units(2),
