@@ -1,4 +1,4 @@
-# X-Ray for films + "tap any face" + Extras — plan (waiting for the owner's "go")
+# X-Ray for films + "tap any face" + Extras — plan (owner said "go" Nov 23; building)
 
 Any agent can pick this up: do the steps in order, tick each box, commit after each step
 (see the push loop in notes/history.md / the Dock plan). Rules: notes/owner-rules.md.
@@ -40,10 +40,17 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - Clean-up: test favorites/tiles live only in throwaway browser profiles; nothing is written to his data. extras.json is job-owned once committed by the job (never commit local copies afterwards).
 
 ## Steps (tick + commit each)
-- [ ] 1. src/films.js: Wikidata queries + parsers (film by TMDB id / IMDb id; person by name or Wikidata id; titles with TMDB ids, years, labels, photo). Tests + fixtures.
+- [x] 1. src/films.js: Wikidata queries + parsers (film by TMDB id / IMDb id; person by name or Wikidata id; titles with TMDB ids, years, labels, photo). Tests + fixtures.
 - [ ] 2. X-Ray for films in app.js (xrayFilm): hero with poster, runtime, director, year, story (Wikipedia summary), Scores, Cast, Trailer. 7-day cache (multigrid.films.v1).
 - [ ] 3. Tappable cast in X-Ray (shows and films) → person page inside X-Ray, back arrow, Known for + all titles with scores and Play (Atlantic link / resume from favorites). Phone + laptop.
 - [ ] 4. YouTube extras play like Replays: laptop tile with an end/err hook through the YouTube player's state; phone in-sheet YouTube player.
 - [ ] 5. tools/build-extras.mjs → extras.json (titles from top10/charts/movies/setup-data; checked YouTube clips; weekly re-search cache). Add to guide.yml. Tests for the clip checks.
 - [ ] 6. Extras row in X-Ray (shows + films), falling back to the Wikidata trailer.
 - [ ] 7. Look check at 1280 + 390 (both themes, no periwinkle, nothing over a Twitch tile), push, verify live, history.md entry, owner-rules job-owned list += extras.json.
+
+## Gotchas found while building
+- Wikidata queries need a fixed User-Agent from Node (a random one got an HTML error page). Browsers send their own; fine.
+- Asking for a person's works with the label service row by row took 19–28 s cold. personWorksQuery groups in the query and reads labels directly (en, then mul): ~1–2 s cold.
+- An "any language" label fallback made the works query slow again; dropped. Titles with no en/mul name are left out.
+- Wikidata's "notable work" (P800) is empty for most actors. "Known for" = Wikipedia fame of the title divided by sqrt(1 + number of better-known people in its cast), so a lead role beats a cameo in a famous film (Euphoria makes Zendaya's top 6).
+- Cast order: Wikidata doesn't keep billing order; cast is sorted by the person's Wikipedia fame.
