@@ -2463,6 +2463,8 @@ function render() {
   homeButton.querySelector('.home-icon').hidden = homeOpen;
   homeButton.querySelector('.streams-icon').hidden = !homeOpen;
   homeButton.querySelector('.bar-button-text').textContent = homeOpen ? 'Streams' : 'Home';
+  const homeSub = homeButton.querySelector('.home-sub');
+  if (homeSub) homeSub.textContent = homeOpen ? 'Streams' : 'Home';
   const full = streamCount(ws) >= MAX_STREAMS;
   $('add-button').disabled = full;
   $('add-button').title = full ? `${MAX_STREAMS} streams is the most a workspace can hold` : 'Add stream';

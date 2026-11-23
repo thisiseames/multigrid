@@ -34,6 +34,11 @@ ANSWERS: yes or no first, then at most two sentences. His anger is information t
 
 Full history of why each rule exists lives in Claude's private notes on the Mac.
 
+## Copy the control next door (Nov 23)
+When adding or changing any control in an existing bar, menu, row or list, open the real screen first and treat the nearest existing control as the spec: same container width logic, height, icon size, label, label position, typography, gap, alignment and tap height. Then look at the two side by side at laptop width and 390 px before saying it is fixed or done.
+**Why:** the phone Home button was added as a 44 px icon-only square beside 48–58 px labelled columns. Its icon was 21 px, it sat lower than the other icons, and it had no text underneath. When the owner said the icon was not the same, I changed only the number to 24 px and shipped it still on the wrong line with no label. He had to point out basic alignment twice. “The icon is 24 px” is not the same as “the control matches the row.”
+**How to apply:** if the owner names one symptom, fix the whole control, not just the symptom. Before replying, take a 390 px screenshot and check the new control against its neighbour: same line, same icon size, same label and label line, same height, no overflow. If any of those differ, it is not done. Do not call it fixed from a single measurement.
+
 ## MULTIGRID-specific preferences
 
 

@@ -1923,7 +1923,18 @@ body.remote-open { overflow: hidden; }
   #remote-button, #saved-button, #help-button, #fullscreen-button,
   #sports-button, #more-button { display: none !important; }
   #today-button { display: inline-flex !important; width: 44px; height: 44px; padding: 0; border-radius: 12px; }
-  body.is-phone #home-button { display: inline-flex !important; flex: none; width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 12px; }
+  body.is-phone #home-button {
+    display: inline-flex !important;
+    flex: none;
+    flex-direction: column;
+    width: 48px;
+    min-width: 48px;
+    height: 52px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+    gap: 3px;
+  }
   body.is-phone #home-button svg { width: 24px; height: 24px; }
   #today-button { order: 2; } #mixer-button { order: 3; } .topbar .add-button { order: 4; }
   #today-button svg { width: 21px; height: 21px; }
@@ -2291,7 +2302,7 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
   /* Same look as the bottom tabs: a 24 pt icon, 3 pt gap, then the label at its natural line height. */
   #today-button, #mixer-button, #palette-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; padding: 0; }
   body.is-phone #mixer-button { width: 48px; min-width: 48px; }
-  #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
+  #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub, #home-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
   #today-button svg, #mixer-button svg, #palette-button svg { width: 24px; height: 24px; }
   #mixer-button:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
   .today-head h3 { display: none; }
