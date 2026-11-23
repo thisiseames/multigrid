@@ -80,7 +80,7 @@ Live at https://thisiseames.github.io/multigrid. Plain ES modules, no build step
 
 ## Tests
 
-`node --test tests/*.test.mjs` — 339 tests as of Nov 23.
+`node --test tests/*.test.mjs` — 350 tests as of Nov 23.
 
 ## Not built yet — do not describe as existing
 
