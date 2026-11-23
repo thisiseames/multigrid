@@ -22,7 +22,7 @@ MULTIGRID is a personal multiview video app for one person (the owner), live at 
 
 ## Never
 - Never commit secrets: `READER-KEY.txt`, API keys, tokens. Secrets live in GitHub repo secrets, and only the owner adds them.
-- Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `top10.json`, `flights.json`, `highlights.json`, `matchday-reactions.json`, `transfers.json`, `team.json`, `podcast-charts.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
+- Never hand-edit or commit local copies of the job-owned files: `guide.json`, `feeds.json`, `movies.json`, `charts.json`, `shows.json`, `top10.json`, `flights.json`, `highlights.json`, `matchday-reactions.json`, `transfers.json`, `team.json`, `podcast-charts.json`, `catalog.json`, `reader/index.json`, `reader/a/*`. The GitHub Actions jobs in `.github/workflows/` make and commit them. To test a job locally, run it, then discard its output (`git checkout -- <file>`).
 - Never store full article text unlocked in the repo (the Reader keeps it encrypted).
 - Never add a paid service, an account sign-up or anything that collects the owner's personal details without the owner's explicit yes.
 

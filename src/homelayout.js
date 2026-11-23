@@ -10,6 +10,7 @@ export const HOME_ROWS = [
   { id: 'teams', title: 'Your teams' },
   { id: 'fresh', title: 'New today' },
   { id: 'onnow', title: 'On now' },
+  { id: 'ten', title: 'The Multigrid Ten' },
   { id: 'netflix', title: 'Top 10 on Netflix · Canada' },
   { id: 'trending', title: 'Trending in Canada' },
 ];
@@ -20,6 +21,7 @@ export const BANNER_PARTS = [
   { id: 'continue', label: 'Continue watching', on: true },
   { id: 'fresh', label: 'New today', on: true },
   { id: 'onnow', label: 'On now', on: true },
+  { id: 'ten', label: 'The Multigrid Ten', on: false },
   { id: 'netflix', label: 'Top 10 on Netflix', on: false },
   { id: 'trending', label: 'Trending in Canada', on: false },
 ];
@@ -31,7 +33,13 @@ export const BANNER_PARTS = [
 export function homeLayout(saved) {
   const known = new Map(HOME_ROWS.map((row) => [row.id, row]));
   const order = (Array.isArray(saved?.order) ? saved.order : []).filter((id, at, list) => known.has(id) && list.indexOf(id) === at);
-  for (const row of HOME_ROWS) if (!order.includes(row.id)) order.push(row.id);
+  for (const row of HOME_ROWS) {
+    if (order.includes(row.id)) continue;
+    // The Multigrid Ten slots into the discovery group, after On now, in older saved layouts.
+    const after = row.id === 'ten' ? order.indexOf('onnow') : -1;
+    if (after >= 0) order.splice(after + 1, 0, row.id);
+    else order.push(row.id);
+  }
   const hidden = new Set(Array.isArray(saved?.hidden) ? saved.hidden : []);
   const banner = {};
   for (const part of BANNER_PARTS) banner[part.id] = typeof saved?.banner?.[part.id] === 'boolean' ? saved.banner[part.id] : part.on;

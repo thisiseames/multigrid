@@ -39,7 +39,7 @@ import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
 import './phone.js';
 import { getCinema } from './crop.js';
 import { castTile, castWay, onTvChange } from './cast.js';
-import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint } from './resume.js';
+import { allPlaces, embedPlace, forgetPlace, placeOf as savedPlace, replacePlaces, isPlayed, listPlaces, notePlace, onPlacesChange, resumePoint, watchedTitles } from './resume.js';
 import { bringBack as bringBackPopOut, canPopOutGrid, isGridPoppedOut, isPoppedOut, popOutGrid } from './popout.js';
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
@@ -61,6 +61,7 @@ import {
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
 import { BANNER_PARTS, bannerShows, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
+import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { searchLiveSources } from './live-search.js';
 import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
@@ -5538,7 +5539,10 @@ function homeCard(item) {
   }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null, item.scores ? scoreChip(item.scores) : null)));
 }
 
-const homeRow = (title, items) => (items.length ? el('section', { class: 'home-row' }, el('h3', { class: 'home-title', textContent: title }), el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
+const homeRow = (title, items, note = '') => (items.length ? el('section', { class: 'home-row' },
+  el('h3', { class: 'home-title', textContent: title }),
+  note ? el('p', { class: 'home-note', textContent: note }) : null,
+  el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
 
 /** Fills in TVmaze's picture and story for an item once they arrive. */
 function withArt(item, name) {
@@ -5606,13 +5610,14 @@ async function drawHome() {
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
-  const [sections, , episodes, , , top] = await Promise.all([
+  const [sections, , episodes, , , top, catalog] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
     loadHighlights().catch(() => null),
     loadMatchdayReactions().catch(() => null),
     loadJob('top10.json'),
+    loadJob('catalog.json'),
   ]);
   if (asked !== homeAsked) return;
   // Matchday: today's game for your team, from the same schedules.
@@ -5696,18 +5701,51 @@ async function drawHome() {
   const netflixTop = chartRow('netflix', 'Top 10 on Netflix');
   const trendingTop = chartRow('trending', 'Trending in Canada');
 
+  // The Multigrid Ten: local taste, the public catalogue, and Atlantic as the way in.
+  const catalogTitles = Array.isArray(catalog?.titles) ? catalog.titles : [];
+  const tenTaste = catalogFresh(catalog?.updated)
+    ? tasteOf({ favorites, places: allPlaces(), watched: watchedTitles(), catalog: catalogTitles })
+    : null;
+  const tenEntries = tenTaste ? rankForYou({ catalog: catalogTitles, taste: tenTaste, limit: 10, now }) : [];
+  const trailerByTitle = new Map(charts.flatMap((chart) => chart.entries)
+    .filter((entry) => entry.trailer)
+    .map((entry) => [titleKey(entry.title), entry.trailer]));
+  const tenTop = tenEntries.map((entry) => {
+    const atlantic = atlanticTarget(entry.title, favorites);
+    const trailer = trailerByTitle.get(titleKey(entry.title)) || '';
+    const sub = [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', (entry.genres || []).slice(0, 2).join(' · ')].filter(Boolean).join(' · ');
+    return {
+      key: `x:${entry.rank}:${entry.title}`,
+      label: 'The Multigrid Ten',
+      title: entry.title,
+      rank: entry.rank,
+      meta: [sub, scoreLine(entry)].filter(Boolean).join(' · '),
+      cardMeta: sub,
+      scores: entry,
+      desc: entry.desc,
+      backdrop: entry.image,
+      art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.kind === 'film' ? 'Film' : 'Series' }), el('span', { class: 'title-card-name', textContent: entry.title })),
+      playLabel: trailer ? 'Play trailer' : atlantic?.label || 'Open in Atlantic',
+      atlantic: trailer ? atlantic : null,
+      play: () => (trailer ? playFromHome(`https://www.youtube.com/watch?v=${trailer}`) : atlantic ? openLink(atlantic.url) : null),
+    };
+  });
+  const tenNote = tenTop.length
+    ? (tenTaste?.hasTaste ? `Because you finish ${basisText(tenTaste.basis)}` : 'Popular and well rated')
+    : '';
+
   const matchday = matchdayHome(now);
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
   // The owner's order and choice of rows (Edit home); Matchday always leads.
-  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, netflix: netflixTop, trending: trendingTop };
-  paint([matchday.strip, matchdayRow, ...layout.rows.filter((row) => row.on).map((row) => homeRow(row.title, rowItems[row.id] ?? [])), editHomeButton()]);
+  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop };
+  paint([matchday.strip, matchdayRow, ...layout.rows.filter((row) => row.on).map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), editHomeButton()]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it.
   const part = (id, items) => (bannerShows(layout, id) ? items : []);
   let rotation = [...part('teams', teams.filter((game) => game.match.state !== 'post')), ...part('continue', cont.slice(0, 3)), ...part('fresh', fresh.slice(0, 2)),
-    ...part('teams', teams.filter((game) => game.match.state === 'post')), ...part('onnow', onNow.slice(0, 3)), ...part('netflix', netflixTop.slice(0, 3)), ...part('trending', trendingTop.slice(0, 3))];
+    ...part('teams', teams.filter((game) => game.match.state === 'post')), ...part('onnow', onNow.slice(0, 3)), ...part('ten', tenTop.slice(0, 3)), ...part('netflix', netflixTop.slice(0, 3)), ...part('trending', trendingTop.slice(0, 3))];
   if (matchday.hero) rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
   heroItems = matchday.hold ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
   if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
@@ -8744,7 +8782,6 @@ function movieRow(movie) {
 
 /* Charts: the top 5 of Billboard's charts, one tab each. It opens on the Hot 100 every time. */
 let chartTab = 0;
-let topTabAt = 0;
 
 const openLink = (url) => window.open(url, '_blank', 'noopener');
 
@@ -8794,65 +8831,23 @@ function chartRow(entry, chart, list) {
   return el('li', { class: 'trow' }, main, actions);
 }
 
-/** One title in the Netflix or Trending tab: tap it for its trailer and where it streams. */
-function topRow(entry, list) {
-  const act = (name, label, onClick) => el('button', { type: 'button', class: 'chart-act', on: { click: onClick } }, icon(name, 14), label);
-  const atlantic = atlanticTarget(entry.title, listFavorites());
-  const actions = el('div', { class: 'chart-actions', hidden: true },
-    entry.trailer ? act('play', 'Watch trailer', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${entry.trailer}`); }) : null,
-    entry.url ? act('open', openLabel(entry), () => openLink(entry.url)) : null,
-    atlantic ? act('open', atlantic.label, () => openLink(atlantic.url)) : null);
-  const main = el('button', {
-    type: 'button',
-    class: 'trow-main',
-    aria: { expanded: 'false' },
-    on: {
-      click() {
-        const opening = actions.hidden;
-        for (const other of list.querySelectorAll('.chart-actions')) other.hidden = true;
-        for (const other of list.querySelectorAll('.trow-main')) other.setAttribute('aria-expanded', 'false');
-        actions.hidden = !opening;
-        main.setAttribute('aria-expanded', String(opening));
-      },
-    },
-  },
-  el('span', { class: 'chart-rank' }, el('b', { textContent: String(entry.rank) })),
-  entry.image
-    ? el('span', { class: 'fart is-picture chart-cover is-wide' }, el('img', { src: entry.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
-    : el('span', { class: 'fart is-icon chart-cover is-wide' }, icon('film', 18)),
-  el('span', { class: 'trow-text' },
-    el('span', { class: 'trow-title', textContent: entry.title }),
-    el('span', { class: 'trow-sub', textContent: topLine(entry) }),
-    scoreChip(entry)));
-  return el('li', { class: 'trow' }, main, actions);
-}
-
-/** Under a list: where it's from and which week. */
+/** Under a Billboard list: its week. */
 function chartNote(chart) {
   const [y, m, d] = String(chart.week || '').split('-').map(Number);
   const day = y ? new Date(y, m - 1, d, 12).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-  if (chart.kind !== 'title') return day ? `Billboard · week of ${day}` : 'Billboard';
-  if (!day) return chart.source;
-  return chart.id === 'netflix' ? `${chart.source} · week ending ${day}` : `${chart.source} · ${day}`;
+  return day ? `Billboard · week of ${day}` : 'Billboard';
 }
 
-/** Billboard's charts, or (with `top`) the Netflix and Trending lists, one tab each. */
-function chartsView(data, { top = false } = {}) {
-  const charts = top ? topCharts(data)
-    : (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
+/** Billboard's charts, one tab each. The Top 10 lives on the home screen now. */
+function chartsView(data) {
+  const charts = (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
   if (!charts.length) return null;
-  // Each list remembers its own tab while Today is open.
-  const saved = top ? topTabAt : chartTab;
-  let at = saved < charts.length ? saved : 0;
+  let at = chartTab < charts.length ? chartTab : 0;
   const list = el('ul', { class: 'rlist chart-list' });
   const note = el('p', { class: 'chart-week' });
-  let byScore = false;
   const draw = () => {
     const chart = charts[at];
-    const titles = byScore ? [...chart.entries].sort((a, b) => (b.imdb ?? 0) - (a.imdb ?? 0)) : chart.entries;
-    list.replaceChildren(...(chart.kind === 'title'
-      ? titles.map((entry) => topRow(entry, list))
-      : chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list))));
+    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list)));
     note.textContent = chartNote(chart);
   };
   const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
@@ -8864,7 +8859,7 @@ function chartsView(data, { top = false } = {}) {
     on: {
       click(event) {
         at = index;
-        if (top) topTabAt = index; else chartTab = index;
+        chartTab = index;
         for (const other of tabs.children) {
           const on = other === event.currentTarget;
           other.classList.toggle('is-on', on);
@@ -8876,12 +8871,7 @@ function chartsView(data, { top = false } = {}) {
     },
   })));
   draw();
-  // The Top 10s can be read by popularity (their own order) or best rated (IMDb).
-  const sorter = top ? el('div', { class: 'chart-sort' }, ...[['Popular', false], ['Best rated', true]].map(([label, value]) => el('button', {
-    type: 'button', class: `chart-sort-btn${byScore === value ? ' is-on' : ''}`, textContent: label,
-    on: { click(event) { byScore = value; for (const other of event.currentTarget.parentNode.children) other.classList.toggle('is-on', other === event.currentTarget); draw(); } },
-  }))) : null;
-  return el('div', { class: 'chart-box' }, ...[tabs, sorter, list, note].filter(Boolean));
+  return el('div', { class: 'chart-box' }, tabs, list, note);
 }
 
 /* Flight deals from Toronto: seven routes, the cheapest nonstop one-way fare found on the
@@ -9451,7 +9441,7 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights, top] = await Promise.all([
+  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -9462,7 +9452,6 @@ async function fillToday() {
     loadPolymarkets().catch(() => []),
     newYouTubeUploads().catch(() => []),
     loadJob('flights.json'),
-    loadJob('top10.json'),
   ]);
   if (asked !== todayAsked || menu.hidden) return;
 
@@ -9565,8 +9554,7 @@ async function fillToday() {
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
-  const topSection = todaySection('Top 10 in Canada', chartsView(top, { top: true }));
-  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, topSection, chartsSection].filter(Boolean);
+  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
     headlinesSection,
@@ -9584,7 +9572,6 @@ async function fillToday() {
     moviesSection.section,
     episodesSection.section,
     premieresSection.section,
-    topSection,
     chartsSection,
   ].filter(Boolean);
 
@@ -9682,7 +9669,6 @@ function weekWeather(box, weather) {
 function buildToday() {
   const menu = $('today-menu');
   chartTab = 0;
-  topTabAt = 0;
   todayView = 'today';
   redrawTodayDates = null;
   redrawTodayView = null;

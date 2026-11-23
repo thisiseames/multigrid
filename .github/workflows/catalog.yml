@@ -1,0 +1,36 @@
+# Refreshes catalog.json once a day for The Multigrid Ten: popular films and shows in Canada
+# from JustWatch's public question, six genres plus the overall list. No key or account.
+# If JustWatch doesn't answer, catalog.json is left as it was.
+name: catalog
+
+on:
+  schedule:
+    - cron: '43 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-catalog.mjs
+      - name: Save the catalogue
+        run: |
+          git config user.name "multigrid-catalog"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add catalog.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update the Multigrid Ten catalogue"
+          git pull --rebase
+          git push

@@ -5,7 +5,7 @@ const store = new Map();
 globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.window ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) };
-const { listPlaces, notePlace } = await import('../src/resume.js');
+const { listPlaces, notePlace, watchedTitles } = await import('../src/resume.js');
 
 test('Continue watching: the last 10% counts as finished, so outros and end screens don\'t keep a video on the list', () => {
   const meta = { input: 'https://www.youtube.com/watch?v=abcdefghijk', name: 'Is Pochettino the answer?', from: 'Proper Saturday' };
@@ -16,4 +16,16 @@ test('Continue watching: the last 10% counts as finished, so outros and end scre
   // A place saved before the change, already past 90%, drops out too.
   store.set('multigrid.resume.v1', JSON.stringify({ 'yt:old': { at: 92, length: 100, saved: 1, input: 'x', name: 'Old' } }));
   assert.equal(listPlaces().length, 0);
+});
+
+test('finished titles keep their names for the taste profile', () => {
+  store.delete('multigrid.watched.v1');
+  notePlace('embed:black-doves', 30 * 60, 60 * 60, { input: 'https://tv.test/black-doves', name: 'Black Doves', from: '' });
+  assert.deepEqual(watchedTitles(), []);
+  notePlace('embed:black-doves', 58 * 60, 60 * 60, { input: 'https://tv.test/black-doves', name: 'Black Doves', from: '' });
+  assert.deepEqual(watchedTitles(), ['Black Doves']);
+  // Watching it again moves it to the front rather than duplicating it.
+  notePlace('embed:mobland', 58 * 60, 60 * 60, { input: 'https://tv.test/mobland', name: 'MobLand', from: '' });
+  notePlace('embed:black-doves', 58 * 60, 60 * 60, { input: 'https://tv.test/black-doves', name: 'Black Doves', from: '' });
+  assert.deepEqual(watchedTitles(), ['Black Doves', 'MobLand']);
 });

@@ -36,8 +36,11 @@ export function resumePoint(key) {
  */
 export function notePlace(key, seconds, length, meta) {
   if (!key || !Number.isFinite(seconds) || !Number.isFinite(length) || length <= 0) return;
-  // Reaching the last 10% counts as played, for the Podcasts shelf.
-  if (seconds >= length * DONE_AT) markPlayed(key);
+  // Reaching the last 10% counts as played, for the Podcasts shelf and the taste profile.
+  if (seconds >= length * DONE_AT) {
+    markPlayed(key);
+    rememberWatched(key, meta);
+  }
   const all = readAll();
   const worth = length >= MIN_LENGTH && seconds >= MIN_PLAYED && seconds < length * DONE_AT;
   if (worth) {
@@ -83,6 +86,26 @@ function markPlayed(key) {
 }
 /** Whether something was played to the end. */
 export const isPlayed = (key) => readPlayed().includes(key);
+
+/* Finished titles with their names, for the taste profile. The played list keeps keys only. */
+const WATCHED = 'multigrid.watched.v1';
+const readWatched = () => {
+  try {
+    const list = JSON.parse(localStorage.getItem(WATCHED) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+};
+function rememberWatched(key, meta) {
+  const name = String(meta?.name || '').trim();
+  if (!key || !name) return;
+  const list = readWatched().filter((item) => item?.key !== key);
+  list.push({ key, name, at: Date.now() });
+  try { localStorage.setItem(WATCHED, JSON.stringify(list.slice(-200))); } catch { /* not remembered */ }
+}
+/** Titles finished on this device, newest first. */
+export const watchedTitles = () => readWatched().slice().reverse().map((item) => item.name).filter(Boolean);
 /** How far into something you are: { at, length, saved }, or null. */
 export function placeOf(key) {
   const point = readAll()[key];
