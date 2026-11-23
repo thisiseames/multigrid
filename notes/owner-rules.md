@@ -88,15 +88,17 @@ Build, brainstorm, curate and design MULTIGRID as if it's the signature product 
 ## MULTIGRID is NOT a sports app
 Nov 23, owner, furious: "Get it through your head that MULTIGRID is not a sports app." It's multiview for everything he watches: news (CP24, CNN, Sky News), series (Atlantic), YouTube, X accounts, TikTok, podcasts, his film/TV library, the Reader, and sport. Not picked Nov 23: Fight Night (UFC card tracking). Pitch for the whole product; never another run of sports-only ideas.
 
+## Design for the MULTIGRID that wins, not the one that exists (Nov 23)
+Owner: "Why do you focus on what MULTIGRID is right now?" My ideas kept coming out small because I started from today's tiles, today's data sources and today's code. Start from the destination instead: the signature product of a company beating Netflix/Prime/DAZN/Apple TV. Today's sources, tile kinds and code are NOT limits: new data can be acquired (new jobs, sources, indexes), new content types, surfaces and platforms can be added. Pitch the idea at full size first; then say plainly what it would take. After a miss, go bigger and more valuable, never smaller and safer.
+
 ## The six-question test (every pitch must pass all six before he sees it)
-From the X-Ray vs Split sound essay (Nov 23). X-Ray passed all six; Split sound (not picked) failed five.
-1. Does it answer a question or need he has every time he watches, not a rare situation?
-2. Does the screen visibly get richer, rather than a setting changing?
-3. Does it work for every kind of tile with no setup or special hardware?
+1. Does it answer a question or need a subscriber has every time they watch, not a rare situation?
+2. Does the screen/experience visibly get richer, rather than a setting changing?
+3. Would it matter to every subscriber, whatever they watch?
 4. Would Netflix/Apple/Prime/DAZN market it, rather than bury it in a help page?
-5. Can I promise it works because I've already checked the data and code, rather than gambling?
-6. Does it build on something he's already responded to (hover card, X-Ray, Replays, RedZone, Pop out grid)?
-Start from the experience of watching, never from "what can the browser/code do".
+5. Is there a real path to building it, even if it needs new sources, jobs or pieces? (Say the path; don't shrink the idea to what's easy today.)
+6. Does it build on something he's responded to (hover card, X-Ray, Replays, RedZone, Pop out grid) or clearly beat it?
+Start from the experience of watching and the vision, never from "what can the current code/data do".
 
 ## Check every piece of a pitch in the code first
 Nov 22: I pitched "live channel cards" (show title, progress bar, what's next), Reader pictures and a drifting banner as upgrades; all three already exist (favorite cards' On now line, Guide Now cards, readerHero/readerPicture, hero-drift). He was furious: "Understand the website before you pitch things." Before any idea: grep src/app.js and styles.css for every element the idea describes, and open the real screen. Each pitch must say what exists today and only the part that doesn't.
