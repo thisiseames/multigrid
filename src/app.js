@@ -6736,7 +6736,8 @@ function fillAddFavorites(holder) {
   const grid = el('div', { class: 'addp-grid-wrap' },
     libraryOpen ? libraryView(holder, query)
       : podcasts ? podcastsView(holder)
-        : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts(), recentGridRows(10) ?? '')
+        // Recent grids are a laptop thing; the phone's Layouts tab shows saved layouts only.
+        : layouts ? el('div', { class: 'saved-menu addp-saved' }, ...savedParts(), (onPhoneScreen() ? null : recentGridRows(10)) ?? '')
           : recent ? el('ul', { class: 'addp-grid' }, ...listRecent().map((seen) => {
             // A favorite shows as its favorite card; anything else by the name it had, without the favorite's menu.
             const favorite = all.find((item) => item.input === seen.input);
@@ -9251,7 +9252,8 @@ function buildMatches() {
       },
     },
   })));
-  menu.replaceChildren(sportsSwitch('games'), matchdayEntry(), tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
+  // No match today: nothing (a bare null would print as the word "null").
+  menu.replaceChildren(sportsSwitch('games'), matchdayEntry() ?? '', tabs, el('div', { class: 'matches-body' }), el('p', { class: 'matches-updated', textContent: '' }));
   requestAnimationFrame(() => tabs.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
   fillMatches();
   clearInterval(matchesTimer);
@@ -11250,7 +11252,7 @@ function buildSavedDrop() {
       el('span', { class: 'sdrop-text' }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
-    recentGridRows(3),
+    onPhoneScreen() ? null : recentGridRows(3),
     saveHereRow(),
     clearAllRow(),
     moveRow(),
