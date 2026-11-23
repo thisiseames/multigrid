@@ -40,9 +40,9 @@ When adding or changing any control in an existing bar, menu, row or list, open 
 **How to apply:** if the owner names one symptom, fix the whole control, not just the symptom. Before replying, take a 390 px screenshot and check the new control against its neighbour: same line, same icon size, same label and label line, same height, no overflow. If any of those differ, it is not done. Do not call it fixed from a single measurement.
 
 ## No housekeeping features (Nov 23)
-Do not pitch housekeeping, library management, cleanup, organisation or settings as a brainstorm: bulk select/move/remove, Tidy up, folder management, sync setup, link health, import/export, backups, profiles or account controls. These are chores, not features. Pitch only things that change what he watches.
+Do not pitch housekeeping, library management, cleanup, organisation or settings as a brainstorm: bulk select/move/remove, Tidy up, folder management, sync setup, link health, import/export, backups, profiles or account controls. These are chores, not features.
 **Why:** after a run of viewing ideas, I pitched Favorites Select mode (bulk move/star/remove for 342 favourites). He answered: “Stop fucking suggesting fucking house cleaning.”
-**How to apply:** before a brainstorm, name what the idea changes about watching. If the honest answer is “it makes managing favourites or settings easier,” drop it.
+**How to apply:** MULTIGRID is not only a video app. Pitch substantive capabilities in any of its real pillars — watching, listening (podcasts/audio), reading (Reader), sports data/desks, or the daily dashboard (Today/weather/flights/markets/trends). What is banned is chores: managing favourites, folders, settings, sync setup or cleanup. Do not use “does it change what he watches?” as the test; use “is this a real capability, not housekeeping?”
 
 ## MULTIGRID-specific preferences
 
