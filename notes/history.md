@@ -400,3 +400,8 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - The phone top bar now has a **Home/Streams** icon (44 px) that opens the same home screen as the laptop: Continue watching, The Multigrid Ten, Top 10 and Trending, with the billboard and rows. An empty phone still starts on the wall/splash; Home is available whenever they want it. The desktop Home/Streams behaviour is unchanged.
 - Phone layout: shorter billboard (36vh, max 320, min 230), 16 px gutters, 44vw cards capped at 190, smaller rank numbers and copy; the Sound button narrowed to 48 px so the 44 px Home button fits at 390 without overflow.
 - Verified at 390 with a stream and Continue watching: Home icon 44×44, home opened with the four rows and 31 cards, no horizontal overflow, Streams returned to the grid. The banner is 304 px on 390×844 and 240 px on 390×667; the title and Resume fit inside both. 373 tests.
+
+## Nov 23 — Remote Guide and PiP swap
+- The phone remote header now has **Guide**. It lists now/next on the screen’s TV channels (using the favorites the screen sent) and **Watch** sends that channel to the screen as an add. It uses the existing guide data; no new source or key.
+- PiP and PiP×2 remote cards now show **Swap screens** when the tile has a partner. The command calls the same `swapPip` used by the laptop’s sound row, so the main and inset swap in place and the remote state updates.
+- Verified over a real phone-to-laptop remote connection with a PiP workspace: Guide opened with “Live MNF: Brentford v Everton — Sky Sports Premier League · until 6:00 pm — Next: Moyes Moments” and a Watch button; Swap screens changed the main from Alpha/Beta to Beta/Alpha. 373 tests.

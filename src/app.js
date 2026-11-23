@@ -1331,12 +1331,12 @@ function favoriteChannel(favorite) {
 }
 
 /** The Guide's current show for every favorite TV channel, deduped by channel. */
-async function guideRowsNow({ catalog = [], zlive = [] } = {}) {
+async function guideRowsNow({ catalog = [], zlive = [], favorites = listFavorites() } = {}) {
   const loaded = await loadGuide().catch(() => false);
   if (!loaded) return [];
   const rows = [];
   const seen = new Set();
-  for (const favorite of listFavorites()) {
+  for (const favorite of favorites) {
     const channel = channelFromInput(favorite.input, { catalog, zlive }) || favoriteChannel(favorite);
     const key = channelKey(channel);
     if (!key || seen.has(key)) continue;
@@ -1344,7 +1344,7 @@ async function guideRowsNow({ catalog = [], zlive = [] } = {}) {
     const show = info?.current;
     if (!show) continue;
     seen.add(key);
-    rows.push({ channel, title: show.title, start: show.start, end: show.end });
+    rows.push({ channel, name: favorite.name, input: favorite.input, title: show.title, start: show.start, end: show.end, next: info?.next ?? null });
   }
   return rows;
 }
@@ -11705,6 +11705,7 @@ function remoteState() {
         canVolume: Boolean(player?.canVolume),
         big: bigTileId === tile.id,
         primary: Boolean(tile.primary),
+        pipSwap: Boolean(pipOther(tile.id)),
       };
     }),
     oneSound: isOneSound(),
@@ -11752,6 +11753,9 @@ function remoteCommand(cmd) {
       break;
     case 'big':
       if (tile) { makeBig(tile.id, Boolean(cmd.value)); remoteSync(); }
+      break;
+    case 'swapPip':
+      if (tile && pipOther(tile.id)) { swapPip(tile.id); remoteSync(); }
       break;
     case 'remove':
       if (tile) { if (bigTileId === tile.id) makeBig(null, false); removeStream(tile.id); }
@@ -12135,9 +12139,53 @@ function remoteTileCard(tile) {
     el('div', { class: 'rm-tile-actions' },
       el('button', { type: 'button', class: `rm-pill${tile.primary ? ' is-on' : ''}`, aria: { pressed: String(Boolean(tile.primary)) }, on: { click: () => remoteSend({ type: 'primary', id: tile.id, value: !tile.primary }) } }, icon('crown'), tile.primary ? 'Primary' : 'Make primary'),
       el('button', { type: 'button', class: `rm-pill${tile.big ? ' is-on' : ''}`, on: { click: () => remoteSend({ type: 'big', id: tile.id, value: !tile.big }) } }, icon(tile.big ? 'collapse' : 'expand'), tile.big ? 'Back to grid' : 'Make big'),
+      tile.pipSwap ? el('button', { type: 'button', class: 'rm-pill', on: { click: () => remoteSend({ type: 'swapPip', id: tile.id }) } }, icon('pip'), 'Swap screens') : null,
       el('button', { type: 'button', class: 'rm-pill', on: { click() { remoteSend({ type: 'reload', id: tile.id }); toast(`Reloading ${tile.label}.`); } } }, icon('reload'), 'Reload'),
       el('button', { type: 'button', class: 'rm-pill', on: { click: () => openRemoteSheet({ mode: 'replace', id: tile.id, label: tile.label }) } }, icon('replace'), 'Replace'),
       el('button', { type: 'button', class: 'rm-pill is-danger', on: { click: () => remoteSend({ type: 'remove', id: tile.id }) } }, icon('trash'), 'Remove')));
+}
+
+/** The screen's TV guide for tonight: now/next on its favorite channels, with Watch. */
+async function openRemoteGuide() {
+  if (!remoteView.state) return;
+  const state = remoteView.state;
+  remoteView.sheet?.remove();
+  const close = () => { remoteView.sheet?.remove(); remoteView.sheet = null; drawRemoteScreen(); };
+  const list = el('div', { class: 'rm-sheet-list' }, el('div', { class: 'matches-loading' }, ...Array.from({ length: 4 }, () => el('span', { class: 'skeleton' }))));
+  const sheet = el('div', { class: 'rm-sheet' },
+    el('div', { class: 'rm-sheet-head' },
+      el('h3', { textContent: 'Guide' }),
+      el('button', { type: 'button', class: 'rm-close', on: { click: close } }, 'Close')),
+    el('p', { class: 'rm-guide-lead', textContent: 'On now on this screen’s TV channels.' }),
+    list);
+  remoteView.sheet = sheet;
+  drawRemoteScreen();
+  try {
+    const rows = await guideRowsNow({ favorites: state.favorites });
+    if (remoteView.sheet !== sheet) return;
+    if (!rows.length) {
+      list.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'No guide shows right now.' }));
+      return;
+    }
+    const rowsUi = rows.map((row) => {
+      const text = el('span', { class: 'rm-guide-text' },
+        el('b', { textContent: row.title }),
+        el('small', { textContent: `${row.name} · until ${clock(row.end)}` }),
+        row.next ? el('small', { textContent: `Next: ${row.next.title}` }) : null);
+      const watch = el('button', {
+        type: 'button', class: 'rm-guide-watch',
+        on: { click() {
+          remoteSend({ type: 'add', input: row.input });
+          close();
+          toast(`${row.name} added on the screen.`);
+        } },
+      }, icon('play', 14), 'Watch');
+      return el('li', { class: 'rm-guide-row' }, text, watch);
+    });
+    list.replaceChildren(el('ul', { class: 'rm-guide-list' }, ...rowsUi));
+  } catch {
+    if (remoteView.sheet === sheet) list.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: 'The guide didn’t load.' }));
+  }
 }
 
 /** The screen's layouts as small pictures, swiped sideways; the current one is highlighted. */
@@ -12189,7 +12237,9 @@ function drawRemoteScreen() {
   screen.replaceChildren(...[
     el('header', { class: 'rm-head' },
       el('div', {}, el('h2', { textContent: 'Remote' }), status),
-      el('button', { type: 'button', class: 'rm-close', on: { click: closeRemoteScreen } }, 'Done')),
+      connected && state ? el('div', { class: 'rm-head-actions' },
+        el('button', { type: 'button', class: 'plain-button rm-guide-button', on: { click: openRemoteGuide } }, 'Guide'),
+        el('button', { type: 'button', class: 'rm-close', on: { click: closeRemoteScreen } }, 'Done')) : el('button', { type: 'button', class: 'rm-close', on: { click: closeRemoteScreen } }, 'Done')),
     el('div', { class: 'rm-body' }, ...body),
     connected && state ? el('footer', { class: 'rm-foot' },
       el('button', { type: 'button', class: 'add-button rm-add', disabled: state.full, on: { click: () => openRemoteSheet({ mode: 'add' }) } }, icon('plus'), state.full ? 'The grid is full' : 'Add stream'),
