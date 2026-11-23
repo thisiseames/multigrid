@@ -448,7 +448,8 @@ function openYouTubeImport() {
     el('ol', { class: 'yt-import-steps' },
       el('li', {}, 'On ', el('a', { href: TAKEOUT_URL, target: '_blank', rel: 'noopener', textContent: 'Google Takeout' }), ', untick everything except YouTube. Under YouTube, untick everything except subscriptions.'),
       el('li', { textContent: 'Create the export. Google emails you a download link, usually within minutes.' }),
-      el('li', { textContent: 'Download it, then choose it here. The .zip is fine; no need to open it.' })));
+      el('li', { textContent: 'Download it, then choose it here. The .zip is fine; no need to open it.' })),
+    el('p', { class: 'x-list-note', textContent: 'These channels stay on this device; the YouTube folder is not synced.' }));
   const showList = () => {
     const list = el('ul', { class: 'yt-import-list' }, ...channels.map(({ id, title }) => {
       const already = have.has(id);
@@ -469,7 +470,7 @@ function openYouTubeImport() {
           el('button', { type: 'button', class: 'text-button', on: { click: all(true) } }, 'Select all'),
           el('button', { type: 'button', class: 'text-button', on: { click: all(false) } }, 'Select none'))),
       list,
-      el('p', { class: 'x-list-note yt-import-warn', hidden: true, textContent: `Pick ${SYNC_SAFE_CHANNELS.toLocaleString()} or fewer: more than that is too big to sync to your other devices.` }));
+      el('p', { class: 'x-list-note yt-import-warn', hidden: true, textContent: `Pick ${SYNC_SAFE_CHANNELS.toLocaleString()} or fewer: more than that is too big to keep in this browser.` }));
     refresh();
   };
   file.addEventListener('change', async () => {
@@ -10565,7 +10566,7 @@ function openSyncBox(view = '') {
     let code;
     try {
       code = await offerCode(syncStore, syncCameIn, () => {
-        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts. The X folder stays on the device it is on.'), actions(button('Done', close, true)));
+        show(head('Paired'), note('This device and the other one now keep the same favorites and saved layouts. The X and YouTube folders and TikTok follows stay on the device they are on.'), actions(button('Done', close, true)));
         refreshFavorites();
       });
     } catch {
@@ -10586,7 +10587,7 @@ function openSyncBox(view = '') {
       status.textContent = 'Pairing…';
       const ok = await joinWithCode(input.value, syncStore, syncCameIn).catch(() => false);
       if (ok) {
-        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other. The X folder stays on the device it is on.'), actions(button('Done', close, true)));
+        show(head('Paired'), note('Favorites and saved layouts from both devices are now on each. Changes on either show up on the other. The X and YouTube folders and TikTok follows stay on the device they are on.'), actions(button('Done', close, true)));
         refreshFavorites();
       } else {
         go.disabled = false;
@@ -10601,7 +10602,7 @@ function openSyncBox(view = '') {
   if (isSyncing()) {
     const when = lastSynced();
     show(head('Synced devices'),
-      note(`Favorites and saved layouts stay the same on every paired device. The X folder stays on this device.${when ? ` Last synced ${clock(when)}.` : ''}`),
+      note(`Favorites and saved layouts stay the same on every paired device. The X and YouTube folders and TikTok follows stay on this device.${when ? ` Last synced ${clock(when)}.` : ''}`),
       actions(
         button('Stop syncing here', () => { stopSync(); toast('This device stopped syncing. Its favorites stay as they are.'); refreshFavorites(); close(); }),
         button('Add a device', showCode, true)));

@@ -141,3 +141,34 @@ test('a favorite moved into X does not become a removal for the other device', (
   assert.deepEqual(stamp(itemsOf(xHere), seen, 20, new Set(['f:https://a.test/1'])), {});
   assert.deepEqual(stamp(itemsOf(xHere), seen, 20), { 'f:https://a.test/1': { t: 20, v: null } });
 });
+
+test('the YouTube folder and TikTok follows stay on their own device', () => {
+  const here = lists([
+    fav('UC1234567890123456789012', 'A Channel', 'YouTube'),
+    fav('UCabcdefghijklmnopqrstuv', 'Lower Case', 'youtube'),
+    fav('https://www.tiktok.com/@person', '@person'),
+    fav('https://www.tiktok.com/@person/video/123', 'A TikTok video', 'Videos'),
+    fav('https://www.youtube.com/watch?v=abc', 'A YouTube video', 'Videos'),
+    fav('https://a.test/keep', 'Keep', 'News'),
+  ]);
+  const items = itemsOf(here);
+  assert.deepEqual(Object.keys(items).sort(), [
+    'f:https://a.test/keep',
+    'f:https://www.tiktok.com/@person/video/123',
+    'f:https://www.youtube.com/watch?v=abc',
+  ]);
+
+  const doc = {
+    'f:UC1234567890123456789012': { t: 5, v: { name: 'Their Channel', group: 'YouTube' } },
+    'f:https://www.tiktok.com/@other': { t: 5, v: { name: '@other', group: '' } },
+    'f:https://a.test/keep': { t: 5, v: { name: 'Keep!', group: 'News' } },
+  };
+  const received = listsOf(doc, here);
+  assert.ok(received.favorites.some((item) => item.input === 'UC1234567890123456789012' && item.name === 'A Channel'), 'the local YouTube channel is kept');
+  assert.ok(received.favorites.some((item) => item.input === 'https://www.tiktok.com/@person' && item.name === '@person'), 'the local TikTok follow is kept');
+  assert.equal(received.favorites.some((item) => item.input === 'https://www.tiktok.com/@other'), false, 'another device’s TikTok follow never arrives');
+  assert.equal(received.favorites.find((item) => item.input === 'https://a.test/keep').name, 'Keep!', 'normal favorites still sync');
+
+  const fresh = listsOf(doc, lists([]));
+  assert.deepEqual(fresh.favorites.map((item) => item.input), ['https://a.test/keep'], 'a new device gets neither YouTube nor TikTok follows');
+});

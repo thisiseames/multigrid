@@ -20,17 +20,22 @@ const FORGET_DELETED = 90 * 24 * 3600 * 1000;
 const MAX_PLACES = 100;
 const PLACE_FIELDS = ['at', 'length', 'input', 'name', 'from', 'page'];
 
-// The X folder holds account feeds that belong to one device. It never travels through sync;
-// each device keeps whatever it has there, even if another paired device removes its own.
-const isXFolder = (group) => String(group || '').trim().toLocaleLowerCase() === 'x';
-const isLocalEntry = (entry) => Boolean(entry?.v) && isXFolder(entry.v.group);
-const withoutLocalEntries = (items) => Object.fromEntries(Object.entries(items || {}).filter(([, entry]) => !isLocalEntry(entry)));
+// The X and YouTube folders and TikTok follows belong to one device. They never travel through
+// sync; each device keeps whatever it has there, even if another paired device removes its own.
+const LOCAL_FOLDERS = new Set(['x', 'youtube']);
+const isLocalFolder = (group) => LOCAL_FOLDERS.has(String(group || '').trim().toLocaleLowerCase());
+const TIKTOK_FOLLOW = /^https?:\/\/(?:www\.)?tiktok\.com\/@[^/?#]+\/?(?:[?#].*)?$/i;
+const isLocalInput = (input) => TIKTOK_FOLLOW.test(String(input || ''));
+const isLocalFavorite = (favorite) => String(favorite?.input || '').startsWith('local:')
+  || isLocalFolder(favorite?.group) || isLocalInput(favorite?.input);
+const isLocalEntry = (key, entry) => Boolean(entry?.v) && (isLocalFolder(entry.v.group) || isLocalInput(key.slice(2)));
+const withoutLocalEntries = (items) => Object.fromEntries(Object.entries(items || {}).filter(([key, entry]) => !isLocalEntry(key, entry)));
 
-/** Every favorite, saved layout and Continue watching place as keyed items. Files and the X folder stay here. */
+/** Every favorite, saved layout and Continue watching place as keyed items. Local items stay here. */
 export function itemsOf({ favorites, layouts, places = {} }) {
   const items = {};
   for (const { input, name, group, logo, poster, sources } of favorites) {
-    if (input.startsWith('local:') || isXFolder(group)) continue;
+    if (isLocalFavorite({ input, group })) continue;
     items[`f:${input}`] = {
       name, group: group || '',
       ...(logo ? { logo } : {}),
@@ -77,11 +82,12 @@ export const seenOf = (doc) => Object.fromEntries(Object.entries(doc).map(([key,
 /** The favorites and layouts lists a doc stands for. Existing ones keep their place; files stay. */
 export function listsOf(doc, { favorites, layouts }) {
   const live = (prefix) => Object.entries(doc).filter(([key, entry]) => key.startsWith(prefix) && entry.v !== null);
-  // Incoming X entries are ignored; a local X favorite stays even when the doc says it was removed.
-  const favs = new Map(live('f:').filter(([, entry]) => !isLocalEntry(entry)).map(([key, entry]) => [key.slice(2), entry.v]));
-  const kept = favorites.filter((item) => item.input.startsWith('local:') || isXFolder(item.group) || favs.has(item.input))
+  // Incoming local-only entries are ignored; a device's own X/YouTube/TikTok items stay even
+  // when the doc says they were removed.
+  const favs = new Map(live('f:').filter(([key, entry]) => !isLocalEntry(key, entry)).map(([key, entry]) => [key.slice(2), entry.v]));
+  const kept = favorites.filter((item) => isLocalFavorite(item) || favs.has(item.input))
     .map((item) => {
-      if (item.input.startsWith('local:') || isXFolder(item.group) || !favs.has(item.input)) return item;
+      if (isLocalFavorite(item) || !favs.has(item.input)) return item;
       return { input: item.input, ...favs.get(item.input) };
     });
   const have = new Set(kept.map((item) => item.input));
@@ -258,8 +264,8 @@ export async function startSync(store, onApplied) {
   };
   const local = () => {
     const lists = store.read();
-    // A favorite moved into X leaves the shared set, but must not become a removal.
-    const keep = new Set(lists.favorites.filter((item) => isXFolder(item.group)).map((item) => `f:${item.input}`));
+    // A favorite moved into X/YouTube or a TikTok follow leaves the shared set, but must not become a removal.
+    const keep = new Set(lists.favorites.filter(isLocalFavorite).map((item) => `f:${item.input}`));
     const changes = stamp(itemsOf(lists), readState()?.seen || {}, Date.now(), keep);
     if (!Object.keys(changes).length) return false;
     doc = merge(doc, changes);
