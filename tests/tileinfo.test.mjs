@@ -47,3 +47,7 @@ test('YouTube, files, series pages and accounts', () => {
   assert.deepEqual(tileCard({ kind: 'website', name: 'Black Doves', series: 'S2 E8 · 34 min in' }).lines, ['S2 E8 · 34 min in']);
   assert.deepEqual(tileCard({ kind: 'x', name: 'acyn' }).lines, ['X']);
 });
+
+test('a film page gets a card (it opens X-Ray on the laptop)', () => {
+  assert.deepEqual(tileCard({ kind: 'page', name: 'Dune: Part Two (2024)', film: 'Film' }), { live: false, title: 'Dune: Part Two (2024)', lines: ['Film'], score: null });
+});

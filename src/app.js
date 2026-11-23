@@ -69,9 +69,10 @@ import {
 } from './game-links.js';
 import { leftText, tileCard } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
-import { findScore, scoreLine, shardKey, votesText } from './scores.js';
+import { findScore, normTitle, scoreLine, shardKey, votesText } from './scores.js';
 import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
+import { atlanticLink, atlanticTitle, castQuery, filmQuery, knownFor, parseCast, parseFilm, parseIntro, parsePerson, parsePersonId, parseSummary as parseWikiSummary, parseWikiImages, personByNameQuery, personInfoQuery, personWorksQuery, runtimeText, sparqlUrl, wikiImagesUrl, wikiIntroUrl, wikiSummaryUrl } from './films.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -2749,7 +2750,7 @@ function popOutWholeGrid() {
    shows from TVmaze (cast, this episode, previously on, next); TV channels add the listings;
    games get the score, win chance, scoring plays and ESPN's official clips (Replays), which play
    in a tile of their own that closes itself when the clip ends. */
-var xr = { id: null, timer: null, replay: null }; // eslint-disable-line no-var
+var xr = { id: null, timer: null, replay: null, people: [] }; // eslint-disable-line no-var
 const tvmazeCache = new Map(); // address → { at, value }
 
 function tvmaze(url) {
@@ -2777,6 +2778,7 @@ function openXRay(id) {
   const tile = tileById(id);
   if (!tile) return;
   xr.id = id;
+  xr.people = [];
   clearInterval(xr.timer);
   const holder = xrayHolder();
   if (onPhoneScreen()) { if (!holder.open) openDialog(holder); } else {
@@ -2791,6 +2793,7 @@ function openXRay(id) {
 function closeXRay() {
   document.querySelector('#xray-box .xr-player')?.dispatchEvent(new Event('replay-done'));
   xr.id = null;
+  xr.people = [];
   clearInterval(xr.timer);
   $('xray').hidden = true;
   $('xray').replaceChildren();
@@ -2810,11 +2813,15 @@ async function drawXRay() {
   if (!tile) { closeXRay(); return; }
   const name = labelOf(tile);
   const source = parseSource(tile.input);
-  const head = el('div', { class: 'xr-head' }, el('span', { class: 'xr-title', textContent: 'X-Ray' }), iconButton('close', 'Close X-Ray', closeXRay));
+  const person = xr.people.at(-1) || null;
+  const head = el('div', { class: 'xr-head' },
+    person ? iconButton('back', `Back to ${xr.people.at(-2)?.name || name}`, closePerson) : null,
+    el('span', { class: 'xr-title', textContent: person ? person.name : 'X-Ray' }),
+    iconButton('close', 'Close X-Ray', closeXRay));
   const body = el('div', { class: 'xr-body' }, el('p', { class: 'xr-loading', textContent: 'Loading…' }));
   if (!holder.querySelector('.xr-body')) holder.replaceChildren(head, body);
-  const parts = await (tile.event ? xrayGame(tile, name) : xrayShow(tile, name, source)).catch(() => []);
-  if (xr.id !== id) return;
+  const parts = await (person ? xrayPerson(tile, person) : tile.event ? xrayGame(tile, name) : xrayShow(tile, name, source)).catch(() => []);
+  if (xr.id !== id || (xr.people.at(-1) || null) !== person) return;
   const scroll = holder.querySelector('.xr-body')?.scrollTop ?? 0;
   const fresh = el('div', { class: 'xr-body' }, ...(parts.length ? parts : [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${name} yet.` })]));
   // A replay playing in the sheet (phone) stays put while the rest refreshes.
@@ -2827,7 +2834,21 @@ async function xrayShow(tile, name, source) {
   const parts = [];
   const listing = nowAndNext(name, source);
   const lookup = listing?.current?.title || name;
+  // A film: an Atlantic movie link says so; otherwise TVmaze (shows only) not knowing it and IMDb
+  // calling it a film does (a film in the library, or one on a channel now).
+  const atlantic = atlanticTitle(tile.input);
+  if (atlantic?.kind === 'film') {
+    const film = await xrayFilm(tile, name, { tmdb: atlantic.tmdb }, listing);
+    if (film) return film;
+  }
   const show = parseShow(await tvmaze(showSearchUrl(lookup)));
+  if (!show || atlantic?.kind === 'film') {
+    const known = await imdbScore(lookup).catch(() => null);
+    if (known?.kind === 'film' && (!show || normTitle(show.name) !== normTitle(titleOf(lookup).title))) {
+      const film = await xrayFilm(tile, name, { imdb: known.id }, listing);
+      if (film) return film;
+    }
+  }
   const episode = episodeOf(episodePage(tile.input, embedPlace(tile.input)?.page) || source.url || '');
   // The hero: the show's picture, name and story (or the channel's current show from the listings).
   const title = show?.name || listing?.current?.title || name;
@@ -2838,14 +2859,8 @@ async function xrayShow(tile, name, source) {
       el('b', { class: 'xr-name', textContent: title }),
       listing?.current ? el('small', { textContent: `Until ${clock(listing.current.end)} · ${leftText((listing.current.end - Date.now()) / 1000)}` }) : null)));
   // Scores: IMDb (from scores/) with its vote count, and Rotten Tomatoes when the Top 10 has it.
-  const imdb = await imdbScore(title, { kind: listing && !show ? '' : 'show' }).catch(() => null);
-  const top = topScoresFor(title);
-  if (imdb || Number.isFinite(top.rt)) {
-    parts.push(xrSection('Scores', el('div', { class: 'xr-scores' },
-      scoreChip({ imdb: top.imdb ?? imdb?.rating ?? null, rt: top.rt ?? null, fresh: top.fresh }),
-      imdb ? el('small', { textContent: `${votesText(imdb.votes)} IMDb ratings${top.fresh ? ' · Certified Fresh' : ''}` }) : null,
-      imdb ? el('a', { class: 'xr-more', href: `https://www.imdb.com/title/${imdb.id}/`, target: '_blank', rel: 'noopener noreferrer', textContent: 'IMDb page' }) : null)));
-  }
+  const scores = xrayScores(title, await imdbScore(title, { kind: listing && !show ? '' : 'show' }).catch(() => null));
+  if (scores) parts.push(scores);
   const story = listing?.current?.about || show?.summary || '';
   if (episode && show) {
     const [now, before] = await Promise.all([
@@ -2859,10 +2874,7 @@ async function xrayShow(tile, name, source) {
   }
   if (show?.cast.length) {
     parts.push(xrSection('Cast',
-      el('ul', { class: 'xr-cast' }, ...show.cast.map((role) => el('li', { class: 'xr-person' },
-        role.photo ? el('img', { src: role.photo, alt: '', referrerPolicy: 'no-referrer', loading: 'lazy' }) : el('span', { class: 'xr-face', textContent: role.name.slice(0, 1) }),
-        el('b', { textContent: role.name }),
-        role.character ? el('small', { textContent: role.character }) : null))),
+      castList(show.cast.map((role) => ({ name: role.name, photo: role.photo, character: role.character }))),
       show.castCount > show.cast.length && show.url ? el('a', { class: 'xr-more', href: `${show.url}/cast`, target: '_blank', rel: 'noopener noreferrer', textContent: 'Full cast on TVmaze' }) : null));
   }
   if (show && !listing) {
@@ -2915,7 +2927,8 @@ function playReplay(gameId, clip) {
   // On the phone the replay plays right in the X-Ray sheet, so you never leave it.
   if (onPhoneScreen()) { playReplayInSheet(clip); return; }
   if (xr.replay) endReplay();
-  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.id, Boolean(tile.muted)]));
+  // Kept by stream, not tile: adding the replay's tile can change the layout and every tile's id.
+  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.input, Boolean(tile.muted)]));
   const id = addStream(clip.url, { mode: 'add' }, clip.title);
   if (!id) return;
   xr.replay = { id, gameId, mutes };
@@ -2978,11 +2991,224 @@ function endReplay() {
   xr.replay = null;
   if (tileById(replay.id)) removeTile(ws, replay.id);
   for (const tile of ws.tiles.filter(isStream)) {
-    if (!(tile.id in replay.mutes) || tile.muted === replay.mutes[tile.id]) continue;
-    tile.muted = replay.mutes[tile.id];
+    if (!(tile.input in replay.mutes) || tile.muted === replay.mutes[tile.input]) continue;
+    tile.muted = replay.mutes[tile.input];
     grid.viewFor(tile.id)?.setMuted(tile.muted);
   }
   commit();
+}
+
+/* X-Ray for films, and "tap any face" (hand-off notes: notes/plans/xray-films-extras.md).
+   TVmaze knows shows only; films and people come from Wikidata (src/films.js), the story and
+   posters from Wikipedia. Tapping a cast member opens their page inside X-Ray (a back arrow
+   returns); every title on it can play in Atlantic, which uses the same TMDB numbers. Answers
+   are kept a week in multigrid.films.v1. */
+const FILMS_KEY = 'multigrid.films.v1';
+var filmsKept = null; // eslint-disable-line no-var
+function filmsCached(key, make) {
+  if (!filmsKept) { try { filmsKept = JSON.parse(localStorage.getItem(FILMS_KEY) || '{}') || {}; } catch { filmsKept = {}; } }
+  const kept = filmsKept[key];
+  if (kept && Date.now() - kept.at < 7 * 86400000) return Promise.resolve(kept.value);
+  return Promise.resolve().then(make).then((value) => {
+    if (value) {
+      filmsKept[key] = { at: Date.now(), value };
+      const keys = Object.keys(filmsKept);
+      if (keys.length > 120) keys.sort((a, b) => filmsKept[a].at - filmsKept[b].at).slice(0, keys.length - 120).forEach((old) => delete filmsKept[old]);
+      try { localStorage.setItem(FILMS_KEY, JSON.stringify(filmsKept)); } catch { /* not remembered */ }
+    }
+    return value ?? null;
+  }).catch(() => null);
+}
+const askWikidata = (query) => fetch(sparqlUrl(query)).then((answer) => (answer.ok ? answer.json() : null));
+const filmSummary = (page) => (page ? filmsCached(`wiki:${page}`, () => fetch(wikiSummaryUrl(page)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? parseWikiSummary(answer) : null))) : Promise.resolve(null));
+
+/** X-Ray's Scores section: IMDb with its vote count, Rotten Tomatoes when the Top 10 has it. */
+function xrayScores(title, imdb) {
+  const top = topScoresFor(title);
+  if (!imdb && !Number.isFinite(top.rt)) return null;
+  return xrSection('Scores', el('div', { class: 'xr-scores' },
+    scoreChip({ imdb: top.imdb ?? imdb?.rating ?? null, rt: top.rt ?? null, fresh: top.fresh }),
+    imdb ? el('small', { textContent: `${votesText(imdb.votes)} IMDb ratings${top.fresh ? ' · Certified Fresh' : ''}` }) : null,
+    imdb ? el('a', { class: 'xr-more', href: `https://www.imdb.com/title/${imdb.id}/`, target: '_blank', rel: 'noopener noreferrer', textContent: 'IMDb page' }) : null));
+}
+
+/** A cast as faces; each one opens that person's page. */
+function castList(people) {
+  return el('ul', { class: 'xr-cast' }, ...people.map((person) => el('li', {},
+    el('button', { type: 'button', class: 'xr-person', aria: { label: `${person.name}: their films and shows` }, on: { click: () => openPerson(person) } },
+      person.photo ? el('img', { src: person.photo, alt: '', referrerPolicy: 'no-referrer', loading: 'lazy', on: { error(event) { event.currentTarget.replaceWith(el('span', { class: 'xr-face', textContent: person.name.slice(0, 1) })); } } }) : el('span', { class: 'xr-face', textContent: person.name.slice(0, 1) }),
+      el('b', { textContent: person.name }),
+      person.character ? el('small', { textContent: person.character }) : null))));
+}
+
+/** A trailer or extra as a clip row, played like a Replay. */
+function extraClip(tile, clip) {
+  return el('li', {}, el('button', { type: 'button', class: 'xr-clip', on: { click: () => playExtra(clip) } },
+    el('span', { class: 'xr-clip-art' }, el('img', { src: `https://i.ytimg.com/vi/${clip.id}/hqdefault.jpg`, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }), el('span', { class: 'xr-clip-play' }, icon('play', 14))),
+    el('span', { class: 'xr-clip-text' }, el('b', { textContent: clip.title }), clip.note ? el('small', { textContent: clip.note }) : null)));
+}
+
+/** A film: poster, year, runtime, director, the story, scores, the trailer and the cast. */
+async function xrayFilm(tile, name, ref, listing) {
+  const film = await filmsCached(`film:${ref.tmdb || ref.imdb}`, () => askWikidata(filmQuery(ref)).then(parseFilm));
+  if (!film?.id || !film.name) return null;
+  const [summary, cast, imdb] = await Promise.all([
+    filmSummary(film.wiki),
+    filmsCached(`cast:${film.id}`, () => askWikidata(castQuery(film.id)).then((answer) => (answer ? parseCast(answer) : null))),
+    imdbScore(film.name, { year: film.year, kind: 'film' }).catch(() => null),
+  ]);
+  const parts = [el('div', { class: 'xr-hero' },
+    summary?.image ? el('img', { class: 'xr-poster', src: summary.image, alt: '', referrerPolicy: 'no-referrer' }) : null,
+    el('div', { class: 'xr-hero-text' },
+      el('span', { class: 'xr-kicker', textContent: listing?.current ? `On ${name} now` : 'Film' }),
+      el('b', { class: 'xr-name', textContent: film.name }),
+      el('small', { textContent: [film.year || '', runtimeText(film.minutes), ...film.genres.slice(0, 2).map((genre) => genre.replace(/ film$/, '').replace(/^./, (letter) => letter.toUpperCase()))].filter(Boolean).join(' · ') }),
+      film.directors.length ? el('small', { textContent: `Directed by ${film.directors.join(', ')}` }) : null,
+      listing?.current ? el('small', { textContent: `Until ${clock(listing.current.end)} · ${leftText((listing.current.end - Date.now()) / 1000)}` }) : null))];
+  const scores = xrayScores(film.name, imdb);
+  if (scores) parts.push(scores);
+  if (summary?.text) {
+    // The opening of Wikipedia's summary (about three sentences); the rest is a tap away.
+    const sentences = summary.text.match(/[^.!?]+[.!?]+(\s|$)/g) || [summary.text];
+    let story = '';
+    for (const sentence of sentences) { if (story && story.length + sentence.length > 420) break; story += sentence; }
+    parts.push(xrSection('The story', el('p', { class: 'xr-text', textContent: story.trim() }),
+      film.wiki ? el('a', { class: 'xr-more', href: `https://en.wikipedia.org/wiki/${film.wiki}`, target: '_blank', rel: 'noopener noreferrer', textContent: 'More on Wikipedia' }) : null));
+  }
+  if (film.trailer) parts.push(xrSection('Trailer', el('ul', { class: 'xr-clips' }, extraClip(tile, { id: film.trailer, title: `${film.name}: official trailer`, note: 'YouTube' }))));
+  if (cast?.length) parts.push(xrSection('Cast', castList(cast.slice(0, 12))));
+  return parts;
+}
+
+function openPerson(person) {
+  xr.people = [...xr.people, person];
+  const holder = xrayHolder();
+  holder.querySelector('.xr-body')?.replaceChildren(el('p', { class: 'xr-loading', textContent: 'Loading…' }));
+  holder.querySelector('.xr-body')?.scrollTo({ top: 0 });
+  drawXRay();
+}
+
+function closePerson() {
+  xr.people = xr.people.slice(0, -1);
+  const holder = xrayHolder();
+  holder.querySelector('.xr-body')?.replaceChildren(el('p', { class: 'xr-loading', textContent: 'Loading…' }));
+  drawXRay();
+}
+
+/** A person's page: who they are, what they're known for, and everything else they're in. */
+async function xrayPerson(tile, who) {
+  const id = who.id || await filmsCached(`pid:${who.name}`, () => askWikidata(personByNameQuery(who.name)).then((answer) => (answer ? parsePersonId(answer) || null : null)));
+  const person = id ? await filmsCached(`person:${id}`, () => Promise.all([askWikidata(personInfoQuery(id)), askWikidata(personWorksQuery(id))]).then(([info, works]) => (info && works ? parsePerson(info, works, id) : null))) : null;
+  if (!person) return [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${who.name} yet.` })];
+  // Their Wikipedia intro names the roles they're known for.
+  const intro = person.wiki ? await filmsCached(`intro:${person.wiki}`, () => fetch(wikiIntroUrl(person.wiki)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? parseIntro(answer) || null : null))) : '';
+  const { known, more } = knownFor(person.titles, intro || '');
+  const pages = [...known, ...more].map((title) => title.wiki).filter(Boolean);
+  const posters = pages.length ? new Map(Object.entries(await filmsCached(`posters:${id}`, () => fetch(wikiImagesUrl(pages)).then((answer) => (answer.ok ? answer.json() : null)).then((answer) => (answer ? Object.fromEntries(parseWikiImages(answer)) : null))) || {})) : new Map();
+  const photo = person.photo || who.photo || '';
+  const parts = [el('div', { class: 'xr-hero xr-who' },
+    photo ? el('img', { class: 'xr-portrait', src: photo, alt: '', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
+    el('div', { class: 'xr-hero-text' },
+      el('span', { class: 'xr-kicker', textContent: who.character ? `Plays ${who.character}` : 'Cast' }),
+      el('b', { class: 'xr-name', textContent: person.name || who.name }),
+      person.about ? el('small', { textContent: person.about.replace(/^./, (letter) => letter.toUpperCase()) }) : null,
+      person.wiki ? el('a', { class: 'xr-more', href: `https://en.wikipedia.org/wiki/${person.wiki}`, target: '_blank', rel: 'noopener noreferrer', textContent: 'Wikipedia' }) : null))];
+  const shelf = (titles) => el('ul', { class: 'xr-titles' }, ...titles.map((title) => titleCard(title, posters.get(title.wiki) || '')));
+  if (known.length) parts.push(xrSection('Known for', shelf(known)));
+  if (more.length) parts.push(xrSection(`More with ${(person.name || who.name).split(' ')[0]}`, shelf(more)));
+  if (!person.titles.length) parts.push(el('p', { class: 'xr-text', textContent: 'No films or shows of theirs can be played yet.' }));
+  return parts;
+}
+
+/** A title on a person's page: poster, name, year and kind, IMDb score, and Play. */
+function titleCard(title, poster) {
+  const score = el('span', { class: 'xr-title-score' });
+  imdbScore(title.name, { year: title.year, kind: title.kind }).then((found) => { if (found?.rating) score.replaceChildren(scoreChip({ imdb: found.rating })); }).catch(() => {});
+  return el('li', {}, el('button', { type: 'button', class: 'xr-titlecard', aria: { label: `Play ${title.name}` }, on: { click: () => playTitle(title) } },
+    el('span', { class: 'xr-titlecard-art' },
+      // The name sits behind the poster: it shows only when there's no picture.
+      el('span', { class: 'xr-titlecard-name', textContent: title.name }),
+      poster ? el('img', { src: poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
+      el('span', { class: 'xr-clip-play' }, icon('play', 14))),
+    el('b', { textContent: title.name }),
+    el('small', { textContent: [title.year || '', title.kind === 'show' ? 'Series' : 'Film'].filter(Boolean).join(' · ') }),
+    score));
+}
+
+/** Play a title from a person's page: where you left off if it's in Favorites or Continue watching, else Atlantic. */
+function playTitle(title) {
+  const same = (input) => { const found = atlanticTitle(input); return found && found.tmdb === title.tmdb && found.kind === title.kind; };
+  const saved = listPlaces(50).find((place) => same(place.input))?.input || listFavorites().find((item) => same(item.input))?.input;
+  const input = saved || atlanticLink(title);
+  if (!input) return;
+  const id = addStream(input, { mode: 'add' }, title.name);
+  if (!id) return;
+  if (onPhoneScreen()) closeXRay();
+  else toast(`${title.name} added`);
+}
+
+/** A trailer or extra plays like a Replay: a tile of its own with the sound, gone when it ends (laptop); in the sheet (phone). */
+function playExtra(clip) {
+  const url = `https://www.youtube.com/watch?v=${clip.id}`;
+  if (onPhoneScreen()) { playExtraInSheet(clip); return; }
+  if (xr.replay) endReplay();
+  // Kept by stream, not tile: adding the replay's tile can change the layout and every tile's id.
+  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.input, Boolean(tile.muted)]));
+  const id = addStream(url, { mode: 'add' }, clip.title);
+  if (!id) return;
+  xr.replay = { id, gameId: null, mutes };
+  for (const tile of muteableTiles()) {
+    if (tile.id === id) continue;
+    if (!tile.muted) { tile.muted = true; grid.viewFor(tile.id)?.setMuted(true); }
+  }
+  const tile = tileById(id);
+  if (tile) { tile.muted = false; tile.volume = tile.volume || 100; }
+  commit();
+  let tries = 0;
+  const hook = () => {
+    if (xr.replay?.id !== id) return;
+    const view = grid.viewFor(id);
+    if (view?.root.querySelector('.tile-error')) { endReplay(); toast("That video couldn't play."); return; }
+    if (!view?.player || !('onEnded' in view.player)) { if (tries++ < 40) setTimeout(hook, 250); return; }
+    view.setMuted(false);
+    view.player.onEnded = () => { if (xr.replay?.id === id) endReplay(); };
+  };
+  hook();
+}
+
+function playExtraInSheet(clip) {
+  const holder = xrayHolder();
+  holder.querySelector('.xr-player')?.dispatchEvent(new Event('replay-done'));
+  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.id, Boolean(tile.muted)]));
+  for (const tile of muteableTiles()) if (!tile.muted) { tile.muted = true; grid.viewFor(tile.id)?.setMuted(true); }
+  // YouTube's own player, with its "ended" message (enablejsapi) so it closes itself.
+  const frame = el('iframe', { src: `https://www.youtube.com/embed/${clip.id}?autoplay=1&playsinline=1&enablejsapi=1&rel=0&origin=${encodeURIComponent(location.origin)}`, allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowFullscreen: true, title: clip.title });
+  const player = el('div', { class: 'xr-player' }, frame,
+    el('div', { class: 'xr-player-bar' }, el('b', { textContent: clip.title }), iconButton('close', 'Close video', () => player.dispatchEvent(new Event('replay-done')))));
+  const onMessage = (event) => {
+    if (event.source !== frame.contentWindow) return;
+    let data = event.data;
+    try { if (typeof data === 'string') data = JSON.parse(data); } catch { return; }
+    if (data?.event === 'onStateChange' && data.info === 0) player.dispatchEvent(new Event('replay-done'));
+    if (data?.event === 'infoDelivery' && data.info?.playerState === 0) player.dispatchEvent(new Event('replay-done'));
+  };
+  frame.addEventListener('load', () => frame.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'xr', channel: 'widget' }), '*'));
+  window.addEventListener('message', onMessage);
+  let done = false;
+  player.addEventListener('replay-done', () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener('message', onMessage);
+    player.remove();
+    for (const tile of ws.tiles.filter(isStream)) {
+      if (!(tile.id in mutes) || tile.muted === mutes[tile.id]) continue;
+      tile.muted = mutes[tile.id];
+      grid.viewFor(tile.id)?.setMuted(tile.muted);
+    }
+    commit();
+  });
+  holder.querySelector('.xr-head')?.after(player);
+  holder.querySelector('.xr-body')?.scrollTo({ top: 0 });
 }
 
 /* The Dock (laptop): move the mouse to the very bottom edge and a slim bar of favorites slides up.
@@ -3535,6 +3761,7 @@ function streamCard({ input, name, event = null, player = null, phone = false })
     match: withClock(espnMatchFor(event)),
     guide: info?.current ? info : null,
     series: seriesProgress(input) || episodeLine(input),
+    film: atlanticTitle(input)?.kind === 'film' ? 'Film' : '',
     player,
   });
   if (!card) return null;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   filmQuery, parseFilm, castQuery, parseCast, personByNameQuery, parsePersonId, personInfoQuery, personWorksQuery,
-  parsePerson, knownFor, atlanticLink, atlanticTitle, runtimeText, parseSummary, wikiSummaryUrl, sparqlUrl, showByTmdbQuery,
+  parsePerson, knownFor, parseIntro, wikiIntroUrl, atlanticLink, atlanticTitle, runtimeText, parseSummary, wikiSummaryUrl, sparqlUrl, showByTmdbQuery,
 } from '../src/films.js';
 
 // Real Wikidata / Wikipedia answers saved Nov 23.
@@ -78,10 +78,23 @@ test('known for: top 6, then the rest newest first', () => {
   assert.equal(known[0].name, 'T0');
   assert.equal(more.length, 18);
   assert.ok(more.every((title, at) => at === 0 || more[at - 1].year >= title.year));
+});
+
+test('known for: the roles their Wikipedia intro names, one per franchise, minor roles skipped', () => {
+  assert.match(wikiIntroUrl('Keira_Knightley'), /exintro=1&explaintext=1&titles=Keira%20Knightley$/);
   const keira = parsePerson(fixture('keira-info'), fixture('keira-works'), 'Q42581');
-  const top = knownFor(keira.titles).known.map((title) => title.name);
-  assert.ok(top.some((name) => /Pirates of the Caribbean/.test(name)));
-  assert.ok(top.includes('Pride & Prejudice'));
+  const intro = parseIntro(fixture('keira-intro'));
+  assert.match(intro, /minor role as Sabé in Star Wars/);
+  const top = knownFor(keira.titles, intro).known.map((title) => title.name);
+  assert.equal(top.length, 6);
+  assert.ok(!top.some((name) => /Phantom Menace/.test(name)), 'a minor role is not what she is known for');
+  assert.equal(top.filter((name) => /Pirates of the Caribbean/.test(name)).length, 1, 'one per franchise');
+  for (const name of ['Pride & Prejudice', 'Atonement', 'Love Actually']) assert.ok(top.includes(name), name);
+  const zendaya = parsePerson(fixture('zendaya-info'), fixture('zendaya-works'), 'Q189489');
+  const hers = knownFor(zendaya.titles, parseIntro(fixture('zendaya-intro'))).known.map((title) => title.name);
+  for (const name of ['Euphoria', 'Challengers']) assert.ok(hers.includes(name), name);
+  assert.equal(hers.filter((name) => /^Dune/.test(name)).length, 1);
+  assert.equal(parseIntro(null), '');
 });
 
 test('Atlantic links both ways', () => {

@@ -41,9 +41,9 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 
 ## Steps (tick + commit each)
 - [x] 1. src/films.js: Wikidata queries + parsers (film by TMDB id / IMDb id; person by name or Wikidata id; titles with TMDB ids, years, labels, photo). Tests + fixtures.
-- [ ] 2. X-Ray for films in app.js (xrayFilm): hero with poster, runtime, director, year, story (Wikipedia summary), Scores, Cast, Trailer. 7-day cache (multigrid.films.v1).
-- [ ] 3. Tappable cast in X-Ray (shows and films) → person page inside X-Ray, back arrow, Known for + all titles with scores and Play (Atlantic link / resume from favorites). Phone + laptop.
-- [ ] 4. YouTube extras play like Replays: laptop tile with an end/err hook through the YouTube player's state; phone in-sheet YouTube player.
+- [x] 2. X-Ray for films in app.js (xrayFilm): hero with poster, runtime, director, year, story (Wikipedia summary), Scores, Cast, Trailer. 7-day cache (multigrid.films.v1).
+- [x] 3. Tappable cast in X-Ray (shows and films) → person page inside X-Ray, back arrow, Known for + all titles with scores and Play (Atlantic link / resume from favorites). Phone + laptop.
+- [x] 4. YouTube extras play like Replays: laptop tile with an end/err hook through the YouTube player's state; phone in-sheet YouTube player.
 - [ ] 5. tools/build-extras.mjs → extras.json (titles from top10/charts/movies/setup-data; checked YouTube clips; weekly re-search cache). Add to guide.yml. Tests for the clip checks.
 - [ ] 6. Extras row in X-Ray (shows + films), falling back to the Wikidata trailer.
 - [ ] 7. Look check at 1280 + 390 (both themes, no periwinkle, nothing over a Twitch tile), push, verify live, history.md entry, owner-rules job-owned list += extras.json.
@@ -54,3 +54,10 @@ Any agent can pick this up: do the steps in order, tick each box, commit after e
 - An "any language" label fallback made the works query slow again; dropped. Titles with no en/mul name are left out.
 - Wikidata's "notable work" (P800) is empty for most actors. "Known for" = Wikipedia fame of the title divided by sqrt(1 + number of better-known people in its cast), so a lead role beats a cameo in a famous film (Euphoria makes Zendaya's top 6).
 - Cast order: Wikidata doesn't keep billing order; cast is sorted by the person's Wikipedia fame.
+- "Known for" uses the person's Wikipedia intro (prop=extracts&exintro): titles it names come first, one per franchise, and a title right after "minor/small/cameo/voice" doesn't count (Keira Knightley's "minor role as Sabé in Phantom Menace"). Wikidata's cast lists are often short, so co-star counting alone put Phantom Menace first.
+- Atlantic film tiles had no hover card (no episode line), and the hover card is X-Ray's way in on the laptop: tileCard now takes `film: 'Film'`.
+- drawXRay's stale check compared `xr.people.at(-1)` (undefined) with `null` and threw every result away: compare `(… || null)`.
+- Replays/trailers remember who had sound by stream input, not tile id (adding a tile can re-id tiles).
+- YouTube can't play on the cloud test machine (stays "unstarted"). The trailer end was tested with a stand-in iframe_api (fires state 0 after 5 s) and a stand-in embed page (posts onStateChange 0): scratchpad trailer.mjs pattern. Turn a tile's sound on with its own Unmute button in tests: the saved copy can say "sound" while the page itself has muted it on load.
+- Cast photos and many posters come from thumb.wikimedia.org (allowed in the test environment Nov 23).
+- The YouTube player exposes `player.onEnded` (src/players.js) for X-Ray extras.

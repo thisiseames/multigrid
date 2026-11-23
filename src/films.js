@@ -114,7 +114,7 @@ export function personInfoQuery(item) {
  * each. Grouped in the query: asking for labels row by row took 19 s for a busy actor; this ~1 s.
  */
 export function personWorksQuery(item) {
-  return `SELECT ?work (SAMPLE(?en) AS ?workLabel) (SAMPLE(?ml) AS ?mulLabel) (MIN(?d) AS ?date) (SAMPLE(?m) AS ?tmdbm) (SAMPLE(?t) AS ?tmdbtv) (SAMPLE(?i) AS ?imdb) (MAX(?n) AS ?links) (MAX(?a) AS ?above) WHERE {
+  return `SELECT ?work (SAMPLE(?en) AS ?workLabel) (SAMPLE(?ml) AS ?mulLabel) (MIN(?d) AS ?date) (SAMPLE(?m) AS ?tmdbm) (SAMPLE(?t) AS ?tmdbtv) (SAMPLE(?i) AS ?imdb) (MAX(?n) AS ?links) (MAX(?a) AS ?above) (SAMPLE(?wart) AS ?article) WHERE {
   ?work wdt:P161 wd:${item}.
   OPTIONAL { ?work wdt:P4947 ?m. }
   OPTIONAL { ?work wdt:P4983 ?t. }
@@ -124,6 +124,7 @@ export function personWorksQuery(item) {
   OPTIONAL { ?work wikibase:sitelinks ?n. }
   OPTIONAL { ?work rdfs:label ?en. FILTER(LANG(?en) = "en") }
   OPTIONAL { ?work rdfs:label ?ml. FILTER(LANG(?ml) = "mul") }
+  OPTIONAL { ?wart schema:about ?work; schema:isPartOf <https://en.wikipedia.org/>. }
   # How many better-known people share the cast: a lead role ranks above a cameo.
   OPTIONAL { SELECT ?work (COUNT(DISTINCT ?o) AS ?a) WHERE {
     ?work wdt:P161 wd:${item}. wd:${item} wikibase:sitelinks ?mine.
@@ -150,6 +151,7 @@ export function parsePerson(info, works, item = '') {
       kind: tv ? 'show' : 'film',
       tmdb: tv || value(row, 'tmdbm'),
       imdb: /^tt\d+$/.test(value(row, 'imdb')) ? value(row, 'imdb') : '',
+      wiki: value(row, 'article') ? decodeURIComponent(value(row, 'article').split('/wiki/')[1] || '') : '',
       // Known on Wikipedia, less so when bigger names lead the cast.
       fame: Number(value(row, 'links') || 0) / Math.sqrt(1 + Number(value(row, 'above') || 0)),
     };
@@ -169,11 +171,45 @@ export function parsePerson(info, works, item = '') {
   };
 }
 
-/** The 6 a person is best known for, then the rest newest first (max total). */
-export function knownFor(titles, max = 24) {
-  const top = titles.slice(0, 6);
-  const rest = titles.slice(6).sort((a, b) => b.year - a.year);
-  return { known: top, more: rest.slice(0, Math.max(0, max - top.length)) };
+/** The opening paragraphs of a Wikipedia page, as plain text: the address. */
+export const wikiIntroUrl = (page) => `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&redirects=1&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(String(page).replace(/_/g, ' '))}`;
+export const parseIntro = (answer) => String(answer?.query?.pages?.[0]?.extract || '');
+
+/** "Pirates of the Caribbean: Dead Man's Chest" → "pirates of the caribbean": one per franchise in Known for. */
+const franchise = (name) => String(name).split(/:| – | - /)[0].toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Where a title is first named in a person's Wikipedia intro, or -1; a "minor role" or cameo doesn't count. */
+function mentionAt(intro, name) {
+  for (const form of [...new Set([name, name.split(/:| – /)[0].trim()])]) {
+    if (form.length < 3) continue;
+    const found = new RegExp(`(^|[^\\w])${escape(form)}(?![\\w])`).exec(intro);
+    if (!found) continue;
+    const before = intro.slice(Math.max(0, found.index - 45), found.index);
+    if (/\b(minor|small|brief|cameo|uncredited|voice)\b/i.test(before)) return -1;
+    return found.index;
+  }
+  return -1;
+}
+
+/**
+ * Known for: the titles a person's Wikipedia intro names as their work (the intro is written
+ * around their defining roles), one per franchise, best known first, filled up to 6 by fame.
+ * Then the rest, newest first (max total). Without an intro, fame alone.
+ */
+export function knownFor(titles, intro = '', max = 24) {
+  const named = intro ? titles.filter((title) => mentionAt(intro, title.name) >= 0) : [];
+  const known = [];
+  const groups = new Set();
+  for (const title of [...named, ...titles]) {
+    if (known.length >= 6) break;
+    const group = franchise(title.name);
+    if (known.includes(title) || groups.has(group)) continue;
+    groups.add(group);
+    known.push(title);
+  }
+  const rest = titles.filter((title) => !known.includes(title)).sort((a, b) => b.year - a.year);
+  return { known, more: rest.slice(0, Math.max(0, max - known.length)) };
 }
 
 /** Where a title plays in Atlantic: films by TMDB number, shows from S1 E1. */
@@ -205,7 +241,18 @@ export const wikiSummaryUrl = (page) => `https://en.wikipedia.org/api/rest_v1/pa
 /** From Wikipedia's summary: { text, image }. */
 export function parseSummary(answer) {
   if (!answer || answer.type === 'disambiguation') return { text: '', image: '' };
-  return { text: String(answer.extract || '').trim(), image: answer.originalimage?.source || answer.thumbnail?.source || '' };
+  return { text: String(answer.extract || '').trim(), image: answer.thumbnail?.source || answer.originalimage?.source || '' };
+}
+
+/** One Wikipedia request for the lead picture (a poster, for films and shows) of up to 50 pages. */
+export const wikiImagesUrl = (pages, size = 240) => `https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&redirects=1&prop=pageimages&piprop=thumbnail&pilicense=any&pithumbsize=${size}&titles=${encodeURIComponent(pages.slice(0, 50).map((page) => String(page).replace(/_/g, ' ')).join('|'))}`;
+
+/** From wikiImagesUrl's answer: Map of the page name as asked (underscores) → picture address. */
+export function parseWikiImages(answer) {
+  const query = answer?.query ?? {};
+  const byTitle = new Map((query.pages ?? []).filter((page) => page.thumbnail?.source).map((page) => [page.title, page.thumbnail.source]));
+  for (const step of [...(query.normalized ?? []), ...(query.redirects ?? [])]) if (byTitle.has(step.to)) byTitle.set(step.from, byTitle.get(step.to));
+  return new Map([...byTitle].map(([title, image]) => [title.replace(/ /g, '_'), image]));
 }
 
 /** The show with this TMDB TV number, as a Wikidata item (for its cast), from Atlantic shows. */

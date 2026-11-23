@@ -279,6 +279,7 @@ function youtubePlayer(source, options) {
     el: frame,
     canMute: true,
     canVolume: levelWorks,
+    onEnded: null,
     // Where the video is, and a link to that exact video, for "Send to phone".
     place() {
       const key = videoKey();
@@ -348,6 +349,8 @@ function youtubePlayer(source, options) {
               if (event.data === 2) onPlayState?.(true);
               if (event.data === 1) maybeResume();
               if (event.data === 2 || event.data === 0) keepPlace();
+              // X-Ray's trailers and extras close themselves when the video ends.
+              if (event.data === 0) self.onEnded?.();
             },
             onError(event) {
               // One video in a list that won't play here shouldn't stop the whole tile.

@@ -24,7 +24,7 @@ const sideName = (side) => side?.abbr || side?.name || '';
  * Returns { live, title, lines, score } where score is { home, away, clock, state } for a game.
  */
 export function tileCard(about = {}, now = Date.now()) {
-  const { kind = '', name = '', match = null, guide = null, series = '', player = null } = about;
+  const { kind = '', name = '', match = null, guide = null, series = '', film = '', player = null } = about;
   // Twitch stops if anything covers it; YouTube shows its own title and time on hover.
   if (kind === 'twitch' || kind === 'youtube') return null;
 
@@ -51,6 +51,8 @@ export function tileCard(about = {}, now = Date.now()) {
   }
 
   if (series) return { live: false, title: name, lines: [series], score: null };
+  // A film page (Atlantic): the card is X-Ray's way in on the laptop.
+  if (film) return { live: false, title: name, lines: [film], score: null };
 
   if (player) {
     if (player.live) return { live: true, title: player.title || name, lines: [player.author].filter(Boolean), score: null };
