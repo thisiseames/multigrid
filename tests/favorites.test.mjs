@@ -12,7 +12,7 @@ globalThis.localStorage = {
 const {
   favoriteName, favoriteSources, findSaved, folderForCategory, isFolderClosed, listFavorites, listFolders,
   openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder,
-  saveFavorite, saveNamed, setFolderClosed,
+  saveCurrent, saveFavorite, saveNamed, setFolderClosed,
 } = await import('../src/storage.js');
 
 beforeEach(() => store.clear());
@@ -136,7 +136,7 @@ test('the latest-file check covers every source file', () => {
   assert.ok(listed.includes('index.html') && listed.includes('styles.css'));
 });
 
-const { loadCurrent, saveCurrent } = await import('../src/storage.js');
+const { loadCurrent } = await import('../src/storage.js');
 const { emptyWorkspace } = await import('../src/layout.js');
 
 test('a stream saved before volumes existed starts at full level, and odd levels are tidied', () => {
@@ -270,4 +270,24 @@ test('the current wall keeps a game link and a saved layout drops it', () => {
   const saved = openSaved(findSaved('Game wall'));
   assert.equal('event' in saved.tiles[0], false);
   assert.deepEqual(saved.tiles[0].sources, [{ input: 'https://b.test/1', name: 'Sky Sports' }]);
+});
+
+test('the room marker travels with the current wall and a saved room', () => {
+  const room = { key: 'sports:1', label: 'Liverpool vs Man Utd', kind: 'game', starts: 1000, ends: 0, notLive: true };
+  const ws = {
+    v: 1, presetId: 'row', minSlots: 0, started: true, fit: true, cols: [1, 1], rows: [1],
+    room,
+    tiles: [{
+      id: 't', input: 'https://a.test/1', muted: false, volume: 100,
+      place: { c: 0, r: 0, cs: 1, rs: 1 }, primary: true,
+    }],
+  };
+  saveCurrent(ws);
+  assert.deepEqual(loadCurrent().room, room);
+  saveNamed('Room · Liverpool vs Man Utd', ws);
+  assert.deepEqual(openSaved(findSaved('Room · Liverpool vs Man Utd')).room, room);
+  // A layout without a room stays without one.
+  const normal = { ...ws, room: undefined };
+  saveCurrent(normal);
+  assert.equal('room' in loadCurrent(), false);
 });

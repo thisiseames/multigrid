@@ -66,6 +66,7 @@ function sanitize(raw) {
       ...(cleanSources(tile.sources).length ? { sources: cleanSources(tile.sources) } : {}),
     });
   }
+  const room = cleanRoom(raw.room);
   return {
     v: 1,
     presetId: typeof raw.presetId === 'string' ? raw.presetId : 'custom',
@@ -76,6 +77,23 @@ function sanitize(raw) {
     rows: [...raw.rows],
     tiles,
     previous: cleanPrevious(raw.previous),
+    ...(room ? { room } : {}),
+  };
+}
+
+/** The small room marker on a saved workspace: what event it belongs to. */
+function cleanRoom(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const key = typeof raw.key === 'string' ? raw.key.trim().slice(0, 200) : '';
+  const label = typeof raw.label === 'string' ? raw.label.trim().slice(0, 120) : '';
+  if (!key || !label) return null;
+  return {
+    key,
+    label,
+    kind: raw.kind === 'show' ? 'show' : 'game',
+    starts: Number(raw.starts) || 0,
+    ends: Number(raw.ends) || 0,
+    ...(raw.notLive === true ? { notLive: true } : {}),
   };
 }
 
@@ -97,9 +115,11 @@ function keptPage(tile) {
 }
 
 function snapshot(ws, { keepEvent = true } = {}) {
+  const room = cleanRoom(ws.room);
   return {
     v: 1,
     ...(ws.previous ? { previous: ws.previous } : {}),
+    ...(room ? { room } : {}),
     presetId: ws.presetId,
     minSlots: ws.minSlots,
     started: ws.started,
