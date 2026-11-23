@@ -1,5 +1,5 @@
 {
- "updated": 1795472163442,
+ "updated": 1795473751791,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -447,7 +447,13 @@
    "title": "Brentford 4–0 Everton",
    "start": 1795464000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "SeF3pK4FohQ",
+     "title": "Brentford FC vs. Everton FC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
+     "rank": 3.5
+    }
+   ]
   },
   "401879238": {
    "league": "Premier League",
