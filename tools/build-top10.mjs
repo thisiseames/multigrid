@@ -32,7 +32,18 @@ const scored = (chart) => (chart?.entries ?? []).some((entry) => 'imdb' in entry
 async function netflix() {
   const had = charts.netflix;
   const weekEnds = had?.week ? Date.parse(`${had.week}T12:00:00Z`) : 0;
-  if (!force && had && scored(had) && (now - weekEnds < 8.5 * 24 * HOUR || now - (had.checked || 0) < 6 * HOUR)) return had;
+  const fresh = had && (now - weekEnds < 8.5 * 24 * HOUR || now - (had.checked || 0) < 6 * HOUR);
+  if (!force && fresh && scored(had)) return had;
+  // A current list saved before scores: add JustWatch's scores to it, without fetching Netflix's file again.
+  if (!force && fresh) {
+    const entries = [];
+    for (const entry of had.entries) {
+      const extra = await justWatch(SEARCH, { query: entry.title }).then((answer) => netflixMatch(answer, entry.title)).catch(() => null);
+      entries.push({ ...entry, ...(extra?.scores ?? {}) });
+      await pause(400);
+    }
+    return { ...had, entries };
+  }
   const response = await fetch(NETFLIX, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(120000) });
   if (!response.ok) throw new Error(`Netflix answered ${response.status}`);
   const found = netflixWeek(await response.text(), 'CA', 'TV');
