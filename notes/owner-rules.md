@@ -120,3 +120,7 @@ Nov 22: the owner hates periwinkle, the pale blue-purple MULTIGRID has used as i
 
 ## He uses Chrome, always
 Nov 22: "I am always on Chrome." Laptop and iPhone. Safari only for short developer checks. Never give Safari steps or reasons ("Safari blocks…"); write every instruction for Chrome. On the iPhone, the home-screen app is added from Chrome (Share → Add to Home Screen).
+
+## Every plan and build can be picked up by another agent (Nov 23, standing)
+Owner: "Moving forward every planned or building should be able to be picked up by another agent."
+**How to apply:** before building anything, write the plan to notes/plans/<name>.md with a numbered checklist, defaults, research and gotchas, and push it. Tick each step and commit + push after it (not only at the end), so an agent opening the repo cold (OpenCode, another Claude session) can see what's done, what's next and how to verify. Add gotchas to the plan as they're found. Mark the plan "DONE, live <date>" at the end.
