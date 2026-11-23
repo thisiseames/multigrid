@@ -68,6 +68,7 @@ import {
 } from './game-links.js';
 import { leftText, tileCard } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
+import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, startSync, stopSync } from './sync.js';
 import {
   closePopovers, coverage, el, fullscreen, hydrateIcons, icon, iconButton, layoutDiagram, openDialog, toast, togglePopover,
@@ -107,6 +108,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onFixStream: (id) => openPalette({ repair: { id } }),
   labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
   tileInfo: (id, player) => tileInfoCard(id, player),
+  onXRay: (id) => openXRay(id),
   onTileArt(id) {
     const tile = tileById(id);
     if (!tile) return null;
@@ -338,6 +340,7 @@ function buildStreamMenu(id) {
     // With two small screens (they have no top bar), the big one's sheet swaps either of them in.
     ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
+    bigButton('help', 'X-Ray', then(() => openXRay(id))),
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
@@ -2737,6 +2740,206 @@ function popOutWholeGrid() {
     .catch(() => toast("Couldn't pop the grid out. Try again."));
 }
 
+/* X-Ray: what's on a tile, in depth. Opened by clicking a tile's hover card (laptop: a column
+   beside the grid, in Game mode's place while open) or from the tile's sheet (phone). Series and
+   shows from TVmaze (cast, this episode, previously on, next); TV channels add the listings;
+   games get the score, win chance, scoring plays and ESPN's official clips (Replays), which play
+   in a tile of their own that closes itself when the clip ends. */
+var xr = { id: null, timer: null, replay: null }; // eslint-disable-line no-var
+const tvmazeCache = new Map(); // address → { at, value }
+
+function tvmaze(url) {
+  const kept = tvmazeCache.get(url);
+  if (kept && Date.now() - kept.at < 86400000) return Promise.resolve(kept.value);
+  return fetch(url).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null).then((value) => {
+    tvmazeCache.set(url, { at: Date.now(), value });
+    return value;
+  });
+}
+
+function xrayHolder() {
+  if (!onPhoneScreen()) return $('xray');
+  let box = document.getElementById('xray-box');
+  if (!box) {
+    box = el('dialog', { id: 'xray-box', class: 'dialog tidy-box xray-box', aria: { label: 'X-Ray' } });
+    box.addEventListener('click', (event) => { if (event.target === box) box.close(); });
+    box.addEventListener('close', () => closeXRay());
+    document.body.append(box);
+  }
+  return box;
+}
+
+function openXRay(id) {
+  const tile = tileById(id);
+  if (!tile) return;
+  xr.id = id;
+  clearInterval(xr.timer);
+  const holder = xrayHolder();
+  if (onPhoneScreen()) { if (!holder.open) openDialog(holder); } else {
+    holder.hidden = false;
+    $('gamebar').hidden = true;
+  }
+  drawXRay();
+  // A live game keeps its score and clips current while X-Ray is open.
+  xr.timer = setInterval(() => { if (xr.id && tileById(xr.id)?.event) drawXRay(); }, 60_000);
+}
+
+function closeXRay() {
+  xr.id = null;
+  clearInterval(xr.timer);
+  $('xray').hidden = true;
+  $('xray').replaceChildren();
+  const box = document.getElementById('xray-box');
+  if (box?.open) box.close();
+  // Game mode comes back if it's on.
+  $('gamebar').hidden = !(isGameOn() && !onPhoneScreen());
+  if (!$('gamebar').hidden) { drawGamebar(); refreshGames(); }
+}
+
+const xrSection = (title, ...body) => el('section', { class: 'xr-section' }, el('h3', { class: 'xr-h', textContent: title }), ...body.filter(Boolean));
+
+async function drawXRay() {
+  const id = xr.id;
+  const tile = tileById(id);
+  const holder = xrayHolder();
+  if (!tile) { closeXRay(); return; }
+  const name = labelOf(tile);
+  const source = parseSource(tile.input);
+  const head = el('div', { class: 'xr-head' }, el('span', { class: 'xr-title', textContent: 'X-Ray' }), iconButton('close', 'Close X-Ray', closeXRay));
+  const body = el('div', { class: 'xr-body' }, el('p', { class: 'xr-loading', textContent: 'Loading…' }));
+  if (!holder.querySelector('.xr-body')) holder.replaceChildren(head, body);
+  const parts = await (tile.event ? xrayGame(tile, name) : xrayShow(tile, name, source)).catch(() => []);
+  if (xr.id !== id) return;
+  const scroll = holder.querySelector('.xr-body')?.scrollTop ?? 0;
+  const fresh = el('div', { class: 'xr-body' }, ...(parts.length ? parts : [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${name} yet.` })]));
+  holder.replaceChildren(head, fresh);
+  fresh.scrollTop = scroll;
+}
+
+/** A show: its picture and story, this episode, previously on, cast, next episode; TV listings too. */
+async function xrayShow(tile, name, source) {
+  const parts = [];
+  const listing = nowAndNext(name, source);
+  const lookup = listing?.current?.title || name;
+  const show = parseShow(await tvmaze(showSearchUrl(lookup)));
+  const episode = episodeOf(episodePage(tile.input, embedPlace(tile.input)?.page) || source.url || '');
+  // The hero: the show's picture, name and story (or the channel's current show from the listings).
+  const title = show?.name || listing?.current?.title || name;
+  parts.push(el('div', { class: 'xr-hero' },
+    show?.image ? el('img', { class: 'xr-poster', src: show.image, alt: '', referrerPolicy: 'no-referrer' }) : null,
+    el('div', { class: 'xr-hero-text' },
+      el('span', { class: 'xr-kicker', textContent: listing?.current ? `On ${name} now` : show?.network || name }),
+      el('b', { class: 'xr-name', textContent: title }),
+      listing?.current ? el('small', { textContent: `Until ${clock(listing.current.end)} · ${leftText((listing.current.end - Date.now()) / 1000)}` }) : null)));
+  const story = listing?.current?.about || show?.summary || '';
+  if (episode && show) {
+    const [now, before] = await Promise.all([
+      tvmaze(episodeUrl(show.id, episode.season, episode.episode)).then(parseEpisode),
+      previousNumber(episode.season, episode.episode) ? tvmaze(episodeUrl(show.id, episode.season, episode.episode - 1)).then(parseEpisode) : null,
+    ]);
+    if (now) parts.push(xrSection('This episode', el('b', { class: 'xr-ep', textContent: `S${now.season} E${now.number} · ${now.name}` }), now.summary ? el('p', { class: 'xr-text', textContent: now.summary }) : null));
+    if (before) parts.push(xrSection('Previously on', el('b', { class: 'xr-ep', textContent: `S${before.season} E${before.number} · ${before.name}` }), before.summary ? el('p', { class: 'xr-text', textContent: before.summary }) : null));
+  } else if (story) {
+    parts.push(xrSection('The story', el('p', { class: 'xr-text', textContent: story })));
+  }
+  if (show?.cast.length) {
+    parts.push(xrSection('Cast',
+      el('ul', { class: 'xr-cast' }, ...show.cast.map((role) => el('li', { class: 'xr-person' },
+        role.photo ? el('img', { src: role.photo, alt: '', referrerPolicy: 'no-referrer', loading: 'lazy' }) : el('span', { class: 'xr-face', textContent: role.name.slice(0, 1) }),
+        el('b', { textContent: role.name }),
+        role.character ? el('small', { textContent: role.character }) : null))),
+      show.castCount > show.cast.length && show.url ? el('a', { class: 'xr-more', href: `${show.url}/cast`, target: '_blank', rel: 'noopener noreferrer', textContent: 'Full cast on TVmaze' }) : null));
+  }
+  if (show && !listing) {
+    parts.push(xrSection('Next episode', el('p', { class: 'xr-text', textContent: show.next ? `S${show.next.season} E${show.next.number} · ${show.next.name}${show.next.airdate ? ` · ${new Date(`${show.next.airdate}T12:00`).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}` : 'No next episode announced.' })));
+  }
+  if (listing) {
+    const later = showsBetween(name, source, Date.now(), Date.now() + 12 * 3600000).filter((item) => item.start > Date.now()).slice(0, 3);
+    if (later.length) parts.push(xrSection(`Next on ${name}`, el('ul', { class: 'xr-list' }, ...later.map((item) => el('li', {}, el('b', { textContent: clock(item.start) }), el('span', { textContent: item.title }))))));
+  }
+  return parts;
+}
+
+/** A game: score, win chance, scoring plays and Replays (ESPN's clips). */
+async function xrayGame(tile, name) {
+  const match = espnMatchFor(tile.event);
+  if (!match) {
+    // Today's games may still be on their way; one quick wait, then whatever is known.
+    tileScores = tileScores.length ? tileScores : await todaysGames().then((groups) => (groups ?? []).flatMap((group) => group.games ?? [])).catch(() => []);
+  }
+  const game = espnMatchFor(tile.event);
+  if (!game) return xrayShow(tile, name, parseSource(tile.input));
+  const summary = await fetch(`${ESPN_SITE}/${game.sport}/summary?event=${game.id}`, { cache: 'no-store' }).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null);
+  const order = game.sport !== 'soccer/all' ? [game.away, game.home] : [game.home, game.away];
+  const sideOf = (side) => el('div', { class: 'xr-side' }, crestOf(side, 40), el('b', { textContent: side.abbr || side.name }), el('span', { class: 'xr-goals', textContent: game.state === 'pre' ? '' : String(side.score ?? '') }));
+  const parts = [el('div', { class: 'xr-score' },
+    sideOf(order[0]),
+    el('span', { class: 'xr-clock' }, game.state === 'in' ? el('span', { class: 'ti-live', textContent: 'LIVE' }) : null, game.state === 'in' ? shortClock(game.detail) : game.state === 'pre' ? clock(game.start) : 'Final'),
+    sideOf(order[1]))];
+  const chance = winChance(summary);
+  if (chance) {
+    const left = order[0] === game.home ? chance.home : chance.away;
+    parts.push(el('div', { class: 'xr-chance' },
+      el('div', { class: 'xr-chance-bar' }, el('span', { style: `width:${left}%` })),
+      el('div', { class: 'xr-chance-labels' }, el('span', { textContent: `${order[0].abbr || order[0].name} ${left}%` }), el('span', { textContent: `${100 - left}% ${order[1].abbr || order[1].name}` }))));
+  }
+  const clips = replayClips(summary);
+  if (clips.length) {
+    parts.push(xrSection('Replays', el('ul', { class: 'xr-clips' }, ...clips.slice(0, 12).map((clip) => el('li', {},
+      el('button', { type: 'button', class: 'xr-clip', on: { click: () => playReplay(tile.id, clip) } },
+        el('span', { class: 'xr-clip-art' }, clip.thumb ? el('img', { src: clip.thumb, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null, el('span', { class: 'xr-clip-play' }, icon('play', 14))),
+        el('span', { class: 'xr-clip-text' }, el('b', { textContent: clip.title }), el('small', { textContent: [clip.published ? agoText(clip.published) : '', clip.seconds ? `${clip.seconds}s` : ''].filter(Boolean).join(' · ') }))))))));
+  }
+  const plays = scoringPlays(summary, game.sport);
+  if (plays.length) parts.push(xrSection('Scoring', el('ul', { class: 'xr-list' }, ...plays.map((play) => el('li', {}, el('b', { textContent: [play.clock, play.team].filter(Boolean).join(' · ') }), el('span', { textContent: play.text }))))));
+  return parts;
+}
+
+/** A replay plays in a tile of its own beside the game, with the sound; it closes itself at the end. */
+function playReplay(gameId, clip) {
+  if (xr.replay) endReplay();
+  const mutes = Object.fromEntries(ws.tiles.filter(isStream).map((tile) => [tile.id, Boolean(tile.muted)]));
+  const id = addStream(clip.url, { mode: 'add' }, clip.title);
+  if (!id) return;
+  xr.replay = { id, gameId, mutes };
+  for (const tile of muteableTiles()) {
+    if (tile.id === id) continue;
+    if (!tile.muted) { tile.muted = true; grid.viewFor(tile.id)?.setMuted(true); }
+  }
+  const tile = tileById(id);
+  if (tile) { tile.muted = false; tile.volume = tile.volume || 100; }
+  commit();
+  // Sound on as soon as its player exists, and away when the clip ends.
+  let tries = 0;
+  const hook = () => {
+    const view = grid.viewFor(id);
+    const video = view?.player?.el instanceof HTMLVideoElement ? view.player.el : view?.player?.media;
+    if (!(video instanceof HTMLVideoElement)) {
+      // A clip that can't play closes itself rather than leaving a broken tile.
+      if (view?.root.querySelector('.tile-error') && xr.replay?.id === id) { endReplay(); toast("That replay couldn't play."); return; }
+      if (tries++ < 40 && xr.replay?.id === id) setTimeout(hook, 250);
+      return;
+    }
+    view.setMuted(false);
+    video.addEventListener('ended', () => { if (xr.replay?.id === id) endReplay(); }, { once: true });
+    video.addEventListener('error', () => { if (xr.replay?.id === id) { endReplay(); toast("That replay couldn't play."); } }, { once: true });
+  };
+  hook();
+}
+
+function endReplay() {
+  const replay = xr.replay;
+  if (!replay) return;
+  xr.replay = null;
+  if (tileById(replay.id)) removeTile(ws, replay.id);
+  for (const tile of ws.tiles.filter(isStream)) {
+    if (!(tile.id in replay.mutes) || tile.muted === replay.mutes[tile.id]) continue;
+    tile.muted = replay.mutes[tile.id];
+    grid.viewFor(tile.id)?.setMuted(tile.muted);
+  }
+  commit();
+}
+
 /* Game mode: live scores beside the grid, on the laptop in a column of its own (so it never
    covers a stream) and on a phone in the bottom ticker. Only on when switched on. */
 const GAME_KEY = 'multigrid.gamemode.v1';
@@ -3133,13 +3336,19 @@ function streamCard({ input, name, event = null, player = null, phone = false })
     name,
     match: withClock(espnMatchFor(event)),
     guide: info?.current ? info : null,
-    series: seriesProgress(input),
+    series: seriesProgress(input) || episodeLine(input),
     player,
   });
   if (!card) return null;
   const favorite = listFavorites().find((item) => item.input === input);
   const art = () => favoriteArt({ name, input, group: favorite?.group ?? '', logo: favorite?.logo ?? '', poster: favorite?.poster ?? '' }, source);
   return { card, art };
+}
+
+/** "S1 E3" for a series page, from its address, or ''. */
+function episodeLine(input) {
+  const episode = episodeOf(episodePage(input, embedPlace(input)?.page) || parseSource(input).url || '');
+  return episode ? `S${episode.season} E${episode.episode}` : '';
 }
 
 /** The card itself: the logo with LIVE under it, then the score or the show, then the lines. */

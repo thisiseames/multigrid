@@ -64,7 +64,11 @@ class TileView {
     this.root.querySelector(':scope > .tile-info')?.remove();
     if (this.root.classList.contains('is-cropping')) return;
     const card = this.grid.handlers.tileInfo?.(this.id, this.player?.info?.() ?? null);
-    if (card) this.root.append(el('div', { class: 'tile-info', aria: { hidden: 'true' } }, card));
+    if (!card) return;
+    // Clicking the card opens X-Ray for this tile.
+    card.title = 'X-Ray: more about this';
+    card.addEventListener('click', (event) => { event.stopPropagation(); this.grid.handlers.onXRay?.(this.id); });
+    this.root.append(el('div', { class: 'tile-info' }, card));
   }
 
   /** RedZone's reason for making this game big ("Red zone · 3rd & 6"), or '' to clear it. */
