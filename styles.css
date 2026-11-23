@@ -3003,27 +3003,28 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .md-next:hover { background: #18181b; }
 .md-next-tag { padding: 3px 8px; border-radius: 999px; background: #f5f5f7; color: #0b0b0d; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .md-next-when { color: rgba(255, 255, 255, .6); }
+.md-next-match { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
 @media (max-width: 640px) {
-  /* The phone pill uses the full gutter width: teams on the first line, the whole
-     date on one line underneath, so "in 2 days" never breaks. */
+  /* The phone pill uses the full gutter width. The crests stay tight around the
+     teams and that whole group is centred; the date is centred under the same group. */
   .md-next {
-    display: grid;
-    grid-template-columns: auto 20px minmax(0, 1fr) 20px;
-    grid-template-rows: auto auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    column-gap: 8px;
-    row-gap: 5px;
+    justify-content: center;
+    gap: 5px;
     width: calc(100% - 32px);
     max-width: none;
     margin: 0 16px 18px;
-    padding: 10px 14px;
+    padding: 11px 14px;
     border-radius: 18px;
+    text-align: center;
   }
-  .md-next-tag { grid-column: 1; grid-row: 1; justify-self: start; }
-  .md-next > .crest:nth-child(2) { grid-column: 2; grid-row: 1; }
-  .md-next > b { grid-column: 3; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .md-next > .crest:nth-child(4) { grid-column: 4; grid-row: 1; }
-  .md-next-when { grid-column: 1 / -1; grid-row: 2; white-space: nowrap; font-size: 13px; }
+  .md-next-tag { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+  .md-next-match { justify-content: center; gap: 8px; max-width: calc(100% - 96px); }
+  .md-next-match b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .md-next-when { width: 100%; text-align: center; white-space: nowrap; font-size: 13px; }
 }
 
 /* The match centre: Game mode's tab on a laptop, the sheet on a phone. */

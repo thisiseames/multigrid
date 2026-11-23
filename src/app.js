@@ -9133,7 +9133,8 @@ function matchdayHome(now = Date.now()) {
     const next = md.next;
     out.strip = el('button', { type: 'button', class: 'md-next', title: 'Open Sports', on: { click: () => $('matches-button').click() } },
       el('span', { class: 'md-next-tag', textContent: 'Next' }),
-      crestOf(next.home, 20), el('b', { textContent: `${next.home.name} v ${next.away.name}` }), crestOf(next.away, 20),
+      el('span', { class: 'md-next-match' },
+        crestOf(next.home, 20), el('b', { textContent: `${next.home.name} v ${next.away.name}` }), crestOf(next.away, 20)),
       el('span', { class: 'md-next-when', textContent: `${dayLabel(next.start)} ${clock(next.start)} · in ${countdownText(next.start - now)}` }));
   }
   return out;
