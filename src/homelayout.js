@@ -15,6 +15,46 @@ export const HOME_ROWS = [
   { id: 'trending', title: 'Trending in Canada' },
 ];
 
+/** The four home editions. Times are local; late wraps past midnight. */
+export const DAYPARTS = [
+  {
+    id: 'morning', label: 'Morning edition', from: 5, to: 11,
+    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'recent'],
+    hero: ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'],
+  },
+  {
+    id: 'afternoon', label: 'Afternoon edition', from: 11, to: 17,
+    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', 'recent'],
+    hero: ['teamsLive', 'onnow', 'continue', 'fresh', 'teamsPost', 'ten', 'netflix', 'trending'],
+  },
+  {
+    id: 'prime', label: 'Prime time', from: 17, to: 23,
+    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'recent'],
+    hero: ['teamsLive', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'teamsPost'],
+  },
+  {
+    id: 'late', label: 'After hours', from: 23, to: 5,
+    rows: ['continue', 'ten', 'netflix', 'trending', 'fresh', 'onnow', 'teams', 'recent'],
+    hero: ['continue', 'ten', 'netflix', 'trending', 'fresh', 'onnow', 'teamsLive', 'teamsPost'],
+  },
+];
+
+/** The edition for a local date. Boundaries: 5, 11, 17, 23. */
+export function daypartFor(date = new Date()) {
+  const hour = date.getHours() + date.getMinutes() / 60;
+  return DAYPARTS.find((part) => (part.from < part.to
+    ? hour >= part.from && hour < part.to
+    : hour >= part.from || hour < part.to)) ?? DAYPARTS[0];
+}
+
+/** The owner's visible rows, in the edition's order; rows it doesn't know stay at the end. */
+export function daypartOrder(daypart, rows) {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const first = (daypart?.rows ?? []).map((id) => byId.get(id)).filter(Boolean);
+  const shown = new Set(first.map((row) => row.id));
+  return [...first, ...rows.filter((row) => !shown.has(row.id))];
+}
+
 /** What the banner can show, and whether it does to begin with. Each goes with a row. */
 export const BANNER_PARTS = [
   { id: 'teams', label: "Your teams' games", on: true },

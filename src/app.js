@@ -59,7 +59,7 @@ import {
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
-import { BANNER_PARTS, bannerShows, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
+import { BANNER_PARTS, bannerShows, daypartFor, daypartOrder, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
@@ -106,6 +106,19 @@ let ws = loadCurrent();
 let roomReturn = null;
 let roomToken = 0;
 let homeOpen = false;
+// A second, time-aware home for preview: ?home=daypart&at=20:00. The normal home is untouched.
+const homeQuery = new URLSearchParams(location.search);
+const daypartPreview = homeQuery.get('home') === 'daypart';
+function previewClock() {
+  const date = new Date();
+  const at = homeQuery.get('at');
+  if (/^\d{1,2}:\d{2}$/.test(at || '')) {
+    const [hour, minute] = at.split(':').map(Number);
+    if (hour >= 0 && hour < 24 && minute >= 0 && minute < 60) date.setHours(hour, minute, 0, 0);
+  }
+  return date;
+}
+let homeEdition = '';
 // Desk: the wall and one panel side by side. Declared with var so the Game mode / X-Ray
 // functions defined earlier can read it without a temporal-dead-zone crash.
 var deskOn = false;
@@ -6280,11 +6293,13 @@ function showHero(item, { hold = false } = {}) {
   // Older layers fade out under the new one, then go.
   [...layers.children].slice(0, -1).forEach((old) => setTimeout(() => old.remove(), 900));
   hero.classList.toggle('is-matchday', Boolean(item.matchday));
+  const edition = homeEdition ? el('span', { class: 'hero-edition', textContent: homeEdition }) : null;
   if (item.render) {
-    hero.querySelector('.hero-info').replaceChildren(...item.render());
+    hero.querySelector('.hero-info').replaceChildren(...[edition, ...item.render()].filter(Boolean));
     return;
   }
   hero.querySelector('.hero-info').replaceChildren(...[
+    edition,
     el('span', { class: 'hero-label', textContent: item.label }),
     el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
     item.meta ? el('p', { class: 'hero-meta', textContent: item.meta }) : null,
@@ -6369,6 +6384,11 @@ async function drawHome() {
   const home = $('home');
   const asked = ++homeAsked;
   const now = Date.now();
+  const previewAt = previewClock();
+  const preview = daypartPreview ? daypartFor(previewAt) : null;
+  homeEdition = preview
+    ? `Preview · ${preview.label} · ${previewAt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`
+    : '';
   const favorites = listFavorites();
   const favoriteNamed = (input) => favorites.find((fav) => fav.input === input);
   const artOf = (item, source) => () => favoriteArt({ name: item.name, input: item.input, group: item.group ?? '', logo: item.logo ?? '', poster: item.poster ?? '' }, source);
@@ -6544,15 +6564,35 @@ async function drawHome() {
   md.drawnData = Boolean(md.data);
   // The owner's order and choice of rows (Edit home); Matchday always leads.
   const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop };
-  paint([matchday.strip, matchdayRow, ...layout.rows.filter((row) => row.on).map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), editHomeButton()]);
+  const visibleRows = layout.rows.filter((row) => row.on);
+  const orderedRows = preview ? daypartOrder(preview, visibleRows) : visibleRows;
+  paint([matchday.strip, matchdayRow, ...orderedRows.map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), preview ? null : editHomeButton()]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
-  // from the build-up until full time it holds it.
-  const part = (id, items) => (bannerShows(layout, id) ? items : []);
-  let rotation = [...part('teams', teams.filter((game) => game.match.state !== 'post')), ...part('continue', cont.slice(0, 3)), ...part('fresh', fresh.slice(0, 2)),
-    ...part('teams', teams.filter((game) => game.match.state === 'post')), ...part('onnow', onNow.slice(0, 3)), ...part('ten', tenTop.slice(0, 3)), ...part('netflix', netflixTop.slice(0, 3)), ...part('trending', trendingTop.slice(0, 3))];
+  // from the build-up until full time it holds it. The preview uses the edition's order even when
+  // the owner has that part switched off, so the time-aware shape can be judged.
+  const groups = {
+    teamsLive: teams.filter((game) => game.match.state !== 'post'),
+    continue: cont.slice(0, 3),
+    fresh: fresh.slice(0, 2),
+    teamsPost: teams.filter((game) => game.match.state === 'post'),
+    onnow: onNow.slice(0, 3),
+    ten: tenTop.slice(0, 3),
+    netflix: netflixTop.slice(0, 3),
+    trending: trendingTop.slice(0, 3),
+  };
+  const rowForGroup = { teamsLive: 'teams', teamsPost: 'teams' };
+  const visibleRowIds = new Set(orderedRows.map((row) => row.id));
+  const heroOrder = preview ? preview.hero : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'];
+  let rotation = heroOrder.flatMap((id) => {
+    const rowId = rowForGroup[id] ?? id;
+    if (!visibleRowIds.has(rowId) || (!preview && !bannerShows(layout, rowId))) return [];
+    return groups[id] ?? [];
+  });
   if (matchday.hero) rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
   heroItems = matchday.hold ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
-  if (heroItems.length && (!heroKey || !heroItems.some((item) => item.key === heroKey))) { heroAt = 0; heroKey = ''; showHero(heroItems[0]); }
+  const firstHero = heroItems[0];
+  const leadChanged = preview ? heroKey !== firstHero?.key : (!heroKey || !heroItems.some((item) => item.key === heroKey));
+  if (heroItems.length && leadChanged) { heroAt = 0; heroKey = ''; showHero(firstHero); }
   rotateHero();
 }
 
@@ -11688,6 +11728,17 @@ function buildMoreMenu() {
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
     switchRow('TV mode', 'tiles', tvMode, () => { toggleTvMode(); buildMoreMenu(); }),
+    onPhoneScreen() ? null : switchRow('Daypart home (preview)', 'today', daypartPreview, () => {
+      const url = new URL(location.href);
+      if (daypartPreview) {
+        url.searchParams.delete('home');
+        url.searchParams.delete('at');
+      } else {
+        url.searchParams.set('home', 'daypart');
+        url.searchParams.delete('at');
+      }
+      location.href = url.toString();
+    }),
     onPhoneScreen() ? null : switchRow('Desk', 'desk', deskOn, () => { setDesk(!deskOn); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
     !onPhoneScreen() && canPopOutGrid() && streamCount(ws) ? row(isGridPoppedOut() ? 'Bring grid back' : 'Pop out grid', 'popout', then(popOutWholeGrid)) : null,
@@ -12050,8 +12101,10 @@ drawTodayIcon();
 setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
 prepareAutoplaySound();
+if (daypartPreview) homeOpen = true;
 render();
 initDesk();
+if (daypartPreview) toast(`Daypart home preview: ${daypartFor(previewClock()).label}.`);
 if (typeof ResizeObserver === 'function') new ResizeObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('stage'));
 if (typeof MutationObserver === 'function') new MutationObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('grid'), { childList: true, subtree: true });
 // RedZone stays on across a reload.
