@@ -10940,6 +10940,7 @@ function sendPayload(value) {
     kind: String(value.kind || '').trim(),
     save: Boolean(value.save),
     open: Boolean(value.open),
+    group: String(value.group || '').trim().slice(0, 40),
   };
 }
 
@@ -10958,24 +10959,38 @@ function addIncoming(payload) {
   const name = payload.name || favoriteName(payload.url) || '';
   if (payload.kind === 'youtube-channel' || isYouTubeChannelPage(payload.url)) {
     const input = channelFavoriteInput(payload.url);
+    const folder = payload.group || 'YOUTUBE';
     forgetStaleChannel(name, input);
-    const saved = saveFavorite(input, name || 'YouTube channel', 'YOUTUBE');
+    const saved = saveFavorite(input, name || 'YouTube channel', folder);
     if (!saved) toast(STORAGE_FULL);
     else if (payload.open) {
       const added = addStream(input, { mode: 'add' }, name || 'YouTube channel');
-      toast(added ? `${name || 'Channel'} added and opened.` : `${name || 'Channel'} saved in YOUTUBE.`);
-    } else toast(`${name || 'Channel'} saved in YOUTUBE.`);
+      toast(added ? `${name || 'Channel'} saved in ${folder} and opened.` : `${name || 'Channel'} saved in ${folder}.`);
+    } else toast(`${name || 'Channel'} saved in ${folder}.`);
     refreshFavorites();
     return;
   }
   const source = parseSource(payload.url);
+  const folder = payload.group || '';
   const audio = payload.kind === 'audio' || source.kind === 'audio' || /\.(mp3|m4a|aac|ogg|opus|wav)(?:\?|#|$)/i.test(payload.url);
-  if (audio) {
-    openPodcast(audioInput(name || 'Podcast', payload.url), { title: name || 'Podcast', from: '' });
-    toast(`Opening ${name || 'podcast'}…`);
+  let saved = false;
+  if (payload.save && source.ok) {
+    saved = saveFavorite(source.input, name || source.label, folder);
+    refreshFavorites();
+    if (!saved) toast(STORAGE_FULL);
+  }
+  if (payload.open || !payload.save) {
+    if (audio) {
+      openPodcast(audioInput(name || 'Podcast', payload.url), { title: name || 'Podcast', from: '' });
+      toast(`Opening ${name || 'podcast'}…`);
+      return;
+    }
+    const added = addStream(payload.url, { mode: 'add' }, name);
+    if (added) toast(payload.save ? `${name || 'Stream'} saved${folder ? ` in ${folder}` : ''} and opened.` : `Added ${name || 'stream'}.`);
+    else if (saved) toast(`${name || 'Stream'} saved${folder ? ` in ${folder}` : ''}.`);
     return;
   }
-  if (addStream(payload.url, { mode: 'add' }, name)) toast(`Added ${name || 'stream'}.`);
+  if (saved) toast(`${name || 'Stream'} saved${folder ? ` in ${folder}` : ''}.`);
 }
 
 function receiveSend() {
