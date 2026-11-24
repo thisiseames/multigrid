@@ -3377,13 +3377,26 @@ const clipLength = (total) => (total ? `${Math.floor(total / 60)}:${String(total
 /** The Extras section; a film's official trailer from Wikidata leads when the job found no trailer. */
 function extrasSection(tile, clips, trailer = null) {
   const list = [...clips];
-  if (trailer && !list.some((clip) => clip.id === trailer.id || clip.kind === 'Trailer')) list.unshift(trailer);
+  if (trailer && !list.some((clip) => clip.id === trailer.id || clip.kind === 'Trailer')) {
+    list.unshift({ ...trailer, kind: 'Trailer' });
+  }
   if (!list.length) return null;
-  return xrSection('Extras', el('ul', { class: 'xr-clips' }, ...list.map((clip) => extraClip(tile, {
-    id: clip.id,
-    title: clip.title,
-    note: clip.note || [clip.kind, clip.channel, clipLength(clip.seconds)].filter(Boolean).join(' · '),
-  }))));
+  // Recap first, then the rest by kind. Headings make the list readable instead of one mixed strip.
+  const order = ['Recap', 'Trailer', 'Promo', 'Interview'];
+  const labels = { Recap: 'Season recap', Trailer: 'Trailers', Promo: 'Promos', Interview: 'Interviews', Other: 'More' };
+  const groups = new Map();
+  for (const clip of list) {
+    const kind = order.includes(clip.kind) ? clip.kind : 'Other';
+    groups.set(kind, [...(groups.get(kind) ?? []), clip]);
+  }
+  const sections = [...order, 'Other'].filter((kind) => groups.get(kind)?.length).map((kind) => el('div', { class: 'xr-extra-group' },
+    el('h4', { class: 'xr-subh', textContent: labels[kind] }),
+    el('ul', { class: 'xr-clips' }, ...groups.get(kind).map((clip) => extraClip(tile, {
+      id: clip.id,
+      title: clip.title,
+      note: clip.note || [clip.channel, clipLength(clip.seconds)].filter(Boolean).join(' · '),
+    })))));
+  return xrSection('Extras', ...sections);
 }
 
 /** A film: poster, year, runtime, director, the story, scores, the trailer and the cast. */
