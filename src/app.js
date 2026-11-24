@@ -11025,6 +11025,10 @@ const SEND_PREFIX = '#send=';
 
 function sendPayload(value) {
   if (!value || typeof value !== 'object') return null;
+  if (Array.isArray(value.items)) {
+    const items = value.items.map((item) => sendPayload(item)).filter(Boolean);
+    return items.length ? { items } : null;
+  }
   const url = String(value.url || '').trim();
   if (!/^https?:\/\//i.test(url)) return null;
   return {
@@ -11095,7 +11099,8 @@ function receiveSend() {
   clean.hash = '';
   history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
   const payload = sendPayload(value);
-  if (payload) addIncoming(payload);
+  if (payload?.items) payload.items.forEach(addIncoming);
+  else if (payload) addIncoming(payload);
 }
 
 /** A favorites link pasted where a stream goes. Home Screen apps have no address bar, so this is how they take one. */
