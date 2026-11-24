@@ -118,6 +118,17 @@ function previewClock() {
   }
   return date;
 }
+function setDaypartHome(on) {
+  const url = new URL(location.href);
+  if (on) {
+    url.searchParams.set('home', 'daypart');
+    url.searchParams.delete('at');
+  } else {
+    url.searchParams.delete('home');
+    url.searchParams.delete('at');
+  }
+  location.href = url.toString();
+}
 let homeEdition = '';
 // Desk: the wall and one panel side by side. Declared with var so the Game mode / X-Ray
 // functions defined earlier can read it without a temporal-dead-zone crash.
@@ -6386,8 +6397,10 @@ async function drawHome() {
   const now = Date.now();
   const previewAt = previewClock();
   const preview = daypartPreview ? daypartFor(previewAt) : null;
+  const weekend = [0, 6].includes(previewAt.getDay());
+  const weather = preview?.id === 'morning' ? loadWeather(() => { if (daypartPreview) drawHome(); }) : null;
   homeEdition = preview
-    ? `Preview · ${preview.label} · ${previewAt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`
+    ? `${preview.label} · ${previewAt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`
     : '';
   const favorites = listFavorites();
   const favoriteNamed = (input) => favorites.find((fav) => fav.input === input);
@@ -6430,7 +6443,14 @@ async function drawHome() {
   };
   const layout = loadHomeLayout();
   const rowOn = (id) => layout.rows.some((row) => row.id === id && row.on);
-  paint([rowOn('continue') ? homeRow('Continue watching', cont) : null]);
+  const phoneEdition = onPhoneScreen() ? el('div', { class: 'home-edition-phone' },
+    el('button', {
+      type: 'button',
+      class: `home-edition-switch${daypartPreview ? ' is-on' : ''}`,
+      aria: { pressed: String(daypartPreview) },
+      on: { click: () => setDaypartHome(!daypartPreview) },
+    }, icon('today', 15), el('span', { textContent: daypartPreview ? 'Edition · On' : 'Edition · Off' }))) : null;
+  paint([phoneEdition, rowOn('continue') ? homeRow('Continue watching', cont) : null]);
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
@@ -6565,8 +6585,11 @@ async function drawHome() {
   // The owner's order and choice of rows (Edit home); Matchday always leads.
   const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop };
   const visibleRows = layout.rows.filter((row) => row.on);
-  const orderedRows = preview ? daypartOrder(preview, visibleRows) : visibleRows;
-  paint([matchday.strip, matchdayRow, ...orderedRows.map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), preview ? null : editHomeButton()]);
+  let previewRows = preview?.rows;
+  if (preview?.id === 'morning' && weekend) previewRows = ['teams', 'fresh', 'continue', 'onnow', 'ten', 'netflix', 'trending', 'recent'];
+  if (preview?.id === 'prime' && fresh.length) previewRows = ['teams', 'onnow', 'fresh', 'ten', 'netflix', 'trending', 'continue', 'recent'];
+  const orderedRows = preview ? daypartOrder({ ...preview, rows: previewRows }, visibleRows) : visibleRows;
+  paint([phoneEdition, matchday.strip, matchdayRow, ...orderedRows.map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), preview ? null : editHomeButton()]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it. The preview uses the edition's order even when
   // the owner has that part switched off, so the time-aware shape can be judged.
@@ -6582,13 +6605,46 @@ async function drawHome() {
   };
   const rowForGroup = { teamsLive: 'teams', teamsPost: 'teams' };
   const visibleRowIds = new Set(orderedRows.map((row) => row.id));
-  const heroOrder = preview ? preview.hero : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'];
+  let heroOrder = preview ? [...preview.hero] : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'];
+  if (preview?.id === 'prime' && fresh.length) heroOrder = ['teamsLive', 'onnow', 'fresh', 'ten', 'netflix', 'trending', 'continue', 'teamsPost'];
   let rotation = heroOrder.flatMap((id) => {
     const rowId = rowForGroup[id] ?? id;
     if (!visibleRowIds.has(rowId) || (!preview && !bannerShows(layout, rowId))) return [];
     return groups[id] ?? [];
   });
-  if (matchday.hero) rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
+  // The first card is the edition's lead: Morning brief, On now, Tonight or After hours.
+  let lead = null;
+  let leadSource = null;
+  if (preview) {
+    let label = '';
+    if (preview.id === 'morning') {
+      leadSource = groups.teamsLive[0] ?? groups.fresh[0] ?? groups.continue[0] ?? groups.onnow[0] ?? null;
+      label = 'Morning brief';
+    } else if (preview.id === 'afternoon') {
+      leadSource = groups.teamsLive[0] ?? groups.onnow[0] ?? groups.continue[0] ?? groups.fresh[0] ?? null;
+      label = groups.teamsLive[0]?.live || groups.onnow[0] ? 'On now' : 'This afternoon';
+    } else if (preview.id === 'prime') {
+      leadSource = groups.teamsLive[0] ?? groups.onnow[0] ?? (fresh.length ? groups.fresh[0] : null) ?? groups.ten[0] ?? null;
+      label = groups.teamsLive[0]?.live ? 'Live now' : groups.onnow[0] ? 'On now' : 'Tonight';
+    } else {
+      leadSource = groups.continue[0] ?? groups.ten[0] ?? groups.netflix[0] ?? groups.trending[0] ?? null;
+      label = 'After hours';
+    }
+    if (leadSource) {
+      const weatherKey = preview.id === 'morning' && weather ? 'w' : 'n';
+      lead = { ...leadSource, key: `d:${preview.id}:${weatherKey}:${leadSource.key}`, label };
+      if (preview.id === 'morning' && weather) {
+        const rain = weather.rain >= 30 ? ` · ${weather.rain}% rain` : '';
+        lead.meta = [`${weather.temp}° · ${weatherWords(weather.code)}${rain}`, lead.meta].filter(Boolean).join(' · ');
+      }
+    }
+  }
+  if (matchday.hero) {
+    rotation = rotation.filter((item) => item.match?.id !== matchday.hero.match.id);
+    if (leadSource?.match?.id === matchday.hero.match.id) lead = null;
+  }
+  if (leadSource) rotation = rotation.filter((item) => item.key !== leadSource.key);
+  if (lead) rotation = [lead, ...rotation];
   heroItems = matchday.hold ? [matchday.hero] : matchday.hero ? [matchday.hero, ...rotation] : rotation;
   const firstHero = heroItems[0];
   const leadChanged = preview ? heroKey !== firstHero?.key : (!heroKey || !heroItems.some((item) => item.key === heroKey));
@@ -11728,17 +11784,7 @@ function buildMoreMenu() {
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
     switchRow('TV mode', 'tiles', tvMode, () => { toggleTvMode(); buildMoreMenu(); }),
-    onPhoneScreen() ? null : switchRow('Daypart home (preview)', 'today', daypartPreview, () => {
-      const url = new URL(location.href);
-      if (daypartPreview) {
-        url.searchParams.delete('home');
-        url.searchParams.delete('at');
-      } else {
-        url.searchParams.set('home', 'daypart');
-        url.searchParams.delete('at');
-      }
-      location.href = url.toString();
-    }),
+    onPhoneScreen() ? null : switchRow('Daypart home', 'today', daypartPreview, () => setDaypartHome(!daypartPreview)),
     onPhoneScreen() ? null : switchRow('Desk', 'desk', deskOn, () => { setDesk(!deskOn); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
     !onPhoneScreen() && canPopOutGrid() && streamCount(ws) ? row(isGridPoppedOut() ? 'Bring grid back' : 'Pop out grid', 'popout', then(popOutWholeGrid)) : null,
@@ -12104,7 +12150,7 @@ prepareAutoplaySound();
 if (daypartPreview) homeOpen = true;
 render();
 initDesk();
-if (daypartPreview) toast(`Daypart home preview: ${daypartFor(previewClock()).label}.`);
+if (daypartPreview) toast(`Daypart home: ${daypartFor(previewClock()).label}.`);
 if (typeof ResizeObserver === 'function') new ResizeObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('stage'));
 if (typeof MutationObserver === 'function') new MutationObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('grid'), { childList: true, subtree: true });
 // RedZone stays on across a reload.
