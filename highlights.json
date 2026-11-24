@@ -1,5 +1,5 @@
 {
- "updated": 1795492977927,
+ "updated": 1795494549062,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -223,6 +223,13 @@
      "rank": 1
     }
    ]
+  },
+  "401873078": {
+   "league": "NFL",
+   "title": "Commanders 22–20 Bengals",
+   "start": 1795482900000,
+   "sources": "feeds",
+   "videos": []
   },
   "401876396": {
    "league": "Ligue 1",
@@ -1247,9 +1254,14 @@
      "rank": 3.5
     },
     {
-     "id": "qkWDTIZMe3U",
-     "title": "Highlights: Myles Turner Scores 27 Points vs. Raptors | 11.23.26",
-     "rank": 0.5
+     "id": "90rT_Q1c2Lg",
+     "title": "Milwaukee Bucks vs. Toronto Raptors | NBA Highlights",
+     "rank": 3
+    },
+    {
+     "id": "JKrJL8Vqwxc",
+     "title": "Highlights: Bucks 116 - Raptors 111 | 11.23.26",
+     "rank": 1.5
     }
    ]
   },
@@ -1297,7 +1309,13 @@
    "title": "Rockets 116–104 Clippers",
    "start": 1795483800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "qt_mU2YySHk",
+     "title": "CLIPPERS at ROCKETS | FULL GAME HIGHLIGHTS | November 23, 2026",
+     "rank": 3.5
+    }
+   ]
   }
  },
  "clubs": {
@@ -1422,7 +1440,9 @@
   "pl:337": "UCAalMUm3LIf504ItA3rqfug",
   "pl:368": "UCtK4QAczAN2mt2ow_jlGinQ",
   "laliga:1538": "",
-  "laliga:3751": ""
+  "laliga:3751": "",
+  "nfl:28": "",
+  "nfl:4": "UCnQUpSnJ39KsjZKbT0CprHQ"
  },
  "club": {
   "360": [
