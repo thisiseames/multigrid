@@ -9,7 +9,7 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, folderAfter, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { addTikTokAccounts, loadTikTokFeeds, newestUpload, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { addTikTokAccounts, loadTikTokFeeds, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
 import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
@@ -8298,13 +8298,54 @@ const READER_GROUPS = ['All', 'News', 'Sport', 'Man United', 'Entertainment', 'T
 let readerTab = (() => { try { return localStorage.getItem(READER_TAB_KEY) || 'All'; } catch { return 'All'; } })();
 let readerTimer = null;
 let readerAsked = 0;
+let readerStoryAsked = 0;
+let readerStoryOpen = false;
+let readerListScroll = 0;
 
 function openItem(item) {
   markRead(item.id);
   closePopovers();
   if (item.kind === 'youtube' && item.video) addStream(`https://www.youtube.com/watch?v=${item.video}`);
   else if (item.kind === 'podcast' && item.audio) openPodcast(audioInput(`${item.source}: ${item.title}`, item.audio), { title: item.title, image: item.image, from: item.source });
-  else addStream(readerInput(item.id, item.title));
+  else if (deskOn) {
+    // In Desk, a story belongs in the Reader column, not on the wall.
+    if (!$('reader-menu').classList.contains('is-desk-panel')) showDeskPanel('reader');
+    openDeskReaderStory(item);
+  } else addStream(readerInput(item.id, item.title));
+}
+
+/** Draws one story in the Desk's Reader panel, with a way back to the list. */
+async function openDeskReaderStory(item) {
+  const menu = $('reader-menu');
+  const body = menu.querySelector('.matches-body');
+  if (!body) return;
+  const asked = ++readerStoryAsked;
+  readerAsked += 1;
+  readerStoryOpen = true;
+  readerListScroll = body.scrollTop;
+  menu.classList.add('is-reader-story');
+  const bar = (link) => el('div', { class: 'reader-desk-bar' },
+    el('button', { type: 'button', class: 'reader-desk-back', on: { click: closeDeskReaderStory } }, icon('back'), el('span', { textContent: 'Reader' })),
+    link ? el('a', { class: 'reader-desk-open', href: link, target: '_blank', rel: 'noopener noreferrer' }, icon('open'), el('span', { textContent: 'Open page' })) : null);
+  body.replaceChildren(el('div', { class: 'reader-desk-article' }, bar(''), el('p', { class: 'reader-note', textContent: 'Loading…' })));
+  body.scrollTop = 0;
+  const { page, link } = await readerStoryPage(item.id, item.title);
+  if (asked !== readerStoryAsked || !readerStoryOpen || !menu.classList.contains('is-desk-panel') || !body.isConnected) return;
+  body.replaceChildren(el('div', { class: 'reader-desk-article' },
+    bar(link),
+    el('article', { class: 'reader-story reader-desk-story' }, page)));
+  body.scrollTop = 0;
+}
+
+function closeDeskReaderStory() {
+  readerStoryAsked += 1;
+  readerStoryOpen = false;
+  const menu = $('reader-menu');
+  menu.classList.remove('is-reader-story');
+  const body = menu.querySelector('.matches-body');
+  if (!body) return;
+  body.scrollTop = readerListScroll;
+  fillReader();
 }
 
 const inTab = (item, tab) => tab === 'All' || item.group === tab;
@@ -8377,12 +8418,13 @@ function readerTabs(data) {
 }
 
 async function fillReader() {
+  if (readerStoryOpen) return;
   const menu = $('reader-menu');
   const asked = ++readerAsked;
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const data = await loadIndex(true);
-  if (asked !== readerAsked || menu.hidden) return;
+  if (asked !== readerAsked || menu.hidden || readerStoryOpen) return;
   if (!data) {
     body.replaceChildren(el('p', { class: 'match-quiet is-empty', textContent: "The Reader couldn't load. Try again in a minute." }));
     return;
@@ -8427,6 +8469,10 @@ async function fillReader() {
 
 function buildReader() {
   const menu = $('reader-menu');
+  readerStoryAsked += 1;
+  readerStoryOpen = false;
+  readerListScroll = 0;
+  menu.classList.remove('is-reader-story');
   if (!READER_GROUPS.includes(readerTab)) readerTab = 'All';
   const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...READER_GROUPS.map((name) => el('button', {
     type: 'button',
@@ -8443,6 +8489,9 @@ function buildReader() {
           other.setAttribute('aria-selected', String(on));
         }
         event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        readerStoryAsked += 1;
+        readerStoryOpen = false;
+        menu.classList.remove('is-reader-story');
         const body = menu.querySelector('.matches-body');
         body.replaceChildren();
         body.scrollTop = 0;

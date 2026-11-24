@@ -997,6 +997,38 @@ function audioPlayer(source, options) {
   };
 }
 
+/** A Reader story's text, picture and page link, ready for a tile or the Desk. */
+export async function readerStoryPage(readerId, fallbackTitle = 'Story') {
+  await loadIndex();
+  const item = itemById(readerId);
+  let story = null;
+  try {
+    story = await openStory(readerId);
+  } catch {
+    story = null;
+  }
+  const link = story?.link || item?.page || item?.link || '';
+  const title = story?.title || item?.title || fallbackTitle;
+  const parts = [
+    el('p', { class: 'reader-meta' },
+      item?.source ? el('span', { class: 'reader-src', style: `color:${sourceColor(item.source)}`, textContent: item.source }) : null,
+      el('span', { textContent: [item ? ago(item.time) : '', story?.byline].filter(Boolean).join(' · ') })),
+    el('h1', { textContent: title }),
+  ];
+  const picture = item?.image || story?.image;
+  if (story?.html) {
+    if (picture && !story.html.includes(picture)) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
+    parts.push(el('div', { class: 'reader-body' }, safeFragment(story.html)));
+  } else {
+    if (picture) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
+    if (item?.summary) parts.push(el('p', { class: 'reader-summary', textContent: item.summary }));
+    parts.push(el('p', { class: 'reader-note', textContent: !hasKey()
+      ? "This device isn't unlocked yet. Open your Reader unlock link on it once to read whole stories here."
+      : item?.hasText === false || item?.textTried ? "This site doesn't let its stories be read outside its own page." : 'This story is still being collected. Try again in a few minutes.' }));
+  }
+  return { page: el('div', { class: 'reader-page' }, ...parts), link };
+}
+
 /* A Reader story, laid out to read. With the MULTIGRID Sound extension on a computer, the
    real page can replace it in the same tile, because the extension lifts the block on it. */
 function readerPlayer(source) {
@@ -1018,36 +1050,10 @@ function readerPlayer(source) {
     silent: true,
     async start() {
       box.replaceChildren(el('p', { class: 'reader-note', textContent: 'Loading…' }));
-      await loadIndex();
-      const item = itemById(source.readerId);
-      let story = null;
-      try {
-        story = await openStory(source.readerId);
-      } catch {
-        story = null;
-      }
+      const { page, link } = await readerStoryPage(source.readerId, source.label);
       if (destroyed) return;
-      const link = story?.link || item?.page || item?.link || '';
-      const title = story?.title || item?.title || source.label;
-      const parts = [
-        el('p', { class: 'reader-meta' },
-          item?.source ? el('span', { class: 'reader-src', style: `color:${sourceColor(item.source)}`, textContent: item.source }) : null,
-          el('span', { textContent: [item ? ago(item.time) : '', story?.byline].filter(Boolean).join(' · ') })),
-        el('h1', { textContent: title }),
-      ];
-      const picture = item?.image || story?.image;
-      if (story?.html) {
-        if (picture && !story.html.includes(picture)) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
-        parts.push(el('div', { class: 'reader-body' }, safeFragment(story.html)));
-      } else {
-        if (picture) parts.push(el('img', { class: 'reader-hero', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
-        if (item?.summary) parts.push(el('p', { class: 'reader-summary', textContent: item.summary }));
-        parts.push(el('p', { class: 'reader-note', textContent: !hasKey()
-          ? "This device isn't unlocked yet. Open your Reader unlock link on it once to read whole stories here."
-          : item?.hasText === false || item?.textTried ? "This site doesn't let its stories be read outside its own page." : 'This story is still being collected. Try again in a few minutes.' }));
-      }
-      if (link) parts.push(actions(link));
-      box.replaceChildren(el('div', { class: 'reader-page' }, ...parts));
+      if (link) page.append(actions(link));
+      box.replaceChildren(page);
     },
     setMuted() {},
     setVolume() {},

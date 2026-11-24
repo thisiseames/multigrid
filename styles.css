@@ -1420,6 +1420,20 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .reader-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; padding-top: 18px; border-top: 1px solid var(--border); }
 .reader-pill { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none; }
 .reader-pill:hover { background: rgba(255,255,255,.13); }
+.readerp.is-reader-story .matches-updated { display: none; }
+.reader-desk-article { padding: 0 2px 26px; }
+.reader-desk-bar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 -12px 14px; padding: 7px 12px; background: #141416; border-bottom: 1px solid var(--border); }
+.reader-desk-back, .reader-desk-open { display: inline-flex; align-items: center; gap: 6px; height: 32px; border-radius: 8px; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.reader-desk-back { padding: 0 10px 0 7px; color: var(--text); }
+.reader-desk-open { padding: 0 8px; color: var(--text-2); }
+.reader-desk-back:hover, .reader-desk-open:hover { background: var(--hover); color: var(--text); }
+.reader-desk-story { font-size: 15.5px; line-height: 1.62; color: var(--text); }
+.reader-desk-story .reader-page { max-width: 560px; margin: 0 auto; }
+.reader-desk-story h1 { margin: 2px 0 14px; font-size: 24px; }
+.reader-desk-story .reader-hero { max-height: 230px; border-radius: 10px; margin-bottom: 16px; }
+.reader-desk-story .reader-body { font-size: 15.5px; line-height: 1.62; }
+.reader-desk-story .reader-body h2, .reader-desk-story .reader-body h3 { font-size: 19px; }
+.reader-desk-story .reader-body img { border-radius: 8px; }
 .tile-body iframe.reader-real { background: #fff; }
 @media (max-width: 640px) { .tile-body .reader-story { padding: 18px 16px 30px; font-size: 16px; } .reader-story h1 { font-size: 24px; } }
 .grid.stacked .tile-body:has(.reader-story) { aspect-ratio: auto; height: 72vh; }
