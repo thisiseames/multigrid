@@ -1,6 +1,6 @@
 # MULTIGRID Catch Up — season recaps for every Series favourite
 
-**Status:** built locally; job and X-Ray card working; 27 of 48 have a usable recap, 21 have none on YouTube. Live check pending.
+**Status:** DONE, live Nov 23, 2026 (commit 80dbb2a). 27 of 48 have a usable recap; 21 have none on YouTube.
 
 ## Running cost
 
@@ -40,7 +40,7 @@ $0/month. YouTube public search and TVmaze, both free/keyless. The job runs insi
 4. [ ] “Catch up” on new-season/premiere rows (not built yet).
 5. [ ] On-demand “Find recap” fallback for a new favourite (not built yet).
 6. [x] Phone X-Ray check: Season recap at the top, Extras grouped without the duplicate, no overflow.
-7. [ ] Notes, tests, commit, push, live check.
+7. [x] Notes, tests, commit, push, live check.
 
 ## Verify
 
@@ -55,3 +55,7 @@ $0/month. YouTube public search and TVmaze, both free/keyless. The job runs insi
 ## Current coverage (Nov 23)
 
 27 of 48 have a usable recap. Missing: MasterChef Australia, Ramsay's Kitchen Nightmares, To Catch a Smuggler, Naked and Afraid of Love, Fear Factor, Top Chef, Habilidad física 100: México, The Pendragon Cycle: Rise of the Merlin, Ronaldinho Gaúcho, Curb Your Enthusiasm, Last Week Tonight with John Oliver, The West Wing, Hell's Kitchen, Kitchen Nightmares, Hotel Hell, Dating Naked UK, Boston Legal, Archer, Californication, Nocturne, Seinfeld. No season/series recap exists on YouTube for these; the job retries weekly.
+
+## Live check (Nov 23)
+
+At 390 on multigrid.club, MobLand showed **Season 2 recap** at the top of X-Ray and Extras under it as Trailers, Promos and Interviews, with no duplicate Recap. The Office showed **Series recap** with “All seasons”. The job checks all 48 Series favourites; 27 have a usable recap and 21 have no usable season/series recap on YouTube. The mobile card fits with no overflow.
