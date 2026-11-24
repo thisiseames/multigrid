@@ -1,5 +1,5 @@
 {
- "updated": 1795547825723,
+ "updated": 1795549388706,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1373,6 +1373,20 @@
      "rank": 1.5
     }
    ]
+  },
+  "401915300": {
+   "league": "Champions League",
+   "title": "Galatasaray 1–0 Aston Villa",
+   "start": 1795542300000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915380": {
+   "league": "Champions League",
+   "title": "Bodo/Glimt 1–0 LASK Linz",
+   "start": 1795542300000,
+   "sources": "feeds",
+   "videos": []
   }
  },
  "clubs": {
@@ -1499,7 +1513,11 @@
   "laliga:1538": "",
   "laliga:3751": "",
   "nfl:28": "",
-  "nfl:4": "UCnQUpSnJ39KsjZKbT0CprHQ"
+  "nfl:4": "UCnQUpSnJ39KsjZKbT0CprHQ",
+  "ucl:2980": "",
+  "ucl:4411": "",
+  "ucl:432": "UCQpeujIamj2ZOKXZnrxTRhA",
+  "ucl:362": "UCICNP0mvtr0prFwGUQIABfQ"
  },
  "club": {
   "360": [
