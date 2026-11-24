@@ -2,7 +2,8 @@
 # Wikipedia), charts.json (Billboard), shows.json (TVmaze premieres) and top10.json (Netflix's
 # Top 10 and JustWatch's most popular, for Canada) every 3 hours, then extras.json (X-Ray's trailers,
 # recaps, promos and interviews from YouTube; each title re-searched about weekly, 25 a run) and
-# recaps.json (one season or series recap for every Series favourite, weekly). Free on a public repository.
+# recaps.json (one season or series recap for every Series favourite, weekly) and similar.json
+# (X-Ray's More like this for every Series favourite, weekly). Free on a public repository.
 # GitHub drops many scheduled runs when it's busy, so it tries every 30 minutes and each try
 # stops straight away unless the guide is nearly 3 hours old.
 name: guide
@@ -18,6 +19,7 @@ on:
       - 'tools/extras-pick.mjs'
       - 'tools/build-recaps.mjs'
       - 'tools/recaps-pick.mjs'
+      - 'tools/build-similar.mjs'
       - '.github/workflows/guide.yml'
   schedule:
     - cron: '17,47 * * * *'
@@ -73,14 +75,17 @@ jobs:
       - run: node tools/build-recaps.mjs
         if: steps.fresh.outputs.skip != 'true'
         continue-on-error: true
+      - run: node tools/build-similar.mjs
+        if: steps.fresh.outputs.skip != 'true'
+        continue-on-error: true
       - name: Save the new guide
         if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "multigrid-guide"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add guide.json feeds.json
-          for file in movies.json charts.json shows.json top10.json extras.json recaps.json; do if [ -f "$file" ]; then git add "$file"; fi; done
+          for file in movies.json charts.json shows.json top10.json extras.json recaps.json similar.json; do if [ -f "$file" ]; then git add "$file"; fi; done
           git diff --cached --quiet && exit 0
-          git commit -m "Update TV guide, feeds, movies, charts, premieres, Top 10s, X-Ray extras and season recaps"
+          git commit -m "Update TV guide, feeds, movies, charts, premieres, Top 10s, X-Ray extras, recaps and similar shows"
           git pull --rebase
           git push

@@ -3125,7 +3125,17 @@ function similarRow(item) {
   el('span', { class: 'xr-similar-open' }, icon('open', 13), el('span', { textContent: 'Atlantic' }))));
 }
 
-/** Hidden until JustWatch answers, so a missing extension never leaves a gap. */
+/* More like this is job-built for the Series favourites, so it works without the extension and
+   on the phone. The extension remains the fallback for any other show. */
+var similarJobLoad = null; // eslint-disable-line no-var
+function similarJobFor(title) {
+  if (!similarJobLoad || Date.now() - similarJobLoad.at > 3600000) {
+    similarJobLoad = { at: Date.now(), data: fetch('similar.json', { cache: 'no-cache' }).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null) };
+  }
+  return similarJobLoad.data.then((data) => data?.shows?.[titleKey(title)]?.items ?? null);
+}
+
+/** Hidden until a real answer arrives, so a missing extension never leaves a gap. */
 function similarSection(tile, title) {
   const list = el('ul', { class: 'xr-similar-list' });
   const section = el('section', { class: 'xr-section', style: 'display:none' },
@@ -3138,7 +3148,12 @@ function similarSection(tile, title) {
     list.replaceChildren(...items.map(similarRow));
     section.style.display = '';
   };
-  similarFor({ title, kind: 'show' }).then(show).catch(() => {});
+  (async () => {
+    const job = await similarJobFor(title);
+    if (job?.length) { show(job); return; }
+    const items = await similarFor({ title, kind: 'show' });
+    show(items);
+  })().catch(() => {});
   return section;
 }
 
