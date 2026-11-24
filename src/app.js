@@ -4393,7 +4393,11 @@ function folderDeleteParts(folder, count, onCancel, closeDialog = false) {
 
 /** One folder: its name opens and closes it, and the edit buttons rename or delete it in place. */
 function folderSection(folder, items, getTarget, searching = false) {
-  const list = el('ul', { class: 'saved-list favorites-list' }, ...items.map((item) => favoriteRow(item, getTarget)));
+  const groups = !searching && folder.toLocaleLowerCase() === 'music' ? musicArtistGroups(items) : [];
+  const grouped = new Set(groups.flatMap((group) => [group.channel.input, ...group.albums.map((album) => album.input)]));
+  const list = el('ul', { class: 'saved-list favorites-list' },
+    ...groups.map((group) => musicArtistRow(group, getTarget)),
+    ...items.filter((item) => !grouped.has(item.input)).map((item) => favoriteRow(item, getTarget)));
   const head = el('div', { class: 'saved-row folder-head' });
   // While searching, folders open so matches show, and opening or closing one isn't remembered.
   let searchClosed = false;
@@ -6836,6 +6840,92 @@ function isTitleFavorite(item, source) {
   return isSeriesFolder(item.group || '') || /\b(movies?|films?|cinema)\b/i.test(item.group || '') || Boolean(episodeOf(source?.url || ''));
 }
 
+/** Group a MUSIC folder's channel plus its prefixed album playlists as one artist. */
+function musicArtistGroups(items) {
+  const channels = items.filter((item) => {
+    const source = parseSource(item.input);
+    return source.kind === 'youtube' && isYouTubeChannelPage(item.input);
+  });
+  return channels.map((channel) => {
+    const prefix = `${channel.name.trim()} · `.toLocaleLowerCase();
+    const albums = items.filter((item) => {
+      const source = parseSource(item.input);
+      return source.kind === 'youtube' && source.youtube?.list && !isYouTubeChannelPage(item.input) && item.name.trim().toLocaleLowerCase().startsWith(prefix);
+    });
+    return albums.length ? { channel, albums } : null;
+  }).filter(Boolean);
+}
+
+function musicArtistRow(group, getTarget) {
+  const { channel, albums } = group;
+  return el('li', { class: 'saved-row music-artist-row' },
+    el('button', {
+      type: 'button', class: 'saved-open', title: `Open ${channel.name}`,
+      on: { click: () => openMusicArtist(group, { getTarget }) },
+    },
+    el('b', { textContent: channel.name }),
+    el('small', { textContent: `Artist · Channel + ${albums.length} album${albums.length === 1 ? '' : 's'}` })));
+}
+
+function musicArtistCard(group, holder) {
+  const { channel, albums } = group;
+  return el('li', { class: 'fcard is-music-artist' },
+    el('button', {
+      type: 'button', class: 'fcard-main', title: `Open ${channel.name}`,
+      on: { click: () => openMusicArtist(group, holder) },
+    },
+    favoriteArt(channel, parseSource(channel.input), true),
+    el('span', { class: 'fcard-text' },
+      el('b', { textContent: channel.name, title: channel.name }),
+      el('small', {},
+        el('span', { class: 'fcard-kind', textContent: 'Artist' }),
+        el('span', { class: 'fcard-now', textContent: `Channel + ${albums.length} album${albums.length === 1 ? '' : 's'}` })))));
+}
+
+/** The artist page inside Add stream: the channel and its album playlists. */
+function openMusicArtist(group, holder) {
+  const { channel, albums } = group;
+  const box = el('dialog', { class: 'dialog music-artist-box', aria: { label: channel.name } });
+  const close = () => box.close();
+  const play = (item) => {
+    const target = holder.getTarget();
+    if ($('source-dialog').open) $('source-dialog').close();
+    box.close();
+    addStream(item.input, target);
+  };
+  const row = (item, note, album = false) => {
+    const source = parseSource(item.input);
+    return el('li', {},
+      el('button', {
+        type: 'button', class: 'music-artist-pick', title: `Play ${item.name}`,
+        on: { click: () => play(item) },
+      },
+      album ? el('span', { class: 'music-artist-art' }, icon('music', 20)) : favoriteArt(item, source, true),
+      el('span', { class: 'music-artist-text' },
+        el('b', { textContent: item.name }),
+        el('small', { textContent: note })),
+      icon('play', 16)));
+  };
+  box.append(
+    el('div', { class: 'music-artist-head' },
+      el('h2', { textContent: channel.name }),
+      iconButton('close', 'Close', close)),
+    el('div', { class: 'music-artist-hero' },
+      favoriteArt(channel, parseSource(channel.input), true),
+      el('div', {},
+        el('span', { textContent: 'Artist' }),
+        el('small', { textContent: `${albums.length} album${albums.length === 1 ? '' : 's'}` }))),
+    el('section', { class: 'music-artist-section' },
+      el('h3', { textContent: 'Channel' }),
+      el('ul', {}, row(channel, 'Channel · newest uploads'))),
+    el('section', { class: 'music-artist-section' },
+      el('h3', { textContent: 'Albums' }),
+      el('ul', {}, ...albums.map((album) => row(album, 'Album playlist', true)))));
+  box.addEventListener('close', () => box.remove());
+  document.body.append(box);
+  openDialog(box);
+}
+
 function favoriteCard(item, holder, { plain = false } = {}) {
   const source = parseSource(item.input);
   const card = el('li', { class: 'fcard' });
@@ -7058,6 +7148,9 @@ function fillAddFavorites(holder) {
     : podcasts || layouts || recent || libraryOpen ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
   // A search also finds podcast shows by name, but not while the library tab is open.
   const shows = query && !libraryOpen ? podShows().filter(matches) : [];
+  const artistGroups = !query && String(addFolder).toLocaleLowerCase() === 'music' ? musicArtistGroups(shown) : [];
+  const groupedArtists = new Set(artistGroups.flatMap((group) => [group.channel.input, ...group.albums.map((album) => album.input)]));
+  const musicCards = shown.filter((item) => !groupedArtists.has(item.input));
   const old = holder.querySelector('.addp-grid-wrap');
   const scroll = old?.scrollTop ?? 0;
   const tools = !query && !libraryOpen && !podcasts && !layouts && !recent && addFolder ? addFolderTools() : null;
@@ -7071,7 +7164,7 @@ function fillAddFavorites(holder) {
             const favorite = all.find((item) => item.input === seen.input);
             return favoriteCard(favorite ?? { input: seen.input, name: seen.name, group: '' }, holder, { plain: !favorite });
           }))
-            : shown.length || shows.length ? el('ul', { class: 'addp-grid' }, ...shown.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
+            : artistGroups.length || musicCards.length || shows.length ? el('ul', { class: 'addp-grid' }, ...artistGroups.map((group) => musicArtistCard(group, holder)), ...musicCards.map((item) => favoriteCard(item, holder)), ...shows.map((show) => showCard(show, holder)))
               : el('p', { class: 'favorites-empty', textContent: query ? 'No favorites match' : addFolder ? 'No favorites here' : 'No favorites yet. Tap Sync to bring them from another device.' }));
   const pills = (folders.length || podEpisodes.length || followedShows().length || layoutsTab() || listRecent().length || libraryAvailable()) && !query ? addFolderPills(holder, folders) : null;
   const oldPills = holder.querySelector('.addp-pills');
