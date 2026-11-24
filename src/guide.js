@@ -55,9 +55,23 @@ export function listingsFor(name, source) {
   return shows.length ? shows : null;
 }
 
+/** Logos for channels whose schedule source doesn't provide one; the guide's own logo wins. */
+const EXTRA_LOGOS = {
+  ELEVENSPORTS: { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_Eleven_Sports_2020.png', tone: 'light' },
+  ELEVENSPORTS1: { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Logo_Eleven_Sports_2020.png', tone: 'light' },
+  SUPERSPORT: { url: 'https://supersport.com/images/SuperSportsLogo.svg', tone: 'dark' },
+  SUPERSPORTPREMIERLEAGUE: { url: 'https://supersport.com/images/SuperSportsLogo.svg', tone: 'dark' },
+  SUPERSPORTLALIGA: { url: 'https://supersport.com/images/SuperSportsLogo.svg', tone: 'dark' },
+  UFCFIGHTPASS: { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/UFC_Fight_Pass_Logo.svg/960px-UFC_Fight_Pass_Logo.svg.png', tone: 'dark' },
+  UFCFIGHTPASS247: { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/UFC_Fight_Pass_Logo.svg/960px-UFC_Fight_Pass_Logo.svg.png', tone: 'dark' },
+  FOXSPORTSNEWS: { url: 'https://thumb.wikimedia.org/wikipedia/en/thumb/9/93/Fox_Sports_News_Australia_Logo.svg/960px-Fox_Sports_News_Australia_Logo.svg.png', tone: 'light' },
+  SPORTSNET: { url: 'https://upload.wikimedia.org/wikipedia/en/0/00/Sportsnet_logo.svg', tone: 'light' },
+  EUROSPORT2UK: { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d8/Eurosport_2_Logo_2015.svg', tone: 'light' },
+};
+
 /** A TV channel's logo and whether it's made for a dark or light background, or null. */
 export function logoFor(name) {
-  const logo = guide?.logos?.[guideKey(name)];
+  const logo = guide?.logos?.[guideKey(name)] ?? EXTRA_LOGOS[guideKey(name)];
   return logo && typeof logo.url === 'string' && /^https:\/\//.test(logo.url) ? { url: logo.url, tone: logo.tone === 'dark' ? 'dark' : 'light' } : null;
 }
 

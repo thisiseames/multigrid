@@ -51,5 +51,5 @@ test('every channel in the list has a schedule source and no name is used twice'
   const { channels } = JSON.parse(readFileSync(new URL('../guide/channels.json', import.meta.url)));
   const keys = channels.flatMap((channel) => [...new Set(channel.names.map(guideKey))]);
   assert.equal(new Set(keys).size, keys.length);
-  for (const channel of channels) assert.ok(channel.sky || channel.tvpassport, channel.names[0]);
+  for (const channel of channels) assert.ok(channel.sky || channel.tvpassport || channel.supersport, channel.names[0]);
 });

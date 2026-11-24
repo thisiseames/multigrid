@@ -13,6 +13,7 @@ on:
     # Only main: on the working branch it would commit its output there too.
     branches: [main]
     paths:
+      - 'guide/channels.json'
       - 'tools/build-guide.mjs'
       - 'tools/build-top10.mjs'
       - 'tools/build-extras.mjs'

@@ -144,11 +144,46 @@ async function tvpassport(channel) {
   return rows;
 }
 
+/* SuperSport (South Africa): one free JSON call covers every channel's events. */
+async function supersport(list) {
+  if (!list.length) return { rows: new Map(), logos: new Map() };
+  const numbers = new Set(list.map((channel) => Number(channel.supersport)));
+  const from = ymd(new Date((now - 86400) * 1000), '-');
+  const to = ymd(new Date((now + 2 * 86400) * 1000), '-');
+  const data = await get(`https://supersport.com/apix/guide/v6/tvguide?countryCode=za&startDateTime=${from}&endDateTime=${to}&removeCompletedEvents=true`, 'json');
+  const rows = new Map();
+  const logos = new Map();
+  const asset = (path) => !path ? '' : (/^https?:\/\//.test(path) ? path : `https://images.supersport.com${path}`);
+  for (const event of Array.isArray(data) ? data : []) {
+    const start = Math.floor(Date.parse(event.utcStart ?? event.start) / 1000);
+    const end = Math.floor(Date.parse(event.utcEnd ?? event.end) / 1000);
+    const title = String(event.title ?? event.name ?? '').trim();
+    if (!title || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+    for (const channel of event.channel ?? []) {
+      const number = Number(channel.channelNumber);
+      if (!numbers.has(number)) continue;
+      const channelRows = rows.get(number) ?? [];
+      channelRows.push(listing(start, end, title, event.synopsis, event.isLive === true));
+      rows.set(number, channelRows);
+      const logo = asset(channel.mobileIcon || channel.squareIcon);
+      if (logo && !logos.has(number)) logos.set(number, logo);
+    }
+  }
+  return { rows, logos };
+}
+
 const result = { updated: now, channels: {}, logos: {} };
 const skyRows = await sky(channels.filter((c) => c.sky));
+const ss = await supersport(channels.filter((c) => c.supersport));
 let empty = 0;
 for (const channel of channels) {
-  const rows = channel.sky ? skyRows.get(channel.sky) ?? [] : await tvpassport(channel);
+  const rows = channel.sky ? skyRows.get(channel.sky) ?? []
+    : channel.supersport ? ss.rows.get(Number(channel.supersport)) ?? []
+      : await tvpassport(channel);
+  if (channel.supersport) {
+    const logo = ss.logos.get(Number(channel.supersport));
+    if (logo) channel.logo = logo;
+  }
   const seen = new Set();
   const kept = rows
     .filter(([start, end]) => end > keepFrom && start < keepTo)
