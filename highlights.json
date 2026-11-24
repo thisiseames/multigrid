@@ -1,5 +1,5 @@
 {
- "updated": 1795499259171,
+ "updated": 1795500827752,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1348,7 +1348,13 @@
    "title": "Lakers 109–94 Jazz",
    "start": 1795489200000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "Iqsnel9aWHg",
+     "title": "JAZZ at LAKERS | FULL GAME HIGHLIGHTS | November 23, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401910045": {
    "league": "NBA",
