@@ -139,7 +139,6 @@ export const PRESETS = [
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
   { id: 'grid3', name: '3 × 3', fixed: 9, build: () => cells(3, 3) },
-  { id: 'grid4', name: '4 × 4', fixed: 16, build: () => cells(4, 4) },
   { id: 'featured', name: 'Featured', hint: 'One big, the rest small', sample: 6, build: featured },
   { id: 'focus', name: 'Focus and row', sample: 4, build: focusRow },
   { id: 'trio', name: 'One and two', fixed: 3, build: () => ({
@@ -160,6 +159,11 @@ export const PRESETS = [
       { c: 0, r: 1, cs: 2, rs: 1 }, { c: 2, r: 1, cs: 2, rs: 1 }, { c: 4, r: 1, cs: 2, rs: 1 },
     ],
   }) },
+];
+
+/** Layouts no longer offered, kept so screens saved with them still open as they were. */
+const LEGACY_PRESETS = [
+  { id: 'grid4', name: '4 × 4', fixed: 16, build: () => cells(4, 4) },
   { id: 'columns', name: 'Two beside three', fixed: 5, build: () => ({
     cols: [2, 1],
     rows: units(6),
@@ -178,7 +182,7 @@ export const PRESETS = [
   }) },
 ];
 
-export const presetById = (id) => PRESETS.find((preset) => preset.id === id);
+export const presetById = (id) => PRESETS.find((preset) => preset.id === id) ?? LEGACY_PRESETS.find((preset) => preset.id === id);
 
 /** What to draw for a preset's little diagram. */
 export function presetDiagram(preset) {

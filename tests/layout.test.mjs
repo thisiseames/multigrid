@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitStage, hiddenTiles,
-  isStream, makeRoom, moveLine, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
+  isStream, makeRoom, moveLine, presetById, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
 } from '../src/layout.js';
 
 function withStreams(n, presetId = 'equal') {
@@ -44,6 +44,17 @@ test('every preset covers the grid exactly, for 0 to 16 streams', () => {
         assert.equal(hidden, 0, `${preset.id} n=${n} should show everything`);
       }
     }
+  }
+});
+
+test('retired layouts are no longer offered but still open saved screens', () => {
+  const offered = new Set(PRESETS.map((preset) => preset.id));
+  for (const [id, streams] of [['grid4', 16], ['columns', 5], ['pinwheel', 5]]) {
+    assert.equal(offered.has(id), false, `${id} should not be in the layout picker`);
+    assert.equal(presetById(id)?.id, id, `${id} should still resolve for an old saved layout`);
+    const ws = withStreams(streams, id);
+    assertTiled(ws, `${id} saved layout`);
+    assert.equal(streamCount(ws), streams);
   }
 });
 
