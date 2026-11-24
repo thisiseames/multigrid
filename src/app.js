@@ -113,6 +113,9 @@ var deskWidth = 380;
 var deskPanel = 'today';
 var deskSport = 'games';
 var deskMoving = false;
+// TV mode: hide each tile's strip and hover card, not the app bar. Kept per device.
+var tvMode = (() => { try { return localStorage.getItem('multigrid.tv.v1') === 'on'; } catch { return false; } })();
+document.body.classList.toggle('is-tv', tvMode);
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
 const pendingSound = new Set(); // tiles saved with sound, held until the first real click
@@ -11617,6 +11620,15 @@ function savedParts() {
   return [form, message, list, ...clear];
 }
 
+function setTvMode(on) {
+  tvMode = Boolean(on);
+  document.body.classList.toggle('is-tv', tvMode);
+  try { localStorage.setItem('multigrid.tv.v1', tvMode ? 'on' : 'off'); } catch { /* not remembered */ }
+  toast(tvMode ? 'TV mode on: tile bars hidden.' : 'TV mode off.');
+  requestAnimationFrame(() => grid.fit());
+}
+const toggleTvMode = () => setTvMode(!tvMode);
+
 /** The overflow: the occasional switches and actions, out of the bar's way. */
 function buildMoreMenu() {
   const menu = $('more-menu');
@@ -11640,6 +11652,7 @@ function buildMoreMenu() {
     switchRow('One sound', 'sound', isOneSound(), () => { toggleOneSound(); buildMoreMenu(); }),
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
+    switchRow('TV mode', 'tiles', tvMode, () => { toggleTvMode(); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('Desk', 'desk', deskOn, () => { setDesk(!deskOn); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
     !onPhoneScreen() && canPopOutGrid() && streamCount(ws) ? row(isGridPoppedOut() ? 'Bring grid back' : 'Pop out grid', 'popout', then(popOutWholeGrid)) : null,
