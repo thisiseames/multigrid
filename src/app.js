@@ -3214,11 +3214,12 @@ async function xrayShow(tile, name, source) {
   if (scores) parts.push(scores);
   let recap = null;
   let extrasClips = null;
+  let similar = null;
   if (show) extrasClips = await extrasFor(show.name);
   if (show && !listing) {
     recap = await recapsFor(show.name);
     if (recap?.clip) parts.push(recapSection(tile, recap));
-    parts.push(similarSection(tile, show.name));
+    similar = similarSection(tile, show.name);
   }
   const story = listing?.current?.about || show?.summary || '';
   if (episode && show) {
@@ -3244,6 +3245,8 @@ async function xrayShow(tile, name, source) {
   if (show && !listing) {
     parts.push(xrSection('Next episode', el('p', { class: 'xr-text', textContent: show.next ? `S${show.next.season} E${show.next.number} · ${show.next.name}${show.next.airdate ? ` · ${new Date(`${show.next.airdate}T12:00`).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}` : 'No next episode announced.' })));
   }
+  // Recommendations go last: the show's own recap, episode, extras, cast and next episode come first.
+  if (similar) parts.push(similar);
   if (listing) {
     const later = showsBetween(name, source, Date.now(), Date.now() + 12 * 3600000).filter((item) => item.start > Date.now()).slice(0, 3);
     if (later.length) parts.push(xrSection(`Next on ${name}`, el('ul', { class: 'xr-list' }, ...later.map((item) => el('li', {}, el('b', { textContent: clock(item.start) }), el('span', { textContent: item.title }))))));
