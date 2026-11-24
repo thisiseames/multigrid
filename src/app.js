@@ -10939,6 +10939,7 @@ function sendPayload(value) {
     name: String(value.name || '').trim().slice(0, 200),
     kind: String(value.kind || '').trim(),
     save: Boolean(value.save),
+    open: Boolean(value.open),
   };
 }
 
@@ -10958,8 +10959,12 @@ function addIncoming(payload) {
   if (payload.kind === 'youtube-channel' || isYouTubeChannelPage(payload.url)) {
     const input = channelFavoriteInput(payload.url);
     forgetStaleChannel(name, input);
-    if (!saveFavorite(input, name || 'YouTube channel', 'YOUTUBE')) toast(STORAGE_FULL);
-    else toast(`${name || 'Channel'} saved in YOUTUBE.`);
+    const saved = saveFavorite(input, name || 'YouTube channel', 'YOUTUBE');
+    if (!saved) toast(STORAGE_FULL);
+    else if (payload.open) {
+      const added = addStream(input, { mode: 'add' }, name || 'YouTube channel');
+      toast(added ? `${name || 'Channel'} added and opened.` : `${name || 'Channel'} saved in YOUTUBE.`);
+    } else toast(`${name || 'Channel'} saved in YOUTUBE.`);
     refreshFavorites();
     return;
   }
