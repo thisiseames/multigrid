@@ -806,6 +806,8 @@ body.is-phone .following-box { width: calc(100vw - 24px); }
 .music-artist-pick .fart { width: 72px; height: 44px; border-radius: 8px; }
 .music-artist-art { flex: none; width: 72px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #1f1f23; color: var(--text-2); }
 .music-artist-art svg { width: 20px; height: 20px; }
+.music-artist-art.is-cover { width: 44px; height: 44px; overflow: hidden; }
+.music-artist-art.is-cover img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .music-artist-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .music-artist-text b { font-size: 14.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .music-artist-text small { font-size: 12px; color: var(--text-2); }

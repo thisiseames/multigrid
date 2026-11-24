@@ -6900,7 +6900,11 @@ function openMusicArtist(group, holder) {
         type: 'button', class: 'music-artist-pick', title: `Play ${item.name}`,
         on: { click: () => play(item) },
       },
-      album ? el('span', { class: 'music-artist-art' }, icon('music', 20)) : favoriteArt(item, source, true),
+      album
+        ? (item.poster
+          ? el('span', { class: 'music-artist-art is-cover' }, el('img', { src: item.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
+          : el('span', { class: 'music-artist-art' }, icon('music', 20)))
+        : favoriteArt(item, source, true),
       el('span', { class: 'music-artist-text' },
         el('b', { textContent: item.name }),
         el('small', { textContent: note })),
@@ -11038,6 +11042,7 @@ function sendPayload(value) {
     save: Boolean(value.save),
     open: Boolean(value.open),
     group: String(value.group || '').trim().slice(0, 40),
+    poster: String(value.poster || '').trim().slice(0, 2000),
   };
 }
 
@@ -11072,7 +11077,7 @@ function addIncoming(payload) {
   const audio = payload.kind === 'audio' || source.kind === 'audio' || /\.(mp3|m4a|aac|ogg|opus|wav)(?:\?|#|$)/i.test(payload.url);
   let saved = false;
   if (payload.save && source.ok) {
-    saved = saveFavorite(source.input, name || source.label, folder);
+    saved = saveFavorite(source.input, name || source.label, folder, undefined, payload.poster || undefined);
     refreshFavorites();
     if (!saved) toast(STORAGE_FULL);
   }
