@@ -3169,7 +3169,14 @@ async function xrayShow(tile, name, source) {
   // Scores: IMDb (from scores/) with its vote count, and Rotten Tomatoes when the Top 10 has it.
   const scores = xrayScores(title, await imdbScore(title, { kind: listing && !show ? '' : 'show' }).catch(() => null));
   if (scores) parts.push(scores);
-  if (show && !listing) parts.push(similarSection(tile, show.name));
+  let recap = null;
+  let extrasClips = null;
+  if (show) extrasClips = await extrasFor(show.name);
+  if (show && !listing) {
+    recap = await recapsFor(show.name);
+    if (recap?.clip) parts.push(recapSection(tile, recap));
+    parts.push(similarSection(tile, show.name));
+  }
   const story = listing?.current?.about || show?.summary || '';
   if (episode && show) {
     const [now, before] = await Promise.all([
@@ -3181,9 +3188,9 @@ async function xrayShow(tile, name, source) {
   } else if (story) {
     parts.push(xrSection('The story', el('p', { class: 'xr-text', textContent: story })));
   }
-  // Extras: trailers, recaps, promos and interviews.
+  // Extras: trailers, promos and interviews. A dedicated recap card replaces the Recap row.
   if (show) {
-    const extras = extrasSection(tile, await extrasFor(show.name));
+    const extras = extrasSection(tile, extrasClips ?? [], null, { skipRecap: Boolean(recap?.clip) });
     if (extras) parts.push(extras);
   }
   if (show?.cast.length) {
@@ -3373,10 +3380,34 @@ function extrasFor(title) {
   }
   return extrasLoad.data.then((data) => data?.titles?.[normTitle(titleOf(title).title)]?.clips ?? []);
 }
+var recapsLoad = null; // eslint-disable-line no-var
+/** The season recap job's entry for a show, or null. */
+function recapsFor(title) {
+  if (!recapsLoad || Date.now() - recapsLoad.at > 3600000) {
+    recapsLoad = { at: Date.now(), data: fetch('recaps.json', { cache: 'no-cache' }).then((answer) => (answer.ok ? answer.json() : null)).catch(() => null) };
+  }
+  return recapsLoad.data.then((data) => data?.shows?.[normTitle(titleOf(title).title)] ?? null);
+}
 const clipLength = (total) => (total ? `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}` : '');
+/** The one season recap for a show, above the rest of X-Ray. */
+function recapSection(tile, recap) {
+  if (!recap?.clip) return null;
+  const season = Number(recap.season) || Number(recap.latest) || 0;
+  const note = [
+    recap.series ? 'All seasons' : season ? `Season ${season}` : '',
+    !recap.series && Number(recap.next) > season ? `before season ${recap.next}` : '',
+    recap.clip.channel,
+    clipLength(recap.clip.seconds),
+  ].filter(Boolean).join(' · ');
+  return xrSection(recap.series ? 'Series recap' : 'Season recap', el('ul', { class: 'xr-clips' }, extraClip(tile, {
+    id: recap.clip.id,
+    title: recap.clip.title,
+    note,
+  })));
+}
 /** The Extras section; a film's official trailer from Wikidata leads when the job found no trailer. */
-function extrasSection(tile, clips, trailer = null) {
-  const list = [...clips];
+function extrasSection(tile, clips, trailer = null, { skipRecap = false } = {}) {
+  const list = clips.filter((clip) => !(skipRecap && clip.kind === 'Recap'));
   if (trailer && !list.some((clip) => clip.id === trailer.id || clip.kind === 'Trailer')) {
     list.unshift({ ...trailer, kind: 'Trailer' });
   }

@@ -6,7 +6,7 @@ export const KINDS = ['Trailer', 'Recap', 'Promo', 'Interview'];
 
 const RULES = {
   Trailer: /\b(trailer|teaser)\b/,
-  Recap: /\b(recap|previously on|catch up)\b/,
+  Recap: /\b(recap|previously on|catch up|entire (?:story|series)|full (?:series|story)|complete story|series recap|(?:in|under)\s+\d+\s+minutes?)\b/,
   Promo: /\b(promo|preview|sneak peek|first look|next on|clip)\b/,
   Interview: /\b(interviews?|behind the scenes|featurette|bts|on set|cast (?:reveal|talk|q ?& ?a))\b/,
 };
@@ -79,7 +79,7 @@ const phrase = (list) => ` ${list.join(' ')} `;
  * title or channel (or, with no service known, a verified channel). A show's clips can't be "movie" ones. The season
  * airing now, verified channels and "official" come first. At most `max`.
  */
-export function pick(videos, { name, kind, show = false, season = 0, service = '' }, max = 2) {
+export function pick(videos, { name, kind, show = false, season = 0, service = '', allowShort = false, maxSeconds = 25 * 60 }, max = 2) {
   const need = words(name);
   if (!need.length) return [];
   const rule = RULES[kind];
@@ -87,12 +87,12 @@ export function pick(videos, { name, kind, show = false, season = 0, service = '
   const serviceWords = words(service);
   const fits = videos.filter((video) => {
     const title = video.title.toLowerCase();
-    if (!rule.test(title) || NOT.test(title) || FOREIGN.test(title) || video.seconds < 20 || video.seconds > 25 * 60) return false;
+    if (!rule.test(title) || NOT.test(title) || FOREIGN.test(title) || video.seconds < 20 || video.seconds > maxSeconds) return false;
     // Keyword-stuffed uploads ("TRAILER|HINDI TRAILER|TRAILER IN HINDI|…").
     if (video.title.split('|').length > 4) return false;
     if (!phrase(words(video.title)).includes(phrase(need))) return false;
     if (show && /\bmovie\b|\(\d{4}\)/.test(title)) return false;
-    if (short) {
+    if (short && !allowShort) {
       const where = phrase(words(`${video.title} ${video.channel}`));
       // Its service named (the film "Raw" is not Netflix's WWE Raw), or a verified channel that
       // writes the name the way studios do: "VisionQuest | Official Trailer", "Nocturne — …".

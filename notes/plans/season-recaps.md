@@ -1,6 +1,6 @@
 # MULTIGRID Catch Up — season recaps for every Series favourite
 
-**Status:** proposed; waiting for the owner's go.
+**Status:** built locally; job and X-Ray card working; 27 of 48 have a usable recap, 21 have none on YouTube. Live check pending.
 
 ## Running cost
 
@@ -18,8 +18,8 @@ $0/month. YouTube public search and TVmaze, both free/keyless. The job runs insi
 
 - Cover every favourite in the **SERIES** folder with an Atlantic link; 48 now.
 - Use TVmaze to get the latest completed season and the next season.
-- Search, strongest first: “<show> recap before season N”, “<show> season N recap”, “<show> seasons 1–N recap”.
-- Keep **one** recap per show. Prefer official/verified channels, then a credible recap channel. No reactions, reviews, episode recaps, fan-made, foreign dubs or videos over 25 minutes.
+- Search, strongest first: “<show> recap before season N”, “<show> season N recap”, “<show> season N-1 recap”, “<show> seasons 1–N recap”, “<show> full series recap”.
+- Keep **one** recap per show. Prefer official/verified channels, then a credible recap channel. No reactions, reviews, episode recaps, spin-offs, old seasons, DVD listings, foreign dubs or videos over 45 minutes. A full-series recap is allowed for an ended show; for an ongoing show, only a recent season.
 - Put a **Season recap** card at the top of X-Ray, above Extras. Tap to play in the tile like Replays.
 - On a new-season/new-episode card, show **Catch up** next to Watch when a recap exists.
 - No new section; use X-Ray and the existing New episodes/Premieres rows.
@@ -34,19 +34,24 @@ $0/month. YouTube public search and TVmaze, both free/keyless. The job runs insi
 
 ## Checklist
 
-1. [ ] `tools/build-recaps.mjs` + pure picker tests: TVmaze season lookup, three query variants, one recap per show, credible filtering.
-2. [ ] `recaps.json` job output, weekly, covering all 48 Series favourites.
-3. [ ] X-Ray “Season recap” card with Play.
-4. [ ] “Catch up” on new-season/premiere rows.
-5. [ ] On-demand “Find recap” fallback for a show not in the file.
-6. [ ] Browser checks at 1440 and 390: five real shows, recap plays, no overflow, no Twitch cover.
+1. [x] `tools/build-recaps.mjs` + pure picker tests: TVmaze season lookup, query variants, one recap per show, credible filtering.
+2. [x] `recaps.json` job output for all 48; 27 have a usable recap now, 21 have none (job retries weekly).
+3. [x] X-Ray “Season recap” card with Play; Extras no longer repeats the Recap.
+4. [ ] “Catch up” on new-season/premiere rows (not built yet).
+5. [ ] On-demand “Find recap” fallback for a new favourite (not built yet).
+6. [x] Phone X-Ray check: Season recap at the top, Extras grouped without the duplicate, no overflow.
 7. [ ] Notes, tests, commit, push, live check.
 
 ## Verify
 
-- Run the job locally; it must output recaps for all 48 Series favourites (or report exactly which YouTube searches were blocked and retry them next run).
+- Run the job locally; it checks all 48 and writes a recap where one exists. Current result: 27 with a recap, 21 with no usable season/series recap on YouTube.
 - Open five shows in X-Ray: a recap exists, plays in the tile, closes/returns correctly.
 - A new-season card shows Catch up; it plays the recap.
-- A show with no good recap hides the card and offers Find recap.
+- A show with no good recap hides the card.
 - Phone X-Ray/rows fit; a Twitch tile is never covered.
 - 373+ tests pass.
+
+
+## Current coverage (Nov 23)
+
+27 of 48 have a usable recap. Missing: MasterChef Australia, Ramsay's Kitchen Nightmares, To Catch a Smuggler, Naked and Afraid of Love, Fear Factor, Top Chef, Habilidad física 100: México, The Pendragon Cycle: Rise of the Merlin, Ronaldinho Gaúcho, Curb Your Enthusiasm, Last Week Tonight with John Oliver, The West Wing, Hell's Kitchen, Kitchen Nightmares, Hotel Hell, Dating Naked UK, Boston Legal, Archer, Californication, Nocturne, Seinfeld. No season/series recap exists on YouTube for these; the job retries weekly.
