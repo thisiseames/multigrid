@@ -1,5 +1,5 @@
 {
- "updated": 1795494549062,
+ "updated": 1795496124563,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -229,7 +229,13 @@
    "title": "Commanders 22–20 Bengals",
    "start": 1795482900000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "C3ZJX7on7OE",
+     "title": "Cincinnati Bengals vs Washington Commanders Game Highlights | 2026 NFL Season Week 11",
+     "rank": 3.5
+    }
+   ]
   },
   "401876396": {
    "league": "Ligue 1",
@@ -1301,6 +1307,16 @@
      "id": "mhYQxD1Qp8k",
      "title": "Jordan Poole First Half Highlights vs. Phoenix Suns 11/23/2026",
      "rank": 1
+    },
+    {
+     "id": "2JSpu2YsJRs",
+     "title": "Jordan Poole Highlights vs. Phoenix Suns 11/23/2026",
+     "rank": 1
+    },
+    {
+     "id": "EqucSLfcVro",
+     "title": "Zion Williamson Highlights vs. Phoenix Suns 11/23/2026",
+     "rank": 1
     }
    ]
   },
@@ -1314,6 +1330,16 @@
      "id": "qt_mU2YySHk",
      "title": "CLIPPERS at ROCKETS | FULL GAME HIGHLIGHTS | November 23, 2026",
      "rank": 3.5
+    },
+    {
+     "id": "qg1sXmarrHo",
+     "title": "Kevin Durant (32 points) Highlights vs. LA Clippers",
+     "rank": 1
+    },
+    {
+     "id": "BhPBiex6ssw",
+     "title": "Alperen Sengun (20 points) Highlights vs. LA Clippers",
+     "rank": 1
     }
    ]
   }
