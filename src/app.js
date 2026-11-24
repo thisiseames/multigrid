@@ -12704,6 +12704,40 @@ function remoteLayouts(state) {
   return el('section', { class: 'rm-section' }, el('h3', { class: 'rm-label', textContent: 'Layout' }), row);
 }
 
+/** The screen's main transport: the big stream, else the primary, else the first pausable one. */
+function remoteTransport(state) {
+  const tiles = state.tiles ?? [];
+  if (!tiles.length) return null;
+  const focus = tiles.find((tile) => tile.big && tile.canPause)
+    ?? tiles.find((tile) => tile.primary && tile.canPause)
+    ?? tiles.find((tile) => tile.canPause)
+    ?? tiles.find((tile) => tile.big)
+    ?? tiles.find((tile) => tile.primary)
+    ?? tiles[0];
+  if (!focus) return null;
+  const canPause = Boolean(focus.canPause);
+  const button = el('button', {
+    type: 'button',
+    class: 'rm-transport-play',
+    disabled: !canPause,
+    title: canPause ? (focus.paused ? `Play ${focus.label}` : `Pause ${focus.label}`) : `${focus.label} can't pause`,
+    aria: { label: canPause ? (focus.paused ? `Play ${focus.label}` : `Pause ${focus.label}`) : `${focus.label} can't pause` },
+    on: {
+      click() {
+        if (!canPause) return;
+        remoteSend({ type: 'pause', id: focus.id, value: !focus.paused });
+        focus.paused = !focus.paused;
+        drawRemoteScreen();
+      },
+    },
+  }, icon(focus.paused ? 'play' : 'pause', 24));
+  return el('div', { class: 'rm-transport' },
+    button,
+    el('div', { class: 'rm-transport-text' },
+      el('b', { textContent: focus.label, title: focus.label }),
+      el('small', { textContent: canPause ? (focus.paused ? 'Paused · tap play' : 'Playing · tap pause') : 'This stream can’t pause' })));
+}
+
 function drawRemoteScreen() {
   const screen = $('remote-screen');
   if (screen.hidden) return;
@@ -12717,6 +12751,7 @@ function drawRemoteScreen() {
         : el('span', { class: 'remote-status' }, el('span', { class: 'remote-dot' }), 'Looking for your screen…');
   const tiles = state?.tiles ?? [];
   const body = connected && state ? [
+    remoteTransport(state),
     el('div', { class: 'rm-switches' },
       remoteSwitch('One sound', state.oneSound, () => remoteSend({ type: 'oneSound', value: !state.oneSound })),
       remoteSwitch('Ticker', state.ticker, () => remoteSend({ type: 'ticker', value: !state.ticker }))),
