@@ -1,5 +1,5 @@
 {
- "updated": 1795560448853,
+ "updated": 1795562011386,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1414,7 +1414,13 @@
    "title": "RB Leipzig 3–1 Lens",
    "start": 1795550400000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "bWPI305N8aw",
+     "title": "RB Leipzig - RC Lens | Highlights | UEFA Champions League",
+     "rank": 2
+    }
+   ]
   },
   "401915300": {
    "league": "Champions League",
@@ -1584,6 +1590,12 @@
  },
  "club": {
   "360": [
+   {
+    "id": "D_tlhlwHxFI",
+    "title": "Pochettino reacts as Leny Yoro’s red card is overturned by FA | Full press conference",
+    "published": 1795561930000,
+    "source": "Sky Sports News"
+   },
    {
     "id": "_-uluZO4WZ0",
     "title": "The January Transfer Targets Tasked With Saving Man United's Season!",
@@ -1985,12 +1997,6 @@
     "title": "Mauricio Pochettino's First Session | Inside Training",
     "published": 1795266385000,
     "source": "Man Utd"
-   },
-   {
-    "id": "9nJDINFlhSg",
-    "title": "The BIG Problem Pochettino Must Solve at Man United",
-    "published": 1795261006000,
-    "source": "TNT Sports"
    },
    {
     "id": "byPvzk7r_J8",
