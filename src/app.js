@@ -12188,8 +12188,9 @@ function remoteState() {
     layout: ws.presetId,
     full: streamCount(ws) >= MAX_STREAMS,
     favorites: favoriteList.map(({ input, name, group }) => ({ input, name, group })),
-    // The phone can reopen a part-watched stream or series here. Local files stay on the laptop.
-    continue: listPlaces(10).filter((place) => !place.input.startsWith('local:')).map((place) => {
+    // The phone can reopen a part-watched stream or series here, including a local file: the host
+    // still holds its file handle.
+    continue: listPlaces(10).map((place) => {
       const favorite = favoriteList.find((item) => item.input === place.input);
       const source = parseSource(place.input);
       const youtube = source.youtube?.id ? `https://i.ytimg.com/vi/${encodeURIComponent(source.youtube.id)}/mqdefault.jpg` : '';
@@ -12792,6 +12793,53 @@ function drawRemoteScreen() {
   if (remoteView.sheet) screen.append(remoteView.sheet);
 }
 
+/** One part-watched item from the screen, used on the remote and in its Add stream sheet. */
+function remoteContinueCard(item, state, choose) {
+  const source = parseSource(item.input);
+  const favorite = state.favorites.find((fav) => fav.input === item.input);
+  const art = favoriteArt({
+    name: favorite?.name ?? item.name,
+    input: item.input,
+    group: favorite?.group ?? '',
+    logo: item.logo || '',
+    poster: item.poster || '',
+  }, source);
+  const percent = Math.min(100, Math.max(2, (item.at / item.length) * 100));
+  const sub = item.from && item.from !== item.name
+    ? item.from
+    : item.page
+      ? 'Saved episode'
+      : source.kind === 'audio'
+        ? 'Podcast'
+        : source.kind === 'file'
+          ? 'Local file'
+          : 'Continue';
+  return el('li', { class: 'cwcard' },
+    el('button', {
+      type: 'button', class: 'cw-main', title: item.name,
+      on: { click: () => choose(item.input, item.page) },
+    },
+    el('span', { class: 'cw-art' }, art, el('span', { class: 'cw-bar' }, el('span', { style: `width:${percent.toFixed(1)}%` }))),
+    el('span', { class: 'cw-text' },
+      el('b', { class: 'cw-name', textContent: item.name }),
+      el('small', { class: 'cw-sub', textContent: sub }),
+      el('small', { class: 'cw-left', textContent: timeLeft(item.length - item.at) }))));
+}
+
+function remoteContinueSection(state, choose, { sheet = false, limit = 10 } = {}) {
+  const items = (state.continue ?? []).slice(0, limit);
+  const heading = sheet ? 'h4' : 'h3';
+  const headingClass = sheet ? 'match-day' : 'rm-label';
+  if (!items.length) {
+    return el('section', { class: sheet ? 'rm-continue is-empty' : 'rm-section rm-continue is-empty' },
+      el(heading, { class: headingClass, textContent: 'Continue watching' }),
+      el('p', { class: 'match-quiet is-empty', textContent: Array.isArray(state.continue) ? 'Nothing part-watched on the screen.' : 'Reload the screen once to show Continue watching here.' }));
+  }
+  return el('section', { class: sheet ? 'rm-continue' : 'rm-section rm-continue' },
+    el(heading, { class: headingClass, textContent: 'Continue watching' }),
+    el('ul', { class: 'cw-row' }, ...items.map((item) => remoteContinueCard(item, state, choose))));
+}
+
 /** Add or replace: a paste box and the laptop's favorites. */
 function openRemoteSheet(target) {
   const state = remoteView.state;
@@ -12804,38 +12852,6 @@ function openRemoteSheet(target) {
     close();
     toast(target.mode === 'replace' ? 'Replaced on the screen.' : 'Added on the screen.');
   };
-  const continueCard = (item) => {
-    const source = parseSource(item.input);
-    const favorite = state.favorites.find((fav) => fav.input === item.input);
-    const art = favoriteArt({
-      name: favorite?.name ?? item.name,
-      input: item.input,
-      group: favorite?.group ?? '',
-      logo: item.logo || '',
-      poster: item.poster || '',
-    }, source);
-    const percent = Math.min(100, Math.max(2, (item.at / item.length) * 100));
-    const sub = item.from && item.from !== item.name
-      ? item.from
-      : item.page
-        ? 'Saved episode'
-        : source.kind === 'audio'
-          ? 'Podcast'
-          : 'Continue';
-    return el('li', { class: 'cwcard' },
-      el('button', {
-        type: 'button', class: 'cw-main', title: item.name,
-        on: { click: () => choose(item.input, item.page) },
-      },
-      el('span', { class: 'cw-art' }, art, el('span', { class: 'cw-bar' }, el('span', { style: `width:${percent.toFixed(1)}%` }))),
-      el('span', { class: 'cw-text' },
-        el('b', { class: 'cw-name', textContent: item.name }),
-        el('small', { class: 'cw-sub', textContent: sub }),
-        el('small', { class: 'cw-left', textContent: timeLeft(item.length - item.at) }))));
-  };
-  const continueSection = state.continue?.length ? el('section', { class: 'rm-continue' },
-    el('h4', { class: 'match-day', textContent: 'Continue watching' }),
-    el('ul', { class: 'cw-row' }, ...state.continue.map(continueCard))) : null;
   const paste = el('textarea', { rows: 2, placeholder: 'Paste a link or iframe code', autocapitalize: 'off', spellcheck: false });
   const message = el('p', { class: 'rm-message' });
   paste.addEventListener('input', () => {
@@ -12885,7 +12901,7 @@ function openRemoteSheet(target) {
       on: { click() { const source = parseSource(paste.value.trim()); if (source.ok) choose(source.input); else { message.textContent = source.error || 'Paste a link first.'; message.classList.add('is-error'); } } },
     }, target.mode === 'replace' ? 'Replace' : 'Add')),
     message,
-    continueSection,
+    remoteContinueSection(state, choose, { sheet: true }),
     copy,
     state.favorites.length ? el('h4', { class: 'match-day', textContent: 'Favorites' }) : null,
     pills,
