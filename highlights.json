@@ -1,5 +1,5 @@
 {
- "updated": 1795557238658,
+ "updated": 1795558859128,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1374,9 +1374,23 @@
     }
    ]
   },
+  "401915294": {
+   "league": "Champions League",
+   "title": "Feyenoord 0–1 FC Porto",
+   "start": 1795550400000,
+   "sources": "feeds",
+   "videos": []
+  },
   "401915295": {
    "league": "Champions League",
    "title": "Arsenal 1–1 Dortmund",
+   "start": 1795550400000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915296": {
+   "league": "Champions League",
+   "title": "Como 1–0 AEK Athens",
    "start": 1795550400000,
    "sources": "feeds",
    "videos": []
@@ -1562,7 +1576,11 @@
   "ucl:86": "",
   "ucl:148": "",
   "ucl:521": "",
-  "ucl:244": "UCeB7JZwcar2fVoK2w2f9OwA"
+  "ucl:244": "UCeB7JZwcar2fVoK2w2f9OwA",
+  "ucl:2572": "",
+  "ucl:887": "",
+  "ucl:142": "",
+  "ucl:437": "UCQegzQwEExHgXvm_yHptzQg"
  },
  "club": {
   "360": [
