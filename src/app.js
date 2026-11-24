@@ -12188,6 +12188,23 @@ function remoteState() {
     layout: ws.presetId,
     full: streamCount(ws) >= MAX_STREAMS,
     favorites: favoriteList.map(({ input, name, group }) => ({ input, name, group })),
+    // The phone can reopen a part-watched stream or series here. Local files stay on the laptop.
+    continue: listPlaces(10).filter((place) => !place.input.startsWith('local:')).map((place) => {
+      const favorite = favoriteList.find((item) => item.input === place.input);
+      const source = parseSource(place.input);
+      const youtube = source.youtube?.id ? `https://i.ytimg.com/vi/${encodeURIComponent(source.youtube.id)}/mqdefault.jpg` : '';
+      return {
+        key: place.key,
+        input: place.input,
+        name: place.name,
+        from: place.from || '',
+        page: place.page || '',
+        logo: favorite?.logo || '',
+        poster: favorite?.poster || youtube,
+        at: place.at,
+        length: place.length,
+      };
+    }),
   };
 }
 
@@ -12234,7 +12251,10 @@ function remoteCommand(cmd) {
       if (tile) { if (bigTileId === tile.id) makeBig(null, false); removeStream(tile.id); }
       break;
     case 'add':
-      if (validInput(cmd.input)) addStream(cmd.input);
+      if (validInput(cmd.input)) {
+        const page = typeof cmd.page === 'string' && cmd.page.length < 4000 ? cmd.page : '';
+        addStream(cmd.input, { mode: 'add' }, '', page);
+      }
       break;
     case 'replace':
       if (tile && validInput(cmd.input)) addStream(cmd.input, { mode: 'replace', id: tile.id });
@@ -12777,11 +12797,45 @@ function openRemoteSheet(target) {
   const state = remoteView.state;
   if (!state) return;
   const close = () => { remoteView.sheet?.remove(); remoteView.sheet = null; };
-  const choose = (input) => {
-    remoteSend(target.mode === 'replace' ? { type: 'replace', id: target.id, input } : { type: 'add', input });
+  const choose = (input, page = '') => {
+    remoteSend(target.mode === 'replace'
+      ? { type: 'replace', id: target.id, input }
+      : { type: 'add', input, ...(page ? { page } : {}) });
     close();
     toast(target.mode === 'replace' ? 'Replaced on the screen.' : 'Added on the screen.');
   };
+  const continueCard = (item) => {
+    const source = parseSource(item.input);
+    const favorite = state.favorites.find((fav) => fav.input === item.input);
+    const art = favoriteArt({
+      name: favorite?.name ?? item.name,
+      input: item.input,
+      group: favorite?.group ?? '',
+      logo: item.logo || '',
+      poster: item.poster || '',
+    }, source);
+    const percent = Math.min(100, Math.max(2, (item.at / item.length) * 100));
+    const sub = item.from && item.from !== item.name
+      ? item.from
+      : item.page
+        ? 'Saved episode'
+        : source.kind === 'audio'
+          ? 'Podcast'
+          : 'Continue';
+    return el('li', { class: 'cwcard' },
+      el('button', {
+        type: 'button', class: 'cw-main', title: item.name,
+        on: { click: () => choose(item.input, item.page) },
+      },
+      el('span', { class: 'cw-art' }, art, el('span', { class: 'cw-bar' }, el('span', { style: `width:${percent.toFixed(1)}%` }))),
+      el('span', { class: 'cw-text' },
+        el('b', { class: 'cw-name', textContent: item.name }),
+        el('small', { class: 'cw-sub', textContent: sub }),
+        el('small', { class: 'cw-left', textContent: timeLeft(item.length - item.at) }))));
+  };
+  const continueSection = state.continue?.length ? el('section', { class: 'rm-continue' },
+    el('h4', { class: 'match-day', textContent: 'Continue watching' }),
+    el('ul', { class: 'cw-row' }, ...state.continue.map(continueCard))) : null;
   const paste = el('textarea', { rows: 2, placeholder: 'Paste a link or iframe code', autocapitalize: 'off', spellcheck: false });
   const message = el('p', { class: 'rm-message' });
   paste.addEventListener('input', () => {
@@ -12831,6 +12885,7 @@ function openRemoteSheet(target) {
       on: { click() { const source = parseSource(paste.value.trim()); if (source.ok) choose(source.input); else { message.textContent = source.error || 'Paste a link first.'; message.classList.add('is-error'); } } },
     }, target.mode === 'replace' ? 'Replace' : 'Add')),
     message,
+    continueSection,
     copy,
     state.favorites.length ? el('h4', { class: 'match-day', textContent: 'Favorites' }) : null,
     pills,

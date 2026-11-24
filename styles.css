@@ -1924,6 +1924,10 @@ body.remote-open { overflow: hidden; }
 .rm-message.is-error { color: #ff8a8d; }
 .rm-sheet .match-day { margin: 8px 0 0; padding: 8px 16px 2px; background: transparent; }
 .rm-sheet .addp-pills { padding: 6px 14px 4px; }
+.rm-continue { flex: none; margin: 2px 0 2px; }
+.rm-continue .cw-row { padding: 0 14px 4px; }
+.rm-continue .cwcard { width: 150px; }
+.rm-continue .cw-name { font-size: 12.5px; }
 .rm-sheet-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 14px calc(16px + env(safe-area-inset-bottom)); }
 .rm-sheet-list .addp-grid { grid-template-columns: minmax(0, 1fr); }
 .rm-copy { flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 14px 0; height: 46px; border-radius: 12px; background: rgba(142, 166, 232, .14); color: var(--accent); font-size: 14.5px; font-weight: 700; }
