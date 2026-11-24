@@ -776,6 +776,15 @@ export class GridView {
       this.gridEl.style.height = '';
       return;
     }
+    // TV mode is a full wall, not a 16:9 grid with room for strips. Fill the stage;
+    // the players are scaled to cover, so only the grid's 1px seams show.
+    if (document.body.classList.contains('is-tv')) {
+      const box = this.stageEl.getBoundingClientRect();
+      this.gridEl.style.width = `${box.width}px`;
+      this.gridEl.style.height = `${box.height}px`;
+      this.gridEl.style.gridTemplateRows = template(this.ws.rows);
+      return;
+    }
     if (this.gridEl.classList.contains('has-phone')) {
       const box = this.stageEl.getBoundingClientRect();
       this.gridEl.style.width = `${box.width}px`;

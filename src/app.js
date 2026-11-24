@@ -136,7 +136,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   },
   onRemove: removeStream,
   onToggleMute: toggleMute,
-  onPlayerChanged: () => renderSound(),
+  onPlayerChanged: () => { renderSound(); fitTvTiles(); },
   onFeedSwitched: (id, name) => toast(`Switched ${name} to another feed.`),
   onPopOutFailed: () => toast("Couldn't pop this stream out. Try clicking Pop out again."),
   onSendToPhone: (id) => sendToPhone(id),
@@ -2480,6 +2480,7 @@ function render() {
 
   renderSound();
   paintRoom();
+  fitTvTiles();
 }
 
 function currentDiagram() {
@@ -11620,12 +11621,46 @@ function savedParts() {
   return [form, message, list, ...clear];
 }
 
+/** In TV mode the cells are not 16:9, so scale the iframe until the 16:9 picture
+    covers the cell; the tile's overflow clips the player's black side/top bars.
+    Bottom-aligned, so a cropped player keeps its play/pause controls. */
+function fitTvTiles() {
+  const on = tvMode && !document.body.classList.contains('is-phone');
+  for (const frame of document.querySelectorAll('.tile-body iframe, .tile-body video')) {
+    if (!on) {
+      frame.style.transform = '';
+      frame.style.transformOrigin = '';
+      if (frame.tagName === 'VIDEO') frame.style.objectFit = '';
+      continue;
+    }
+    if (frame.tagName === 'VIDEO') {
+      frame.style.transform = '';
+      frame.style.transformOrigin = '';
+      frame.style.objectFit = 'cover';
+      continue;
+    }
+    if (frame.matches('.frame-card, .frame-feed, .frame-post, .frame-daddy, .reader-real')) {
+      frame.style.transform = '';
+      frame.style.transformOrigin = '';
+      continue;
+    }
+    const box = frame.parentElement?.getBoundingClientRect();
+    if (!box?.width || !box.height) continue;
+    const cell = box.width / box.height;
+    const picture = 16 / 9;
+    // Round up, so no hairline of the player's black shows beside a seam.
+    const scale = Math.ceil((cell > picture ? cell / picture : picture / cell) * 1000) / 1000;
+    frame.style.transform = `scale(${scale})`;
+    frame.style.transformOrigin = 'center bottom';
+  }
+}
+
 function setTvMode(on) {
   tvMode = Boolean(on);
   document.body.classList.toggle('is-tv', tvMode);
   try { localStorage.setItem('multigrid.tv.v1', tvMode ? 'on' : 'off'); } catch { /* not remembered */ }
   toast(tvMode ? 'TV mode on: tile bars hidden.' : 'TV mode off.');
-  requestAnimationFrame(() => grid.fit());
+  requestAnimationFrame(() => { grid.fit(); fitTvTiles(); });
 }
 const toggleTvMode = () => setTvMode(!tvMode);
 
@@ -12017,6 +12052,8 @@ buildStarters();
 prepareAutoplaySound();
 render();
 initDesk();
+if (typeof ResizeObserver === 'function') new ResizeObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('stage'));
+if (typeof MutationObserver === 'function') new MutationObserver(() => { if (tvMode) requestAnimationFrame(fitTvTiles); }).observe($('grid'), { childList: true, subtree: true });
 // RedZone stays on across a reload.
 if (isRedZoneOn()) startRedZone();
 // The Dock's opening edge, once the grid is drawn.

@@ -336,10 +336,19 @@ body.is-phone #stage.is-empty-wall::after { content: none; }
   body.is-phone .tile.is-empty { display: none; }
 }
 .grid { display: grid; position: relative; width: 100%; height: 100%; }
-/* TV mode: the picture only. The app bar stays so it can be turned off. */
-body.is-tv .strip,
-body.is-tv .tile-info,
-body.is-tv .corner { display: none !important; }
+/* TV mode: the picture only. The app bar stays so it can be turned off.
+   The wall fills the stage and tiles touch with a 1px seam; the media is
+   scaled to cover, so a player's letterbox bars are cropped, not shown. */
+body.is-tv:not(.is-phone) .strip,
+body.is-tv:not(.is-phone) .tile-info,
+body.is-tv:not(.is-phone) .corner,
+body.is-tv:not(.is-phone) .divider,
+body.is-tv:not(.is-phone) .resize-preview { display: none !important; }
+body.is-tv:not(.is-phone) .grid { gap: 1px; }
+body.is-tv:not(.is-phone) .tile { margin: 0; border-radius: 0; }
+body.is-tv:not(.is-phone) .grid.is-custom .tile { margin: 0; }
+body.is-tv:not(.is-phone) .grid.is-custom .tile-body { margin-bottom: 0; }
+body.is-tv:not(.is-phone) .tile-body video { object-fit: cover; }
 .grid.stacked {
   display: flex;
   flex-direction: column;
