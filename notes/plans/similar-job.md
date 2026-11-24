@@ -1,6 +1,6 @@
 # More like this from a job
 
-**Status:** built; live after push. X-Ray uses the job file first, extension second. The initial `similar.json` is the job's own generated output; `guide.yml` refreshes it weekly.
+**Status:** live. X-Ray uses the job file first, extension second. The initial `similar.json` is the job's own generated output; `guide.yml` refreshes it weekly.
 
 ## Why
 
