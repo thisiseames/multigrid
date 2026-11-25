@@ -1,6 +1,7 @@
 # Native TikTok profile tile (laptop and phone)
 
-**Status:** built; checks pass. Commit/live check pending.
+**Status:** DONE, live Nov 25, 2026 (commit 0375a73). Verified on multigrid.club:
+real header/counts, six cards, no TikViewer banner, video opens a second tile and the profile stays.
 
 ## Running cost
 
@@ -75,7 +76,7 @@ limit is about 20 requests a minute, so normal use stays under it.
 - Phone 390 px: 3-column cards, internal scroll, no horizontal overflow; taller stacked body.
 - Reader blocked: clear unavailable state; **Try again** recovers once the reader returns.
 - Typed Profile button: invalid name shows the inline error; valid name opens the profile.
-- Existing TikTok feeds/menu, other tiles, all tests.
+- Existing TikTok feeds/menu, other tiles, all tests (412 pass).
 
 ## Steps
 
@@ -85,7 +86,7 @@ limit is about 20 requests a minute, so normal use stays under it.
 - [x] Add `tiktokprofile:` source, player and profile tile UI.
 - [x] Add the Profile action and app open-video bridge.
 - [x] Update index file list/CSP; run tests; verify laptop and phone.
-- [ ] Commit/push, check live, mark DONE.
+- [x] Commit/push, check live, mark DONE.
 
 ## Gotchas
 
