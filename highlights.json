@@ -1,5 +1,5 @@
 {
- "updated": 1795577703083,
+ "updated": 1795579267309,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -766,6 +766,19 @@
     }
    ]
   },
+  "401909315": {
+   "league": "NBA",
+   "title": "Wizards 116–131 Celtics",
+   "start": 1795568400000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "KTqVQ0JHdwk",
+     "title": "CELTICS at WIZARDS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
   "401910023": {
    "league": "NBA",
    "title": "76ers 132–129 Bucks",
@@ -1467,12 +1480,6 @@
     "title": "Senegal Defeat Morocco In Court To Win AFCON. FOOTBALL WON!",
     "published": 1795537974000,
     "source": "Adikastakes"
-   },
-   {
-    "id": "6U2F6Zdvo68",
-    "title": "Manchester United made ‘basic’ mistakes against Liverpool | The 2 Robbies Podcast | Premier League",
-    "published": 1795537101000,
-    "source": "NBC Sports"
    },
    {
     "id": "lHCdh7Juy3I",
