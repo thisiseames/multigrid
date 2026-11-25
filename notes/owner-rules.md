@@ -19,14 +19,21 @@ Before replying, planning or calling a tool, split the message into **every** se
 - If two parts conflict or one is ambiguous, name that part and ask only about that; never silently choose one and drop the rest.
 - In the reply, briefly show that each part was handled. Do not answer one part and disappear.
 
-## Lead with the normal case, then the exceptions (Nov 25)
-Owner: "Why do you default to the most unclear fucking instructions and descriptions?"
+## Clarity first (Nov 25)
+Owner: "THE RULE IS FUCKING CLARITY."
 
-Before explaining anything, say what happens in the **normal** case in one or two plain sentences. Then, separately, list the exceptions with the exact condition ("Only if Reduce Motion is on…"). Never mix an edge case into the main sequence, never list a caveat without saying it is a caveat, and never make him work out which path is the default.
+Every description, instruction and plan must be clear on **one read**. The method:
 
-If there are several cases, name the default first, then the alternatives. The same applies to plans, instructions and descriptions: normal path first, exceptions after.
+- Say what happens in the **normal** case first, in one or two plain sentences.
+- Put exceptions after, separately, with the exact condition ("Only if Reduce Motion is on…").
+- Never mix an edge case into the main sequence.
+- Never list a caveat without saying it is a caveat.
+- Never make him work out which path is the default.
+- If there are several cases, name the default first, then the alternatives.
 
-**Why:** I described iPhone Reduce Motion as if it were part of the normal opening, so the whole opening sounded like it had no animation. He had to ask why, then point out it was a secondary phone setting. The information was right; the order made it useless.
+If a sentence needs a second read to know which case applies, it is not finished.
+
+**Why:** I described iPhone Reduce Motion as if it were part of the normal opening, so the whole opening sounded like it had no animation. The information was right; the clarity was missing. He had to ask why, then point out it was a secondary phone setting.
 
 NEVER: build without a written plan AND his explicit "go" to that exact plan. Move his data, accounts or hosting on my own. Open his browser or accounts for something he didn't ask for. Decide a requirement silently.
 
