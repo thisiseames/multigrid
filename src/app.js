@@ -11714,10 +11714,6 @@ $('add-button').addEventListener('click', () => openSourceDialog({ mode: 'add' }
 $('file-zone').addEventListener('click', () => pickFilesFor(sourceTarget));
 $('channel-find').addEventListener('click', openChannelFinder);
 $('ppv-find').addEventListener('click', () => openPPV(sourceTarget));
-$('bluesky-trending').addEventListener('click', () => {
-  if ($('source-dialog').open) $('source-dialog').close();
-  addStream('bluesky:trending');
-});
 $('source-dialog').addEventListener('close', () => {
   if ($('ppv-box').open) $('ppv-box').close();
   if ($('podcast-box').open) $('podcast-box').close();

@@ -471,3 +471,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 25: The phone Matchday programme sheet now respects the top and bottom safe-area insets, so its title and close button sit below the status bar.
 - Nov 25: Phone Add stream action labels now match the 16px paste field (iOS zoom threshold). The phone Reels/Live/TikTok sheets now fill the available height, with the list scrolling and the username/add bar pinned at the bottom.
 - Nov 25: “Trending on Bluesky” is now the first row in the Reels menu, using the shared vertical tile; no need to go through Add stream. The phone Reels/Live/TikTok sheets fill their height with the list scrolling and the add field pinned at the bottom.
+- Nov 25: Removed “Trending on Bluesky” from the Add stream actions; it now lives only in the Reels menu, or as the `bluesky:trending` link. The four Add stream buttons fill the row on desktop. The Matchday Programme link now sits on the heading’s baseline.
