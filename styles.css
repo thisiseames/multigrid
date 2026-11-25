@@ -2295,13 +2295,13 @@ body.remote-open { overflow: hidden; }
   body.is-phone .mixer { display: none !important; }
 
   /* A stream's sheet and the Sound sheet. */
-  .stream-menu.is-sheet, .sound-menu.is-sheet { padding: 4px 16px 20px; }
+  .stream-menu.is-sheet, .sound-menu.is-sheet { padding: 4px 12px 20px; }
   .sa-transport { display: flex; justify-content: center; gap: 14px; padding: 6px 0 14px; }
   .sa-round { width: 56px; height: 56px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255, 255, 255, .09); color: var(--text); }
   .sa-round.is-on { background: var(--accent); color: var(--accent-ink); }
   .sa-volume { display: block; width: 100%; height: 36px; margin: 0 0 16px; accent-color: var(--accent); }
-  .sa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .sa-btn { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px 6px; border-radius: 16px; background: rgba(255, 255, 255, .06); font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--text); }
+  .sa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sa-btn { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 6px 4px; border-radius: 14px; background: rgba(255, 255, 255, .06); font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--text); }
   .sa-btn.is-on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
   .sa-btn.is-danger { color: #ff8a8d; }
   .sa-switches { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 2px 0 14px; }
