@@ -1,5 +1,5 @@
 {
- "updated": 1795594865525,
+ "updated": 1795599538856,
  "window": {
   "name": "Summer 2026",
   "playlist": "4658365"
@@ -283,20 +283,12 @@
  ],
  "league": [
   {
-   "club": "Fulham",
-   "player": "Jose Sani",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1788871740000,
-   "link": "https://www.fulhamfc.com/news/2026/september/07/sani-signs/"
-  },
-  {
-   "club": "Sunderland",
-   "player": "Juan Riquelme Angulo Caicedo",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1788307440000,
-   "link": "https://www.safc.com/news/2026/september/01/sunderland-afc-sign-young-starlet-angulo/"
+   "club": "Nottingham Forest",
+   "player": "Cherif Yaya",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1788799560000,
+   "link": "https://www.nottinghamforest.co.uk/news/2026/september/07/cherif-yaya-joins-ilkeston-on-loan/"
   },
   {
    "club": "Crystal Palace",
@@ -315,52 +307,28 @@
    "link": "https://www.mancity.com/news/mens/enzo-fernandez-signs-for-city-63923893"
   },
   {
-   "club": "Brentford",
-   "player": "Jayden Meghoma",
-   "direction": "in",
-   "kind": "Loan in",
-   "date": 1788296700000,
-   "link": "https://www.brentfordfc.com/en/news/article/first-team-jayden-meghoma-portsmouth-loan-transfer"
-  },
-  {
-   "club": "Liverpool",
-   "player": "Stefan Bajcetic",
-   "direction": "out",
-   "kind": "Sold",
-   "date": 1788201240000,
-   "link": "https://www.liverpoolfc.com/news/stefan-bajcetic-completes-permanent-transfer-celta-vigo"
-  },
-  {
-   "club": "Arsenal",
-   "player": "Reiss Nelson",
-   "direction": "out",
-   "kind": "Released",
-   "date": 1787845740000,
-   "link": "https://www.arsenal.com/news/reiss-nelson-leaves-arsenal-aK7qJ9T658rj"
-  },
-  {
-   "club": "Hull City",
-   "player": "Ilyas Ansah",
+   "club": "Leeds United",
+   "player": "Michael Zetterer",
    "direction": "in",
    "kind": "Signed",
-   "date": 1787838360000,
-   "link": "https://www.wearehullcity.co.uk/news/2026/september/01/ansah-signs-for-hull-city/"
+   "date": 1788030300000,
+   "link": "https://www.leedsunited.com/en/news/michael-zetterer-joins-leeds-united"
   },
   {
-   "club": "Newcastle",
-   "player": "Matias Fernandez-Pardo",
+   "club": "Ipswich",
+   "player": "Exequiel Palacios",
    "direction": "in",
    "kind": "Signed",
-   "date": 1787771460000,
-   "link": "https://www.newcastleunited.com/en/news/newcastle-united-sign-matias-fernandez-pardo"
+   "date": 1787861280000,
+   "link": "https://www.itfc.co.uk/news/2026/august/27/world-cup-winner-palacios-signs/"
   },
   {
    "club": "Brighton & Hove Albion",
-   "player": "Carlos Baleba",
-   "direction": "out",
-   "kind": "Sold",
-   "date": 1787672160000,
-   "link": "https://www.brightonandhovealbion.com/media-article/carlos-baleba-joins-manchester-united"
+   "player": "Jaouen Hadjam",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1787684520000,
+   "link": "https://www.brightonandhovealbion.com/media-article/albion-sign-jaouen-hadjam-from-young-boys"
   },
   {
    "club": "Man Utd",
@@ -371,36 +339,44 @@
    "link": "https://www.manutd.com/en/news/carlos-baleba-joins-united"
   },
   {
-   "club": "Leeds United",
-   "player": "Nico Elvedi",
+   "club": "Aston Villa",
+   "player": "Matteo Ruggeri",
    "direction": "in",
    "kind": "Signed",
-   "date": 1787133840000,
-   "link": "https://www.leedsunited.com/en/news/leeds-united-sign-nico-elvedi?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1787126940000,
+   "link": "https://www.avfc.co.uk/news/2026/august/19/signing-matteo-ruggeri-signing-confirmed/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
    "club": "Tottenham Hotspur",
-   "player": "Guglielmo Vicario",
+   "player": "Yang Min-Hyeok",
    "direction": "out",
    "kind": "Loan out",
-   "date": 1787062680000,
-   "link": "https://www.tottenhamhotspur.com/news/1086109/juventus-loan-for-vicario?c=Vicario%20loan%20|%20Content%20|%20X&source_caller=ui&deep_link_value=news%2F1086109%2Fjuventus-loan-for-vicario&shortlink=g7rcsejd&pid=X&af_dp=thfc-app%3A%2F%2F&af_xp=custom?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1786527240000,
+   "link": "https://www.tottenhamhotspur.com/news/1084291/loan-move-for-yang?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Nottingham Forest",
-   "player": "Steven Benda",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1786446300000,
-   "link": "https://www.nottinghamforest.co.uk/news/2026/august/15/steven-benda-joins-forest/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "club": "Sunderland",
+   "player": "Ahmed Abdullahi",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1785845340000,
+   "link": "https://www.safc.com/news/2026/august/04/abdullahi-joins-ey-pspor-on-permanent-deal/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Chelsea",
-   "player": "Valentin Barco",
+   "club": "Brentford",
+   "player": "Mamadou Sangare",
    "direction": "in",
    "kind": "Signed",
-   "date": 1785599220000,
-   "link": "https://www.chelseafc.com/en/news/article/valentin-barco-signs-for-chelsea/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1785600540000,
+   "link": "https://www.brentfordfc.com/en/news/article/first-team-brentford-mamadou-sangare-lens-club-record-transfer?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Everton",
+   "player": "Idrissa Gana Gueye",
+   "direction": "out",
+   "kind": "Released",
+   "date": 1784914080000,
+   "link": "https://www.evertonfc.com/news/2026/july/24/gana-leaves-everton/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
    "club": "AFC Bournemouth",
@@ -419,28 +395,52 @@
    "link": "https://www.ccfc.co.uk/news/2026/july/16/coventry-city-sign-aur-le-amenda-from-eintracht-frankfurt/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Everton",
-   "player": "Seamus Coleman",
+   "club": "Fulham",
+   "player": "Ollie Gofford",
    "direction": "out",
    "kind": "Released",
-   "date": 1769964480000,
-   "link": "https://www.evertonfc.com/news/2026/may/15/Coleman-Calls-Time-On-Everton-Playing-Career/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1780923060000,
+   "link": "https://www.fulhamfc.com/news/2026/june/08/player-contract-updates/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Aston Villa",
-   "player": "Yeimar Mosquera",
+   "club": "Chelsea",
+   "player": "Liam Delap",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1780483140000,
+   "link": "https://www.chelseafc.com/en/news/article/liam-delap-departs-for-nottingham-forest"
+  },
+  {
+   "club": "Arsenal",
+   "player": "Jakub Kiwior",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1770732420000,
+   "link": "https://www.arsenal.com/news/jakub-kiwior-joins-porto-permanent-deal?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Hull City",
+   "player": "Akin Famewo",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1770732420000,
+   "link": "https://www.wearehullcity.co.uk/news/2026/july/01/famewo-joins-bolton-wanderers/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Liverpool",
+   "player": "Curtis Jones",
    "direction": "out",
    "kind": "Sold",
    "date": 1769947380000,
-   "link": "https://www.avfc.co.uk/news/2026/july/16/news-mosquera-moves-to-vitoria/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "link": "https://www.liverpoolfc.com/news/curtis-jones-completes-permanent-transfer-internazionale"
   },
   {
-   "club": "Ipswich",
-   "player": "Leon Ayinde",
+   "club": "Newcastle",
+   "player": "Max Thompson",
    "direction": "out",
-   "kind": "Sold",
+   "kind": "Released",
    "date": 1766753460000,
-   "link": "https://www.itfc.co.uk/news/2026/may/20/leon-ayinde-to-join-doncaster/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "link": "https://www.newcastleunited.com/en/news/newcastle-united-confirm-mens-first-team-retained-list?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   }
  ],
  "spent": "£152m",

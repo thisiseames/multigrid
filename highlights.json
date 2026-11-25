@@ -1,5 +1,5 @@
 {
- "updated": 1795597949959,
+ "updated": 1795599513664,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1463,6 +1463,18 @@
  "club": {
   "360": [
    {
+    "id": "NHTsAszPHl0",
+    "title": "Pochettino's European Test! | Sporting vs Man United | Match Preview | Champions League",
+    "published": 1795599031000,
+    "source": "Stretford Paddock"
+   },
+   {
+    "id": "XppLLMAxrZY",
+    "title": "How bad it’s got… 😑",
+    "published": 1795598754000,
+    "source": "Stephen Howson"
+   },
+   {
     "id": "TILvfkk3dD0",
     "title": "Real Madrid Can Stop PSG From Winning The UCL. They Look Scary!",
     "published": 1795564782000,
@@ -1875,12 +1887,6 @@
     "title": "Maguire's Late Heroics! | Liverpool v Manchester United 2025/26",
     "published": 1795255264000,
     "source": "Premier League"
-   },
-   {
-    "id": "cDfdQ4oiqpU",
-    "title": "THE BIG ONE! | Pochettino's FIRST Game | Liverpool vs Man United | Match Preview | Premier League",
-    "published": 1795253405000,
-    "source": "Stretford Paddock"
    }
   ]
  }
