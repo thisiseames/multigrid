@@ -9675,7 +9675,8 @@ function matchdayHeroItem(phase) {
       parts.push(el('div', { class: 'hero-buttons' },
         md.broadcast ? mdButton(now >= md.broadcast.start ? 'Watch the build-up' : `Watch from ${clock(md.broadcast.start)}`, 'play', mdWatch, true) : null,
         mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast),
-        lineupsAction ? el('span', { class: 'hero-button-pair' }, programme, lineupsAction) : programme));
+        programme,
+        lineupsAction));
     } else if (phase === 'live') {
       const last = (data?.timeline ?? []).filter((item) => item.kind !== 'break').at(-1);
       const event = last ? `${last.minute} ${last.kind === 'goal' ? 'Goal' : last.kind === 'sub' ? 'Sub' : last.kind === 'red' ? 'Red card' : 'Yellow card'}: ${last.player}${last.kind === 'sub' ? ` for ${last.off}` : ''} (${match[last.side]?.name || ''})` : '';
@@ -9687,7 +9688,8 @@ function matchdayHeroItem(phase) {
       parts.push(el('div', { class: 'hero-buttons' },
         md.broadcast ? mdButton('Watch', 'play', mdWatch, true) : null,
         mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast),
-        lineupsAction ? el('span', { class: 'hero-button-pair' }, centre, lineupsAction) : centre));
+        centre,
+        lineupsAction));
     } else {
       const place = data?.positions?.[mdSide(match)];
       const moved = !isCalledOff(match) && place?.rank ? tableMove(positionBefore(match.id), place.rank) : '';

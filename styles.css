@@ -2955,8 +2955,6 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hero-play:hover { background: #fff; }
 .hero-play svg { fill: currentColor; }
 .hero-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.hero-button-pair { display: inline-flex; flex: none; gap: 10px; }
-.hero-button-pair > button { flex: none; white-space: nowrap; }
 .hero-buttons .hero-play { margin-top: 0; }
 .hero-more { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px 0 16px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .16); color: #fff; font: 700 15px/1 var(--font); cursor: pointer; backdrop-filter: blur(8px); }
 .hero-more:hover { background: rgba(255, 255, 255, .26); }
@@ -3005,7 +3003,7 @@ body.is-phone .hero-title { font-size: clamp(28px, 8vw, 38px); }
 body.is-phone .hero-meta { font-size: 12.5px; }
 body.is-phone .hero-desc { font-size: 13px; -webkit-line-clamp: 2; }
 body.is-phone .hero-play, body.is-phone .hero-more { height: 42px; font-size: 14px; }
-body.is-phone .home-rows { margin-top: -38px; padding-bottom: 24px; }
+body.is-phone .home-rows { margin-top: -38px; padding-top: 0; padding-bottom: 24px; -webkit-mask-image: none; mask-image: none; }
 body.is-phone .home-title, body.is-phone .home-note { padding: 0 16px; }
 body.is-phone .home-title { margin-bottom: 8px; font-size: 12px; }
 body.is-phone .home-note { margin-top: -4px; margin-bottom: 8px; }
@@ -3395,16 +3393,16 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 /* Phone Matchday: one full-width column. The XI becomes a Line-ups button instead of the
    desktop right-hand art, and the facts stack so the chances cannot run under it. */
 @media (max-width: 640px) {
-  body.is-phone .home-hero.is-matchday { height: min(48vh, 420px); min-height: 405px; }
-  body.is-phone .home-hero.is-matchday .hero-info { left: 16px; right: 16px; bottom: 52px; width: auto; gap: 8px; }
+  body.is-phone .home-hero.is-matchday { height: min(46vh, 400px); min-height: 390px; }
+  body.is-phone .home-hero.is-matchday .hero-info { left: 16px; right: 16px; bottom: 44px; width: auto; gap: 8px; }
   body.is-phone .home-hero.is-matchday .md-facts { grid-template-columns: 1fr; gap: 8px; }
   body.is-phone .home-hero.is-matchday .md-facts > * { min-width: 0; }
   body.is-phone .home-hero.is-matchday .md-art .md-xi,
   body.is-phone .home-hero.is-matchday .md-art-crests { display: none; }
   body.is-phone .home-hero.is-matchday .md-chance-labels { font-size: 12px; gap: 6px; }
   body.is-phone .home-hero.is-matchday .md-chance-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  body.is-phone .home-hero.is-matchday .hero-buttons { gap: 8px; }
-  body.is-phone .home-hero.is-matchday .hero-button-pair { gap: 8px; }
+  body.is-phone .home-hero.is-matchday .hero-buttons { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  body.is-phone .home-hero.is-matchday .hero-buttons > button { width: 100%; min-width: 0; padding: 0 8px; justify-content: center; }
   body.is-phone .home-hero.is-matchday .hero-meta-channel { display: block; }
   body.is-phone .home-hero.is-matchday .hero-meta-channel::before { content: none; }
 }
