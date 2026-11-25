@@ -14,7 +14,7 @@ test('the standard layout: every row in order and on; Ten, Top 10 and Trending o
 
 test('a saved layout: its order, The Ten after On now, unknown and repeated ids dropped', () => {
   const layout = homeLayout({ order: ['trending', 'gone', 'continue', 'trending'], hidden: ['onnow', 'gone'], banner: { netflix: true, teams: 'yes' } });
-  assert.deepEqual(layout.rows.map((row) => row.id), ['trending', 'continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix']);
+  assert.deepEqual(layout.rows.map((row) => row.id), ['trending', 'continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trailers']);
   assert.equal(layout.rows.find((row) => row.id === 'onnow').on, false);
   assert.equal(layout.banner.netflix, true);
   assert.equal(layout.banner.teams, true);
@@ -25,9 +25,9 @@ test('a saved layout: its order, The Ten after On now, unknown and repeated ids 
 test('moving, hiding and the banner', () => {
   let layout = homeLayout(null);
   layout = moveRow(layout, 'trending', -1);
-  assert.deepEqual(layout.rows.slice(-2).map((row) => row.id), ['trending', 'netflix']);
+  assert.deepEqual(layout.rows.slice(-2).map((row) => row.id), ['netflix', 'trailers']);
   assert.equal(moveRow(layout, 'continue', -1), layout);
-  assert.equal(moveRow(layout, 'netflix', 1), layout);
+  assert.equal(moveRow(layout, 'trailers', 1), layout);
   layout = setRow(layout, 'continue', false);
   assert.equal(bannerShows(layout, 'continue'), false);
   assert.equal(bannerShows(layout, 'teams'), true);
@@ -54,8 +54,8 @@ test('a daypart orders only the rows that are switched on', () => {
   const layout = homeLayout({ order: ['ten', 'continue'], hidden: ['teams'] });
   const visible = layout.rows.filter((row) => row.on);
   const prime = daypartFor(new Date(2026, 10, 24, 20));
-  assert.deepEqual(daypartOrder(prime, visible).map((row) => row.id), ['onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'recent']);
+  assert.deepEqual(daypartOrder(prime, visible).map((row) => row.id), ['onnow', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'continue', 'recent']);
   const all = homeLayout(null).rows.filter((row) => row.on);
-  assert.deepEqual(daypartOrder(prime, all).map((row) => row.id), ['teams', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'recent']);
-  assert.deepEqual(daypartOrder(daypartFor(new Date(2026, 10, 24, 8)), all).map((row) => row.id), ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'recent']);
+  assert.deepEqual(daypartOrder(prime, all).map((row) => row.id), ['teams', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'continue', 'recent']);
+  assert.deepEqual(daypartOrder(daypartFor(new Date(2026, 10, 24, 8)), all).map((row) => row.id), ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'recent']);
 });

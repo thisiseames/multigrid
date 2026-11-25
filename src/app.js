@@ -6476,7 +6476,7 @@ async function drawHome() {
   heroItems = cont.slice(0, 3);
   if (heroItems.length && !heroKey) showHero(heroItems[0]);
 
-  const [sections, , episodes, , , top, catalog] = await Promise.all([
+  const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -6484,6 +6484,8 @@ async function drawHome() {
     loadMatchdayReactions().catch(() => null),
     loadJob('top10.json'),
     loadJob('catalog.json'),
+    loadJob('movies.json'),
+    loadJob('shows.json'),
   ]);
   if (asked !== homeAsked) return;
   // Matchday: today's game for your team, from the same schedules.
@@ -6567,6 +6569,30 @@ async function drawHome() {
   const netflixTop = chartRow('netflix', 'Top 10 on Netflix');
   const trendingTop = chartRow('trending', 'Trending in Canada');
 
+  // Trending trailers: this week's film and series trailers, played in a tile.
+  const trailerWhen = (date) => {
+    const at = Date.parse(`${date}T12:00:00`);
+    if (!Number.isFinite(at)) return '';
+    return `${at <= now ? 'Released' : 'Releases'} ${monthDay.format(new Date(at))}`;
+  };
+  const trailerCard = (title, trailer, meta, key) => withArt({
+    key, label: 'Trailer', title, meta, cardMeta: meta,
+    backdrop: `https://i.ytimg.com/vi/${encodeURIComponent(trailer)}/mqdefault.jpg`,
+    art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: 'Trailer' }), el('span', { class: 'title-card-name', textContent: title })),
+    playLabel: 'Play trailer',
+    play: () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`),
+  }, title);
+  const trailerTop = [
+    ...(movieJob?.items ?? []).filter((movie) => /^[\w-]{11}$/.test(movie.trailer || '')).map((movie) => ({
+      date: Date.parse(`${movie.date}T12:00:00`) || 0,
+      item: trailerCard(movie.title, movie.trailer, [movie.kind === 'cinema' ? 'In cinemas' : movie.service || 'Streaming', trailerWhen(movie.date)].filter(Boolean).join(' · '), `tr:movie:${movie.trailer}`),
+    })),
+    ...(showJob?.items ?? []).filter((show) => /^[\w-]{11}$/.test(show.trailer || '')).map((show) => ({
+      date: Date.parse(`${show.date}T12:00:00`) || 0,
+      item: trailerCard(show.name, show.trailer, [show.service, show.season ? `Season ${show.season}` : 'New series', trailerWhen(show.date)].filter(Boolean).join(' · '), `tr:show:${show.trailer}`),
+    })),
+  ].sort((a, b) => a.date - b.date).slice(0, 16).map(({ item }) => item);
+
   // The Multigrid Ten: local taste, the public catalogue, and Atlantic as the way in.
   const catalogTitles = Array.isArray(catalog?.titles) ? catalog.titles : [];
   const tenTaste = catalogFresh(catalog?.updated)
@@ -6605,7 +6631,7 @@ async function drawHome() {
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
   // The owner's order and choice of rows (Edit home); Matchday always leads.
-  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop };
+  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop, trailers: trailerTop };
   const visibleRows = layout.rows.filter((row) => row.on);
   let previewRows = preview?.rows;
   if (preview?.id === 'morning' && weekend) previewRows = ['teams', 'fresh', 'continue', 'onnow', 'ten', 'netflix', 'trending', 'recent'];

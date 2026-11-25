@@ -13,28 +13,29 @@ export const HOME_ROWS = [
   { id: 'ten', title: 'The Multigrid Ten' },
   { id: 'netflix', title: 'Top 10 on Netflix · Canada' },
   { id: 'trending', title: 'Trending in Canada' },
+  { id: 'trailers', title: 'Trending trailers' },
 ];
 
 /** The four home editions. Times are local; late wraps past midnight. */
 export const DAYPARTS = [
   {
     id: 'morning', label: 'Morning edition', from: 5, to: 11,
-    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'recent'],
+    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'recent'],
     hero: ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'],
   },
   {
     id: 'afternoon', label: 'Afternoon edition', from: 11, to: 17,
-    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', 'recent'],
+    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', 'trailers', 'recent'],
     hero: ['teamsLive', 'onnow', 'continue', 'fresh', 'teamsPost', 'ten', 'netflix', 'trending'],
   },
   {
     id: 'prime', label: 'Prime time', from: 17, to: 23,
-    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'recent'],
+    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'continue', 'recent'],
     hero: ['teamsLive', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'teamsPost'],
   },
   {
     id: 'late', label: 'After hours', from: 23, to: 5,
-    rows: ['continue', 'ten', 'netflix', 'trending', 'fresh', 'onnow', 'teams', 'recent'],
+    rows: ['continue', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'onnow', 'teams', 'recent'],
     hero: ['continue', 'ten', 'netflix', 'trending', 'fresh', 'onnow', 'teamsLive', 'teamsPost'],
   },
 ];
