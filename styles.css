@@ -182,6 +182,8 @@ body.is-phone .sports-switch { display: none; }
 .live-row .reels-text { padding-right: 2px; }
 .live-row-art { overflow: hidden; padding: 0; }
 .live-row-art img { width: 100%; height: 100%; object-fit: cover; }
+.tiktok-row-art { overflow: hidden; padding: 0; }
+.tiktok-row-art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .live-add-form { display: flex; gap: 6px; }
 .live-add-form input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; }
 .live-add-form input:focus { outline: none; border-color: var(--accent); }

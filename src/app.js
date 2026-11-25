@@ -4484,6 +4484,7 @@ function tiktokUsernameFrom(value) {
 }
 
 let tiktokMenuFeedsAsked = false;
+let tiktokAvatarObserver = null;
 
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
@@ -12420,17 +12421,22 @@ function buildTikTokMenu() {
     });
   }
   const list = [...accounts.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
-  const row = (account) => el('li', {}, el('button', {
-    type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
-    on: {
-      click() {
-        closePopovers();
-        addStream(account.input, { mode: 'add' });
+  const artJobs = new Map();
+  const row = (account) => {
+    const art = el('span', { class: 'reels-icon tiktok-row-art' }, icon('music', 18));
+    artJobs.set(art, account.username);
+    return el('li', {}, el('button', {
+      type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
+      on: {
+        click() {
+          closePopovers();
+          addStream(account.input, { mode: 'add' });
+        },
       },
     },
-  },
-  el('span', { class: 'reels-icon' }, icon('music', 18)),
-  el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))));
+    art,
+    el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))));
+  };
   const input = el('input', {
     id: 'tiktok-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
     placeholder: '@username or TikTok link', aria: { label: 'TikTok username or link' },
@@ -12469,6 +12475,35 @@ function buildTikTokMenu() {
       ? el('ul', { class: 'reels-list' }, ...list.map(row))
       : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' }),
     el('div', { class: 'reels-foot' }, form, error));
+  tiktokAvatarObserver?.disconnect();
+  tiktokAvatarObserver = null;
+  const shownList = menu.querySelector('.reels-list');
+  if (shownList && artJobs.size) {
+    const loadAvatar = (art, username) => {
+      avatarFor('tiktok', username).then((url) => {
+        if (!url || !art.isConnected) return;
+        const img = el('img', { src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+        img.addEventListener('load', () => { if (art.isConnected) art.replaceChildren(img); }, { once: true });
+        img.addEventListener('error', () => forgetAvatar('tiktok', username), { once: true });
+      }).catch(() => {});
+    };
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const art = entry.target;
+          const username = artJobs.get(art);
+          if (!username) continue;
+          observer.unobserve(art);
+          loadAvatar(art, username);
+        }
+      }, { root: shownList, rootMargin: '160px' });
+      for (const art of artJobs.keys()) observer.observe(art);
+      tiktokAvatarObserver = observer;
+    } else {
+      for (const [art, username] of artJobs) loadAvatar(art, username);
+    }
+  }
   if (!tiktokMenuFeedsAsked) {
     tiktokMenuFeedsAsked = true;
     loadTikTokFeeds().then(() => {
