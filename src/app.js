@@ -6263,6 +6263,8 @@ const channelPictureFor = (name) => CHANNEL_PICTURES.find(([pattern]) => pattern
 // Services whose own mark is clearer than a favicon. "picture" fills the card; "logo" sits on a
 // dark or light tile, because a black wordmark would disappear on the dark one.
 const BRAND_PICTURES = [
+  // Bluesky's app icon, so its dock tile reads at a glance.
+  [/^bluesky(?:\s+app)?$/i, { url: 'assets/bluesky-logo.svg', fit: 'picture', domain: 'bsky.app' }],
   // Atlantic (atlantic.bz): its own "A" mark on its navy, made to fill the card. Exactly "Atlantic", so Sky Atlantic isn't caught.
   [/^atlantic$/i, { url: 'assets/atlantic-card.svg', fit: 'picture', domain: 'atlantic.bz' }],
   // TimStreams (tim-streams.com): its own play icon and wordmark, made to fill the card. The "NBA on Prime | TimStreams" channel keeps its own picture.
