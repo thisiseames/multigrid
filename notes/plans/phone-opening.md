@@ -1,6 +1,6 @@
 # Phone opening: MULTIGRID logo + sound (plan 2)
 
-**Status:** built locally, not live yet.
+**Status:** DONE, live Nov 25.
 
 ## Running cost
 
@@ -41,7 +41,7 @@ sound is the existing generated Web Audio sting; the background is the plain col
 - Reduce Motion: no animation; logo static; short hold and fade.
 - Desktop 1440 px: no phone splash; existing layout unaffected.
 - 402 tests pass.
-- Live checks still to run.
+- Live checks: phone 390 px shows the wordmark first, then the plain collage and app; desktop 1440 px has no phone splash; the menu shows both switches.
 
 ## Steps
 
@@ -50,8 +50,8 @@ sound is the existing generated Web Audio sting; the background is the plain col
 - [x] Logo/sound switches in the MULTIGRID menu.
 - [x] Start-up timer and early logo-off check; CSP hash.
 - [x] Local phone, desktop, Reduce Motion and switch checks.
-- [ ] Commit, push, check live at 390 px and 1440 px.
-- [ ] Mark DONE, live date.
+- [x] Commit, push, check live at 390 px and 1440 px.
+- [x] Mark DONE, live Nov 25.
 
 ## Gotchas
 
