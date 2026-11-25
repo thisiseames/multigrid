@@ -11,6 +11,7 @@
 // Problems are reported through onError(message). Only a parsed source's address is ever
 // used: nothing pasted by the user reaches the page as HTML.
 
+import { loadBlueskyVideos } from './bluesky.js';
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { zliveEmbed } from './zlive.js';
@@ -1147,6 +1148,198 @@ function tiktokLivePlayer(source, options) {
   };
 }
 
+/* ---------- Bluesky trending videos ---------- */
+
+const shortCount = (value) => {
+  const n = Number(value) || 0;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+};
+
+function blueskyVideoPlayer(source, options) {
+  const { muted, volume, autoplay, onError, onPlayState } = options;
+  let videos = [];
+  let index = 0;
+  let hls = null;
+  let stopped = false;
+  let started = false;
+
+  const video = document.createElement('video');
+  video.className = 'bsky-video';
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.muted = muted;
+  if (muted) video.setAttribute('muted', '');
+  video.volume = volume / 100;
+  if (autoplay) video.setAttribute('autoplay', '');
+  video.addEventListener('play', () => onPlayState?.(false));
+  video.addEventListener('pause', () => onPlayState?.(true));
+  video.addEventListener('playing', () => {
+    if (stopped) return;
+    status.hidden = true;
+    overlay.hidden = false;
+  });
+  video.addEventListener('ended', () => {
+    if (!stopped && videos.length) show(index + 1);
+  });
+
+  const avatar = el('img', { class: 'bsky-avatar', alt: '', referrerPolicy: 'no-referrer' });
+  avatar.addEventListener('error', () => { avatar.hidden = true; });
+  const name = el('b', { class: 'bsky-name', textContent: '' });
+  const handle = el('small', { class: 'bsky-handle', textContent: '' });
+  const text = el('p', { class: 'bsky-text', textContent: '' });
+  const likes = el('span', { class: 'bsky-stat' }, icon('star', 12), el('span', { textContent: '' }));
+  const reposts = el('span', { class: 'bsky-stat' }, icon('reload', 12), el('span', { textContent: '' }));
+  const stats = el('div', { class: 'bsky-stats' }, likes, reposts);
+  const top = el('div', { class: 'bsky-top' },
+    el('img', { class: 'bsky-mark', src: 'assets/bluesky-logo.svg', alt: '' }),
+    el('span', { class: 'bsky-brand', textContent: 'Bluesky' }),
+    el('span', { class: 'bsky-tag', textContent: 'Trending videos' }));
+  const overlay = el('div', { class: 'bsky-overlay' },
+    top,
+    el('div', { class: 'bsky-bottom' },
+      el('div', { class: 'bsky-author' }, avatar, el('span', { class: 'bsky-person' }, name, handle)),
+      text,
+      stats));
+  const statusKicker = el('span', { class: 'live-status-kicker', textContent: 'BLUESKY' });
+  const statusTitle = el('b', { class: 'live-status-title', textContent: 'Trending videos' });
+  const statusText = el('p', { class: 'live-status-text', textContent: 'Loading videos…' });
+  const retry = el('button', { type: 'button', class: 'live-retry', textContent: 'Try again', hidden: true });
+  const status = el('div', { class: 'live-status bsky-status' }, statusKicker, statusTitle, statusText, retry);
+  const box = el('div', { class: 'bsky-feed' }, video, overlay, status);
+  const counter = el('span', { class: 'feed-count', textContent: '' });
+  overlay.hidden = true;
+  avatar.hidden = true;
+
+  const setStatus = (title, message, canRetry = false) => {
+    status.hidden = false;
+    overlay.hidden = true;
+    statusTitle.textContent = title;
+    statusText.textContent = message;
+    retry.hidden = !canRetry;
+  };
+
+  const cleanup = () => {
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  };
+
+  const fill = (item) => {
+    avatar.hidden = !item.avatar;
+    if (item.avatar) avatar.src = item.avatar;
+    name.textContent = item.name || `@${item.handle}`;
+    handle.textContent = item.name && item.handle ? `@${item.handle}` : 'Bluesky';
+    text.textContent = item.text || '';
+    likes.lastElementChild.textContent = shortCount(item.likes);
+    reposts.lastElementChild.textContent = shortCount(item.reposts);
+    counter.textContent = `${index + 1}/${videos.length}`;
+  };
+
+  const show = (at) => {
+    if (stopped || !videos.length) return;
+    index = (at + videos.length) % videos.length;
+    const item = videos[index];
+    cleanup();
+    fill(item);
+    setStatus('Bluesky', 'Loading video…');
+    const play = async () => {
+      try {
+        await loadScript('vendor/hls.min.js');
+        if (stopped) return;
+        const Hls = window.Hls;
+        if (Hls?.isSupported()) {
+          hls = new Hls({ lowLatencyMode: false });
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (!data?.fatal || stopped) return;
+            setStatus('Bluesky', 'This video didn’t play. Try Next.', false);
+          });
+          hls.loadSource(item.playlist);
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = item.playlist;
+        } else {
+          throw new Error('HLS is not supported');
+        }
+        if (autoplay) video.play().catch(() => {});
+      } catch {
+        if (!stopped) setStatus('Bluesky', 'This video didn’t play. Try Next.', false);
+      }
+    };
+    play();
+  };
+
+  const begin = async () => {
+    if (stopped) return;
+    setStatus('Bluesky', 'Loading trending videos…');
+    try {
+      const found = await loadBlueskyVideos();
+      if (stopped) return;
+      if (!found.length) throw new Error('No videos');
+      videos = found;
+      show(0);
+    } catch {
+      if (!stopped) setStatus('Bluesky', 'Trending videos didn’t load. Try again.', true);
+    }
+  };
+  retry.addEventListener('click', () => { if (!started) return; begin(); });
+
+  const stripButtons = [
+    iconButton('back', 'Previous Bluesky video', () => show(index - 1)),
+    counter,
+    iconButton('next', 'Next Bluesky video', () => show(index + 1)),
+  ];
+
+  return {
+    el: box,
+    canMute: true,
+    canVolume: levelWorks,
+    canPause: true,
+    canSeek: true,
+    stripButtons,
+    info: () => {
+      const item = videos[index];
+      return {
+        live: false,
+        title: item?.text?.slice(0, 100) || (item?.handle ? `@${item.handle}` : 'Bluesky'),
+        author: item?.handle ? `Bluesky · @${item.handle}` : 'Bluesky',
+        at: video.currentTime || 0,
+        length: Number.isFinite(video.duration) ? video.duration : 0,
+      };
+    },
+    start() {
+      if (started) return;
+      started = true;
+      begin();
+    },
+    setPaused(next) {
+      if (next) video.pause();
+      else video.play().catch(() => {});
+    },
+    setMuted(next) {
+      video.muted = next;
+    },
+    setVolume(next) {
+      video.volume = next / 100;
+    },
+    seekBy(seconds) {
+      if (!Number.isFinite(video.duration)) return;
+      video.currentTime = Math.min(video.duration, Math.max(0, video.currentTime + seconds));
+    },
+    destroy() {
+      stopped = true;
+      cleanup();
+      video.removeAttribute('src');
+      video.load();
+    },
+  };
+}
+
 function tiktokPlayer(source, options) {
   if (source.tiktok.profile) return tiktokFeedPlayer(source, options);
   const { muted, volume, autoplay, env, onError } = options;
@@ -1855,6 +2048,7 @@ const PLAYERS = {
   kick: addressMutedPlayer,
   tiktok: tiktokPlayer,
   tiktoklive: tiktokLivePlayer,
+  blueskyvideos: blueskyVideoPlayer,
   x: xPlayer,
   file: filePlayer,
   playlist: playlistPlayer,

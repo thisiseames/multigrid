@@ -230,7 +230,8 @@ const isVerticalFeed = (tile) => {
   if (tile.reels === true) return true;
   if (!tile.input) return false;
   const source = parseSource(tile.input);
-  return source.kind === 'tiktoklive' || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
+  return source.kind === 'tiktoklive' || source.kind === 'blueskyvideos'
+    || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
 };
 
 /** The stream that belongs in the phone column, worked out fresh from its link. */

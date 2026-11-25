@@ -376,6 +376,16 @@ function parseKick(url, host, input) {
 export function parseSource(raw) {
   const input = String(raw ?? '').trim();
   if (!input) return fail(input, 'Paste a link or iframe code.');
+  if (/^(?:bluesky|bsky):/i.test(input)) {
+    const topic = input.slice(input.indexOf(':') + 1).trim().toLocaleLowerCase();
+    if (topic !== 'trending' && topic !== 'videos') return fail(input, 'Only Bluesky trend videos can be opened from that address.');
+    return {
+      ok: true, input, kind: 'blueskyvideos',
+      label: 'Bluesky · Trending videos',
+      openUrl: 'https://bsky.app/',
+      bluesky: { trending: true },
+    };
+  }
   if (input.startsWith('playlist:')) return parsePlaylist(input);
   if (/^tiktoklive:/i.test(input)) {
     const name = input.slice('tiktoklive:'.length).trim().replace(/^@/, '');

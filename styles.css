@@ -1209,6 +1209,30 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .live-status-text { max-width: 250px; margin: 0; color: var(--text-2); font-size: 11.5px; line-height: 1.5; }
 .live-retry { min-height: 30px; margin-top: 4px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--raised); color: var(--text); font-size: 12px; }
 .live-retry:hover { background: var(--hover); }
+.bsky-feed { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #000; }
+.bsky-video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.bsky-overlay {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 11px 12px 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, 0) 26%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .78));
+}
+.bsky-overlay[hidden] { display: none; }
+.bsky-top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.bsky-mark { flex: none; width: 19px; height: 19px; border-radius: 5px; }
+.bsky-brand { color: #fff; font-size: 12.5px; font-weight: 700; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.bsky-tag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 255, 255, .62); font-size: 10.5px; }
+.bsky-bottom { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.bsky-author { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bsky-avatar { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255, 255, 255, .35); }
+.bsky-person { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.bsky-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-size: 12.5px; font-weight: 650; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.bsky-handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 255, 255, .7); font-size: 10.5px; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.bsky-text { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; color: rgba(255, 255, 255, .94); font-size: 12px; line-height: 1.38; text-shadow: 0 1px 4px rgba(0, 0, 0, .85); }
+.bsky-stats { display: flex; align-items: center; gap: 14px; color: rgba(255, 255, 255, .78); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.bsky-stat { display: inline-flex; align-items: center; gap: 4px; }
+.bsky-status .live-status-kicker { color: #1185fe; }
+.grid.stacked .tile-body:has(.bsky-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .feed-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 14px; background: #000; color: var(--text-2); font: 13px system-ui, sans-serif; text-align: center; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
@@ -1579,7 +1603,7 @@ body.is-phone #add-button.add-button { border-color: transparent; }
 .addp-top .addp-x-row { margin: 0; }
 .addp-x-col { min-width: 0; display: flex; flex-direction: column; }
 .addp-top .addp-x-list { margin: 4px 0 0; }
-.addp-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 16px 0; }
+.addp-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 10px 16px 0; }
 .addp-actions .addp-file { margin: 0; }
 @media (max-width: 980px) { .addp-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .addp-top, .addp-actions { grid-template-columns: 1fr; } }

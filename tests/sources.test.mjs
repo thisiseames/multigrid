@@ -156,6 +156,16 @@ test('tiktok: video links become the official player', () => {
   assert.equal(parseSource('https://www.tiktok.com/@scout2015/video/6718335390845095173').label, 'TikTok · @scout2015');
 });
 
+test('Bluesky trending opens a native video feed', () => {
+  for (const input of ['bluesky:trending', 'bsky:trending', 'bluesky:videos']) {
+    const source = parseSource(input);
+    assert.equal(source.ok, true, input);
+    assert.equal(source.kind, 'blueskyvideos', input);
+    assert.equal(source.bluesky.trending, true, input);
+  }
+  assert.equal(parseSource('bluesky:something-else').ok, false);
+});
+
 test('tiktok live links become a native live source', () => {
   for (const input of [
     'https://www.tiktok.com/@typicalgamer/live',
