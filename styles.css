@@ -157,11 +157,18 @@ body.is-phone .sports-switch { display: none; }
 .reels-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: min(50vh, 360px); overflow-y: auto; }
 .reels-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px; border-radius: 9px; color: var(--text); text-align: left; }
 .reels-row:hover { background: var(--hover); }
+.reels-item { border-radius: 9px; }
+.reels-item .reels-row { flex: 1; width: auto; min-width: 0; }
+.reels-item .row-actions { opacity: 1; }
+.reels-item .row-actions button { opacity: .55; }
+.reels-item .row-actions button:hover { opacity: 1; }
+.reels-item .row-actions button.is-danger:hover { color: var(--danger); }
+.reels-item .row-actions button:disabled { opacity: .2; cursor: default; }
+.reels-item .row-actions button:disabled:hover { background: none; color: var(--text-2); }
 .reels-icon { flex: none; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: #1f1f23; color: var(--text-2); }
 .reels-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .reels-text b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reels-text small { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.reels-chev { flex: none; display: inline-flex; color: var(--text-2); opacity: .7; }
 .reels-empty { margin: 6px 6px 8px; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
 .reels-foot { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
 .reels-add { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; }

@@ -11,7 +11,7 @@ globalThis.localStorage = {
 
 const {
   deleteFolder, favoriteName, favoriteSources, findSaved, folderForCategory, isFolderClosed, listFavorites, listFolders,
-  openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder,
+  moveFavorite, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder,
   saveCurrent, saveFavorite, saveNamed, setFolderClosed,
 } = await import('../src/storage.js');
 
@@ -30,6 +30,19 @@ test('new favorites go first, and editing one keeps its place', () => {
   saveFavorite('a', 'A2', 'News');
   assert.deepEqual(listFavorites().map((item) => item.name), ['B', 'A2']);
   assert.equal(listFavorites()[1].group, 'News');
+});
+
+test('a reel moves inside its folder without disturbing the other folders', () => {
+  saveFavorite('x', 'X', 'News');
+  saveFavorite('y', 'Y', 'Sports');
+  saveFavorite('a', 'A', 'REELS');
+  saveFavorite('b', 'B', 'reels');
+  assert.deepEqual(listFavorites().map((item) => item.input), ['b', 'a', 'y', 'x']);
+  assert.equal(moveFavorite('b', 1, 'Reels'), true);
+  assert.deepEqual(listFavorites().map((item) => item.input), ['a', 'b', 'y', 'x']);
+  assert.equal(moveFavorite('a', -1, 'REELS'), false);
+  assert.equal(moveFavorite('b', 1, 'REELS'), false);
+  assert.equal(moveFavorite('x', 1, 'News'), false);
 });
 
 test('folders are A to Z, and news and News are the same folder', () => {

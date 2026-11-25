@@ -54,7 +54,7 @@ import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpi
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
-  deleteFolder, loadCurrent, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
+  deleteFolder, loadCurrent, moveFavorite, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
   saveCurrent, saveFavorite, saveNamed, setFolderClosed, setMixerOpen, transferableFavorites, unpackFavorites, onSyncedChange, replaceFavorites, replaceSynced, syncedLists,
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
@@ -4327,9 +4327,9 @@ function refreshFavorites() {
 const REELS_FOLDER = 'REELS';
 const isReelsFolder = (folder) => String(folder || '').trim().toLocaleLowerCase() === 'reels';
 const isWebsite = (input) => parseSource(input).kind === 'iframe';
+/** REELS favorites in the order they were arranged, not alphabetical. */
 const reelFavorites = () => listFavorites()
-  .filter((item) => isReelsFolder(item.group) && isWebsite(item.input))
-  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  .filter((item) => isReelsFolder(item.group) && isWebsite(item.input));
 
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
@@ -12090,24 +12090,71 @@ function buildMoreMenu() {
   ].filter(Boolean));
 }
 
-function buildReelsMenu() {
+function buildReelsMenu(focusInput = null) {
   const menu = $('reels-menu');
+  const opened = !menu.hidden;
+  const scroll = opened ? (menu.querySelector('.reels-list')?.scrollTop ?? 0) : 0;
   const reels = reelFavorites();
   const host = (input) => {
     try { return new URL(input).hostname.replace(/^www\./i, ''); } catch { return 'Website'; }
   };
-  const row = (item) => el('li', {}, el('button', {
-    type: 'button', class: 'reels-row', title: `Open ${item.name} as a reel`,
-    on: {
-      click() {
-        closePopovers();
-        addStream(item.input, { mode: 'add', reels: true });
+  const action = (name, label, disabled, onClick, danger = false) => {
+    const button = el('button', {
+      type: 'button', class: `reels-action${danger ? ' is-danger' : ''}`,
+      title: label, aria: { label },
+      on: { click: onClick },
+    }, icon(name, 15));
+    button.disabled = disabled;
+    return button;
+  };
+  const move = (item, delta) => {
+    if (!moveFavorite(item.input, delta, item.group)) {
+      toast(STORAGE_FULL);
+      return;
+    }
+    refreshFavorites();
+    buildReelsMenu(item.input);
+  };
+  const remove = (item) => {
+    const before = listFavorites();
+    const at = reels.findIndex((candidate) => candidate.input === item.input);
+    if (!removeFavorite(item.input)) {
+      toast(STORAGE_FULL);
+      return;
+    }
+    refreshFavorites();
+    const left = reelFavorites();
+    const next = left[Math.min(at, left.length - 1)];
+    buildReelsMenu(next?.input ?? null);
+    toast(`Removed ${item.name} from Reels.`, {
+      label: 'Undo',
+      run() {
+        if (!replaceFavorites(before)) toast(STORAGE_FULL);
+        refreshFavorites();
+        buildReelsMenu(item.input);
+      },
+    });
+  };
+  const row = (item, index) => {
+    const main = el('button', {
+      type: 'button', class: 'reels-row', title: `Open ${item.name} as a reel`,
+      on: {
+        click() {
+          closePopovers();
+          addStream(item.input, { mode: 'add', reels: true });
+        },
       },
     },
-  },
-  el('span', { class: 'reels-icon' }, icon('phone', 18)),
-  el('span', { class: 'reels-text' }, el('b', { textContent: item.name }), el('small', { textContent: host(item.input) })),
-  el('span', { class: 'reels-chev' }, icon('next', 14))));
+    el('span', { class: 'reels-icon' }, icon('phone', 18)),
+    el('span', { class: 'reels-text' }, el('b', { textContent: item.name }), el('small', { textContent: host(item.input) })));
+    main.dataset.reelInput = item.input;
+    return el('li', { class: 'saved-row reels-item' },
+      main,
+      el('span', { class: 'row-actions reels-actions' },
+        action('up', `Move ${item.name} up`, index === 0, () => move(item, -1)),
+        action('down', `Move ${item.name} down`, index === reels.length - 1, () => move(item, 1)),
+        action('trash', `Remove ${item.name} from Reels`, false, () => remove(item), true)));
+  };
   menu.replaceChildren(
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'Reels' }),
@@ -12120,6 +12167,13 @@ function buildReelsMenu() {
         type: 'button', class: 'reels-add',
         on: { click() { closePopovers(); $('add-button').click(); } },
       }, icon('plus', 15), el('span', { textContent: 'Add a reel' }))));
+  const list = menu.querySelector('.reels-list');
+  if (list) list.scrollTop = scroll;
+  if (focusInput) {
+    const target = [...menu.querySelectorAll('.reels-row')]
+      .find((button) => button.dataset.reelInput === focusInput);
+    (target ?? menu.querySelector('.reels-add'))?.focus();
+  }
 }
 
 $('reels-button').addEventListener('click', () => togglePopover($('reels-button'), $('reels-menu'), buildReelsMenu));

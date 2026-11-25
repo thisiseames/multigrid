@@ -258,6 +258,29 @@ export function removeFavorite(input) {
   return write(FAVORITES_KEY, listFavorites().filter((item) => item.input !== input));
 }
 
+/**
+ * Moves a favorite one place up or down inside its folder, leaving every other
+ * favorite's order alone. Folder names match without regard to capitals.
+ */
+export function moveFavorite(input, delta, folder = null) {
+  if (delta !== 1 && delta !== -1) return false;
+  const list = listFavorites();
+  const at = list.findIndex((item) => item.input === input);
+  if (at < 0) return false;
+  const inFolder = (item) => folder === null || sameFolder(item.group, folder);
+  const peers = list.filter(inFolder);
+  const from = peers.findIndex((item) => item.input === input);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= peers.length) return false;
+  const anchor = peers[to].input;
+  const [moved] = list.splice(at, 1);
+  let target = list.findIndex((item) => item.input === anchor);
+  if (target < 0) return false;
+  if (delta === 1) target += 1;
+  list.splice(target, 0, moved);
+  return write(FAVORITES_KEY, list);
+}
+
 /** Puts the whole list back as it was (Tidy up's Undo). */
 export const replaceFavorites = (list) => write(FAVORITES_KEY, Array.isArray(list) ? list : []);
 

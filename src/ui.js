@@ -10,6 +10,8 @@ const ICON_PATHS = {
   upload: '<path d="M8 10.5V3M5 5.8 8 3l3 2.8M3 10v3h10v-3"/>',
   download: '<path d="M8 3v7.5M5 7.7 8 10.5l3-2.8M3 10v3h10v-3"/>',
   chevron: '<path d="m5 6.5 3 3 3-3"/>',
+  up: '<path d="M8 13V3.2M4.2 7 8 3.2 11.8 7"/>',
+  down: '<path d="M8 3v9.8M4.2 9 8 12.8 11.8 9"/>',
   help: '<circle cx="8" cy="8" r="5.75"/><path d="M6.3 6.4a1.75 1.75 0 1 1 2.6 1.5c-.6.35-.9.7-.9 1.35"/><path d="M8 11.3v.01"/>',
   expand: '<path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/>',
   collapse: '<path d="M6 3v3H3M13 6h-3V3M10 13v-3h3M3 10h3v3"/>',
