@@ -1,5 +1,5 @@
 {
- "updated": 1795618235362,
+ "updated": 1795619812058,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -311,29 +311,6 @@
    "sources": "feeds",
    "videos": []
   },
-  "401878754": {
-   "league": "Premier League",
-   "title": "Spurs 2–0 Ipswich",
-   "start": 1795273200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "RG3wzuJQFlc",
-     "title": "Tottenham Hotspur vs. Ipswich Town | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    },
-    {
-     "id": "-f5rhR4zQiY",
-     "title": "Williams-Barnett makes history! | Tottenham 2-0 Ipswich | Premier League Highlights",
-     "rank": 2.5
-    },
-    {
-     "id": "OtTIWakAjTQ",
-     "title": "HIGHLIGHTS | SPURS 2 TOWN 0",
-     "rank": 1.5
-    }
-   ]
-  },
   "401878755": {
    "league": "Premier League",
    "title": "Liverpool 4–0 Man Utd",
@@ -344,29 +321,6 @@
      "id": "9DFQV3X392w",
      "title": "Liverpool FC vs. Manchester United | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
      "rank": 3.5
-    }
-   ]
-  },
-  "401878756": {
-   "league": "Premier League",
-   "title": "Aston Villa 0–0 Sunderland",
-   "start": 1795273200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "nmsB23rokTw",
-     "title": "Aston Villa vs. Sunderland AFC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    },
-    {
-     "id": "vwjhCaMIiMc",
-     "title": "Villa 0-0 Sunderland | Premier League Highlights",
-     "rank": 2.5
-    },
-    {
-     "id": "lcMsRsDOLlM",
-     "title": "A Hard-Fought Point at Villa Park | Aston Villa 0-0 Sunderland AFC | Premier League Highlights",
-     "rank": 2
     }
    ]
   },
@@ -396,52 +350,6 @@
     }
    ]
   },
-  "401879235": {
-   "league": "Premier League",
-   "title": "Coventry 3–2 C Palace",
-   "start": 1795273200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "s0904zPUFk0",
-     "title": "Coventry City vs. Crystal Palace | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    },
-    {
-     "id": "oHg7rTSQo2k",
-     "title": "Match Highlights | Coventry City 3-2 Crystal Palace | Premier League",
-     "rank": 2
-    },
-    {
-     "id": "9MFB-EAPAyw",
-     "title": "WSL Highlights | London City Lionesses 6-2 Palace",
-     "rank": 2
-    }
-   ]
-  },
-  "401879236": {
-   "league": "Premier League",
-   "title": "Chelsea 1–4 Leeds",
-   "start": 1795273200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "mMyreibC5lQ",
-     "title": "Chelsea FC vs. Leeds United | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    },
-    {
-     "id": "yD6SLduQ1PA",
-     "title": "Chelsea 1-4 Leeds United | HIGHLIGHTS | Premier League 2026/27",
-     "rank": 2.5
-    },
-    {
-     "id": "7FO9vPbudn4",
-     "title": "Chelsea 1-4 Leeds Utd | HIGHLIGHTS - Extended | Premier League 2026/27",
-     "rank": 2.5
-    }
-   ]
-  },
   "401879237": {
    "league": "Premier League",
    "title": "Brentford 4–0 Everton",
@@ -462,19 +370,6 @@
      "id": "VQq8IoHTYmk",
      "title": "Brentford v Everton | Premier League highlights ▶️",
      "rank": 2
-    }
-   ]
-  },
-  "401879238": {
-   "league": "Premier League",
-   "title": "Bournemouth 2–0 Nottm Forest",
-   "start": 1795273200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "nRJFDq6lIng",
-     "title": "AFC Bournemouth vs. Nottingham Forest | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
     }
    ]
   },
@@ -516,24 +411,6 @@
      "id": "W8InB9bFuNE",
      "title": "HIGHLIGHTS | Real Madrid 2-1 Celta | LaLiga",
      "rank": 2.5
-    }
-   ]
-  },
-  "401882799": {
-   "league": "LaLiga",
-   "title": "Rayo 0–1 Valencia",
-   "start": 1795274100000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "AFtt31mdI68",
-     "title": "RAYO VALLECANO 0 - 1 VALENCIA CF | RESUMEN LALIGA EA SPORTS",
-     "rank": 3.5
-    },
-    {
-     "id": "zvPOAIQqhKQ",
-     "title": "RAYO VALLECANO 0 - 1 VALENCIA CF | RESUMEN DEL PARTIDO DE LA JORNADA 13 DE LALIGA EA SPORTS 2026-27",
-     "rank": 2
     }
    ]
   },
@@ -1396,6 +1273,12 @@
  "club": {
   "360": [
    {
+    "id": "kTOSsJebpaI",
+    "title": "\"Every penny needs to go on helping Poch rebuild the team\" Christian Purslow on Man Utd rebuild",
+    "published": 1795618478000,
+    "source": "Sky Sports News"
+   },
+   {
     "id": "FeEAyav2-48",
     "title": "Time For An Uncomfortable Conversation...",
     "published": 1795608030000,
@@ -1789,12 +1672,6 @@
     "id": "aS0CPT7W65U",
     "title": "Full Match | Man Utd v Derby County | U18s Premier League",
     "published": 1795276164000,
-    "source": "Man Utd"
-   },
-   {
-    "id": "jsTc4pZ8ir8",
-    "title": "EXCLUSIVE: Sir Alex Ferguson's 40th Anniversary Dinner | Behind-The-Scenes Access",
-    "published": 1795273545000,
     "source": "Man Utd"
    }
   ]
