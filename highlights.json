@@ -1,5 +1,5 @@
 {
- "updated": 1795608854454,
+ "updated": 1795610419755,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -379,19 +379,6 @@
     {
      "id": "TFqU_ztB89M",
      "title": "Newcastle United vs. Arsenal FC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401879233": {
-   "league": "Premier League",
-   "title": "Man City 1–1 Fulham",
-   "start": 1795264200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "qGUAbM2K42A",
-     "title": "Manchester City vs. Fulham FC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
      "rank": 3.5
     }
    ]
