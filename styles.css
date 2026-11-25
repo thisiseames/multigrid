@@ -3003,7 +3003,7 @@ body.is-phone .hero-title { font-size: clamp(28px, 8vw, 38px); }
 body.is-phone .hero-meta { font-size: 12.5px; }
 body.is-phone .hero-desc { font-size: 13px; -webkit-line-clamp: 2; }
 body.is-phone .hero-play, body.is-phone .hero-more { height: 42px; font-size: 14px; }
-body.is-phone .home-rows { margin-top: -38px; padding-top: 0; padding-bottom: 24px; -webkit-mask-image: none; mask-image: none; }
+body.is-phone .home-rows { margin-top: -38px; padding-top: 12px; padding-bottom: 24px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px); mask-image: linear-gradient(to bottom, transparent 0, #000 12px); }
 body.is-phone .home-title, body.is-phone .home-note { padding: 0 16px; }
 body.is-phone .home-title { margin-bottom: 8px; font-size: 12px; }
 body.is-phone .home-note { margin-top: -4px; margin-bottom: 8px; }
