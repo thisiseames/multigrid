@@ -1,5 +1,5 @@
 {
- "updated": 1795574562344,
+ "updated": 1795576135140,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -743,58 +743,17 @@
    "sources": "feeds",
    "videos": []
   },
-  "401909312": {
-   "league": "NBA",
-   "title": "Nuggets 133–124 Rockets",
-   "start": 1795230000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "FMHdRbySu54",
-     "title": "ROCKETS AT NUGGETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 20, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "UK02FOWIYI0",
-     "title": "Denver Nuggets vs. Houston Rockets Full Game Highlights 📺",
-     "rank": 2.5
-    },
-    {
-     "id": "ZzZcRlSTb7c",
-     "title": "Nikola Jokić DOMINATED THE THIRD QUARTER | Game Highlights DEN vs. HOU",
-     "rank": 2.5
-    }
-   ]
-  },
-  "401909313": {
-   "league": "NBA",
-   "title": "Lakers 106–104 Kings",
-   "start": 1795230000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "UpC7NWUo0Mg",
-     "title": "KINGS AT LAKERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 20, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "Yg4Vbtko-Sw",
-     "title": "EXTENDED: KINGS at LAKERS | FULL GAME HIGHLIGHTS | November 20, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "cxhBhvHS5u0",
-     "title": "Ottawa Senators vs Los Angeles Kings | NHL Highlights",
-     "rank": 3
-    }
-   ]
-  },
   "401909314": {
    "league": "NBA",
    "title": "Magic 86–104 Pistons",
    "start": 1795564800000,
    "sources": "feeds",
    "videos": [
+    {
+     "id": "K4gN0RJ1Ghs",
+     "title": "PISTONS at MAGIC | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
+     "rank": 3.5
+    },
     {
      "id": "gexTFF5Em9k",
      "title": "POSTGAME HIGHLIGHTS: DETROIT PISTONS VS. ORLANDO MAGIC 11.24.26 PRESENTED BY PLANET FITNESS",
