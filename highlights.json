@@ -1,5 +1,5 @@
 {
- "updated": 1795610419755,
+ "updated": 1795611990370,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -613,19 +613,6 @@
     {
      "id": "Ngrd58fZSVA",
      "title": "FC BARCELONA 3 - 2 VILLARREAL CF | RESUMEN LALIGA EA SPORTS",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401882806": {
-   "league": "LaLiga",
-   "title": "Alavés 3–1 Deportivo",
-   "start": 1795266000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "IYM7UXWv3tE",
-     "title": "DEPORTIVO ALAVÉS 3 - 1 RC DEPORTIVO | RESUMEN LALIGA EA SPORTS",
      "rank": 3.5
     }
    ]
@@ -1868,12 +1855,6 @@
     "title": "Here's My Starting XI For Liverpool vs Manchester United",
     "published": 1795270952000,
     "source": "MinaFootball"
-   },
-   {
-    "id": "FvROm70zqVo",
-    "title": "Mauricio Pochettino's First Session | Inside Training",
-    "published": 1795266385000,
-    "source": "Man Utd"
    }
   ]
  }
