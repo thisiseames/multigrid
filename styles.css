@@ -3305,8 +3305,10 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .md-facts .md-stats { min-width: 220px; gap: 7px; }
 .home-hero.is-matchday .md-title { font-size: clamp(28px, 3vw, 42px); }
 .md-art-crests .crest { width: 130px; height: 130px; }
-.matchday-box .ch-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px 18px; }
+.matchday-box .ch-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; padding: 16px 16px 8px 18px; }
 .matchday-box .ch-head h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.matchday-box .ch-head .md-link { align-self: baseline; }
+.matchday-box .ch-head .icon-button { align-self: center; }
 .md-chance-label, .md-form-place, .md-form-team { white-space: nowrap; }
 @media (max-width: 1180px) {
   .home-hero.is-matchday .hero-info { width: min(620px, 64%); }
