@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blueskyVideo, blueskyVideos } from '../src/bluesky.js';
+import { blueskyTopic, blueskyTopics, blueskyVideo, blueskyVideos } from '../src/bluesky.js';
 
 const post = (overrides = {}) => ({
   uri: 'at://did:plc:example/app.bsky.feed.post/3kabc',
@@ -69,4 +69,54 @@ test('a feed can keep only English videos, drops duplicates and other posts', ()
     'at://did:plc:example/app.bsky.feed.post/3kabc',
     'at://did:plc:example/app.bsky.feed.post/3ksecond',
   ]);
+});
+
+const trend = (overrides = {}) => ({
+  link: '/profile/did:plc:example/feed/3kfeed',
+  description: 'A short explanation of the story.',
+  topic: 'The story',
+  displayName: 'The story',
+  ...overrides,
+});
+
+test('a Bluesky trend becomes a Today row with a public feed link', () => {
+  assert.deepEqual(blueskyTopic(trend()), {
+    name: 'The story',
+    description: 'A short explanation of the story.',
+    url: 'https://bsky.app/profile/did:plc:example/feed/3kfeed',
+  });
+});
+
+test('trends without a usable feed link are dropped', () => {
+  assert.equal(blueskyTopic(trend({ link: 'https://bsky.app/profile/example/feed/3kfeed' })), null);
+  assert.equal(blueskyTopic(trend({ link: '/profile/example' })), null);
+  assert.equal(blueskyTopic(trend({ displayName: '', topic: '' })), null);
+});
+
+test('a trend with no description still shows', () => {
+  assert.deepEqual(blueskyTopic(trend({ description: '' })), {
+    name: 'The story',
+    description: '',
+    url: 'https://bsky.app/profile/did:plc:example/feed/3kfeed',
+  });
+});
+
+test('trends drop duplicates and stop at the five-topic limit', () => {
+  const data = {
+    topics: [
+      trend(),
+      trend(),
+      trend({ displayName: 'Second', link: '/profile/did:plc:example/feed/3ksecond' }),
+      trend({ displayName: 'Bad', link: '/profile/example' }),
+      trend({ displayName: 'Third', link: '/profile/did:plc:example/feed/3kthird' }),
+      trend({ displayName: 'Fourth', link: '/profile/did:plc:example/feed/3kfourth' }),
+      trend({ displayName: 'Fifth', link: '/profile/did:plc:example/feed/3kfifth' }),
+      trend({ displayName: 'Sixth', link: '/profile/did:plc:example/feed/3ksixth' }),
+    ],
+  };
+  assert.deepEqual(blueskyTopics(data).map((topic) => topic.name), [
+    'The story', 'Second', 'Third', 'Fourth', 'Fifth',
+  ]);
+  assert.deepEqual(blueskyTopics(data, 2).map((topic) => topic.name), ['The story', 'Second']);
+  assert.deepEqual(blueskyTopics({ topics: [] }), []);
 });

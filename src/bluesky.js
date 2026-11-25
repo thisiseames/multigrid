@@ -113,3 +113,68 @@ export function loadBlueskyVideos({ force = false } = {}) {
     .finally(() => { inflight = null; });
   return inflight;
 }
+
+const TOPICS_API = 'https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics';
+const TOPICS_CACHE_MS = 10 * 60000;
+const TOPICS_LIMIT = 5;
+
+let topicsCached = null;
+let topicsCachedAt = 0;
+let topicsInflight = null;
+
+const topicLink = (value) => {
+  const link = String(value || '').trim();
+  return /^\/profile\/[^/?#]+\/feed\/[^/?#]+$/.test(link) ? link : '';
+};
+
+/** One Bluesky trend as Today needs it, or null when it has no usable feed link. */
+export function blueskyTopic(item) {
+  const link = topicLink(item?.link);
+  if (!link) return null;
+  const name = String(item?.displayName || item?.topic || '').trim();
+  if (!name) return null;
+  return {
+    name,
+    description: String(item?.description || '').trim(),
+    url: `https://bsky.app${link}`,
+  };
+}
+
+/** The first `limit` usable trends, dropping duplicates and links that aren't feeds. */
+export function blueskyTopics(data, limit = TOPICS_LIMIT) {
+  const seen = new Set();
+  const topics = [];
+  for (const item of data?.topics || []) {
+    const topic = blueskyTopic(item);
+    if (!topic || seen.has(topic.url)) continue;
+    seen.add(topic.url);
+    topics.push(topic);
+    if (topics.length >= limit) break;
+  }
+  return topics;
+}
+
+async function fetchTopics() {
+  const response = await fetch(`${TOPICS_API}?limit=10`, {
+    cache: 'no-cache',
+    signal: AbortSignal.timeout?.(10000),
+  });
+  if (!response.ok) throw new Error(`Bluesky answered ${response.status}`);
+  const topics = blueskyTopics(await response.json());
+  if (!topics.length) throw new Error('No Bluesky trends right now.');
+  return topics;
+}
+
+/** Trending topics for Today, cached so reopening the panel doesn't ask again. */
+export function loadBlueskyTopics({ force = false } = {}) {
+  if (!force && topicsCached && Date.now() - topicsCachedAt < TOPICS_CACHE_MS) return Promise.resolve(topicsCached);
+  if (topicsInflight) return topicsInflight;
+  topicsInflight = fetchTopics()
+    .then((topics) => {
+      topicsCached = topics;
+      topicsCachedAt = Date.now();
+      return topics;
+    })
+    .finally(() => { topicsInflight = null; });
+  return topicsInflight;
+}
