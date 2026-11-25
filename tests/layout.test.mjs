@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitStage, hiddenTiles,
-  isStream, makeRoom, moveLine, presetById, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
+  isStream, makeRoom, moveLine, phoneColumn, phoneTile, presetById, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
 } from '../src/layout.js';
 
 function withStreams(n, presetId = 'equal') {
@@ -56,6 +56,15 @@ test('retired layouts are no longer offered but still open saved screens', () =>
     assertTiled(ws, `${id} saved layout`);
     assert.equal(streamCount(ws), streams);
   }
+});
+
+test('a REELS website becomes the vertical phone column', () => {
+  const ws = withStreams(2, 'equal');
+  ws.tiles[0].input = 'https://urlebird.com/trending/';
+  ws.tiles[0].reels = true;
+  phoneColumn(ws, ws.tiles[0].id);
+  assert.equal(ws.presetId, 'phone');
+  assert.equal(phoneTile(ws)?.id, ws.tiles[0].id);
 });
 
 test('stack is one column and row is one row', () => {

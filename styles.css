@@ -150,6 +150,22 @@ body.is-phone .sports-switch { display: none; }
 
 /* The overflow menu */
 .more-menu { width: 238px; max-width: calc(100vw - 16px); padding: 6px; }
+.reels-menu { width: 276px; max-width: calc(100vw - 16px); padding: 8px; }
+.reels-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 3px 6px 8px; }
+.reels-head > span { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+.reels-head small { font-size: 11px; color: var(--text-2); }
+.reels-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: min(50vh, 360px); overflow-y: auto; }
+.reels-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px; border-radius: 9px; color: var(--text); text-align: left; }
+.reels-row:hover { background: var(--hover); }
+.reels-icon { flex: none; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: #1f1f23; color: var(--text-2); }
+.reels-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.reels-text b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reels-text small { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reels-chev { flex: none; display: inline-flex; color: var(--text-2); opacity: .7; }
+.reels-empty { margin: 6px 6px 8px; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+.reels-foot { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+.reels-add { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
+.reels-add:hover { background: var(--hover); }
 .more-action { display: flex; width: 100%; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 7px; text-align: left; font-size: 13px; color: var(--text); }
 .more-action:hover { background: var(--hover); }
 .more-action svg { width: 15px; height: 15px; flex: none; color: var(--text-2); }
@@ -1123,6 +1139,18 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
   aspect-ratio: 9 / 16;
   max-width: 100%;
 }
+.tile-body iframe.frame-reel {
+  color-scheme: dark;
+  inset: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  max-width: 100%;
+  background: #000;
+}
+.grid.stacked .tile-body:has(.frame-reel) { aspect-ratio: 9 / 16; max-height: 78vh; }
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .feed-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 14px; background: #000; color: var(--text-2); font: 13px system-ui, sans-serif; text-align: center; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
@@ -2013,6 +2041,7 @@ body.remote-open { overflow: hidden; }
   .topbar { --bar: 52px; gap: 0; }
   body.is-phone .topbar > .spacer { flex: none; width: 0; min-width: 0; }
   body.is-phone .topbar > #palette-button,
+  body.is-phone .topbar > #reels-button,
   body.is-phone .topbar > #today-button,
   body.is-phone .topbar > #mixer-button,
   body.is-phone .topbar > .add-button,
@@ -2385,8 +2414,8 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
   /* Same look as the bottom tabs: a 24 pt icon, 3 pt gap, then the label at its natural line height. */
   #today-button, #mixer-button, #palette-button { flex-direction: column; gap: 3px; width: 58px; height: 52px; padding: 0; }
   body.is-phone #mixer-button { width: 48px; min-width: 48px; }
-  #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub, #home-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
-  #today-button svg, #mixer-button svg, #palette-button svg { width: 24px; height: 24px; }
+  #today-button .bar-sub, #mixer-button .bar-sub, #palette-button .bar-sub, #reels-button .bar-sub, #home-button .bar-sub { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.4; color: var(--text-2); }
+  #today-button svg, #mixer-button svg, #palette-button svg, #reels-button svg { width: 24px; height: 24px; }
   #mixer-button:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
   .today-head h3 { display: none; }
 }

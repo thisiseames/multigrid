@@ -4052,6 +4052,8 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   const eventLink = tileEventFrom(event);
   const pageOf = () => (moved ? { for: input, href: moved } : undefined);
   const source = parseSource(input);
+  const savedFavorite = listFavorites().find((item) => item.input === input);
+  const reels = Boolean(target.reels) || isReelsFolder(savedFavorite?.group);
   // A podcast is audio, so it plays in the dock instead of taking a tile.
   if (source.kind === 'audio') {
     openPodcast(input, { title: title || favoriteName(input) || '', from: '' });
@@ -4079,6 +4081,8 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
       tile.input = input;
       tile.title = autoTitle || undefined;
       tile.page = pageOf();
+      if (reels) tile.reels = true;
+      else delete tile.reels;
       if (eventLink) tile.event = eventLink;
       else delete tile.event;
       addedId = tile.id;
@@ -4090,14 +4094,17 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
     slot.input = input;
     slot.title = autoTitle || undefined;
     slot.page = pageOf();
+    if (reels) slot.reels = true;
+    else delete slot.reels;
     if (eventLink) slot.event = eventLink;
     else delete slot.event;
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
-    // A TikTok account is vertical video, so it gets its own tall column and the
-    // other streams sit beside it. A second account joins the grid as usual.
-    if (!isPhoneLayout(ws) && source.kind === 'tiktok' && source.tiktok?.profile) phoneColumn(ws, slot.id);
+    // A TikTok account or a REELS website is vertical, so it gets its own tall
+    // column and the other streams sit beside it. A second feed joins as usual.
+    const vertical = reels || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
+    if (vertical && (!isPhoneLayout(ws) || !phoneTile(ws))) phoneColumn(ws, slot.id);
   }
   // An X account is kept in Favorites, in a Twitter folder, so the feed can be found again.
   if (source.kind === 'x' && source.x?.profile && favoriteName(input) === null) {
@@ -4251,13 +4258,15 @@ function surfChannels(step, id = null) {
   const current = all.find((item) => item.input === tile.input);
   let pool = all;
   if (phone && tile.id === phone.id) {
-    // The TikTok column keeps its shape only for another TikTok account.
+    // A vertical column keeps its shape only for another feed of the same kind.
+    const reel = tile.reels === true;
     pool = listFavorites().filter((item) => {
+      if (reel) return isReelsFolder(item.group);
       const source = parseSource(item.input);
       return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
     });
     if (!pool.length) {
-      toast('No TikTok accounts in Favorites to surf.');
+      toast(reel ? 'No REELS favorites to surf.' : 'No TikTok accounts in Favorites to surf.');
       return;
     }
   } else if (current?.group) {
@@ -4303,17 +4312,37 @@ function refreshFavorites() {
   if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
 
+const REELS_FOLDER = 'REELS';
+const isReelsFolder = (folder) => String(folder || '').trim().toLocaleLowerCase() === 'reels';
+const reelFavorites = () => listFavorites()
+  .filter((item) => isReelsFolder(item.group))
+  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
+  const folders = listFolders();
+  // A website can be saved straight into Reels from this box.
+  if (parseSource(input).kind === 'iframe' && !folders.some(isReelsFolder)) folders.push(REELS_FOLDER);
   openFavoriteBox({
     anchor,
     title: current ? 'Edit favorite' : 'Add to favorites',
     name: current?.name ?? suggestedName,
     folder: current?.group ?? '',
-    folders: listFolders(),
+    folders,
     removable: Boolean(current),
     onSave(name, folder) {
-      if (!saveFavorite(input, name, folder)) toast(STORAGE_FULL);
+      if (!saveFavorite(input, name, folder)) {
+        toast(STORAGE_FULL);
+        return;
+      }
+      if (isReelsFolder(folder)) {
+        const tile = ws.tiles.find((candidate) => candidate.input === input);
+        if (tile) {
+          tile.reels = true;
+          if (!isPhoneLayout(ws) || !phoneTile(ws)) phoneColumn(ws, tile.id);
+          commit();
+        }
+      }
       refreshFavorites();
     },
     onRemove() {
@@ -12039,6 +12068,39 @@ function buildMoreMenu() {
   ].filter(Boolean));
 }
 
+function buildReelsMenu() {
+  const menu = $('reels-menu');
+  const reels = reelFavorites();
+  const host = (input) => {
+    try { return new URL(input).hostname.replace(/^www\./i, ''); } catch { return 'Website'; }
+  };
+  const row = (item) => el('li', {}, el('button', {
+    type: 'button', class: 'reels-row', title: `Open ${item.name} as a reel`,
+    on: {
+      click() {
+        closePopovers();
+        addStream(item.input, { mode: 'add', reels: true });
+      },
+    },
+  },
+  el('span', { class: 'reels-icon' }, icon('phone', 18)),
+  el('span', { class: 'reels-text' }, el('b', { textContent: item.name }), el('small', { textContent: host(item.input) })),
+  el('span', { class: 'reels-chev' }, icon('next', 14))));
+  menu.replaceChildren(
+    el('div', { class: 'reels-head' },
+      el('span', { textContent: 'Reels' }),
+      el('small', { textContent: reels.length ? `${reels.length} ${reels.length === 1 ? 'feed' : 'feeds'}` : 'Vertical feeds' })),
+    reels.length
+      ? el('ul', { class: 'reels-list' }, ...reels.map(row))
+      : el('p', { class: 'reels-empty', textContent: 'Save a website in a folder called REELS to see it here.' }),
+    el('div', { class: 'reels-foot' },
+      el('button', {
+        type: 'button', class: 'reels-add',
+        on: { click() { closePopovers(); $('add-button').click(); } },
+      }, icon('plus', 15), el('span', { textContent: 'Add a reel' }))));
+}
+
+$('reels-button').addEventListener('click', () => togglePopover($('reels-button'), $('reels-menu'), buildReelsMenu));
 $('surf-prev').addEventListener('click', () => surfChannels(-1));
 $('surf-next').addEventListener('click', () => surfChannels(1));
 $('more-button').addEventListener('click', () => togglePopover($('more-button'), $('more-menu'), buildMoreMenu));

@@ -60,6 +60,7 @@ function sanitize(raw) {
       volume: Number.isFinite(tile.volume) ? Math.min(100, Math.max(0, Math.round(tile.volume))) : 100,
       place: tile.place ? { ...tile.place } : null,
       primary: tile.primary === true && Boolean(tile.input),
+      ...(tile.reels === true ? { reels: true } : {}),
       ...(typeof tile.title === 'string' && tile.title.trim() ? { title: tile.title.trim().slice(0, 300) } : {}),
       ...(keptPage(tile) ? { page: keptPage(tile) } : {}),
       ...(liveEvent(cleanTileEvent(tile.event)) ? { event: liveEvent(cleanTileEvent(tile.event)) } : {}),
@@ -127,13 +128,14 @@ function snapshot(ws, { keepEvent = true } = {}) {
     cols: ws.cols,
     rows: ws.rows,
     tiles: ws.tiles.map((tile) => {
-      const { input, muted, volume, place, primary, title } = tile;
+      const { input, muted, volume, place, primary, reels, title } = tile;
       const page = keptPage(tile);
       const event = keepEvent ? liveEvent(cleanTileEvent(tile.event)) : null;
       const sources = cleanSources(tile.sources);
       return {
         input, muted, volume, place,
         ...(primary && input ? { primary: true } : {}),
+        ...(reels === true ? { reels: true } : {}),
         ...(title ? { title } : {}),
         ...(page ? { page } : {}),
         ...(event ? { event } : {}),

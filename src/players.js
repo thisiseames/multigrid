@@ -1526,6 +1526,7 @@ function genericPlayer(source, options) {
   const frame = makeFrame(zlive || source.url);
   if (zlive) frame.setAttribute('scrolling', 'no');
   if (daddyLivePlayer(source.url)) frame.classList.add('frame-daddy');
+  if (options.reel) frame.classList.add('frame-reel');
   return closedPlayer(frame, options);
 }
 

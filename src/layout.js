@@ -224,9 +224,11 @@ export const visualOrder = (ws) => ws.tiles.filter(isVisible).sort(byPosition);
 
 const orderedStreams = (ws) => [...visualOrder(ws).filter(isStream), ...hiddenTiles(ws)];
 
-/** A stream that is a TikTok account, which plays as a vertical feed. */
-const isTikTokFeed = (tile) => {
-  if (!tile?.input) return false;
+/** A stream that is a TikTok account or a website saved in REELS, which plays as a vertical feed. */
+const isVerticalFeed = (tile) => {
+  if (!tile) return false;
+  if (tile.reels === true) return true;
+  if (!tile.input) return false;
   const source = parseSource(tile.input);
   return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
 };
@@ -234,7 +236,7 @@ const isTikTokFeed = (tile) => {
 /** The stream that belongs in the phone column, worked out fresh from its link. */
 export function phoneTile(ws) {
   if (!isPhoneLayout(ws)) return null;
-  return visualOrder(ws).find((tile) => isStream(tile) && isTikTokFeed(tile)) ?? null;
+  return visualOrder(ws).find((tile) => isStream(tile) && isVerticalFeed(tile)) ?? null;
 }
 
 export function emptyWorkspace() {
@@ -281,7 +283,7 @@ export function applyPreset(ws, presetId, minSlots = 0) {
   }
   // A phone layout keeps one slot for the vertical feed, wherever that slot sits.
   if (isPhoneLayout({ presetId: preset.id })) {
-    const feed = ws.tiles.find((tile) => isStream(tile) && isTikTokFeed(tile));
+    const feed = ws.tiles.find((tile) => isStream(tile) && isVerticalFeed(tile));
     const occupant = ws.tiles[phoneSlotIndex(preset.id, slots)];
     if (feed && occupant && occupant !== feed) {
       [feed.place, occupant.place] = [occupant.place, feed.place];

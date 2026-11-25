@@ -161,6 +161,7 @@ class TileView {
       volume: tile.volume,
       autoplay,
       env,
+      reel: this.tile.reels === true,
       // What this tile is, for Continue watching: its link and the name it shows.
       describe: () => ({ input: this.tile.input, page: this.page, name: this.grid.handlers.favoriteName(this.tile.input) ?? this.source.label }),
       // A playlist moving to its next episode keeps the tile's name in step.
@@ -237,6 +238,7 @@ class TileView {
         volume: this.tile.volume,
         autoplay: true,
         env: this.grid.env,
+        reel: this.tile.reels === true,
         describe: () => ({ input: this.tile.input, name }),
         onError() {},
         onCapability() {},
