@@ -12535,6 +12535,7 @@ function buildTikTokMenu() {
     });
   }
   const list = [...accounts.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  const following = tiktokFollowing();
   const artJobs = new Map();
   const row = (account) => {
     const art = el('span', { class: 'reels-icon tiktok-row-art' }, icon('music', 18));
@@ -12585,6 +12586,15 @@ function buildTikTokMenu() {
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'TikTok' }),
       el('small', { textContent: list.length ? `${list.length} ${list.length === 1 ? 'account' : 'accounts'}` : 'TikTok feeds' })),
+    el('button', {
+      type: 'button',
+      class: 'reels-add tiktok-following',
+      on: { click() { closePopovers(); chooseFollowing(); } },
+    },
+    icon('saved', 16),
+    el('span', { class: 'reels-text' },
+      el('b', { textContent: following.length ? 'Choose followed accounts…' : 'Import following list…' }),
+      following.length ? el('small', { textContent: `(${following.length})` }) : null)),
     list.length
       ? el('ul', { class: 'reels-list' }, ...list.map(row))
       : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' }),
