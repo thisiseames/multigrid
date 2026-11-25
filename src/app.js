@@ -9636,21 +9636,32 @@ function matchdayHeroItem(phase) {
     // Two columns of facts beside each other keep the banner its usual height.
     const facts = (...cells) => (cells.some(Boolean) ? el('div', { class: 'md-facts' }, ...cells.filter(Boolean)) : null);
     const channel = md.broadcast ? `${md.broadcast.start < match.start && match.state === 'pre' ? `${titleCase(md.broadcast.favorite.name)} from ${clock(md.broadcast.start)}` : titleCase(md.broadcast.favorite.name)}` : '';
+    const lineupsAction = phoneHero && (phase === 'buildup' || phase === 'live') && (data?.lineups ?? []).length
+      ? mdButton('Line-ups', 'pitch', () => openLineups(match))
+      : null;
     if (phase === 'early' || phase === 'buildup') {
-      parts.push(el('p', { class: 'hero-meta', textContent: [match.venue || data?.match?.venue, `Kick-off ${clock(match.start)} · in ${countdownText(match.start - now)}`, channel].filter(Boolean).join(' · ') }));
+      const where = [match.venue || data?.match?.venue, `Kick-off ${clock(match.start)} · in ${countdownText(match.start - now)}`].filter(Boolean).join(' · ');
+      parts.push(el('p', { class: `hero-meta${where ? '' : ' is-channel-only'}` },
+        where,
+        channel ? el('span', { class: 'hero-meta-channel', textContent: channel }) : null));
       parts.push(facts(mdForm(match, data), mdChances(match, md.odds)));
+      const programme = mdButton('Programme', 'guide', () => openProgramme(match));
       parts.push(el('div', { class: 'hero-buttons' },
         md.broadcast ? mdButton(now >= md.broadcast.start ? 'Watch the build-up' : `Watch from ${clock(md.broadcast.start)}`, 'play', mdWatch, true) : null,
         mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast),
-        mdButton('Programme', 'guide', () => openProgramme(match))));
+        lineupsAction ? el('span', { class: 'hero-button-pair' }, programme, lineupsAction) : programme));
     } else if (phase === 'live') {
       const last = (data?.timeline ?? []).filter((item) => item.kind !== 'break').at(-1);
-      parts.push(el('p', { class: 'hero-meta', textContent: [last ? `${last.minute} ${last.kind === 'goal' ? 'Goal' : last.kind === 'sub' ? 'Sub' : last.kind === 'red' ? 'Red card' : 'Yellow card'}: ${last.player}${last.kind === 'sub' ? ` for ${last.off}` : ''} (${match[last.side]?.name || ''})` : '', channel].filter(Boolean).join(' · ') }));
+      const event = last ? `${last.minute} ${last.kind === 'goal' ? 'Goal' : last.kind === 'sub' ? 'Sub' : last.kind === 'red' ? 'Red card' : 'Yellow card'}: ${last.player}${last.kind === 'sub' ? ` for ${last.off}` : ''} (${match[last.side]?.name || ''})` : '';
+      parts.push(el('p', { class: `hero-meta${event ? '' : ' is-channel-only'}` },
+        event,
+        channel ? el('span', { class: 'hero-meta-channel', textContent: channel }) : null));
       parts.push(facts(mdStats(match, data, 3), mdChances(match, md.odds)));
+      const centre = mdButton('Match centre', 'live', openMatchday);
       parts.push(el('div', { class: 'hero-buttons' },
         md.broadcast ? mdButton('Watch', 'play', mdWatch, true) : null,
         mdButton('Matchday grid', 'tiles', matchdayGrid, !md.broadcast),
-        mdButton('Match centre', 'live', openMatchday)));
+        lineupsAction ? el('span', { class: 'hero-button-pair' }, centre, lineupsAction) : centre));
     } else {
       const place = data?.positions?.[mdSide(match)];
       const moved = !isCalledOff(match) && place?.rank ? tableMove(positionBefore(match.id), place.rank) : '';
@@ -9667,10 +9678,6 @@ function matchdayHeroItem(phase) {
         md.next ? mdButton('Programme', 'guide', () => openProgramme(md.next)) : null,
         mdButton('Match centre', 'live', openMatchday, !highlights && !reaction)));
       if (md.next) parts.push(el('p', { class: 'hero-meta md-next-line', textContent: `Next: ${md.next.home.name} v ${md.next.away.name} · ${dayLabel(md.next.start)} ${clock(md.next.start)}` }));
-    }
-    // The desktop art carries this link; on a phone the art is hidden, so keep it here.
-    if (phoneHero && (phase === 'buildup' || phase === 'live') && (data?.lineups ?? []).length) {
-      parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, 'Both line-ups and subs'));
     }
     return parts.filter(Boolean);
   };
