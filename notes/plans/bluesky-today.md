@@ -45,14 +45,14 @@ hides. Hosting stays on the existing GitHub Pages site.
 
 ## Steps
 
-- [ ] Write and push this plan.
-- [ ] Add `readBlueskyTopics` / `loadBlueskyTopics` to `src/bluesky.js` with URL normalization,
+- [x] Write and push this plan.
+- [x] Add `readBlueskyTopics` / `loadBlueskyTopics` to `src/bluesky.js` with URL normalization,
       10-minute cache and in-flight dedupe.
-- [ ] Add unit tests for topic parsing.
-- [ ] Add the section to `fillToday` directly after the X trends holder; fill asynchronously;
+- [x] Add unit tests for topic parsing.
+- [x] Add the section to `fillToday` directly after the X trends holder; fill asynchronously;
       hide on empty, error or This week.
-- [ ] Run the full test suite.
-- [ ] Check locally at 1440 px and 390 px.
+- [x] Run the full test suite (402 pass).
+- [x] Check locally at 1440 px and 390 px.
 - [ ] Commit, push and check the live site at both widths.
 - [ ] Mark this plan DONE, live <date>.
 
@@ -62,3 +62,5 @@ hides. Hosting stays on the existing GitHub Pages site.
 - No post counts are available; do not invent them.
 - The section must fail quietly, like the X trends.
 - Do not touch Home in this build.
+- The heading uses `.match-day` edge-to-edge margins, so its `scrollWidth` is wider than the
+  section by 12 px on purpose. That is not clipping.

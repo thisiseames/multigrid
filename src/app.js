@@ -33,6 +33,7 @@ import { MY_LEAGUES } from './leagues.js';
 import { addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeHoldUntil, isCalledOff, isFulltimeHold, loadChances, markFulltime, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { artFor } from './artwork.js';
+import { loadBlueskyTopics } from './bluesky.js';
 import { isStingOn, playSting, setStingOn } from './sting.js';
 import { applyMove, isOldHome, moveLink, NEW_HOME, readMove } from './move.js';
 import { channelOfFavorite, subscriptionsFromFile } from './yt-subs.js';
@@ -10665,6 +10666,27 @@ function fillTodayTrends(holder, asked) {
   }).catch(() => {});
 }
 
+/* Bluesky's public trends, next to the X trends. Tapping a row opens the topic on Bluesky. */
+function fillTodayBluesky(holder, asked) {
+  loadBlueskyTopics().then((topics) => {
+    if (asked !== todayAsked || !holder.isConnected || !topics.length) return;
+    holder.replaceChildren(
+      el('h4', { class: 'match-day trend-head' }, el('span', { textContent: 'Trending on Bluesky' })),
+      el('ul', { class: 'trend-list' }, ...topics.map((topic) => el('li', { class: 'trend-item' },
+        el('a', {
+          class: 'trend-row',
+          href: topic.url,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          title: topic.description || topic.name,
+        },
+        el('span', { class: 'trend-main' },
+          el('b', { class: 'trend-name', textContent: topic.name }),
+          topic.description ? el('small', { class: 'trend-desc', textContent: topic.description }) : null))))));
+    holder.hidden = todayView !== 'today';
+  }).catch(() => {});
+}
+
 /* New from the YouTube channels kept as favourites: the newest upload, shown once. */
 const YT_SEEN = 'multigrid.ytseen.v1';
 const readYtSeen = () => {
@@ -10946,6 +10968,7 @@ async function fillToday() {
   const podcastList = todayPodcasts(news);
   const tubeList = tube.filter((item) => !item.opened);
   const trendHolder = el('section', { class: 'today-section', hidden: true });
+  const bskyHolder = el('section', { class: 'today-section', hidden: true });
   const ppvHolder = el('section', { class: 'today-section', hidden: true });
   const liveHolder = el('section', { class: 'today-section', hidden: true });
   const drawLiveToday = () => {
@@ -10990,6 +11013,7 @@ async function fillToday() {
     liveHolder,
     headlinesSection,
     trendHolder,
+    bskyHolder,
     continueSection,
     podcastSection,
     youtubeSection,
@@ -11021,6 +11045,7 @@ async function fillToday() {
     for (const section of todayOnlySections) section.hidden = week;
     for (const section of weekOnlySections) section.hidden = !week;
     trendHolder.hidden = week || !trendHolder.childElementCount;
+    bskyHolder.hidden = week || !bskyHolder.childElementCount;
     redrawTodayDates();
     liveTodayDraw?.();
   };
@@ -11031,6 +11056,7 @@ async function fillToday() {
   liveTodayDraw?.();
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
   fillTodayTrends(trendHolder, asked);
+  fillTodayBluesky(bskyHolder, asked);
   fillTodayPPV(ppvHolder, asked);
 }
 
