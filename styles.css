@@ -1192,6 +1192,10 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 
 .match-day { position: sticky; top: 0; z-index: 1; display: flex; align-items: baseline; gap: 6px; margin: 0 -12px; padding: 14px 16px 6px; background: #141416; font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--text); }
 .match-day-date { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-2); }
+.match-day.is-toggle { padding: 0; }
+.match-day-toggle { flex: 1; min-width: 0; width: 100%; display: flex; align-items: baseline; gap: 6px; padding: 14px 16px 6px; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; cursor: pointer; }
+.match-day-toggle .match-day-chevron { margin-left: auto; align-self: center; display: inline-flex; opacity: .65; }
+.match-day-toggle.is-open .match-day-chevron svg { transform: rotate(180deg); }
 
 .mrow-list { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--surface); overflow: hidden; }
 .mrow + .mrow { border-top: 1px solid var(--border); }
@@ -1344,6 +1348,7 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 @media (max-width: 480px) {
   .matches-body { padding: 0 8px 10px; }
   .match-day { margin: 0 -8px; padding: 12px 12px 6px; }
+  .match-day-toggle { padding: 12px 12px 6px; }
   .mrow-main { gap: 8px; padding: 8px 8px 8px 10px; }
   /* Narrow enough that a row with Watch keeps the same name width, so scores stay in one line. */
   .mrow-name { width: 7.3em; flex-shrink: 0; }

@@ -8542,6 +8542,7 @@ let matchesTimer = null;
 let matchesAsked = 0;
 let matchesFetched = 0;
 let matchesLive = false;
+let matchYesterdayOpen = false;
 const matchOpen = new Set();
 const matchDetails = new Map();
 
@@ -9648,9 +9649,29 @@ function matchList(matches) {
     const label = dayLabel(match.start);
     if (label !== current) {
       current = label;
-      list = el('ul', { class: 'mrow-list' });
-      parts.push(el('h4', { class: 'match-day' }, el('span', { textContent: label }),
-        daysAway(match.start) >= -1 && daysAway(match.start) <= 1 ? el('span', { class: 'match-day-date', textContent: dayFormat.format(new Date(match.start)) }) : null), list);
+      const ago = daysAway(match.start);
+      const yesterday = ago === -1;
+      list = el('ul', { class: 'mrow-list', hidden: yesterday && !matchYesterdayOpen });
+      const date = ago >= -1 && ago <= 1 ? el('span', { class: 'match-day-date', textContent: dayFormat.format(new Date(match.start)) }) : null;
+      if (yesterday) {
+        const yesterdayList = list;
+        const toggle = el('button', {
+          type: 'button',
+          class: `match-day-toggle${matchYesterdayOpen ? ' is-open' : ''}`,
+          aria: { expanded: String(matchYesterdayOpen) },
+          on: {
+            click() {
+              matchYesterdayOpen = !matchYesterdayOpen;
+              yesterdayList.hidden = !matchYesterdayOpen;
+              toggle.classList.toggle('is-open', matchYesterdayOpen);
+              toggle.setAttribute('aria-expanded', String(matchYesterdayOpen));
+            },
+          },
+        }, el('span', { textContent: label }), date, el('span', { class: 'match-day-chevron' }, icon('chevron', 16)));
+        parts.push(el('h4', { class: 'match-day is-toggle' }, toggle), list);
+      } else {
+        parts.push(el('h4', { class: 'match-day' }, el('span', { textContent: label }), date), list);
+      }
     }
     list.append(matchRow(match));
   }
@@ -9723,6 +9744,7 @@ async function fillMatches(force = true) {
 function buildMatches() {
   const menu = $('matches-menu');
   matchesTab = SHOWN_TABS[0];
+  matchYesterdayOpen = false;
   const tabs = el('div', { class: 'matches-tabs', role: 'tablist' }, ...SHOWN_TABS.map((tab) => el('button', {
     type: 'button',
     role: 'tab',
@@ -9732,6 +9754,7 @@ function buildMatches() {
     on: {
       click(event) {
         matchesTab = tab;
+        matchYesterdayOpen = false;
         for (const other of tabs.children) {
           const on = other === event.currentTarget;
           other.classList.toggle('is-on', on);
