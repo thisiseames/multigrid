@@ -9622,6 +9622,7 @@ function openProgramme(match = programmeMatch()) {
 function matchdayHeroItem(phase) {
   const match = mdMatch();
   const data = md.data;
+  const phoneHero = onPhoneScreen() && window.matchMedia('(max-width: 640px)').matches;
   const key = `md:${match.id}:${phase}`;
   const title = match.state === 'pre' ? `${match.home.name} v ${match.away.name}` : `${match.home.name} ${match.home.score}–${match.away.score} ${match.away.name}`;
   const label = phase === 'live' ? `Live · ${shortClock(match.detail) || match.detail}` : phase === 'fulltime' ? (isCalledOff(match) ? match.detail : 'Full time') : 'Matchday';
@@ -9666,6 +9667,10 @@ function matchdayHeroItem(phase) {
         md.next ? mdButton('Programme', 'guide', () => openProgramme(md.next)) : null,
         mdButton('Match centre', 'live', openMatchday, !highlights && !reaction)));
       if (md.next) parts.push(el('p', { class: 'hero-meta md-next-line', textContent: `Next: ${md.next.home.name} v ${md.next.away.name} · ${dayLabel(md.next.start)} ${clock(md.next.start)}` }));
+    }
+    // The desktop art carries this link; on a phone the art is hidden, so keep it here.
+    if (phoneHero && (phase === 'buildup' || phase === 'live') && (data?.lineups ?? []).length) {
+      parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, 'Both line-ups and subs'));
     }
     return parts.filter(Boolean);
   };

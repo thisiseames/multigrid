@@ -3349,6 +3349,20 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 @media (max-width: 1180px) { .md-art .md-xi { width: 210px; } }
 .mdp-player.is-off { opacity: .32; }
 
+/* Phone Matchday: one full-width column. The XI is a line-ups link instead of the
+   desktop right-hand art, and the facts stack so the chances cannot run under it. */
+@media (max-width: 640px) {
+  body.is-phone .home-hero.is-matchday { height: min(48vh, 410px); min-height: 390px; }
+  body.is-phone .home-hero.is-matchday .hero-info { left: 16px; right: 16px; bottom: 16px; width: auto; gap: 8px; }
+  body.is-phone .home-hero.is-matchday .md-facts { grid-template-columns: 1fr; gap: 8px; }
+  body.is-phone .home-hero.is-matchday .md-facts > * { min-width: 0; }
+  body.is-phone .home-hero.is-matchday .md-art .md-xi,
+  body.is-phone .home-hero.is-matchday .md-art-crests { display: none; }
+  body.is-phone .home-hero.is-matchday .md-chance-labels { font-size: 12px; gap: 6px; }
+  body.is-phone .home-hero.is-matchday .md-chance-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  body.is-phone .home-hero.is-matchday .hero-buttons { gap: 8px; }
+}
+
 /* Tidy up favorites. */
 .favorites-head-actions { display: inline-flex; align-items: baseline; gap: 16px; }
 .favorites-tidy { display: inline-flex; align-items: center; gap: 6px; }
