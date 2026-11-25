@@ -1,5 +1,5 @@
 {
- "updated": 1795563578206,
+ "updated": 1795565146532,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -742,19 +742,6 @@
    "start": 1795271400000,
    "sources": "feeds",
    "videos": []
-  },
-  "401909305": {
-   "league": "NBA",
-   "title": "Hawks 111–97 Hornets",
-   "start": 1795219200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "MIe8lFlW-2I",
-     "title": "Game Highlights | Hornets at Hawks | 11/20/2026",
-     "rank": 2
-    }
-   ]
   },
   "401909306": {
    "league": "NBA",
@@ -1590,6 +1577,12 @@
  },
  "club": {
   "360": [
+   {
+    "id": "TILvfkk3dD0",
+    "title": "Real Madrid Can Stop PSG From Winning The UCL. They Look Scary!",
+    "published": 1795564782000,
+    "source": "Adikastakes"
+   },
    {
     "id": "XU6dSJHqHlg",
     "title": "'WE NEED BETTER FROM GYOKERES!' Arsenal 1-1 BVB REACTION",
