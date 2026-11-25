@@ -1860,7 +1860,8 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
   .addp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .fart { width: 64px; height: 40px; }
   .addp .addp-paste textarea { height: 46px; min-height: 46px; max-height: 46px; padding-top: 13px; padding-bottom: 13px; font-size: 16px; }
-  .addp .addp-pasteadd { height: 46px; padding: 0 18px; font-size: 15px; }
+  .addp .addp-pasteadd { height: 46px; padding: 0 18px; font-size: 16px; }
+  .addp-actions .addp-file { font-size: 16px; }
   .addp-x { min-height: 46px; }
   .addp-x input { height: 46px; }
   .addp-x-add { height: 46px; padding: 0 18px; }
@@ -2259,6 +2260,12 @@ body.remote-open { overflow: hidden; }
     animation: sheet-up .28s cubic-bezier(.2, .9, .3, 1);
   }
   body.sheet-dragging .sheet-frame, body.sheet-dragging .popover.is-sheet { animation: none; transition: none; }
+  /* The vertical menus fill the sheet: the list scrolls and the add field stays at the bottom. */
+  body.is-phone .popover.reels-menu.is-sheet { display: flex; flex-direction: column; overflow: hidden; }
+  body.is-phone .reels-menu.is-sheet .reels-head { flex: none; }
+  body.is-phone .reels-menu.is-sheet .reels-list { flex: 1 1 auto; min-height: 0; max-height: none; }
+  body.is-phone .reels-menu.is-sheet .reels-empty { flex: 1 1 auto; }
+  body.is-phone .reels-menu.is-sheet .reels-foot { flex: none; margin-top: auto; }
   .popover.is-sheet .matches-tabs { padding-left: 14px; padding-right: 14px; }
 
   /* Big rows, like the layout button's Saved layouts and How it works on a phone. */

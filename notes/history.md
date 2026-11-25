@@ -469,3 +469,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 25: Bluesky trend videos are filtered to English posts via `record.langs`; the tile now says “Trending videos · English.” The feed fetches up to 8 pages of What’s Hot and returns up to 18 English videos.
 - Nov 25: Phone top bar simplified: Reels and Sound moved into the MULTIGRID wordmark menu, and TikTok took the Sound slot. Top bar now reads MULTIGRID, Home/Streams, Search, Today, TikTok, Stream; Reels/Sound/TikTok panels open as sheets. Wordmark stays visible on small phones. Desktop unchanged.
 - Nov 25: The phone Matchday programme sheet now respects the top and bottom safe-area insets, so its title and close button sit below the status bar.
+- Nov 25: Phone Add stream action labels now match the 16px paste field (iOS zoom threshold). The phone Reels/Live/TikTok sheets now fill the available height, with the list scrolling and the username/add bar pinned at the bottom.
