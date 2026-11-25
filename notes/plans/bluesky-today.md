@@ -1,6 +1,6 @@
 # Bluesky in Today
 
-**Status:** building. Owner said go on Nov 25.
+**Status:** DONE, live Nov 25. Owner said go on Nov 25.
 
 ## Running cost
 
@@ -53,14 +53,17 @@ hides. Hosting stays on the existing GitHub Pages site.
       hide on empty, error or This week.
 - [x] Run the full test suite (402 pass).
 - [x] Check locally at 1440 px and 390 px.
-- [ ] Commit, push and check the live site at both widths.
-- [ ] Mark this plan DONE, live <date>.
+- [x] Commit, push and check the live site at both widths.
+- [x] Mark this plan DONE, live Nov 25.
 
 ## Gotchas
 
 - The trends list is story topics, not clean categories.
 - No post counts are available; do not invent them.
 - The section must fail quietly, like the X trends.
+- Live check: five topics after “Trending on X” at 1440 px and 390 px; click opened the
+  matching bsky.app topic; This week hid it; a blocked request hid it.
+- 402 tests pass.
 - Do not touch Home in this build.
 - The heading uses `.match-day` edge-to-edge margins, so its `scrollWidth` is wider than the
   section by 12 px on purpose. That is not clipping.
