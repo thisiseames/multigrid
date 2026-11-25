@@ -137,6 +137,23 @@ test('predictions: a feed with nothing serious returns nothing', () => {
   ], now), []);
 });
 
+test('predictions: the daily rotation changes the questions without losing the five slots', () => {
+  const seen = new Set();
+  for (let day = 0; day < 10; day++) {
+    const rows = pickPredictions(events, now + day * 86400000, { rotate: true });
+    assert.equal(rows.length, 5);
+    assert.ok(rows.every((row) => row.question && row.slug && row.chance > 0));
+    seen.add(rows.map((row) => row.question).join('|'));
+  }
+  assert.ok(seen.size > 1, 'the rotation should not return one fixed set');
+});
+
+test('predictions: the rotation is stable through the same day', () => {
+  const morning = pickPredictions(events, now, { rotate: true });
+  const later = pickPredictions(events, now + 3600000, { rotate: true });
+  assert.deepEqual(morning, later);
+});
+
 const superBowl = {
   title: 'Pro Football: 2027 Champion',
   slug: 'super-bowl-2027',

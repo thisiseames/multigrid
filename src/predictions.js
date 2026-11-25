@@ -186,7 +186,21 @@ function cultureBonus(tags, title) {
 }
 
 /** Up to five prediction rows: { slug, question, chance, change, topic }. */
-export function pickPredictions(events, now = Date.now()) {
+export function pickPredictions(events, now = Date.now(), options = {}) {
+  // Once a day the top few questions in each topic swap places, so Today doesn't
+  // show the same five for weeks. Off by default so the tests stay deterministic.
+  const rotate = options.rotate === true;
+  const localDay = new Date(now);
+  localDay.setHours(0, 0, 0, 0);
+  const seed = Math.floor(localDay.getTime() / 86400000);
+  const hash = (text) => {
+    let value = 2166136261;
+    for (const char of text) {
+      value ^= char.codePointAt(0);
+      value = Math.imul(value, 16777619);
+    }
+    return value >>> 0;
+  };
   const rows = [];
   for (const event of Array.isArray(events) ? events : []) {
     if (!event || typeof event !== 'object') continue;
@@ -238,6 +252,17 @@ export function pickPredictions(events, now = Date.now()) {
     usedStories.add(row.story);
     unique.push(row);
   }
+  const byTopic = new Map();
+  for (const row of unique) {
+    const list = byTopic.get(row.topic) ?? [];
+    list.push(row);
+    byTopic.set(row.topic, list);
+  }
+  const choose = (topic) => {
+    const list = (byTopic.get(topic) ?? []).slice(0, 4);
+    if (!list.length) return null;
+    return list[rotate ? hash(`${seed}:${topic}`) % list.length : 0];
+  };
   const picked = [];
   const used = new Set();
   const counts = {};
@@ -250,11 +275,9 @@ export function pickPredictions(events, now = Date.now()) {
     picked.push(row);
     return true;
   };
-  for (const topic of ['Economy', 'World', 'Politics']) {
-    take(unique.find((row) => row.topic === topic && !used.has(row.story)));
-  }
-  take(unique.find((row) => row.topic === 'Sport' && !used.has(row.story)));
-  take(unique.find((row) => row.topic === 'Culture' && !used.has(row.story)));
+  for (const topic of ['Economy', 'World', 'Politics']) take(choose(topic));
+  take(choose('Sport'));
+  take(choose('Culture'));
   for (const row of unique) {
     if (picked.length >= MAX_ROWS) break;
     take(row);

@@ -10117,7 +10117,7 @@ function todayViewBar() {
 }
 
 /* Prediction markets: important, near-term questions from Polymarket's featured events. */
-const POLY_STORE = 'multigrid.polymarket.v4';
+const POLY_STORE = 'multigrid.polymarket.v5';
 const POLY_TTL = 10 * 60 * 1000;
 
 async function loadPolymarkets() {
@@ -10131,7 +10131,7 @@ async function loadPolymarkets() {
     });
     if (!response.ok) throw new Error(`Polymarket answered ${response.status}`);
     const data = await response.json();
-    const list = pickPredictions(Array.isArray(data) ? data : []);
+    const list = pickPredictions(Array.isArray(data) ? data : [], Date.now(), { rotate: true });
     if (list.length) {
       try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
       return list;
