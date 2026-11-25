@@ -4113,10 +4113,14 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
-    // A TikTok account or a REELS website is vertical, so it gets its own tall
-    // column and the other streams sit beside it. A second feed joins as usual.
-    const vertical = reels || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
-    if (vertical && (!isPhoneLayout(ws) || !phoneTile(ws))) phoneColumn(ws, slot.id);
+    // A TikTok account, a TikTok LIVE, or a REELS website is vertical, so it gets its
+    // own tall column and the other streams sit beside it. A second feed joins as usual.
+    const vertical = reels || source.kind === 'tiktoklive'
+      || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
+    const phone = phoneTile(ws);
+    const liveTakesPhone = source.kind === 'tiktoklive'
+      && (!phone || parseSource(phone.input).kind !== 'tiktoklive');
+    if (vertical && (!isPhoneLayout(ws) || !phone || liveTakesPhone)) phoneColumn(ws, slot.id);
   }
   // An X account is kept in Favorites, in a Twitter folder, so the feed can be found again.
   if (source.kind === 'x' && source.x?.profile && favoriteName(input) === null) {
@@ -4272,13 +4276,15 @@ function surfChannels(step, id = null) {
   if (phone && tile.id === phone.id) {
     // A vertical column keeps its shape only for another feed of the same kind.
     const reel = tile.reels === true;
+    const live = parseSource(tile.input).kind === 'tiktoklive';
     pool = listFavorites().filter((item) => {
       if (reel) return isReelsFolder(item.group);
       const source = parseSource(item.input);
+      if (live) return source.kind === 'tiktoklive';
       return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
     });
     if (!pool.length) {
-      toast(reel ? 'No REELS favorites to surf.' : 'No TikTok accounts in Favorites to surf.');
+      toast(reel ? 'No REELS favorites to surf.' : live ? 'No TikTok LIVE favorites to surf.' : 'No TikTok accounts in Favorites to surf.');
       return;
     }
   } else if (current?.group) {
@@ -6013,14 +6019,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveP
 
 let addFolder = '';
 const KIND_NAMES = {
-  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', kick: 'Kick', x: 'X', file: 'Video file',
+  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', tiktoklive: 'TikTok Live', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
   podcastshow: 'Podcast',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', tiktoklive: 'live', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'tiktoklive', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -8625,7 +8631,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'x', 'kick', 'file', 'podcastshow']);
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'tiktoklive', 'x', 'kick', 'file', 'podcastshow']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {

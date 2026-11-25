@@ -28,6 +28,22 @@
     });
   });
 
+  // TikTok LIVE: the page can’t call TikTok itself, so the background looks up the room.
+  window.addEventListener('message', (event) => {
+    if (event.source !== window || !event.data?.multigridLive) return;
+    const ask = event.data.multigridLive;
+    const id = typeof ask.id === 'string' ? ask.id.slice(0, 80) : '';
+    const username = typeof ask.username === 'string' ? ask.username.trim().slice(0, 64) : '';
+    if (!id || !username) return;
+    chrome.runtime.sendMessage({ multigrid: 'live', id, username }, (reply) => {
+      if (chrome.runtime.lastError) {
+        window.postMessage({ multigridLiveReply: { id, error: chrome.runtime.lastError.message } }, '*');
+        return;
+      }
+      window.postMessage({ multigridLiveReply: { id, ...(reply || {}) } }, '*');
+    });
+  });
+
   const PREFIX = 'multigrid.';
   // Caches that rebuild themselves stay behind.
   const SKIP = /^multigrid\.(avatars|trends|polymarket|weather|posters|moviePosters|x\.feeds|x\.videos|tiktok\.accounts|matches|standings|page)\b/;

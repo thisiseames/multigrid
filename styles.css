@@ -1158,6 +1158,35 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
   background: #000;
 }
 .grid.stacked .tile-body:has(.frame-reel) { aspect-ratio: 9 / 16; max-height: 78vh; }
+.grid.stacked .tile-body:has(.live-tile) { aspect-ratio: 9 / 16; max-height: 78vh; }
+.live-tile { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #000; }
+.live-video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.live-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 11px 12px 12px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 68%, rgba(0, 0, 0, .72));
+}
+.live-overlay[hidden], .live-status[hidden], .live-avatar[hidden] { display: none; }
+.live-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.live-avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255, 255, 255, .35); }
+.live-person { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.live-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-size: 13px; font-weight: 650; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.live-handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 255, 255, .72); font-size: 10.5px; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.live-badge { flex: none; padding: 3px 6px; border-radius: 999px; background: #fe2c55; color: #fff; font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+.live-viewers { flex: none; margin-left: auto; color: rgba(255, 255, 255, .88); font-size: 10.5px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
+.live-title { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: rgba(255, 255, 255, .92); font-size: 12px; line-height: 1.35; text-shadow: 0 1px 4px rgba(0, 0, 0, .85); }
+.live-status {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+  padding: 18px; text-align: center; color: var(--text);
+  background: radial-gradient(circle at 50% 30%, #24131a, #0b0b0e 72%);
+}
+.live-status-kicker { color: #fe2c55; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.live-status-title { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 650; }
+.live-status-text { max-width: 250px; margin: 0; color: var(--text-2); font-size: 11.5px; line-height: 1.5; }
+.live-retry { min-height: 30px; margin-top: 4px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--raised); color: var(--text); font-size: 12px; }
+.live-retry:hover { background: var(--hover); }
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .feed-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 14px; background: #000; color: var(--text-2); font: 13px system-ui, sans-serif; text-align: center; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }

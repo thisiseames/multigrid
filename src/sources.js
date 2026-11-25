@@ -194,6 +194,12 @@ function parseTikTok(url, host, input) {
     openUrl: url.href,
     tiktok: { id },
   });
+  const makeLive = (author) => ({
+    ok: true, input, kind: 'tiktoklive',
+    label: author,
+    openUrl: url.href,
+    tiktoklive: { username: author.slice(1) },
+  });
   const [first, second, third] = segments;
   if (first === 'player' && second === 'v1' && /^\d+$/.test(third || '')) return make(third);
   if (first === 'embed') {
@@ -201,8 +207,9 @@ function parseTikTok(url, host, input) {
     if (id) return make(id);
   }
   if (first?.startsWith('@') && second === 'video' && /^\d+$/.test(third || '')) return make(third, first);
-  // An account shows TikTok's profile card: its recent videos. TikTok has no live player.
-  if (/^@[\w.]{2,24}$/.test(first || '') && (!second || second === 'live')) {
+  // A live link plays the broadcast itself; the bare account keeps its recent-video feed.
+  if (/^@[\w.]{2,24}$/.test(first || '') && second === 'live') return makeLive(first);
+  if (/^@[\w.]{2,24}$/.test(first || '') && !second) {
     return {
       ok: true, input, kind: 'tiktok', label: `TikTok · ${first}`, openUrl: url.href, tiktok: { profile: first.slice(1) },
     };
@@ -370,6 +377,16 @@ export function parseSource(raw) {
   const input = String(raw ?? '').trim();
   if (!input) return fail(input, 'Paste a link or iframe code.');
   if (input.startsWith('playlist:')) return parsePlaylist(input);
+  if (/^tiktoklive:/i.test(input)) {
+    const name = input.slice('tiktoklive:'.length).trim().replace(/^@/, '');
+    if (!/^[\w.]{2,24}$/.test(name)) return fail(input, "That isn't a TikTok username.");
+    return {
+      ok: true, input, kind: 'tiktoklive',
+      label: `@${name}`,
+      openUrl: `https://www.tiktok.com/@${name}/live`,
+      tiktoklive: { username: name },
+    };
+  }
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);

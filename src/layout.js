@@ -230,13 +230,15 @@ const isVerticalFeed = (tile) => {
   if (tile.reels === true) return true;
   if (!tile.input) return false;
   const source = parseSource(tile.input);
-  return source.kind === 'tiktok' && Boolean(source.tiktok?.profile);
+  return source.kind === 'tiktoklive' || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
 };
 
 /** The stream that belongs in the phone column, worked out fresh from its link. */
 export function phoneTile(ws) {
   if (!isPhoneLayout(ws)) return null;
-  return visualOrder(ws).find((tile) => isStream(tile) && isVerticalFeed(tile)) ?? null;
+  const feeds = visualOrder(ws).filter((tile) => isStream(tile) && isVerticalFeed(tile));
+  // A LIVE is the most specific kind of vertical feed, so it keeps the phone column.
+  return feeds.find((tile) => parseSource(tile.input).kind === 'tiktoklive') ?? feeds[0] ?? null;
 }
 
 export function emptyWorkspace() {

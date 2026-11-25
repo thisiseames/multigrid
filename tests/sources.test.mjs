@@ -156,6 +156,23 @@ test('tiktok: video links become the official player', () => {
   assert.equal(parseSource('https://www.tiktok.com/@scout2015/video/6718335390845095173').label, 'TikTok · @scout2015');
 });
 
+test('tiktok live links become a native live source', () => {
+  for (const input of [
+    'https://www.tiktok.com/@typicalgamer/live',
+    'https://tiktok.com/@typicalgamer/live?lang=en',
+    'tiktoklive:@typicalgamer',
+    'tiktoklive:typicalgamer',
+  ]) {
+    const source = parseSource(input);
+    assert.equal(source.ok, true, input);
+    assert.equal(source.kind, 'tiktoklive', input);
+    assert.equal(source.tiktoklive.username, 'typicalgamer', input);
+    assert.equal(source.label, '@typicalgamer', input);
+  }
+  assert.equal(parseSource('https://www.tiktok.com/@typicalgamer').kind, 'tiktok');
+  assert.equal(parseSource('tiktoklive:not a name').ok, false);
+});
+
 test('tiktok: short links and non-video pages explain themselves', () => {
   for (const input of ['https://vm.tiktok.com/ZMabc/', 'https://vt.tiktok.com/ZSabc/', 'https://www.tiktok.com/t/ZTabc/']) {
     assert.match(parseSource(input).error, /Short links/, input);

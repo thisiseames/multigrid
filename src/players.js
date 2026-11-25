@@ -868,6 +868,285 @@ function tiktokFeedPlayer(source, options) {
   };
 }
 
+/* ---------- TikTok LIVE ---------- */
+
+let liveLookupId = 0;
+
+/** Asks the MULTIGRID Sound extension to look up a TikTok live room. */
+function tiktokLiveLookup(username) {
+  if (!hasSoundExtension()) {
+    return Promise.resolve({
+      error: 'TikTok LIVE needs the MULTIGRID Sound extension. Enable it in Chrome, then reload this tile.',
+    });
+  }
+  return new Promise((resolve) => {
+    const id = `live-${++liveLookupId}`;
+    let done = false;
+    let timer = null;
+    const finish = (value) => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const onMessage = (event) => {
+      if (event.source !== window) return;
+      const reply = event.data?.multigridLiveReply;
+      if (reply?.id === id) finish(reply);
+    };
+    window.addEventListener('message', onMessage);
+    timer = setTimeout(() => finish({
+      error: 'The MULTIGRID Sound extension did not answer. Reload it in chrome://extensions, then reload this tile.',
+    }), 12000);
+    window.postMessage({ multigridLive: { id, username } }, '*');
+  });
+}
+
+const liveViewers = (count) => {
+  const n = Number(count) || 0;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+};
+
+function tiktokLivePlayer(source, options) {
+  const { muted, volume, autoplay, onPlayState } = options;
+  const username = String(source.tiktoklive?.username || '').replace(/^@/, '');
+  let stopped = false;
+  let started = false;
+  let liveInfo = null;
+  let streamPlayer = null;
+  let hls = null;
+  let pollTimer = null;
+  let failing = false;
+  let fallbackTried = false;
+
+  const video = document.createElement('video');
+  video.className = 'live-video';
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.muted = muted;
+  if (muted) video.setAttribute('muted', '');
+  video.volume = volume / 100;
+  if (autoplay) video.setAttribute('autoplay', '');
+  video.addEventListener('play', () => onPlayState?.(false));
+  video.addEventListener('pause', () => onPlayState?.(true));
+
+  const avatar = el('img', { class: 'live-avatar', alt: '', referrerPolicy: 'no-referrer' });
+  avatar.addEventListener('error', () => { avatar.hidden = true; });
+  const name = el('b', { class: 'live-name', textContent: `@${username}` });
+  const handle = el('small', { class: 'live-handle', textContent: 'TikTok LIVE' });
+  const badge = el('span', { class: 'live-badge', textContent: 'LIVE' });
+  const viewers = el('span', { class: 'live-viewers', textContent: '' });
+  const title = el('p', { class: 'live-title', textContent: '' });
+  const overlay = el('div', { class: 'live-overlay' },
+    el('div', { class: 'live-head' }, avatar, el('span', { class: 'live-person' }, name, handle), badge, viewers),
+    title);
+  const statusKicker = el('span', { class: 'live-status-kicker', textContent: 'TIKTOK LIVE' });
+  const statusTitle = el('b', { class: 'live-status-title', textContent: `@${username}` });
+  const statusText = el('p', { class: 'live-status-text', textContent: 'Looking for this live…' });
+  const retry = el('button', { type: 'button', class: 'live-retry', textContent: 'Try again', hidden: true });
+  const status = el('div', { class: 'live-status' }, statusKicker, statusTitle, statusText, retry);
+  const box = el('div', { class: 'live-tile' }, video, overlay, status);
+  overlay.hidden = true;
+  avatar.hidden = true;
+
+  const setStatus = (heading, text, canRetry = false) => {
+    status.hidden = false;
+    overlay.hidden = true;
+    statusTitle.textContent = heading;
+    statusText.textContent = text;
+    retry.hidden = !canRetry;
+  };
+
+  const fill = (info) => {
+    liveInfo = info;
+    const who = info.nickname || `@${info.username || username}`;
+    name.textContent = who;
+    handle.textContent = info.nickname ? `@${info.username || username}` : 'TikTok LIVE';
+    title.textContent = info.title || '';
+    viewers.textContent = info.viewers ? `${liveViewers(info.viewers)} watching` : '';
+    avatar.hidden = !info.avatar;
+    if (info.avatar) avatar.src = info.avatar;
+  };
+
+  const showLive = () => {
+    overlay.hidden = false;
+    status.hidden = true;
+  };
+
+  const stopStream = () => {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+    if (streamPlayer) {
+      streamPlayer.destroy();
+      streamPlayer = null;
+    }
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  };
+
+  const playFlv = async (url) => {
+    try {
+      await loadScript('vendor/mpegts.js');
+      if (stopped) return false;
+      const mpegts = window.mpegts;
+      if (!mpegts?.isSupported() || !mpegts.getFeatureList?.().mseLivePlayback) return false;
+      streamPlayer = mpegts.createPlayer({ type: 'flv', url, isLive: true, cors: true }, {
+        enableWorker: true,
+        liveBufferLatencyChasing: true,
+        liveBufferLatencyMinRemain: 1.5,
+        liveBufferLatencyMaxLatency: 3.5,
+        fixAudioTimestampGap: true,
+      });
+      streamPlayer.on(mpegts.Events.ERROR, () => { if (!stopped) streamFailed(); });
+      streamPlayer.attachMediaElement(video);
+      streamPlayer.load();
+      if (autoplay) video.play().catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const playHls = async (url) => {
+    try {
+      await loadScript('vendor/hls.min.js');
+      if (stopped) return false;
+      const Hls = window.Hls;
+      if (!Hls?.isSupported()) return false;
+      hls = new Hls({ lowLatencyMode: true, liveSyncDurationCount: 3 });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data?.fatal && !stopped) streamFailed();
+      });
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      if (autoplay) video.play().catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const streamFailed = async () => {
+    if (stopped || failing) return;
+    failing = true;
+    const fallback = liveInfo?.streams?.find((stream) => stream.hls);
+    if (fallback?.hls && !fallbackTried) {
+      fallbackTried = true;
+      stopStream();
+      if (await playHls(fallback.hls)) {
+        failing = false;
+        pollTimer = setTimeout(poll, 30000);
+        return;
+      }
+    }
+    stopStream();
+    if (liveInfo) liveInfo = { ...liveInfo, live: false };
+    setStatus('TikTok LIVE', 'The live stream did not start. Try again in a moment.', true);
+  };
+
+  const poll = async () => {
+    if (stopped) return;
+    const reply = await tiktokLiveLookup(username);
+    if (stopped) return;
+    if (reply?.error) {
+      pollTimer = setTimeout(poll, 30000);
+      return;
+    }
+    if (!reply.live) {
+      liveInfo = { ...(liveInfo || {}), ...reply, live: false };
+      stopStream();
+      setStatus(`@${reply.username || username}`, 'This LIVE has ended.', true);
+      return;
+    }
+    fill(reply);
+    pollTimer = setTimeout(poll, 30000);
+  };
+
+  const tune = async () => {
+    if (stopped) return;
+    failing = false;
+    fallbackTried = false;
+    setStatus(`@${username}`, 'Looking for this live…');
+    const reply = await tiktokLiveLookup(username);
+    if (stopped) return;
+    if (reply?.error) {
+      setStatus('TikTok LIVE', reply.error, true);
+      return;
+    }
+    fill(reply);
+    if (!reply.live) {
+      setStatus(`@${reply.username || username}`, 'This account is not live right now.', true);
+      return;
+    }
+    const stream = reply.streams?.find((item) => item.flv) || reply.streams?.find((item) => item.hls);
+    if (!stream) {
+      setStatus(`@${reply.username || username}`, 'TikTok did not return a playable stream.', true);
+      return;
+    }
+    showLive();
+    const playing = stream.flv ? await playFlv(stream.flv) : false;
+    if (!playing && stream.hls) {
+      if (!await playHls(stream.hls)) {
+        setStatus('TikTok LIVE', 'The live stream did not start. Try again in a moment.', true);
+        return;
+      }
+    } else if (!playing) {
+      setStatus('TikTok LIVE', 'This live has no playable video stream.', true);
+      return;
+    }
+    pollTimer = setTimeout(poll, 30000);
+  };
+
+  retry.addEventListener('click', () => {
+    stopStream();
+    tune();
+  });
+
+  return {
+    el: box,
+    canMute: true,
+    canVolume: levelWorks,
+    canPause: true,
+    canSeek: false,
+    info: () => ({
+      live: Boolean(liveInfo?.live),
+      title: liveInfo?.title || `TikTok LIVE · @${username}`,
+      author: liveInfo?.nickname ? `${liveInfo.nickname} · @${username}` : `@${username}`,
+    }),
+    start() {
+      if (started) return;
+      started = true;
+      tune();
+    },
+    setPaused(next) {
+      if (next) video.pause();
+      else video.play().catch(() => {});
+    },
+    setMuted(next) {
+      video.muted = next;
+    },
+    setVolume(next) {
+      video.volume = next / 100;
+    },
+    destroy() {
+      stopped = true;
+      clearTimeout(pollTimer);
+      pollTimer = null;
+      stopStream();
+      video.removeAttribute('src');
+      video.load();
+    },
+  };
+}
+
 function tiktokPlayer(source, options) {
   if (source.tiktok.profile) return tiktokFeedPlayer(source, options);
   const { muted, volume, autoplay, env, onError } = options;
@@ -1575,6 +1854,7 @@ const PLAYERS = {
   twitch: twitchPlayer,
   kick: addressMutedPlayer,
   tiktok: tiktokPlayer,
+  tiktoklive: tiktokLivePlayer,
   x: xPlayer,
   file: filePlayer,
   playlist: playlistPlayer,

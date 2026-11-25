@@ -58,6 +58,22 @@ test('retired layouts are no longer offered but still open saved screens', () =>
   }
 });
 
+test('a TikTok LIVE becomes the vertical phone column', () => {
+  const ws = withStreams(2, 'equal');
+  ws.tiles[0].input = 'https://www.tiktok.com/@typicalgamer/live';
+  phoneColumn(ws, ws.tiles[0].id);
+  assert.equal(ws.presetId, 'phone');
+  assert.equal(phoneTile(ws)?.id, ws.tiles[0].id);
+});
+
+test('a TikTok LIVE keeps the phone column over a profile feed', () => {
+  const ws = withStreams(2, 'equal');
+  ws.tiles[0].input = 'https://www.tiktok.com/@typicalgamer';
+  ws.tiles[1].input = 'https://www.tiktok.com/@typicalgamer/live';
+  phoneColumn(ws, ws.tiles[1].id);
+  assert.equal(phoneTile(ws)?.id, ws.tiles[1].id);
+});
+
 test('a REELS website becomes the vertical phone column', () => {
   const ws = withStreams(2, 'equal');
   ws.tiles[0].input = 'https://urlebird.com/trending/';
