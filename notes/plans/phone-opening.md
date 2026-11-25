@@ -60,4 +60,6 @@ sound is the existing generated Web Audio sting; the opening background is the p
 - The splash removal timer runs from the animation start, not from page load.
 - `empty-wall.jpg` is the logo collage for the clear-all wall; `opening-collage.jpg` is the
   plain opening image. Never swap or overwrite them.
+- The iOS launch screen is separate from the web splash. Black `apple-touch-startup-image`
+  files and a black first paint stop the white flash before the opening.
 - iOS will usually block the cold-launch sound; the logo is the reliable part.
