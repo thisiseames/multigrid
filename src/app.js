@@ -132,7 +132,7 @@ const STARTERS = [
 let ws = loadCurrent();
 let roomReturn = null;
 let roomToken = 0;
-let homeOpen = false;
+let homeOpen = document.body.classList.contains('is-phone');
 // A second, time-aware home for preview: ?home=daypart&at=20:00. The normal home is untouched.
 const homeQuery = new URLSearchParams(location.search);
 const daypartPreview = homeQuery.get('home') === 'daypart';

@@ -11,7 +11,7 @@ sound is the existing generated Web Audio sting; the opening background is the p
 
 - On a full phone launch the screen is near-black. The MULTIGRID wordmark is the first thing
   seen; it draws together for 1.6 s, holds, then fades.
-- The app appears on Streams, or on the existing logo collage empty wall when there are no streams.
+- The app appears on Home. Streams is one tap away; with no streams, Streams shows the existing logo collage empty wall.
 - The existing logo collage stays as `assets/empty-wall.jpg` and remains the phone empty wall.
 - The plain collage is a separate `assets/opening-collage.jpg`, used only by the opening.
 - Desktop is unchanged: no phone splash, same empty-wall logo and sound.
@@ -41,7 +41,7 @@ sound is the existing generated Web Audio sting; the opening background is the p
 - Reduce Motion: no animation; logo static; short hold and fade.
 - Desktop 1440 px: no phone splash; existing layout unaffected.
 - 402 tests pass.
-- Live checks: phone 390 px shows the wordmark first, then the plain opening collage, then the logo collage wall and app; desktop 1440 px has no phone splash; the menu shows both switches.
+- Live checks: phone 390 px shows the wordmark first, then the plain opening collage, then the Home screen; Streams with no streams shows the logo collage wall. Desktop 1440 px has no phone splash; the menu shows both switches.
 
 ## Steps
 
