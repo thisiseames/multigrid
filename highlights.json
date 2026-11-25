@@ -1,5 +1,5 @@
 {
- "updated": 1795585528545,
+ "updated": 1795587079771,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -778,6 +778,11 @@
      "rank": 3.5
     },
     {
+     "id": "Cv92zqJxO1k",
+     "title": "EXTENDED: CELTICS at WIZARDS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
+     "rank": 3.5
+    },
+    {
      "id": "kV23wgDR898",
      "title": "Highlights: Washington Wizards vs. Boston Celtics",
      "rank": 2
@@ -789,7 +794,13 @@
    "title": "Nuggets 101–120 Mavericks",
    "start": 1795575600000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "ZV_1v8zzUbw",
+     "title": "MAVERICKS at NUGGETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401910023": {
    "league": "NBA",
