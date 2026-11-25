@@ -227,6 +227,11 @@ const grid = new GridView($('grid'), $('stage'), env, {
     else delete tile.page;
     saveCurrent(ws);
   },
+  // A profile card clicked a video: open it in its own TikTok tile, keeping the profile as it is.
+  onOpenVideo: (input, title) => {
+    closePopovers();
+    addStream(input, { mode: 'add' }, title || '');
+  },
   onCast: (id) => castStream(id),
   // Picture in picture: the small screen becomes the big one.
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
@@ -2606,7 +2611,7 @@ function renderPhoneBar() {
   if (!wantArt && artSlot.firstElementChild) artSlot.replaceChildren();
   artSlot.hidden = !artSlot.firstElementChild;
   let title = name;
-  let sub = 'Playing';
+  let sub = parseSource(tile.input).kind === 'tiktokprofile' ? 'Latest videos' : 'Playing';
   if (card?.score) {
     title = card.score.order.map((key) => `${card.score[key].name}${card.score[key].score !== '' ? ` ${card.score[key].score}` : ''}`).join('   ');
     sub = card.score.clock;
@@ -4517,6 +4522,17 @@ function tiktokUsernameFrom(value) {
   return source.kind === 'tiktok' && source.tiktok?.profile ? source.tiktok.profile : '';
 }
 
+/** Opens a native, read-only TikTok profile tile: header and latest videos, no site in a frame. */
+function openTikTokProfile(name) {
+  const input = `tiktokprofile:${name}`;
+  const existing = ws.tiles.find((tile) => tile.input === input && tile.place);
+  if (existing) {
+    toast(`@${name}'s profile is already open.`);
+    return;
+  }
+  addStream(input, { mode: 'add' });
+}
+
 let tiktokMenuFeedsAsked = false;
 let tiktokAvatarObserver = null;
 
@@ -6206,14 +6222,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveP
 
 let addFolder = '';
 const KIND_NAMES = {
-  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', tiktoklive: 'TikTok Live', blueskyvideos: 'Bluesky videos', kick: 'Kick', x: 'X', file: 'Video file',
+  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', tiktokprofile: 'TikTok profile', tiktoklive: 'TikTok Live', blueskyvideos: 'Bluesky videos', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
   podcastshow: 'Podcast',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', tiktoklive: 'live', blueskyvideos: 'play', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
+const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', tiktokprofile: 'person', tiktoklive: 'live', blueskyvideos: 'play', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
+const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -6385,6 +6401,11 @@ function favoriteArt(item, source, highRes = false) {
   if (source.kind === 'blueskyvideos') {
     art.className = 'fart is-picture';
     artPicture(art, 'assets/bluesky-logo.svg', quiet);
+    return art;
+  }
+  if (source.kind === 'tiktokprofile') {
+    art.className = 'fart is-picture';
+    artPicture(art, 'assets/tiktok-logo.svg', quiet);
     return art;
   }
   const logo = !NOT_TV_KINDS.has(source.kind) ? logoFor(item.name) : null;
@@ -8853,7 +8874,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'podcastshow']);
+const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'podcastshow']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {
@@ -12547,17 +12568,29 @@ function buildTikTokMenu() {
   const row = (account) => {
     const art = el('span', { class: 'reels-icon tiktok-row-art' }, icon('music', 18));
     artJobs.set(art, account.username);
-    return el('li', {}, el('button', {
-      type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
-      on: {
-        click() {
-          closePopovers();
-          addStream(account.input, { mode: 'add' });
+    return el('li', { class: 'tiktok-menu-item' },
+      el('button', {
+        type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
+        on: {
+          click() {
+            closePopovers();
+            addStream(account.input, { mode: 'add' });
+          },
         },
       },
-    },
-    art,
-    el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))));
+      art,
+      el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))),
+      el('button', {
+        type: 'button', class: 'tiktok-profile-action',
+        title: `Open ${account.label} profile`,
+        aria: { label: `Open ${account.label} profile` },
+        on: {
+          click() {
+            closePopovers();
+            openTikTokProfile(account.username);
+          },
+        },
+      }, icon('person', 14), el('span', { textContent: 'Profile' })));
   };
   const input = el('input', {
     id: 'tiktok-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
@@ -12565,18 +12598,28 @@ function buildTikTokMenu() {
   });
   const error = el('p', { class: 'live-add-error', hidden: true });
   input.addEventListener('input', () => { error.hidden = true; });
+  const typedName = () => {
+    const name = tiktokUsernameFrom(input.value);
+    if (!name) {
+      error.textContent = 'Enter a TikTok username or account link.';
+      error.hidden = false;
+      input.focus();
+    }
+    return name;
+  };
+  const openTypedProfile = () => {
+    const name = typedName();
+    if (!name) return;
+    closePopovers();
+    openTikTokProfile(name);
+  };
   const form = el('form', {
-    class: 'live-add-form',
+    class: 'live-add-form tiktok-add-form',
     on: {
       submit(event) {
         event.preventDefault();
-        const name = tiktokUsernameFrom(input.value);
-        if (!name) {
-          error.textContent = 'Enter a TikTok username or account link.';
-          error.hidden = false;
-          input.focus();
-          return;
-        }
+        const name = typedName();
+        if (!name) return;
         const existing = listFavorites().find((item) => {
           const source = parseSource(item.input);
           return source.kind === 'tiktok' && source.tiktok?.profile?.toLocaleLowerCase() === name.toLocaleLowerCase();
@@ -12588,7 +12631,13 @@ function buildTikTokMenu() {
         addStream(target, { mode: 'add' });
       },
     },
-  }, input, el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }));
+  }, input,
+  el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }),
+  el('button', {
+    type: 'button', class: 'live-add-button is-profile', textContent: 'Profile',
+    title: 'Open this account as a profile tile',
+    on: { click: openTypedProfile },
+  }));
   menu.replaceChildren(
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'TikTok' }),

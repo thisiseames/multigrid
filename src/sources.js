@@ -397,6 +397,17 @@ export function parseSource(raw) {
       tiktoklive: { username: name },
     };
   }
+  // A native, read-only profile: the header and latest videos, without TikTok's page in a frame.
+  if (/^tiktokprofile:/i.test(input)) {
+    const name = input.slice('tiktokprofile:'.length).trim().replace(/^@/, '');
+    if (!/^[\w.]{2,24}$/.test(name)) return fail(input, "That isn't a TikTok username.");
+    return {
+      ok: true, input, kind: 'tiktokprofile',
+      label: `TikTok · @${name}`,
+      openUrl: `https://www.tiktok.com/@${name}`,
+      tiktokprofile: { username: name },
+    };
+  }
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);

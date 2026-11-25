@@ -1,83 +1,98 @@
-# Native TikTok profile tile (laptop)
+# Native TikTok profile tile (laptop and phone)
 
-**Status:** building. Spike in progress: extension fetch of a real TikTok profile.
+**Status:** built; checks pass. Commit/live check pending.
 
 ## Running cost
 
-$0/month. Laptop Chrome only, using the existing MULTIGRID Sound extension. No new server,
-account or API key. TikTok profile data is fetched by the extension in the background and
-cached in the app for five minutes.
+$0/month. No server, account, key or extension. The profile uses the same `r.jina.ai` reader
+MULTIGRID already uses for TikTok. A refresh asks for the profile page, the account embed and
+the newest six video pages (eight requests), then caches the result for 10 minutes. The reader's
+limit is about 20 requests a minute, so normal use stays under it.
 
 ## Experience
 
-- **Entry:** in the TikTok dropdown, each account row gets a small **Profile** action; the
-  username field can also open a profile. It adds a tile, not a popover.
-- **Tile:** normal grid tile labelled `TikTok · @username`; movable/resizable like every tile.
+- **Entry:** every account row in the TikTok dropdown has a small **Profile** action. The
+  username field also has a **Profile** button, so a typed account can open a profile directly.
+- **Tile:** a normal grid tile labelled `TikTok · @username`; movable/resizable like every tile.
 - **First frame:** compact profile header — avatar, display name, @handle, verified mark,
-  followers, following, total likes, video count.
-- **Below:** latest videos, newest first, with cover, views, likes and date. The tile body
-  scrolls; no giant banner and no TikViewer chrome.
-- **Video click:** opens that TikTok video in the existing vertical TikTok feed/tile; the
-  profile tile stays in place.
-- **Refresh:** a small refresh action re-asks the extension; otherwise cached five minutes.
-- **No:** earnings calculator, creator score, hashtag pages, trending/top-creator pages.
-  Those are TikViewer estimates/marketing, not profile data.
+  signature, followers, following, total likes and video count.
+- **Below:** the newest six videos, with cover, views, likes, comments and date. The tile body
+  scrolls; no TikViewer banner or page chrome.
+- **Video click:** opens that TikTok video in a TikTok player tile; the profile tile stays.
+- **Refresh:** re-fetches the profile and the six videos.
+- **No:** earnings calculator, creator score, hashtags, top creators.
 
 ## Data
 
-- The page asks `carry.js` → extension background for one username.
-- The background fetches `https://www.tiktok.com/@username?lang=en` with host permissions,
-  reads the public profile JSON in the page, and returns:
-  - user: id, handle, display name, avatar, verified, signature, follower/following/heart/
-    video counts;
-  - videos: id, description, cover, created time, duration, views, likes, comments, shares.
-- The app parses a `tiktokprofile:@username` source and renders the tile. No TikTok page is
-  loaded in the tile.
-- If TikTok returns a challenge/login page or no profile JSON, the tile says so; no fake
-  numbers.
+- The profile page (`r.jina.ai/https://www.tiktok.com/@username` with `X-Return-Format: html`)
+  supplies the exact header from its embedded `__UNIVERSAL_DATA_FOR_REHYDRATION__`: name,
+  avatar, verified mark, signature, followers/following/hearts and total video count.
+- TikTok's account embed (`r.jina.ai/https://www.tiktok.com/embed/@username?lang=en-US`) is
+  the reliable video list: ten recent videos with IDs, descriptions, covers and view counts
+  in `__FRONTITY_CONNECT_STATE__`. The full profile page sometimes leaves out its video cards
+  for a logged-out reader, so the tile prefers the embed and falls back to the profile page.
+- Each of the newest six video pages returns `playCount`, `diggCount`, `commentCount` and
+  `shareCount` in its own embedded JSON. If one fails, the card keeps the view count already
+  known and shows no invented likes or comments.
+- The merged profile is cached for 10 minutes. No key, no login, public profiles only.
+- If the profile page fails but the embed works, the header still renders and the video count
+  shows as `—`; if both fail, the tile shows the unavailable state.
 
 ## Controls and exceptions
 
-- **Extension missing:** tile explains it needs laptop Chrome with MULTIGRID Sound.
-- **TikTok blocks the fetch:** “TikTok didn’t return that profile” + Try again.
-- **Private/age-restricted:** clear unavailable message.
-- **No videos:** header still shows; empty-videos line.
-- **Phone:** profile tile unavailable; existing TikTok menus/feeds unchanged.
-- **Desktop:** tile can be moved/resized; the profile view is responsive. Other tiles
-  unchanged.
+- **Profile action** on TikTok account rows and beside the username field.
+- **Refresh** in the profile header; a subtle spinner while it asks.
+- **Loading:** compact skeleton header/cards, no blank flash.
+- **Reader/profile error:** “Profile unavailable” with the reason and **Try again**.
+- **Private account:** public header stays; note explains that only the public header is shown.
+- **No videos:** header still shows; a clear empty-videos line.
+- **Laptop and phone:** normal tile. On a stacked phone layout the profile body gets a taller
+  height. On phone the stream bar says “Latest videos”, not “Playing”.
+- Profile tiles are not popped out; the card is not a stream. Existing TikTok menus, feeds,
+  other tiles and pop-out behaviour are unchanged.
 
 ## Assets and files
 
-- No new image asset; avatar/cover URLs come from TikTok, with the existing TikTok music icon
-  and initials as fallbacks.
-- Likely files: `extension/bg.js`, `extension/carry.js`, `extension/manifest.json` (version),
-  `src/sources.js`, `src/players.js`, `src/app.js`, `styles.css`, and tests.
-- Any new `src/` file must be added to the inline file list and CSP hash in `index.html`.
+- No new image asset; TikTok avatar/cover URLs, with the existing TikTok logo and initials as
+  fallbacks.
+- `src/tiktok-profile.js` (reader fetch, profile/embed/video parsers, cache)
+- `src/sources.js` (`tiktokprofile:` source)
+- `src/players.js` (native profile tile)
+- `src/grid-view.js` (profile video click bridge)
+- `src/app.js` (menu action, typed Profile button, tile registration, phone bar)
+- `src/popout.js` (profile is not poppable)
+- `src/ui.js` (person, eye, heart, comment icons)
+- `styles.css` (menu action, profile tile, skeleton, phone height)
+- `index.html` (help text, file list, CSP hash)
+- `tests/tiktok-profile.test.mjs`, `tests/sources.test.mjs`
 
 ## Checks
 
-- **Spike:** extension fetches @speedymorman and returns real follower/like/video fields.
-  If TikTok blocks it, stop; do not build an empty tile.
-- Parser tests for the profile JSON: fields, missing fields, weird URLs.
-- Add profile tile from the TikTok menu at 1440 px; header and videos fit; no banner; tile
-  resizes; a video opens in the TikTok player; profile stays.
-- Extension off/blocked: clear states.
-- Existing TikTok feeds, menu and phone layout unchanged.
-- All existing tests plus new parser tests; live check at laptop and phone width.
+- Parser tests: profile header, verified, counts, video cards, views, dates; embed header and
+  videos; video-page engagement; missing/duplicate/invalid data; merge and cache.
+- Add a profile tile from the TikTok menu at 1440 px: real header and counts, six cards, no
+  banner; click a video opens it in a new tile; profile stays.
+- Phone 390 px: 3-column cards, internal scroll, no horizontal overflow; taller stacked body.
+- Reader blocked: clear unavailable state; **Try again** recovers once the reader returns.
+- Typed Profile button: invalid name shows the inline error; valid name opens the profile.
+- Existing TikTok feeds/menu, other tiles, all tests.
 
 ## Steps
 
-- [ ] Write and push this plan.
-- [ ] Spike the extension fetch/parser; stop if blocked.
-- [ ] Add the profile bridge and parser tests.
-- [ ] Add `tiktokprofile:` source and native tile UI.
-- [ ] Add the Profile action to the TikTok menu; verify tile/video flow.
-- [ ] Verify extension-off, blocked, empty; laptop and phone.
-- [ ] Bump the extension, reload it, commit/push, check live; mark DONE.
+- [x] Spike the reader/profile/video data (real @speedymorman and others).
+- [x] Write and push the revised plan.
+- [x] Add `src/tiktok-profile.js` parsers/tests.
+- [x] Add `tiktokprofile:` source, player and profile tile UI.
+- [x] Add the Profile action and app open-video bridge.
+- [x] Update index file list/CSP; run tests; verify laptop and phone.
+- [ ] Commit/push, check live, mark DONE.
 
 ## Gotchas
 
-- TikTok may block headless/datacenter requests; the extension uses the user's real Chrome.
-- The extension's background service worker may need waking; the page bridge handles replies.
-- Public data only; no login, private profiles, earnings or creator score.
-- Do not load the TikTok page in the tile; the whole point is to remove it.
+- The reader is third-party and rate-limited; cache and fail quietly.
+- The full profile page can omit its video cards; the account embed is the fallback that keeps
+  the latest videos working.
+- TikTok HTML class names change; parse the embedded JSON and stable video links, not CSS.
+- Public data only; no private profiles, earnings or creator score.
+- The six video requests are the rate-limit cost; do not fetch every listed video.
+- Profile tiles must not be popped out: there is no `onOpenVideo` bridge in the floating window.

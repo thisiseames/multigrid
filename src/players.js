@@ -14,6 +14,7 @@
 import { loadBlueskyVideos } from './bluesky.js';
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
+import { loadTikTokProfile, shortTikTokCount } from './tiktok-profile.js';
 import { zliveEmbed } from './zlive.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, icon, iconButton } from './ui.js';
@@ -1340,6 +1341,187 @@ function blueskyVideoPlayer(source, options) {
   };
 }
 
+/* ---------- TikTok profile (native, read-only) ---------- */
+
+/* A compact profile card: header, counts and the latest videos. Nothing from TikTok's page
+   is framed; the same public reader used by the feeds supplies the data. */
+function tiktokProfilePlayer(source, options) {
+  const { onOpenVideo } = options;
+  const username = source.tiktokprofile.username;
+  let loading = false;
+  let started = false;
+  let stopped = false;
+  let generation = 0;
+
+  const refresh = el('button', {
+    type: 'button', class: 'tik-profile-refresh', title: 'Refresh profile',
+    aria: { label: 'Refresh profile' },
+    on: { click: () => { load(true); } },
+  }, icon('reload', 14));
+  const top = el('div', { class: 'tik-profile-top' },
+    el('img', { class: 'tik-profile-mark', src: 'assets/tiktok-logo.svg', alt: '' }),
+    el('span', { class: 'tik-profile-site', textContent: 'TikTok profile' }),
+    el('span', { class: 'tik-profile-handle', textContent: `@${username}` }),
+    refresh);
+  const body = el('div', { class: 'tik-profile-body' });
+  const root = el('div', { class: 'tik-profile' }, top, body);
+
+  const line = (className) => el('span', { class: `tik-skel ${className}` });
+  const skeleton = () => {
+    const stats = el('div', { class: 'tik-profile-stats is-skeleton' },
+      ...Array.from({ length: 4 }, () => line('tik-skel-stat')));
+    const cards = el('div', { class: 'tik-profile-grid' },
+      ...Array.from({ length: 6 }, () => el('span', { class: 'tik-skel tik-skel-card' })));
+    body.replaceChildren(
+      el('section', { class: 'tik-profile-head is-skeleton' },
+        el('span', { class: 'tik-skel tik-skel-avatar' }),
+        el('span', { class: 'tik-profile-person' },
+          line('tik-skel-name'), line('tik-skel-handle'), line('tik-skel-signature'))),
+      stats,
+      cards);
+  };
+
+  const showError = (message) => {
+    refresh.hidden = true;
+    const retry = el('button', {
+      type: 'button', class: 'tik-profile-retry', textContent: 'Try again',
+      on: { click: () => { refresh.hidden = false; load(true); } },
+    });
+    body.replaceChildren(
+      el('div', { class: 'tik-profile-status' },
+        el('img', { class: 'tik-profile-status-mark', src: 'assets/tiktok-logo.svg', alt: '' }),
+        el('span', { class: 'tik-profile-kicker', textContent: 'TIKTOK PROFILE' }),
+        el('b', { class: 'tik-profile-status-title', textContent: 'Profile unavailable' }),
+        el('p', { class: 'tik-profile-status-text', textContent: message }),
+        retry));
+  };
+
+  const render = (data) => {
+    const user = data.user;
+    const videos = data.videos.slice(0, 6);
+    refresh.hidden = false;
+    const fallback = el('span', {
+      class: 'tik-profile-avatar-fallback',
+      textContent: (user.name || user.handle || '?').slice(0, 1).toLocaleUpperCase(),
+      hidden: Boolean(user.avatar),
+    });
+    const avatar = el('img', {
+      class: 'tik-profile-avatar', src: user.avatar || '', alt: '', loading: 'lazy',
+      decoding: 'async', referrerPolicy: 'no-referrer', hidden: !user.avatar,
+    });
+    avatar.addEventListener('error', () => { avatar.hidden = true; fallback.hidden = false; });
+    const name = el('span', { class: 'tik-profile-name' },
+      el('b', { textContent: user.name || `@${user.handle}` }),
+      user.verified ? el('span', { class: 'tik-profile-verified', title: 'Verified', aria: { label: 'Verified' } }, icon('check', 11)) : null);
+    const signature = user.signature ? el('p', { class: 'tik-profile-signature', textContent: user.signature }) : null;
+    const handle = el('span', { class: 'tik-profile-userhandle', textContent: `@${user.handle}` });
+    const stat = (value, label) => el('span', { class: 'tik-profile-stat' },
+      el('b', { textContent: value === null || value === undefined ? '—' : shortTikTokCount(value) }),
+      el('small', { textContent: label }));
+    const stats = el('div', { class: 'tik-profile-stats' },
+      stat(user.followers, 'Followers'),
+      stat(user.following, 'Following'),
+      stat(user.likes, 'Likes'),
+      stat(user.videos, 'Videos'));
+
+    const card = (video, index) => {
+      const cover = el('span', { class: 'tik-card-cover' });
+      if (video.cover) {
+        const image = el('img', {
+          src: video.cover, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer',
+        });
+        image.addEventListener('error', () => image.remove());
+        cover.append(image);
+      } else {
+        cover.classList.add('is-empty');
+      }
+      cover.append(el('span', { class: 'tik-card-views' },
+        icon('eye', 11),
+        el('span', { textContent: video.views || '—' })));
+      const meta = el('span', { class: 'tik-card-meta' });
+      if (video.likes) meta.append(el('span', {}, icon('heart', 11), el('span', { textContent: shortTikTokCount(video.likes) })));
+      if (video.comments) meta.append(el('span', {}, icon('comment', 11), el('span', { textContent: shortTikTokCount(video.comments) })));
+      if (video.createdAt) meta.append(el('span', { textContent: ago(video.createdAt * 1000) }));
+      return el('button', {
+        type: 'button', class: 'tik-card',
+        title: video.title || `Open video ${index + 1}`,
+        on: { click: () => { if (!stopped) onOpenVideo?.(video.url, video.title || ''); } },
+      },
+      cover,
+      el('span', { class: 'tik-card-title', textContent: video.title || 'Open video' }),
+      meta);
+    };
+
+    const privateNote = user.private
+      ? el('p', { class: 'tik-profile-note', textContent: 'This account is private, so only its public header is shown.' })
+      : null;
+    body.replaceChildren(
+      el('section', { class: 'tik-profile-head' },
+        el('span', { class: 'tik-profile-avatar-wrap' }, avatar, fallback),
+        el('span', { class: 'tik-profile-person' },
+          name, handle, signature),
+        privateNote),
+      stats,
+      el('div', { class: 'tik-profile-section' },
+        el('b', { textContent: 'Latest videos' }),
+        el('small', { textContent: videos.length ? `${videos.length} of ${data.videos.length}` : 'Public videos' })),
+      videos.length
+        ? el('div', { class: 'tik-profile-grid' }, ...videos.map(card))
+        : el('p', { class: 'tik-profile-empty', textContent: 'No public videos right now.' }));
+    body.scrollTop = 0;
+  };
+
+  async function load(force = false) {
+    if (loading || stopped) return;
+    loading = true;
+    const run = ++generation;
+    refresh.disabled = true;
+    refresh.classList.add('is-loading');
+    if (force || !body.querySelector('.tik-profile-head')) skeleton();
+    try {
+      const data = await loadTikTokProfile(username, { force });
+      if (stopped || run !== generation) return;
+      if (!data?.user?.handle) throw new Error("TikTok didn't return that profile.");
+      render(data);
+    } catch (error) {
+      if (stopped || run !== generation) return;
+      const message = /didn't return|not found|private/i.test(String(error?.message))
+        ? "TikTok didn't return that profile. Check the username, or try again in a minute."
+        : 'The profile reader could not be reached. Try again in a minute.';
+      showError(message);
+    } finally {
+      if (run === generation) {
+        loading = false;
+        refresh.disabled = false;
+        refresh.classList.remove('is-loading');
+      }
+    }
+  }
+
+  return {
+    el: root,
+    canMute: false,
+    canVolume: false,
+    canPause: false,
+    canSeek: false,
+    silent: true,
+    start() {
+      if (started || stopped) return;
+      started = true;
+      load(false);
+    },
+    setMuted() {},
+    setVolume() {},
+    setPaused() {},
+    seekBy() {},
+    destroy() {
+      stopped = true;
+      generation += 1;
+      loading = false;
+    },
+  };
+}
+
 function tiktokPlayer(source, options) {
   if (source.tiktok.profile) return tiktokFeedPlayer(source, options);
   const { muted, volume, autoplay, env, onError } = options;
@@ -2047,6 +2229,7 @@ const PLAYERS = {
   twitch: twitchPlayer,
   kick: addressMutedPlayer,
   tiktok: tiktokPlayer,
+  tiktokprofile: tiktokProfilePlayer,
   tiktoklive: tiktokLivePlayer,
   blueskyvideos: blueskyVideoPlayer,
   x: xPlayer,

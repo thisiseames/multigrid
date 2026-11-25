@@ -168,6 +168,8 @@ class TileView {
       onEpisode: (name) => this.grid.handlers.onEpisode?.(this.id, name),
       // The extension says when the page inside moves on, so a reload comes back to it.
       onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
+      // A profile card opens a video in its own tile, leaving the profile where it is.
+      onOpenVideo: (url, title) => this.grid.handlers.onOpenVideo?.(url, title),
       onError: (message) => {
         if (generation !== this.generation) return;
         this.recover(message);

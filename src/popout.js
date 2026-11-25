@@ -26,6 +26,8 @@ const videoFloats = (video) => Boolean(video && (
 /** Whether this tile gets a Pop out button. */
 export function canPopOut(view) {
   if (!view.source?.ok) return false;
+  // A profile card opens videos in the grid; it isn't a stream to float.
+  if (view.source.kind === 'tiktokprofile') return false;
   if (docWindow()) return view.source.kind !== 'reader';
   if (fromHomeScreen()) return false;
   return videoFloats(videoOf(view));

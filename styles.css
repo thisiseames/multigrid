@@ -206,8 +206,18 @@ body.is-phone .sports-switch { display: none; }
 .live-row-art img { width: 100%; height: 100%; object-fit: cover; }
 .tiktok-row-art { overflow: hidden; padding: 0; }
 .tiktok-row-art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.tiktok-menu-item { display: flex; align-items: center; gap: 2px; border-radius: 9px; }
+.tiktok-menu-item .reels-row { flex: 1; width: auto; min-width: 0; }
+.tiktok-profile-action { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 30px; margin-right: 3px; padding: 0 8px; border-radius: 7px; color: var(--text-2); font-size: 11.5px; font-weight: 650; }
+.tiktok-profile-action:hover { background: var(--hover); color: var(--text); }
+.tiktok-profile-action svg { width: 14px; height: 14px; }
 .live-add-form { display: flex; gap: 6px; }
+.live-add-button.is-profile { padding: 0 9px; color: var(--text-2); }
+.live-add-button.is-profile:hover { color: var(--text); }
 .live-add-form input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; }
+.tiktok-add-form { flex-wrap: wrap; }
+.live-add-form.tiktok-add-form input { flex: 1 1 100%; }
+.live-add-form.tiktok-add-form .live-add-button { flex: 1; }
 .live-add-form input:focus { outline: none; border-color: var(--accent); }
 .live-add-button { flex: none; height: 34px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--raised); color: var(--text); font-size: 12.5px; font-weight: 650; }
 .live-add-button:hover { background: var(--hover); }
@@ -1292,6 +1302,67 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .bsky-stat { display: inline-flex; align-items: center; gap: 4px; }
 .bsky-status .live-status-kicker { color: #1185fe; }
 .grid.stacked .tile-body:has(.bsky-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }
+
+/* ---------- Native TikTok profile ---------- */
+.tik-profile { position: absolute; inset: 0; display: flex; flex-direction: column; background: #101014; color: var(--text); }
+.tik-profile-top { flex: none; display: flex; align-items: center; gap: 7px; min-width: 0; height: 34px; padding: 0 8px 0 10px; border-bottom: 1px solid var(--border); background: #17171b; }
+.tik-profile-mark { flex: none; width: 18px; height: 18px; border-radius: 5px; }
+.tik-profile-site { flex: none; font-size: 11px; font-weight: 750; letter-spacing: .03em; }
+.tik-profile-handle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 11px; }
+.tik-profile-refresh { flex: none; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text-2); }
+.tik-profile-refresh:hover { background: var(--hover); color: var(--text); }
+.tik-profile-refresh[hidden] { display: none; }
+.tik-profile-refresh:disabled { opacity: .6; cursor: default; }
+.tik-profile-refresh.is-loading svg { animation: tik-spin .9s linear infinite; }
+@keyframes tik-spin { to { transform: rotate(360deg); } }
+.tik-profile-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 20px; -webkit-overflow-scrolling: touch; }
+.tik-profile-head { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; align-items: center; }
+.tik-profile-avatar-wrap { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; background: #26262c; display: grid; place-items: center; }
+.tik-profile-avatar { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tik-profile-avatar[hidden], .tik-profile-avatar-fallback[hidden] { display: none; }
+.tik-profile-avatar-fallback { color: #fe2c55; font-size: 22px; font-weight: 750; }
+.tik-profile-person { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tik-profile-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.tik-profile-name b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 700; }
+.tik-profile-verified { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #20a7f5; color: #fff; }
+.tik-profile-userhandle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 12px; }
+.tik-profile-signature { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--text-2); font-size: 11.5px; line-height: 1.4; }
+.tik-profile-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 14px 0 16px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.tik-profile-stat { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tik-profile-stat b { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tik-profile-stat small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 10px; }
+.tik-profile-section { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.tik-profile-section b { font-size: 12px; font-weight: 650; }
+.tik-profile-section small { color: var(--text-2); font-size: 10.5px; }
+.tik-profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 9px 8px; }
+.tik-card { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left; }
+.tik-card-cover { position: relative; display: block; width: 100%; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 8px; background: linear-gradient(160deg, #2c1a21, #141418); }
+.tik-card-cover img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .15s; }
+.tik-card:hover .tik-card-cover img { transform: scale(1.03); }
+.tik-card-cover.is-empty::after { content: 'TikTok'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-2); font-size: 11px; }
+.tik-card-views { position: absolute; left: 5px; bottom: 5px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 5px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 10px; font-variant-numeric: tabular-nums; }
+.tik-card-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 11.5px; line-height: 1.35; }
+.tik-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; color: var(--text-2); font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.tik-card-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.tik-profile-note { grid-column: 1 / -1; margin: 4px 0 0; color: var(--text-2); font-size: 11px; line-height: 1.4; }
+.tik-profile-empty { margin: 4px 0 0; color: var(--text-2); font-size: 12px; }
+.tik-profile-status { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 20px; text-align: center; }
+.tik-profile-status-mark { width: 30px; height: 30px; opacity: .85; }
+.tik-profile-kicker { color: #fe2c55; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.tik-profile-status-title { font-size: 14px; }
+.tik-profile-status-text { max-width: 280px; margin: 0; color: var(--text-2); font-size: 11.5px; line-height: 1.5; }
+.tik-profile-retry { height: 30px; margin-top: 4px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--raised); color: var(--text); font-size: 12px; }
+.tik-profile-retry:hover { background: var(--hover); }
+.tik-skel { display: block; border-radius: 6px; background: linear-gradient(100deg, #202025 25%, #2b2b31 42%, #202025 60%); background-size: 220% 100%; animation: tik-shimmer 1.4s ease infinite; }
+@keyframes tik-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.tik-skel-avatar { width: 58px; height: 58px; border-radius: 50%; }
+.tik-skel-name { width: 62%; height: 14px; }
+.tik-skel-handle { width: 40%; height: 10px; }
+.tik-skel-signature { width: 86%; height: 10px; }
+.tik-profile-stats.is-skeleton .tik-skel-stat { height: 26px; }
+.tik-skel-card { width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; }
+.grid.stacked .tile-body:has(.tik-profile) { aspect-ratio: auto; height: 72vh; }
+
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .feed-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 14px; background: #000; color: var(--text-2); font: 13px system-ui, sans-serif; text-align: center; }
 .grid.stacked .tile-body:has(.frame-feed) { aspect-ratio: 9 / 16; max-height: 78vh; }

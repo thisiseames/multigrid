@@ -183,6 +183,18 @@ test('tiktok live links become a native live source', () => {
   assert.equal(parseSource('tiktoklive:not a name').ok, false);
 });
 
+test('a profile tile opens TikTok public data without the site in a frame', () => {
+  for (const input of ['tiktokprofile:@scout2015', 'tiktokprofile:scout2015']) {
+    const source = parseSource(input);
+    assert.equal(source.ok, true, input);
+    assert.equal(source.kind, 'tiktokprofile', input);
+    assert.equal(source.tiktokprofile.username, 'scout2015', input);
+    assert.equal(source.label, 'TikTok · @scout2015', input);
+    assert.equal(source.openUrl, 'https://www.tiktok.com/@scout2015', input);
+  }
+  assert.equal(parseSource('tiktokprofile:not a name').ok, false);
+});
+
 test('tiktok: short links and non-video pages explain themselves', () => {
   for (const input of ['https://vm.tiktok.com/ZMabc/', 'https://vt.tiktok.com/ZSabc/', 'https://www.tiktok.com/t/ZTabc/']) {
     assert.match(parseSource(input).error, /Short links/, input);
