@@ -2954,7 +2954,7 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hcard-text small { font-size: 12.5px; color: rgba(255, 255, 255, .6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Phone home: the same rows, sized for a phone and the bottom tabs. */
-body.is-phone .home-hero { height: min(36vh, 320px); min-height: 230px; }
+body.is-phone .home-hero { height: min(33vh, 300px); min-height: 220px; }
 body.is-phone .hero-info { left: 16px; right: 16px; bottom: 52px; width: auto; gap: 6px; }
 body.is-phone .hero-edition { font-size: 9.5px; letter-spacing: .14em; }
 body.is-phone .hero-label { font-size: 10.5px; }
