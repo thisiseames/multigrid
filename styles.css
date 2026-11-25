@@ -33,6 +33,12 @@ html, body {
 }
 
 body { display: flex; flex-direction: column; height: 100dvh; }
+/* A home-screen app can stop 100dvh at the safe areas, leaving a black strip below
+   the tab bar. In standalone there is no browser chrome, so the large viewport is
+   the whole screen: use it and let the bars' own safe-area padding do the rest. */
+@media (display-mode: standalone) {
+  body { height: 100vh; height: 100lvh; }
+}
 
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -2098,7 +2104,7 @@ body.remote-open { overflow: hidden; }
 .strip-actions .strip-more { display: none; }
 
 @media (max-width: 640px), (hover: none) and (max-height: 500px) {
-  :root { --tabbar: 56px; --phonebar-h: 52px; }
+  :root { --tabbar: 56px; --phonebar-h: 52px; --tabbar-safe: max(env(safe-area-inset-bottom) - 12px, 0px); }
   .phone-only { display: inline; }
   .add-button .wide-only { display: none; }
 
@@ -2208,8 +2214,8 @@ body.remote-open { overflow: hidden; }
   .tabbar {
     display: flex;
     flex: none;
-    height: calc(var(--tabbar) + env(safe-area-inset-bottom));
-    padding: 0 max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px, env(safe-area-inset-left));
+    height: calc(var(--tabbar) + var(--tabbar-safe));
+    padding: 0 max(4px, env(safe-area-inset-right)) var(--tabbar-safe) max(4px, env(safe-area-inset-left));
     background: var(--chrome);
     border-top: 1px solid var(--border-strong);
     position: relative;
@@ -2228,7 +2234,7 @@ body.remote-open { overflow: hidden; }
     position: fixed;
     left: 0; right: 0;
     top: calc(env(safe-area-inset-top) + 40px);
-    bottom: calc(var(--tabbar) + var(--phonebar) + env(safe-area-inset-bottom));
+    bottom: calc(var(--tabbar) + var(--phonebar) + var(--tabbar-safe));
     z-index: 55;
     background: #141416;
     border-radius: 18px 18px 0 0;
@@ -2252,7 +2258,7 @@ body.remote-open { overflow: hidden; }
     position: fixed !important;
     left: 0 !important; right: 0 !important;
     top: calc(env(safe-area-inset-top) + 40px + 64px) !important;
-    bottom: calc(var(--tabbar) + var(--phonebar) + env(safe-area-inset-bottom)) !important;
+    bottom: calc(var(--tabbar) + var(--phonebar) + var(--tabbar-safe)) !important;
     width: auto !important; max-width: none !important; max-height: none !important;
     margin: 0;
     border: 0; border-radius: 0; box-shadow: none;
@@ -2348,7 +2354,7 @@ body.remote-open { overflow: hidden; }
   body.is-phone .addp-x-prefix, body.is-phone .addp-x input { font-size: 16px; }
 
   /* Notes and messages sit just above the tab bar. */
-  .toast { bottom: calc(var(--tabbar) + var(--phonebar) + env(safe-area-inset-bottom) + 10px); }
+  .toast { bottom: calc(var(--tabbar) + var(--phonebar) + var(--tabbar-safe) + 10px); }
 }
 @media (hover: none) and (max-height: 500px) {
   :root { --tabbar: 46px; --phonebar-h: 46px; }
