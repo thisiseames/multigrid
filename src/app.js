@@ -6071,7 +6071,7 @@ const BRAND_PICTURES = [
   [/cnn international/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/CNN_Logo_%282014%29.svg/960px-CNN_Logo_%282014%29.svg.png', fit: 'logo', tone: 'light', domain: 'cnn.com' }],
   [/cbc news/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/CBC_News_Network_2022.svg/960px-CBC_News_Network_2022.svg.png', fit: 'logo', tone: 'light', domain: 'cbc.ca' }],
   [/^boomerang$/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Boomerang_2014_logo.svg/960px-Boomerang_2014_logo.svg.png', fit: 'logo', tone: 'light', domain: 'boomerang.com' }],
-  [/bein sports (?:extra|xtra)/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/BeIN_Sports_logo.svg/960px-BeIN_Sports_logo.svg.png', fit: 'logo', tone: 'dark', domain: 'beinsports.com' }],
+  [/bein sports/i, { url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/BeIN_Sports_logo.svg/960px-BeIN_Sports_logo.svg.png', fit: 'logo', tone: 'dark', domain: 'beinsports.com' }],
   [/bar[cç]a tv/i, { url: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Football_club_barcelona_television.png', fit: 'logo', tone: 'dark', domain: 'fcbarcelona.com' }],
 ];
 const brandPictureFor = (name) => BRAND_PICTURES.find(([pattern]) => pattern.test(plainChannelName(name)))?.[1] ?? null;
