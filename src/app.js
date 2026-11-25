@@ -4068,26 +4068,16 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   }
   // Website embeds often carry the match in their URL; use that as a useful label.
   const autoTitle = title || (source.kind === 'iframe' ? eventLabelFor(input) : '');
-  // There is only ever one Reel tile. Opening another Reel replaces it instead
-  // of adding a second vertical tile.
+  // Reels, Live and TikTok share one tall tile. Picking any of them swaps the
+  // source in that tile; only the Live menu's new-tile action opts out.
+  const vertical = reels || isVerticalSource(source);
   let mode = target.mode;
   let replaceId = target.id;
-  if (mode === 'add' && reels) {
-    const existing = ws.tiles.filter((tile) => tile.reels === true && isStream(tile) && isVisible(tile));
-    if (existing.length) {
+  if (mode === 'add' && vertical && target.newLive !== true && target.newTile !== true) {
+    const existing = sharedVerticalTile(ws);
+    if (existing) {
       mode = 'replace';
-      replaceId = existing[0].id;
-      for (const extra of existing.slice(1)) removeTile(ws, extra.id);
-    }
-  }
-  // A live normally has one slot, like a Reel. The Live menu's new-tile action
-  // opts out when two lives are wanted side by side.
-  if (mode === 'add' && source.kind === 'tiktoklive' && target.newLive !== true) {
-    const lives = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && parseSource(tile.input).kind === 'tiktoklive');
-    if (lives.length) {
-      const phone = phoneTile(ws);
-      mode = 'replace';
-      replaceId = (phone && lives.includes(phone) ? phone : lives[0]).id;
+      replaceId = existing.id;
     }
   }
   if (mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
@@ -4123,14 +4113,9 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
     slot.muted = true;
     slot.volume = 100;
     addedId = slot.id;
-    // A TikTok account, a TikTok LIVE, or a REELS website is vertical, so it gets its
-    // own tall column and the other streams sit beside it. A second feed joins as usual.
-    const vertical = reels || source.kind === 'tiktoklive'
-      || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
+    // A new vertical source gets the tall column when there is no shared one yet.
     const phone = phoneTile(ws);
-    const liveTakesPhone = source.kind === 'tiktoklive'
-      && (!phone || parseSource(phone.input).kind !== 'tiktoklive');
-    if (vertical && (!isPhoneLayout(ws) || !phone || liveTakesPhone)) phoneColumn(ws, slot.id);
+    if (vertical && (!isPhoneLayout(ws) || !phone)) phoneColumn(ws, slot.id);
   }
   // An X account is kept in Favorites, in a Twitter folder, so the feed can be found again.
   if (source.kind === 'x' && source.x?.profile && favoriteName(input) === null) {
@@ -4371,6 +4356,17 @@ function ensureLiveFolder() {
   if (changed && !replaceFavorites(list)) toast(STORAGE_FULL);
 }
 
+const isVerticalSource = (source) => source.kind === 'tiktoklive'
+  || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
+
+/** The one tall tile Reels, Live and TikTok share. */
+const sharedVerticalTile = (workspace) => {
+  const phone = phoneTile(workspace);
+  const tiles = workspace.tiles.filter((tile) => isStream(tile) && isVisible(tile)
+    && (tile.reels === true || isVerticalSource(parseSource(tile.input))));
+  return (phone && tiles.includes(phone) ? phone : tiles[0]) ?? null;
+};
+
 const liveStatus = new Map();
 let liveTodayDraw = null;
 let liveSignature = '';
@@ -4478,6 +4474,16 @@ function liveUsernameFrom(value) {
   if (source.kind === 'tiktok' && source.tiktok?.profile) return source.tiktok.profile;
   return '';
 }
+
+function tiktokUsernameFrom(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const asUrl = /^(https?:\/\/|(?:www\.)?tiktok\.com\/)/i.test(text);
+  const source = parseSource(asUrl ? text : `https://www.tiktok.com/@${text.replace(/^@/, '')}`);
+  return source.kind === 'tiktok' && source.tiktok?.profile ? source.tiktok.profile : '';
+}
+
+let tiktokMenuFeedsAsked = false;
 
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
@@ -12387,6 +12393,90 @@ function buildReelsMenu(focusInput = null) {
   }
 }
 
+function buildTikTokMenu() {
+  const menu = $('tiktok-menu');
+  const accounts = new Map();
+  for (const item of listFavorites()) {
+    const source = parseSource(item.input);
+    if (source.kind !== 'tiktok' || !source.tiktok?.profile) continue;
+    const username = source.tiktok.profile;
+    const key = username.toLocaleLowerCase();
+    if (!accounts.has(key)) accounts.set(key, {
+      username,
+      label: item.name,
+      sub: `@${username}`,
+      input: item.input,
+    });
+  }
+  for (const account of tiktokAccounts()) {
+    const username = String(account.name || '').replace(/^@/, '').trim();
+    const key = username.toLocaleLowerCase();
+    if (!username || accounts.has(key)) continue;
+    accounts.set(key, {
+      username,
+      label: `@${username}`,
+      sub: account.title || (account.videos ? `${account.videos} videos` : 'TikTok'),
+      input: `https://www.tiktok.com/@${username}`,
+    });
+  }
+  const list = [...accounts.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  const row = (account) => el('li', {}, el('button', {
+    type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
+    on: {
+      click() {
+        closePopovers();
+        addStream(account.input, { mode: 'add' });
+      },
+    },
+  },
+  el('span', { class: 'reels-icon' }, icon('music', 18)),
+  el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))));
+  const input = el('input', {
+    id: 'tiktok-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
+    placeholder: '@username or TikTok link', aria: { label: 'TikTok username or link' },
+  });
+  const error = el('p', { class: 'live-add-error', hidden: true });
+  input.addEventListener('input', () => { error.hidden = true; });
+  const form = el('form', {
+    class: 'live-add-form',
+    on: {
+      submit(event) {
+        event.preventDefault();
+        const name = tiktokUsernameFrom(input.value);
+        if (!name) {
+          error.textContent = 'Enter a TikTok username or account link.';
+          error.hidden = false;
+          input.focus();
+          return;
+        }
+        const existing = listFavorites().find((item) => {
+          const source = parseSource(item.input);
+          return source.kind === 'tiktok' && source.tiktok?.profile?.toLocaleLowerCase() === name.toLocaleLowerCase();
+        });
+        const target = existing?.input || `https://www.tiktok.com/@${name}`;
+        if (!existing && !saveFavorite(target, `@${name}`, folderForCategory('TikTok') || 'TikTok')) toast(STORAGE_FULL);
+        refreshFavorites();
+        closePopovers();
+        addStream(target, { mode: 'add' });
+      },
+    },
+  }, input, el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }));
+  menu.replaceChildren(
+    el('div', { class: 'reels-head' },
+      el('span', { textContent: 'TikTok' }),
+      el('small', { textContent: list.length ? `${list.length} ${list.length === 1 ? 'account' : 'accounts'}` : 'TikTok feeds' })),
+    list.length
+      ? el('ul', { class: 'reels-list' }, ...list.map(row))
+      : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' }),
+    el('div', { class: 'reels-foot' }, form, error));
+  if (!tiktokMenuFeedsAsked) {
+    tiktokMenuFeedsAsked = true;
+    loadTikTokFeeds().then(() => {
+      if (!$('tiktok-menu').hidden && !$('tiktok-username')?.value) buildTikTokMenu();
+    }).catch(() => {});
+  }
+}
+
 function buildLiveMenu() {
   const menu = $('live-menu');
   const accounts = savedLiveAccounts();
@@ -12458,6 +12548,7 @@ function buildLiveMenu() {
 }
 
 $('live-button').addEventListener('click', () => togglePopover($('live-button'), $('live-menu'), buildLiveMenu));
+$('tiktok-button').addEventListener('click', () => togglePopover($('tiktok-button'), $('tiktok-menu'), buildTikTokMenu));
 setTimeout(() => refreshLiveStatuses(), 2000);
 setInterval(() => { if (!document.hidden) refreshLiveStatuses(); }, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveStatuses(); });

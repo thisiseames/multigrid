@@ -136,7 +136,7 @@ body:not(.is-phone) #saved-button,
 body:not(.is-phone) #help-button,
 body:not(.is-phone) #fullscreen-button { display: none; }
 body.is-phone #sports-button, body.is-phone #more-button { display: none; }
-@media (min-width: 641px) and (max-width: 980px) {
+@media (min-width: 641px) and (max-width: 1120px) {
   .topbar .bar-button-text { display: none; }
   .topbar .bar-button { padding: 0 8px; }
 }
@@ -173,7 +173,7 @@ body.is-phone .sports-switch { display: none; }
 .reels-foot { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
 .reels-add { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
 .reels-add:hover { background: var(--hover); }
-.live-menu { width: 306px; }
+.live-menu, .tiktok-menu { width: 306px; }
 .live-menu-item { border-radius: 9px; }
 .live-menu-item .reels-row { flex: 1; width: auto; min-width: 0; }
 .live-menu-item .row-actions { opacity: 1; padding-right: 4px; }
@@ -2096,7 +2096,8 @@ body.remote-open { overflow: hidden; }
   #today-button .narrow-only { display: inline-flex; }
   .topbar { --bar: 52px; gap: 0; }
   body.is-phone .topbar > .spacer { flex: none; width: 0; min-width: 0; }
-  body.is-phone .topbar > #live-button { display: none !important; }
+  body.is-phone .topbar > #live-button,
+  body.is-phone .topbar > #tiktok-button { display: none !important; }
   body.is-phone .topbar > #palette-button,
   body.is-phone .topbar > #reels-button,
   body.is-phone .topbar > #today-button,
