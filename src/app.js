@@ -12120,6 +12120,18 @@ function clearAllRow() {
   el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Clear all streams' }), el('small', { textContent: streamCount(ws) === 1 ? 'Removes the 1 stream' : `Removes all ${streamCount(ws)} streams` })));
 }
 
+/** A phone-only shortcut in the MULTIGRID drop-down. */
+function phoneDropRow(iconName, title, note, onClick) {
+  return el('button', {
+    type: 'button',
+    class: 'sdrop-switch',
+    on: { click: onClick },
+  },
+  el('span', { class: 'sdrop-shape' }, icon(iconName, 18)),
+  el('span', { class: 'sdrop-text' }, el('b', { textContent: title }), el('small', { textContent: note })),
+  el('span', { class: 'sdrop-mark' }, icon('next', 16)));
+}
+
 function buildSavedDrop() {
   const saved = listSaved();
   $('saved-drop').replaceChildren(...[
@@ -12141,6 +12153,10 @@ function buildSavedDrop() {
     saveHereRow(),
     clearAllRow(),
     moveRow(),
+    // The phone's top bar keeps the main four; Reels and Sound live in here.
+    onPhoneScreen() ? el('div', { class: 'sdrop-sep' }) : null,
+    onPhoneScreen() ? phoneDropRow('phone', 'Reels', 'Vertical feeds', () => $('reels-button').click()) : null,
+    onPhoneScreen() ? phoneDropRow('sound', 'Sound', 'Mixer and mute', () => $('mixer-button').click()) : null,
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
     el('div', { class: 'sdrop-sep' }),
     el('button', {

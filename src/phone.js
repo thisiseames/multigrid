@@ -21,6 +21,8 @@ const TITLES = {
   'hidden-menu': 'Hidden streams',
   'stream-menu': 'Stream',
   'sound-menu': 'Sound',
+  'reels-menu': 'Reels',
+  'tiktok-menu': 'TikTok',
 };
 // Which tab lights up while a panel is open.
 const TAB_OF = {
