@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-oW9ALf89nD1Qjk6wDDpTAk8cHt9czeTDsK2KrluIBuk=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-8gFvBg1xzzpqQk9WWLHUMER2EEB76sJyAijK4nVkZRk=' https://www.youtube.com https://player.twitch.tv https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https: http: blob:; connect-src 'self' https: http: wss:; worker-src 'self' blob:; frame-src https: http:; base-uri 'none'; form-action 'none'">
   <meta name="theme-color" content="#000000">
   <meta name="description" content="Arrange your own video streams in a flexible grid.">
   <title>MULTIGRID</title>
@@ -18,6 +18,9 @@
   <style>html { background: #000; } body { visibility: hidden; }</style>
 </head>
 <body>
+  <div id="phone-splash" class="phone-splash" aria-hidden="true">
+    <span class="phone-splash-word">MULTIGRID</span>
+  </div>
   <header id="topbar" class="topbar">
     <button id="wordmark" class="wordmark" type="button" aria-haspopup="true" aria-expanded="false" title="Saved layouts">MULTIGRID</button>
     <button id="home-button" class="bar-button home-button" type="button" title="Home" aria-label="Home">
@@ -358,6 +361,9 @@
       link.onerror = done;
       document.head.append(link);
     });
+    try {
+      if (localStorage.getItem('multigrid.openinglogo.v1') === 'off') document.getElementById('phone-splash')?.remove();
+    } catch {}
     document.body.style.visibility = 'visible';
     await import('./src/app.js');
   </script>

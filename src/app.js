@@ -95,6 +95,31 @@ if (!window.__mgPageVersion) {
 const env = { hostname: location.hostname, origin: location.origin, protocol: location.protocol };
 const $ = (id) => document.getElementById(id);
 
+// The phone's opening logo is a separate switch from the opening sound.
+const OPENING_LOGO_KEY = 'multigrid.openinglogo.v1';
+const isOpeningLogoOn = () => { try { return localStorage.getItem(OPENING_LOGO_KEY) !== 'off'; } catch { return true; } };
+const setOpeningLogoOn = (on) => { try { localStorage.setItem(OPENING_LOGO_KEY, on ? 'on' : 'off'); } catch { /* not remembered */ } };
+
+/** Plan 2: near-black and the wordmark first, then the app (the plain collage stays behind it). */
+function startPhoneSplash() {
+  const splash = $('phone-splash');
+  if (!splash) return;
+  if (!document.body.classList.contains('is-phone') || !isOpeningLogoOn()) {
+    splash.remove();
+    return;
+  }
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  requestAnimationFrame(() => {
+    splash.classList.add('is-playing');
+    playSting().catch(() => {});
+    setTimeout(() => {
+      splash.classList.add('is-done');
+      setTimeout(() => splash.remove(), 450);
+    }, reduced ? 900 : 2000);
+  });
+}
+startPhoneSplash();
+
 const STARTERS = [
   { name: 'Side by side', preset: 'row', slots: 2 },
   { name: 'One and two', preset: 'trio', slots: 3 },
@@ -12203,15 +12228,23 @@ function buildSavedDrop() {
     el('span', { class: 'sdrop-shape' }, icon('live', 18)),
     el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Game mode' }), el('small', { textContent: grid.isStacked || onPhoneScreen() ? 'Live scores in the ticker' : 'Live scores beside the streams' })),
     el('span', { class: `more-switch${isGameOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })),
-    // The opening sound plays only on the laptop's empty screen, so its switch is only there.
-    onPhoneScreen() ? null : el('button', {
+    onPhoneScreen() ? el('button', {
+      type: 'button',
+      class: 'sdrop-switch',
+      aria: { pressed: String(isOpeningLogoOn()) },
+      on: { click() { setOpeningLogoOn(!isOpeningLogoOn()); buildSavedDrop(); } },
+    },
+    el('span', { class: 'sdrop-shape' }, icon('tiles', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Opening logo' }), el('small', { textContent: 'MULTIGRID animation on launch' })),
+    el('span', { class: `more-switch${isOpeningLogoOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })) : null,
+    el('button', {
       type: 'button',
       class: 'sdrop-switch',
       aria: { pressed: String(isStingOn()) },
       on: { click() { setStingOn(!isStingOn()); buildSavedDrop(); } },
     },
     el('span', { class: 'sdrop-shape' }, icon('sound', 18)),
-    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Opening sound' }), el('small', { textContent: 'When the empty screen appears' })),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Opening sound' }), el('small', { textContent: onPhoneScreen() ? 'With the opening logo' : 'When the empty screen appears' })),
     el('span', { class: `more-switch${isStingOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })),
   ].filter(Boolean));
 }

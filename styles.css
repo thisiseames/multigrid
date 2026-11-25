@@ -376,6 +376,35 @@ body.is-phone #stage.is-empty-wall {
   background-repeat: no-repeat;
 }
 body.is-phone #stage.is-empty-wall::after { content: none; }
+
+/* Phone opening (plan 2): near-black first, the MULTIGRID wordmark, then the app.
+   The plain collage is the empty-wall background after the splash, never a second logo. */
+.phone-splash { display: none; }
+@media (max-width: 640px), (hover: none) and (max-height: 500px) {
+  .phone-splash {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    background: #000 radial-gradient(ellipse 60% 45% at 50% 50%, #0c0c0f 0%, #000 70%);
+  }
+  .phone-splash-word {
+    padding-left: .42em;
+    font: 600 clamp(28px, 9vw, 40px)/1 var(--font);
+    letter-spacing: .42em;
+    color: rgba(255, 255, 255, .94);
+    text-align: center;
+    opacity: .4;
+  }
+  .phone-splash.is-playing .phone-splash-word { animation: phone-title-in 1.6s cubic-bezier(.2, .7, .2, 1) both; }
+  @keyframes phone-title-in {
+    from { opacity: .4; letter-spacing: .5em; }
+    to { opacity: 1; letter-spacing: .42em; }
+  }
+  .phone-splash.is-done { opacity: 0; transition: opacity .4s ease; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-splash.is-playing .phone-splash-word { animation: none; opacity: 1; }
+}
 @media (orientation: portrait) {
   body.is-phone #stage.is-empty-wall {
     background-color: var(--bg);
