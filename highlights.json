@@ -1,5 +1,5 @@
 {
- "updated": 1795646794850,
+ "updated": 1795648401929,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1005,7 +1005,13 @@
    "title": "Galatasaray 1–0 Aston Villa",
    "start": 1795542300000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "03q4mhgwBts",
+     "title": "Galatasaray 1-0 Aston Villa | UEFA Champions League Highlights",
+     "rank": 2
+    }
+   ]
   },
   "401915373": {
    "league": "Champions League",
@@ -1040,7 +1046,13 @@
    "title": "Lille 2–1 Bayern",
    "start": 1795636800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "C6FnS8TeaTg",
+     "title": "Tough night in Lille | OSC Lille vs. FC Bayern 2-1 | Champions League Highlights",
+     "rank": 2
+    }
+   ]
   },
   "401915378": {
    "league": "Champions League",
@@ -1218,10 +1230,40 @@
   "ucl:160": "",
   "ucl:104": "UCLttSYJ6kPtlcurY96kXkQw",
   "ucl:493": "UCmPCqUih--EyT2oxUn72MtA",
-  "ucl:436": "UCgqlho3-8a6FmDqQm7Q6gJw"
+  "ucl:436": "UCgqlho3-8a6FmDqQm7Q6gJw",
+  "ucl:2250": "",
+  "ucl:360": "UC6yW44UGJJBvYTlfC7CRg2Q",
+  "ucl:21922": "",
+  "ucl:83": "UC14UlmYlSNiQCBe9Eookf_A",
+  "ucl:494": "",
+  "ucl:102": ""
  },
  "club": {
   "360": [
+   {
+    "id": "r5kFspNfwjg",
+    "title": "PSG, We Are Coming For You! Liverpool Is Back!!!",
+    "published": 1795648312000,
+    "source": "Adikastakes"
+   },
+   {
+    "id": "O-ZDgtGic50",
+    "title": "Pochettino, Fernandes & Zirkzee Post-Sporting",
+    "published": 1795647880000,
+    "source": "Man Utd"
+   },
+   {
+    "id": "JxyDC2fPCrE",
+    "title": "Manchester United Remain WINLESS Under Pochettino... | Sporting 2-2 United.",
+    "published": 1795647293000,
+    "source": "Culture Cams"
+   },
+   {
+    "id": "gv2ru2iiDyI",
+    "title": "PROUD POCH! Pochettino Reacts to Man United’s Draw Against Sporting",
+    "published": 1795647062000,
+    "source": "TNT Sports"
+   },
    {
     "id": "c6HQBUNGdjg",
     "title": "Bruno Fernandes delivers an honest assessment of Man Utd's controversial draw with Sporting 😤",
@@ -1230,7 +1272,7 @@
    },
    {
     "id": "jCPoBE0ZRgM",
-    "title": "Bruno Brace Goes To Waste! 😤 | Sporting CP 2-2 Man United | UEFA Champions League Highlights",
+    "title": "Lammens HOWLER Denies United Win! 🤯 | Sporting CP 2-2 Man United | UEFA Champions League Highlights",
     "published": 1795645284000,
     "source": "TNT Sports"
    },
@@ -1248,7 +1290,7 @@
    },
    {
     "id": "ftAcQ4UuYF8",
-    "title": "Man United concede two penalties in three minutes vs Sporting",
+    "title": "DRAMA! Man United concede two penalties in three minutes vs Sporting",
     "published": 1795640745000,
     "source": "TNT Sports"
    },
