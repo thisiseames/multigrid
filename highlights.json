@@ -1,5 +1,5 @@
 {
- "updated": 1795565146532,
+ "updated": 1795566731770,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -742,65 +742,6 @@
    "start": 1795271400000,
    "sources": "feeds",
    "videos": []
-  },
-  "401909306": {
-   "league": "NBA",
-   "title": "Nets 111–113 Magic",
-   "start": 1795221000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "i9gq4Uu0LHU",
-     "title": "POSTGAME HIGHLIGHTS: ORLANDO MAGIC VS. BROOKLYN NETS 11.20.26 PRESENTED BY PLANET FITNESS",
-     "rank": 2
-    },
-    {
-     "id": "igCftJbNLDo",
-     "title": "FULL GAME HIGHLIGHTS: ORLANDO MAGIC VS. BROOKLYN NETS 11.20.26",
-     "rank": 2
-    },
-    {
-     "id": "UVrRj-dv1gk",
-     "title": "Orlando Magic Recap vs Brooklyn Nets",
-     "rank": 1.5
-    }
-   ]
-  },
-  "401909307": {
-   "league": "NBA",
-   "title": "Cavaliers 128–119 Pacers",
-   "start": 1795221000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "w5GYoO5DuY8",
-     "title": "Cavs vs Pacers | Game Highlights | 11.20.2026",
-     "rank": 2.5
-    },
-    {
-     "id": "68q_Yna-1F8",
-     "title": "Indiana Pacers at Cleveland Cavaliers (November 20, 2026) | FULL GAME HIGHLIGHTS",
-     "rank": 2
-    },
-    {
-     "id": "QOwVF674HpY",
-     "title": "Cavs vs Pacers | James Harden Highlights | 11.20.2026",
-     "rank": 1
-    }
-   ]
-  },
-  "401909308": {
-   "league": "NBA",
-   "title": "Pistons 102–105 Raptors",
-   "start": 1795221000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "RBY1IdgGfdk",
-     "title": "Detroit Pistons vs. Toronto Raptors | NBA Highlights",
-     "rank": 3
-    }
-   ]
   },
   "401909309": {
    "league": "NBA",
