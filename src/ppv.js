@@ -18,6 +18,9 @@ function iframeSource(raw) {
   return httpsOnly(match ? match[1] : text);
 }
 
+/** Ice hockey and wrestling are never part of PPV's live-event list. */
+export const isPPVSkip = (event) => /\b(?:ice hockey|wrestling)\b/i.test([event?.category, event?.tag].filter(Boolean).join(' '));
+
 /** Live events first, then upcoming, then the always-on channels; past events are dropped. */
 export function normalizePPV(data, now = Date.now()) {
   const found = [];
@@ -26,6 +29,8 @@ export function normalizePPV(data, now = Date.now()) {
       const name = String(stream?.name || '').replace(/\s+/g, ' ').trim();
       const input = iframeSource(stream?.iframe) || iframeSource(stream?.substreams?.[0]?.iframe);
       if (!name || !input) continue;
+      const streamCategory = String(stream.category_name || stream.category || category?.category || '').trim();
+      if (isPPVSkip({ category: streamCategory, tag: stream.tag })) continue;
       const starts = Number(stream.starts_at) > 0 ? Number(stream.starts_at) * 1000 : 0;
       const ends = Number(stream.ends_at) > 0 ? Number(stream.ends_at) * 1000 : 0;
       const always = Boolean(Number(stream.always_live));
@@ -36,7 +41,7 @@ export function normalizePPV(data, now = Date.now()) {
       found.push({
         id: Number(stream.id) || 0,
         name,
-        category: String(stream.category_name || stream.category || category?.category || '').trim(),
+        category: streamCategory,
         tag: String(stream.tag || '').trim(),
         source: String(stream.source_tag || '').trim(),
         poster: httpsOnly(stream.poster),
@@ -64,7 +69,7 @@ export function normalizePPV(data, now = Date.now()) {
 /** Darts, from any source (PPV.st, Daddy Live, Matchora): the owner doesn't want it anywhere. */
 export const isDarts = (event) => /\bdarts?\b/i.test([event?.category, event?.sport, event?.league, event?.tag, event?.name, ...(event?.categories ?? [])].filter(Boolean).join(' '));
 
-const skipToday = (event) => event.category === 'Ice Hockey' || isDarts(event)
+const skipToday = (event) => isPPVSkip(event) || isDarts(event)
   || /\b(college|ncaa)\b/i.test(`${event.tag} ${event.source}`);
 
 /** The six events Today shows: live or starting in the next six hours, without college sports, hockey or darts. */

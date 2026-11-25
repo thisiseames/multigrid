@@ -36,6 +36,10 @@ const linkName = (raw, index) => {
   return text || `Link ${index + 1}`;
 };
 
+const DADDY_SKIP = new Set(['cricket', 'hockey', 'hockey nhl', 'ice hockey', 'ice hockey nhl', 'nhl', 'wrestling']);
+const DADDY_SKIP_NAME = /\b(?:cricket|hockey|nhl|wrestling|wwe)\b/i;
+const isSkippedDaddyCategory = (name) => DADDY_SKIP.has(keyFor(name));
+
 /**
  * Flattens the API's category groups into one list. The same event can appear under
  * "Live Events" and a sport category; merge those, keep every distinct link, and keep
@@ -110,6 +114,7 @@ export function normalizeDaddyLive(data) {
         order: event.order,
       };
     })
+    .filter((event) => !event.categories.some(isSkippedDaddyCategory) && !DADDY_SKIP_NAME.test(event.name))
     .sort((a, b) => a.order - b.order);
 }
 

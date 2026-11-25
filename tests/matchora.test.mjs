@@ -40,6 +40,16 @@ test('Matchora keeps live/upcoming matches, drops finished and past rows', () =>
   assert.equal(list[0].channelCount, 1);
 });
 
+test('Matchora drops baseball, cricket and ice hockey', () => {
+  const list = normalizeMatchora({ events: [
+    match({ id: 'mlb', sport: 'Baseball' }),
+    match({ id: 'cricket', sport: 'Cricket' }),
+    match({ id: 'hockey', sport: 'Ice Hockey' }),
+    match({ id: 'soccer', sport: 'Soccer' }),
+  ] }, now);
+  assert.deepEqual(list.map((item) => item.id), ['soccer']);
+});
+
 test('Matchora handles a home-only event and insecure badges', () => {
   const [event] = normalizeMatchora({ events: [match({
     id: 'aew', home: 'Collision #171', away: '', home_badge: 'http://matchora.pro/x.png', away_badge: '', league_badge: 'https://es.matchora.pro/league.png',

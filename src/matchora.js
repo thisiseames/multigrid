@@ -35,6 +35,8 @@ function embedUrl(raw) {
   }
 }
 
+const MATCHORA_SKIP = new Set(['baseball', 'cricket', 'hockey', 'ice hockey']);
+
 /** Live and upcoming matches with a clean embed, live first, then by kick-off time. */
 export function normalizeMatchora(data, now = Date.now()) {
   const found = new Map();
@@ -46,6 +48,8 @@ export function normalizeMatchora(data, now = Date.now()) {
     const name = away ? `${home} vs ${away}` : home;
     const input = embedUrl(item?.embed_url);
     if (!name || !input) continue;
+    const sport = clean(item?.sport) || 'Other';
+    if (MATCHORA_SKIP.has(sport.toLocaleLowerCase())) continue;
     const status = clean(item?.status).toUpperCase();
     const live = Boolean(item?.live) || status === 'LIVE';
     const finished = Boolean(item?.finished) || ['FT', 'AET', 'PEN', 'CANC', 'ABD'].includes(status);
@@ -68,7 +72,7 @@ export function normalizeMatchora(data, now = Date.now()) {
       home,
       away,
       league: clean(item?.league),
-      sport: clean(item?.sport) || 'Other',
+      sport,
       starts,
       live,
       score: clean(item?.score),

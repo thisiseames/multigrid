@@ -61,6 +61,7 @@ test('Today leaves out college sports, hockey, darts and always-on channels', ()
     event('BYU Cougars at Kansas Jayhawks', { category: 'American Football', tag: 'College Football' }),
     event('College basketball', { category: 'Basketball', tag: 'College Basketball' }),
     event('NHL game', { category: 'Ice Hockey', tag: 'NHL' }),
+    event('WWE Raw', { category: 'Wrestling', tag: 'WWE' }),
     event('Grand Slam of Darts | Day 9', { category: 'Darts', tag: 'PDC' }),
     event('World Darts Championship', { category: 'Other', tag: 'PDC' }),
     event('NBA game', { category: 'Basketball', tag: 'NBA' }),
@@ -69,6 +70,15 @@ test('Today leaves out college sports, hockey, darts and always-on channels', ()
     event('Too far away', { tag: 'MLS', live: false, upcoming: true, starts: now + 7 * 3600000 }),
   ], now);
   assert.deepEqual(list.map((item) => item.name), ['Real Madrid vs. Celta Vigo', 'NBA game', 'Upcoming soccer']);
+});
+
+test('the PPV list drops ice hockey and wrestling', () => {
+  const data = { streams: [
+    { category: 'Ice Hockey', streams: [stream({ id: 1, name: 'NHL game', category_name: 'Ice Hockey' })] },
+    { category: 'Wrestling', streams: [stream({ id: 2, name: 'WWE Raw', category_name: 'Wrestling' })] },
+    { category: 'Football', streams: [stream({ id: 3, name: 'Football game', category_name: 'Football' })] },
+  ] };
+  assert.deepEqual(normalizePPV(data, now).map((item) => item.name), ['Football game']);
 });
 
 test('the PPV list drops past streams unless the service allows them', () => {

@@ -77,6 +77,21 @@ test('Daddy Live drops missing events and links that are not its player', () => 
   ))));
 });
 
+test('Daddy Live drops cricket, hockey, NHL and wrestling', () => {
+  const oneLink = [{ channel_name: 'Link - 1', url: link('x') }];
+  const data = { categories: {
+    Cricket: [event('India v England', 'tv1', oneLink)],
+    Hockey: [event('Hockey match', 'tv2', oneLink)],
+    'Hockey NHL': [event('NHL match', 'tv3', oneLink)],
+    'Ice Hockey NHL': [event('Ice hockey match', 'tv4', oneLink)],
+    NHL: [event('Oilers v Knights', 'tv8', oneLink)],
+    Wrestling: [event('WWE Raw', 'tv5', oneLink)],
+    Football: [event('Football match', 'tv6', oneLink)],
+    'Live Events': [event('NHL: Rangers v Bruins', 'tv7', oneLink)],
+  } };
+  assert.deepEqual(normalizeDaddyLive(data).map((item) => item.name), ['Football match']);
+});
+
 test('Daddy Live handles an empty or malformed answer quietly', () => {
   assert.deepEqual(normalizeDaddyLive({}), []);
   assert.deepEqual(normalizeDaddyLive({ categories: { Soccer: 'not a list' } }), []);
