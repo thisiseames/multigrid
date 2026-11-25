@@ -4080,6 +4080,16 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
       for (const extra of existing.slice(1)) removeTile(ws, extra.id);
     }
   }
+  // A live normally has one slot, like a Reel. The Live menu's new-tile action
+  // opts out when two lives are wanted side by side.
+  if (mode === 'add' && source.kind === 'tiktoklive' && target.newLive !== true) {
+    const lives = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && parseSource(tile.input).kind === 'tiktoklive');
+    if (lives.length) {
+      const phone = phoneTile(ws);
+      mode = 'replace';
+      replaceId = (phone && lives.includes(phone) ? phone : lives[0]).id;
+    }
+  }
   if (mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
     toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
     return;
@@ -12364,7 +12374,7 @@ function buildLiveMenu() {
     const sub = status?.live
       ? [handle, status.viewers ? `${viewerCount(status.viewers)} watching` : ''].filter(Boolean).join(' · ')
       : `${handle} · ${status ? 'Offline' : 'Checking…'}`;
-    return el('li', {}, el('button', {
+    const main = el('button', {
       type: 'button', class: 'reels-row live-row', title: `Open ${account.item.name} live`,
       on: {
         click() {
@@ -12375,7 +12385,14 @@ function buildLiveMenu() {
     },
     liveArt(status, 'reels-icon live-row-art'),
     el('span', { class: 'reels-text' }, el('b', { textContent: account.item.name }), el('small', { textContent: sub })),
-    liveStatusBadge(status)));
+    liveStatusBadge(status));
+    return el('li', { class: 'saved-row live-menu-item' },
+      main,
+      el('span', { class: 'row-actions live-row-actions' },
+        iconButton('plus', `Open ${account.item.name} in a new tile`, () => {
+          closePopovers();
+          addStream(account.item.input, { mode: 'add', newLive: true });
+        })));
   };
   const input = el('input', {
     id: 'live-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
