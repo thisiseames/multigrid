@@ -45,6 +45,7 @@ Before proposing a feature or API, check `notes/product-map.md`. If the capabili
 - **No housekeeping pitches.** Bulk edit, cleanup, folder management, sync setup, link health, import/export and account/settings features are chores. MULTIGRID is not only video: pitch real capabilities in watching, listening, reading, sports data or the daily dashboard; do not reduce the test to “changes what he watches.”
 - **Copy the control next door.** Before adding or changing any control in an existing bar, menu or row, match the nearest existing control's height, icon size, label, label line, spacing and alignment. Check a 390 px screenshot before calling it done. If the owner names one symptom, fix the whole control.
 - Put new lists inside existing structures (a Favorites folder tab, an existing section) rather than adding new space-eating sections.
+- **Place by type, never by newness.** New is not the same as most important. Say what the thing is (trends, video row, control), find the existing section that does that job, and slot it into that hierarchy. Never default to the top; the top is only for the screen's primary action. Name the exact existing slot in the plan.
 - Tickers go at the bottom, never the top.
 - Nothing may overlap a Twitch player (Twitch stops playback when covered).
 - "Done" means you saw it work on the live site, at laptop and phone width.

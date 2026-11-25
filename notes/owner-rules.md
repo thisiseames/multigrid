@@ -142,3 +142,10 @@ Owner: "Moving forward every planned or building should be able to be picked up 
 
 ## One white button per screen (Nov 23)
 Owner: "Fix the button hierarchy" (phone Sports sheet: the Games tab and the My teams chip were both big white pills). The top-level switch is the only white-filled button; second-level chips/filters are outlined (selected = white outline + white text, others dim), and badges like POST-MATCH are grey, not white. Apply the same when adding chips under a switch anywhere.
+
+## Place new things by what they are, never by newness (Nov 25)
+Owner, furious: "Why is your default when putting something new to fucking put it at the fucking top, irrelevant to whatever else is there?"
+
+New is not the same as most important. Never park a new feature at the top of a screen just to make it visible. First say what it is (a trends list, a video row, a control), find the existing section that already does that job, and put it in that hierarchy. Trends go with trends; video rows join the existing rows; controls match the control next door.
+
+**How to apply:** in every plan and build, name the existing section it belongs with and the exact slot before touching the page. "Top" is only allowed when the thing is the screen's primary action and the existing order says so. If nothing fits, say that plainly and propose the smallest natural home, never a new top section. New things do not earn the top spot by being new.
