@@ -873,7 +873,7 @@ function tiktokFeedPlayer(source, options) {
 let liveLookupId = 0;
 
 /** Asks the MULTIGRID Sound extension to look up a TikTok live room. */
-function tiktokLiveLookup(username) {
+export function lookupTikTokLive(username) {
   if (!hasSoundExtension()) {
     return Promise.resolve({
       error: 'TikTok LIVE needs the MULTIGRID Sound extension. Enable it in Chrome, then reload this tile.',
@@ -1054,7 +1054,7 @@ function tiktokLivePlayer(source, options) {
 
   const poll = async () => {
     if (stopped) return;
-    const reply = await tiktokLiveLookup(username);
+    const reply = await lookupTikTokLive(username);
     if (stopped) return;
     if (reply?.error) {
       pollTimer = setTimeout(poll, 30000);
@@ -1075,7 +1075,7 @@ function tiktokLivePlayer(source, options) {
     failing = false;
     fallbackTried = false;
     setStatus(`@${username}`, 'Looking for this live…');
-    const reply = await tiktokLiveLookup(username);
+    const reply = await lookupTikTokLive(username);
     if (stopped) return;
     if (reply?.error) {
       setStatus('TikTok LIVE', reply.error, true);
