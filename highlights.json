@@ -1,5 +1,5 @@
 {
- "updated": 1795573003234,
+ "updated": 1795574562344,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -743,29 +743,6 @@
    "sources": "feeds",
    "videos": []
   },
-  "401909311": {
-   "league": "NBA",
-   "title": "Jazz 101–111 Suns",
-   "start": 1795228200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "AR4TUrUkkzo",
-     "title": "SUNS AT JAZZ | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 20, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "C6ljSzfK7Ng",
-     "title": "Phoenix Suns beat Utah Jazz 111-101 | Game Highlights 11-20-26",
-     "rank": 2
-    },
-    {
-     "id": "_m8QfK9Gwno",
-     "title": "Devin Booker with 23 PTS vs Utah Jazz | Phoenix Suns Player Highlights",
-     "rank": 0.5
-    }
-   ]
-  },
   "401909312": {
    "league": "NBA",
    "title": "Nuggets 133–124 Rockets",
@@ -809,6 +786,24 @@
      "id": "cxhBhvHS5u0",
      "title": "Ottawa Senators vs Los Angeles Kings | NHL Highlights",
      "rank": 3
+    }
+   ]
+  },
+  "401909314": {
+   "league": "NBA",
+   "title": "Magic 86–104 Pistons",
+   "start": 1795564800000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "gexTFF5Em9k",
+     "title": "POSTGAME HIGHLIGHTS: DETROIT PISTONS VS. ORLANDO MAGIC 11.24.26 PRESENTED BY PLANET FITNESS",
+     "rank": 2.5
+    },
+    {
+     "id": "0mqQGKwkqxg",
+     "title": "FULL GAME HIGHLIGHTS: DETROIT PISTONS VS. ORLANDO MAGIC 11.24.26",
+     "rank": 2.5
     }
    ]
   },
