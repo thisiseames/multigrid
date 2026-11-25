@@ -1,5 +1,5 @@
 {
- "updated": 1795616666006,
+ "updated": 1795618235362,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -617,13 +617,6 @@
     }
    ]
   },
-  "401884728": {
-   "league": "Bundesliga",
-   "title": "Elversberg 0–1 Freiburg",
-   "start": 1795271400000,
-   "sources": "feeds",
-   "videos": []
-  },
   "401884729": {
    "league": "Bundesliga",
    "title": "Schalke 0–0 Stuttgart",
@@ -665,26 +658,6 @@
     }
    ]
   },
-  "401884731": {
-   "league": "Bundesliga",
-   "title": "Gladbach 0–1 Dortmund",
-   "start": 1795271400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "I9zCBwd5ywU",
-     "title": "(N)MATCHWINNER NMECHA! | BORUSSIA M'GLADBACH - BORUSSIA DORTMUND | Highlights | MD 10 – Bundesliga",
-     "rank": 3
-    }
-   ]
-  },
-  "401884732": {
-   "league": "Bundesliga",
-   "title": "Union Berlin 1–5 RB Leipzig",
-   "start": 1795271400000,
-   "sources": "feeds",
-   "videos": []
-  },
   "401884733": {
    "league": "Bundesliga",
    "title": "Augsburg 3–1 Mainz",
@@ -702,20 +675,6 @@
      "rank": 3
     }
    ]
-  },
-  "401884734": {
-   "league": "Bundesliga",
-   "title": "Frankfurt 1–0 Hoffenheim",
-   "start": 1795271400000,
-   "sources": "feeds",
-   "videos": []
-  },
-  "401884735": {
-   "league": "Bundesliga",
-   "title": "Leverkusen 4–0 Paderborn",
-   "start": 1795271400000,
-   "sources": "feeds",
-   "videos": []
   },
   "401909314": {
    "league": "NBA",
