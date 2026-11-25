@@ -1,5 +1,5 @@
 {
- "updated": 1795622965912,
+ "updated": 1795646794850,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -237,13 +237,6 @@
     }
    ]
   },
-  "401876396": {
-   "league": "Ligue 1",
-   "title": "Strasbourg 0–1 Brest",
-   "start": 1795290300000,
-   "sources": "feeds",
-   "videos": []
-  },
   "401876397": {
    "league": "Ligue 1",
    "title": "Paris FC 4–0 Angers",
@@ -253,26 +246,6 @@
     {
      "id": "fTCdiImqoks",
      "title": "TOTAL RÉGAL | PARIS FC 4-0 ANGERS | RÉSUMÉ J11 LIGUE 1 MCDONALDS",
-     "rank": 2.5
-    }
-   ]
-  },
-  "401876398": {
-   "league": "Ligue 1",
-   "title": "Nice 2–3 PSG",
-   "start": 1795277700000,
-   "sources": "feeds",
-   "videos": []
-  },
-  "401876399": {
-   "league": "Ligue 1",
-   "title": "Monaco 1–1 Auxerre",
-   "start": 1795290300000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "bi9ZmAQt3Zo",
-     "title": "HIGHLIGHTS, AS Monaco 1-1 AJ Auxerre (Ligue 1, J11)",
      "rank": 2.5
     }
    ]
@@ -297,20 +270,6 @@
     }
    ]
   },
-  "401876402": {
-   "league": "Ligue 1",
-   "title": "Lille 0–1 Lyon",
-   "start": 1795290300000,
-   "sources": "feeds",
-   "videos": []
-  },
-  "401876403": {
-   "league": "Ligue 1",
-   "title": "Lens 1–1 Toulouse",
-   "start": 1795290300000,
-   "sources": "feeds",
-   "videos": []
-  },
   "401878755": {
    "league": "Premier League",
    "title": "Liverpool 4–0 Man Utd",
@@ -320,19 +279,6 @@
     {
      "id": "9DFQV3X392w",
      "title": "Liverpool FC vs. Manchester United | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401879232": {
-   "league": "Premier League",
-   "title": "Newcastle 2–2 Arsenal",
-   "start": 1795282200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "TFqU_ztB89M",
-     "title": "Newcastle United vs. Arsenal FC | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
      "rank": 3.5
     }
    ]
@@ -370,47 +316,6 @@
      "id": "VQq8IoHTYmk",
      "title": "Brentford v Everton | Premier League highlights ▶️",
      "rank": 2
-    }
-   ]
-  },
-  "401882797": {
-   "league": "LaLiga",
-   "title": "Sevilla 1–1 Betis",
-   "start": 1795282200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "dQkp9JOW2WU",
-     "title": "SEVILLA FC 1 - 1 REAL BETIS | RESUMEN LALIGA EA SPORTS",
-     "rank": 3.5
-    },
-    {
-     "id": "0MnF16chXqg",
-     "title": "Sevilla FC - Real Betis (1-1) LALIGA | Resumen",
-     "rank": 2.5
-    },
-    {
-     "id": "xZUNJY9RD4w",
-     "title": "Real Sociedad-Sevilla FC Femenino (1-0) | Liga F Moeve | Resumen",
-     "rank": 2.5
-    }
-   ]
-  },
-  "401882798": {
-   "league": "LaLiga",
-   "title": "Real Madrid 2–1 Celta Vigo",
-   "start": 1795291200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "pmjOx-ItOz4",
-     "title": "REAL MADRID 2 - 1 CELTA | RESUMEN LALIGA EA SPORTS",
-     "rank": 3.5
-    },
-    {
-     "id": "W8InB9bFuNE",
-     "title": "HIGHLIGHTS | Real Madrid 2-1 Celta | LaLiga",
-     "rank": 2.5
     }
    ]
   },
@@ -491,24 +396,6 @@
      "id": "Ngrd58fZSVA",
      "title": "FC BARCELONA 3 - 2 VILLARREAL CF | RESUMEN LALIGA EA SPORTS",
      "rank": 3.5
-    }
-   ]
-  },
-  "401884729": {
-   "league": "Bundesliga",
-   "title": "Schalke 0–0 Stuttgart",
-   "start": 1795282200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "OH2RDPHmdBA",
-     "title": "SCHALKE 04 - VFB STUTTGART | Highlights | Matchday 10 – Bundesliga 2026/27",
-     "rank": 3
-    },
-    {
-     "id": "CcMEOKUjJak",
-     "title": "Another Draw At Home! | SCHALKE 04 - VFB STUTTGART | Highlights | Matchday 10 – Bundesliga 2026/27",
-     "rank": 3
     }
    ]
   },
@@ -608,24 +495,6 @@
     {
      "id": "ZV_1v8zzUbw",
      "title": "MAVERICKS at NUGGETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401910023": {
-   "league": "NBA",
-   "title": "76ers 132–129 Bucks",
-   "start": 1795284000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "Kyw8c2ComZ0",
-     "title": "BUCKS at 76ERS | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "fD9ObwrdOHI",
-     "title": "EXTENDED: BUCKS at 76ERS | FULL GAME HIGHLIGHTS | November 21, 2026",
      "rank": 3.5
     }
    ]
@@ -1056,6 +925,27 @@
     }
    ]
   },
+  "401915291": {
+   "league": "Champions League",
+   "title": "Atlético 2–0 Viking FK",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915292": {
+   "league": "Champions League",
+   "title": "Club Brugge 0–3 Liverpool",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915293": {
+   "league": "Champions League",
+   "title": "Slavia Prague 0–1 Villarreal",
+   "start": 1795628700000,
+   "sources": "feeds",
+   "videos": []
+  },
   "401915294": {
    "league": "Champions League",
    "title": "Feyenoord 0–1 FC Porto",
@@ -1082,7 +972,13 @@
    "title": "S Bratislava 0–2 Betis",
    "start": 1795550400000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "TUEI5IPGbyw",
+     "title": "Resumen del partido SK Slovan Bratislava - Real Betis | HIGHLIGHTS | Real BETIS Balompié",
+     "rank": 2
+    }
+   ]
   },
   "401915298": {
    "league": "Champions League",
@@ -1108,6 +1004,48 @@
    "league": "Champions League",
    "title": "Galatasaray 1–0 Aston Villa",
    "start": 1795542300000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915373": {
+   "league": "Champions League",
+   "title": "Sporting 2–2 Man Utd",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915374": {
+   "league": "Champions League",
+   "title": "PSG 2–2 AS Roma",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915375": {
+   "league": "Champions League",
+   "title": "Shakhtar 0–1 Fenerbahce",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915376": {
+   "league": "Champions League",
+   "title": "Inter Milan 2–0 Stuttgart",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915377": {
+   "league": "Champions League",
+   "title": "Lille 2–1 Bayern",
+   "start": 1795636800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401915378": {
+   "league": "Champions League",
+   "title": "Sabah 1–4 Barcelona",
+   "start": 1795628700000,
    "sources": "feeds",
    "videos": []
   },
@@ -1268,10 +1206,58 @@
   "ucl:2572": "",
   "ucl:887": "",
   "ucl:142": "",
-  "ucl:437": "UCQegzQwEExHgXvm_yHptzQg"
+  "ucl:437": "UCQegzQwEExHgXvm_yHptzQg",
+  "ucl:1068": "",
+  "ucl:510": "",
+  "ucl:570": "",
+  "ucl:364": "UCfY5wSKOGzH-f0uqtYPjXrQ",
+  "ucl:110": "",
+  "ucl:134": "",
+  "ucl:166": "",
+  "ucl:132": "UCZkcxFIsqW5htimoUQKA0iA",
+  "ucl:160": "",
+  "ucl:104": "UCLttSYJ6kPtlcurY96kXkQw",
+  "ucl:493": "UCmPCqUih--EyT2oxUn72MtA",
+  "ucl:436": "UCgqlho3-8a6FmDqQm7Q6gJw"
  },
  "club": {
   "360": [
+   {
+    "id": "c6HQBUNGdjg",
+    "title": "Bruno Fernandes delivers an honest assessment of Man Utd's controversial draw with Sporting 😤",
+    "published": 1795645633000,
+    "source": "TNT Sports"
+   },
+   {
+    "id": "jCPoBE0ZRgM",
+    "title": "Bruno Brace Goes To Waste! 😤 | Sporting CP 2-2 Man United | UEFA Champions League Highlights",
+    "published": 1795645284000,
+    "source": "TNT Sports"
+   },
+   {
+    "id": "E-8L8RzaTrs",
+    "title": "We Need To Talk About The Officiating! | Sporting 2-2 Manchester United (REACTION)",
+    "published": 1795644955000,
+    "source": "MinaFootball"
+   },
+   {
+    "id": "yjkyFegfvd8",
+    "title": "REFEREE DRAMA! Man United ‘ROBBED’ by Two HUGE Calls Against Sporting?! 😳",
+    "published": 1795643552000,
+    "source": "TNT Sports"
+   },
+   {
+    "id": "ftAcQ4UuYF8",
+    "title": "Man United concede two penalties in three minutes vs Sporting",
+    "published": 1795640745000,
+    "source": "TNT Sports"
+   },
+   {
+    "id": "aAC5KPrmWDE",
+    "title": "“Defence is the real issue” | How can Pochettino fix Man Utd’s defensive problem? | Soccer Special",
+    "published": 1795638669000,
+    "source": "Sky Sports News"
+   },
    {
     "id": "kTOSsJebpaI",
     "title": "\"Every penny needs to go on helping Poch rebuild the team\" Christian Purslow on Man Utd rebuild",
@@ -1421,12 +1407,6 @@
     "title": "Arsenal Is Looking Unstoppable In The Title Race This Season.",
     "published": 1795443092000,
     "source": "Adikastakes"
-   },
-   {
-    "id": "xJnKi85hdsg",
-    "title": "Could Manchester United really be relegated from the Premier League? | Sky Sports FC",
-    "published": 1795441301000,
-    "source": "Sky Sports News"
    },
    {
     "id": "MGLZRv2uaOY",
@@ -1613,48 +1593,6 @@
     "title": "VINI JR, WELCOME BACK! (Real Madrid 2-1 Celta Vigo)",
     "published": 1795303340000,
     "source": "Lyes"
-   },
-   {
-    "id": "fDO-_EBgNB8",
-    "title": "Chelsea HUMILIATED By Leeds + Arsenal & City Drop Points!",
-    "published": 1795298136000,
-    "source": "Lyes"
-   },
-   {
-    "id": "pSJ2_KoRMpQ",
-    "title": "“LUCÁ WILLIAMS-BARNETT IS A STAR BOY!” 🌟 Abbi Summers Reacts To Spurs 2-0 Ipswich",
-    "published": 1795295345000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "yyweAXDOFeE",
-    "title": "Madueke Rescues A Point For Arsenal, This Team Is Too Stubborn😡",
-    "published": 1795293856000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "mKPdVY07mKg",
-    "title": "SORRY... THE PREMIER LEAGUE HAS FELL OFF. | Saturday Round Up.",
-    "published": 1795293078000,
-    "source": "Culture Cams"
-   },
-   {
-    "id": "xo38wMP3B14",
-    "title": "Leeds Destroy Chelsea 4-1 At Stamford Bridge. Chelsea Is In Crisis!",
-    "published": 1795285931000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "eWS19ISRcpo",
-    "title": "“DISGRACEFUL PERFORMANCE!” 😡 | Man City 1-1 Fulham",
-    "published": 1795282622000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "lVVgePARVGs",
-    "title": "Maresca Is Destroying Man City! It’s Over For Them.",
-    "published": 1795278746000,
-    "source": "Adikastakes"
    }
   ]
  }
