@@ -184,7 +184,7 @@ body.is-phone .sports-switch { display: none; }
 .live-add-button:hover { background: var(--hover); }
 .live-add-error { margin: 6px 2px 0; color: var(--danger); font-size: 11.5px; line-height: 1.4; }
 #live-button { position: relative; }
-.live-count { position: absolute; top: 4px; right: 3px; min-width: 15px; height: 15px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #fe2c55; color: #fff; font-size: 9px; font-weight: 800; line-height: 1; }
+.live-count { flex: none; min-width: 15px; height: 15px; margin-left: 1px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #fe2c55; color: #fff; font-size: 9px; font-weight: 800; line-height: 1; }
 .live-count[hidden] { display: none; }
 .favorite-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .favorite-name-line b { min-width: 0; }
