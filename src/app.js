@@ -3049,10 +3049,13 @@ function addRoomFeed() {
   openSourceDialog({ mode: 'add' });
 }
 
-function saveRoomNow() {
+function saveRoomNow({ create = false } = {}) {
   const room = ws.room;
   if (!room) return false;
   const existing = listSaved().find((item) => item.workspace.room?.key === room.key);
+  // Opening a room creates its saved layout. Later updates only refresh an existing one,
+  // so deleting the saved room cannot be undone by the next retune/mute/feed click.
+  if (!existing && !create) return false;
   return saveNamed(existing?.name || roomName(room), fitToStreams(ws));
 }
 
@@ -3080,7 +3083,7 @@ async function openEventRoom(id) {
   roomReturn = JSON.parse(JSON.stringify(ws));
   ws = workspaceForRoom(room);
   commit();
-  const saved = saveRoomNow();
+  const saved = saveRoomNow({ create: true });
   toast(saved ? 'Event Room opened.' : "Event Room opened, but this browser couldn't save it.", { label: 'Undo', run() { exitRoom(); } });
 }
 

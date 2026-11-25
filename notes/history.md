@@ -484,3 +484,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 25: The phone Matchday actions are a full-width 2×2 grid (Watch, Matchday grid, Match centre/Programme, Line-ups). Removed the desktop 88 px top padding from the phone Home rows so the big black gap under the hero is gone, and fitted the hero height to the content.
 - Nov 25: The desktop TikTok menu now fills the window height: the account list scrolls and the Add bar stays at the bottom.
 - Nov 25: The TikTok dropdown now starts with “Choose followed accounts…” and the imported following count, opening the existing picker. It shows “Import following list…” when no list is imported.
+- Nov 25: Deleting a saved Event Room layout no longer lets the room save itself back. Opening a room creates its saved layout; later room updates only refresh an existing one, so a deleted room stays deleted.
