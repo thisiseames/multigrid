@@ -9,7 +9,7 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, folderAfter, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { addTikTokAccounts, loadTikTokFeeds, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { addTikTokAccounts, loadTikTokFeeds, lookupTikTokLive, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
 import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
@@ -4327,6 +4327,8 @@ const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turne
 function refreshFavorites() {
   render();
   syncGuideButton();
+  syncLiveButton();
+  liveTodayDraw?.();
   if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
 
@@ -4336,6 +4338,116 @@ const isWebsite = (input) => parseSource(input).kind === 'iframe';
 /** REELS favorites in the order they were arranged, not alphabetical. */
 const reelFavorites = () => listFavorites()
   .filter((item) => isReelsFolder(item.group) && isWebsite(item.input));
+
+/* ---------- Saved TikTok LIVE accounts ---------- */
+
+const liveStatus = new Map();
+let liveTodayDraw = null;
+let liveSignature = '';
+let livePollBusy = false;
+
+const liveAccountOf = (input) => {
+  const source = parseSource(input);
+  return source.kind === 'tiktoklive' ? source.tiktoklive.username.toLocaleLowerCase() : '';
+};
+
+const savedLiveAccounts = () => {
+  const seen = new Set();
+  const accounts = [];
+  for (const item of listFavorites()) {
+    const source = parseSource(item.input);
+    if (source.kind !== 'tiktoklive') continue;
+    const username = source.tiktoklive.username;
+    const key = username.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    accounts.push({ item, source, username, key });
+  }
+  return accounts;
+};
+
+const liveStatusFor = (input) => {
+  const key = liveAccountOf(input);
+  return key ? liveStatus.get(key) || null : null;
+};
+
+const liveStatusBadge = (status) => {
+  if (!status) return el('span', { class: 'live-badge is-small is-offline', textContent: 'Checking' });
+  return status.live ? liveTag() : el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' });
+};
+
+const liveArt = (status, className = 'fart') => {
+  if (status?.avatar) {
+    return el('span', { class: `${className} is-avatar` },
+      el('img', { class: 'fart-face', src: status.avatar, alt: '', referrerPolicy: 'no-referrer' }));
+  }
+  return el('span', { class: `${className} is-icon` }, icon('phone', 20));
+};
+
+function syncLiveButton() {
+  const button = $('live-button');
+  if (!button) return;
+  const count = savedLiveAccounts().filter((account) => liveStatus.get(account.key)?.live).length;
+  button.classList.toggle('has-live', count > 0);
+  const badge = $('live-count');
+  if (badge) {
+    badge.hidden = count === 0;
+    badge.textContent = String(count);
+  }
+  button.title = count ? `Live · ${count} on now` : 'Live';
+  button.setAttribute('aria-label', count ? `Live, ${count} on now` : 'Live');
+}
+
+async function refreshLiveStatuses() {
+  if (livePollBusy || document.hidden) return;
+  const accounts = savedLiveAccounts();
+  if (!accounts.length) {
+    if (liveStatus.size) {
+      liveStatus.clear();
+      liveSignature = '';
+      refreshFavorites();
+      liveTodayDraw?.();
+    }
+    syncLiveButton();
+    return;
+  }
+  if (document.documentElement.dataset.multigridSound !== '1') {
+    syncLiveButton();
+    return;
+  }
+  livePollBusy = true;
+  try {
+    const wanted = new Set(accounts.slice(0, 20).map((account) => account.key));
+    for (const key of [...liveStatus.keys()]) if (!wanted.has(key)) liveStatus.delete(key);
+    for (const account of accounts.slice(0, 20)) {
+      const reply = await lookupTikTokLive(account.username);
+      if (reply && !reply.error) liveStatus.set(account.key, reply);
+    }
+  } finally {
+    livePollBusy = false;
+  }
+  syncLiveButton();
+  const signature = JSON.stringify(savedLiveAccounts().map((account) => {
+    const status = liveStatus.get(account.key);
+    return [account.key, Boolean(status?.live), status?.title || '', status?.username || ''];
+  }));
+  if (signature !== liveSignature) {
+    liveSignature = signature;
+    refreshFavorites();
+    if (!$('live-menu').hidden && !$('live-username')?.value) buildLiveMenu();
+  }
+  liveTodayDraw?.();
+}
+
+function liveUsernameFrom(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const asUrl = /^(https?:\/\/|(?:www\.)?tiktok\.com\/)/i.test(text);
+  const source = parseSource(asUrl || /^tiktoklive:/i.test(text) ? text : `tiktoklive:${text.replace(/^@/, '')}`);
+  if (source.kind === 'tiktoklive') return source.tiktoklive.username;
+  if (source.kind === 'tiktok' && source.tiktok?.profile) return source.tiktok.profile;
+  return '';
+}
 
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
@@ -4372,6 +4484,7 @@ function editFavorite(input, suggestedName, anchor) {
         }
       }
       refreshFavorites();
+      if (parseSource(input).kind === 'tiktoklive') refreshLiveStatuses();
     },
     onRemove() {
       removeFavorite(input);
@@ -4382,6 +4495,8 @@ function editFavorite(input, suggestedName, anchor) {
 
 function favoriteRow(item, getTarget) {
   const row = el('li', { class: 'saved-row' });
+  const source = parseSource(item.input);
+  const status = source.kind === 'tiktoklive' ? liveStatusFor(item.input) : null;
   const showNormal = () => {
     row.replaceChildren(
       el('button', {
@@ -4395,7 +4510,7 @@ function favoriteRow(item, getTarget) {
             addStream(item.input, target);
           },
         },
-      }, el('b', { textContent: item.name }), onNowLine(item)),
+      }, el('span', { class: 'favorite-name-line' }, el('b', { textContent: item.name }), status ? liveStatusBadge(status) : null), onNowLine(item)),
       el('span', { class: 'row-actions' },
         iconButton('pencil', 'Edit', (event) => editFavorite(item.input, item.name, event.currentTarget)),
         iconButton('trash', 'Remove from favorites', showConfirm)));
@@ -6185,6 +6300,14 @@ function favoriteArt(item, source, highRes = false) {
     artPicture(art, item.logo, quiet);
     return art;
   }
+  if (source.kind === 'tiktoklive') {
+    const status = liveStatusFor(item.input);
+    if (status?.avatar) {
+      art.className = 'fart is-picture';
+      artPicture(art, status.avatar, quiet);
+      return art;
+    }
+  }
   const logo = !NOT_TV_KINDS.has(source.kind) ? logoFor(item.name) : null;
   if (logo) {
     art.className = `fart is-logo is-${logo.tone}`;
@@ -7090,6 +7213,22 @@ function favoriteCard(item, holder, { plain = false } = {}) {
         line.replaceChildren(el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' }));
       }
     });
+  }
+  if (source.kind === 'tiktoklive') {
+    const status = liveStatusFor(item.input);
+    if (status) {
+      const line = el('small', { class: 'fcard-twitch fcard-live' });
+      if (status.live) {
+        line.append(liveTag(), el('span', {
+          class: 'fcard-twitch-text',
+          textContent: status.viewers ? `${viewerCount(status.viewers)} watching` : 'Live now',
+        }));
+        line.title = status.title || '';
+      } else {
+        line.append(el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' }));
+      }
+      card.querySelector('.fcard-text')?.append(line);
+    }
   }
   if (isSeriesFolder(item.group)) {
     // Where you're up to: "S2 E8 · 34 min in".
@@ -10755,6 +10894,34 @@ async function fillToday() {
   const tubeList = tube.filter((item) => !item.opened);
   const trendHolder = el('section', { class: 'today-section', hidden: true });
   const ppvHolder = el('section', { class: 'today-section', hidden: true });
+  const liveHolder = el('section', { class: 'today-section', hidden: true });
+  const drawLiveToday = () => {
+    if (!liveHolder.isConnected) return;
+    const lives = savedLiveAccounts()
+      .map((account) => ({ account, status: liveStatus.get(account.key) }))
+      .filter(({ status }) => status?.live);
+    if (todayView === 'week' || !lives.length) {
+      liveHolder.hidden = true;
+      liveHolder.replaceChildren();
+      return;
+    }
+    liveHolder.hidden = false;
+    liveHolder.replaceChildren(
+      el('h4', { class: 'match-day', textContent: 'Live now' }),
+      el('ul', { class: 'rlist' }, ...lives.map(({ account, status }) => todayRow({
+        art: liveArt(status),
+        top: el('span', { textContent: `${account.item.name} · ${status.viewers ? `${viewerCount(status.viewers)} watching` : 'Live now'}` }),
+        title: status.title || account.item.name,
+        sub: 'TikTok LIVE',
+        live: true,
+        onClick() {
+          closePopovers();
+          addStream(account.item.input, { mode: 'add' });
+        },
+      }))));
+  };
+  liveTodayDraw = drawLiveToday;
+  drawLiveToday();
   const headlinesSection = todaySection('Top headlines', newsList);
   const polySection = todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null);
   const continueSection = todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null);
@@ -10767,6 +10934,7 @@ async function fillToday() {
   const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
+    liveHolder,
     headlinesSection,
     trendHolder,
     continueSection,
@@ -10801,11 +10969,13 @@ async function fillToday() {
     for (const section of weekOnlySections) section.hidden = !week;
     trendHolder.hidden = week || !trendHolder.childElementCount;
     redrawTodayDates();
+    liveTodayDraw?.();
   };
   redrawTodayView();
   const scroll = body.scrollTop;
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
   body.scrollTop = scroll;
+  liveTodayDraw?.();
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
   fillTodayTrends(trendHolder, asked);
   fillTodayPPV(ppvHolder, asked);
@@ -12181,6 +12351,74 @@ function buildReelsMenu(focusInput = null) {
     (target ?? menu.querySelector('.reels-add'))?.focus();
   }
 }
+
+function buildLiveMenu() {
+  const menu = $('live-menu');
+  const accounts = savedLiveAccounts();
+  const liveCount = accounts.filter((account) => liveStatus.get(account.key)?.live).length;
+  const ordered = [...accounts].sort((a, b) => Number(Boolean(liveStatus.get(b.key)?.live)) - Number(Boolean(liveStatus.get(a.key)?.live))
+    || a.item.name.localeCompare(b.item.name, undefined, { sensitivity: 'base' }));
+  const row = (account) => {
+    const status = liveStatus.get(account.key);
+    const handle = `@${account.username}`;
+    const sub = status?.live
+      ? [handle, status.viewers ? `${viewerCount(status.viewers)} watching` : ''].filter(Boolean).join(' · ')
+      : `${handle} · ${status ? 'Offline' : 'Checking…'}`;
+    return el('li', {}, el('button', {
+      type: 'button', class: 'reels-row live-row', title: `Open ${account.item.name} live`,
+      on: {
+        click() {
+          closePopovers();
+          addStream(account.item.input, { mode: 'add' });
+        },
+      },
+    },
+    liveArt(status, 'reels-icon live-row-art'),
+    el('span', { class: 'reels-text' }, el('b', { textContent: account.item.name }), el('small', { textContent: sub })),
+    liveStatusBadge(status)));
+  };
+  const input = el('input', {
+    id: 'live-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
+    placeholder: '@username or live link', aria: { label: 'TikTok LIVE username or link' },
+  });
+  const error = el('p', { class: 'live-add-error', hidden: true });
+  const form = el('form', {
+    class: 'live-add-form',
+    on: {
+      submit(event) {
+        event.preventDefault();
+        const name = liveUsernameFrom(input.value);
+        if (!name) {
+          error.textContent = 'Enter a TikTok username or a live link.';
+          error.hidden = false;
+          input.focus();
+          return;
+        }
+        const existing = listFavorites().find((item) => liveAccountOf(item.input) === name.toLocaleLowerCase());
+        const liveInput = existing?.input || `tiktoklive:${name}`;
+        if (!existing && !saveFavorite(liveInput, `@${name}`, folderForCategory('TikTok'))) toast(STORAGE_FULL);
+        refreshFavorites();
+        refreshLiveStatuses();
+        closePopovers();
+        addStream(liveInput, { mode: 'add' });
+      },
+    },
+  }, input, el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }));
+  menu.replaceChildren(
+    el('div', { class: 'reels-head' },
+      el('span', { textContent: 'Live' }),
+      el('small', { textContent: accounts.length ? `${liveCount} on now · ${accounts.length} saved` : 'TikTok LIVE' })),
+    ordered.length
+      ? el('ul', { class: 'reels-list' }, ...ordered.map(row))
+      : el('p', { class: 'reels-empty', textContent: 'No saved lives yet. Add a username below; it will appear here and in Today.' }),
+    el('div', { class: 'reels-foot' }, form, error));
+  if (!liveStatus.size && accounts.length) refreshLiveStatuses();
+}
+
+$('live-button').addEventListener('click', () => togglePopover($('live-button'), $('live-menu'), buildLiveMenu));
+setTimeout(() => refreshLiveStatuses(), 2000);
+setInterval(() => { if (!document.hidden) refreshLiveStatuses(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveStatuses(); });
 
 $('reels-button').addEventListener('click', () => togglePopover($('reels-button'), $('reels-menu'), buildReelsMenu));
 $('surf-prev').addEventListener('click', () => surfChannels(-1));
