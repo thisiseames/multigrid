@@ -370,7 +370,7 @@ body.is-phone #stage.is-empty-wall {
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)),
     linear-gradient(to bottom, rgba(11, 11, 12, 0.7), rgba(11, 11, 12, 0.05) 25%, rgba(11, 11, 12, 0.05) 70%, rgba(11, 11, 12, 0.85)),
-    url('assets/empty-wall.jpg');
+    url('assets/empty-wall.jpg?v=2');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -387,12 +387,20 @@ body.is-phone #stage.is-empty-wall::after { content: none; }
     overflow: hidden;
     background: #000 radial-gradient(ellipse 60% 45% at 50% 50%, #0c0c0f 0%, #000 70%);
   }
+  .phone-splash-art {
+    position: absolute; inset: 0;
+    background: #000 url('assets/opening-collage.jpg') center / cover no-repeat;
+    opacity: 0;
+  }
+  .phone-splash.is-collage .phone-splash-art { opacity: 1; transition: opacity .45s ease; }
   .phone-splash-word {
+    position: relative; z-index: 1;
     padding-left: .42em;
     font: 600 clamp(28px, 9vw, 40px)/1 var(--font);
     letter-spacing: .42em;
     color: rgba(255, 255, 255, .94);
     text-align: center;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, .7);
     opacity: .4;
   }
   .phone-splash.is-playing .phone-splash-word { animation: phone-title-in 1.6s cubic-bezier(.2, .7, .2, 1) both; }
@@ -404,6 +412,7 @@ body.is-phone #stage.is-empty-wall::after { content: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .phone-splash.is-playing .phone-splash-word { animation: none; opacity: 1; }
+  .phone-splash.is-collage .phone-splash-art { transition: none; }
 }
 @media (orientation: portrait) {
   body.is-phone #stage.is-empty-wall {
@@ -411,7 +420,7 @@ body.is-phone #stage.is-empty-wall::after { content: none; }
     background-image:
       linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)),
       linear-gradient(to bottom, rgba(11, 11, 12, 0.7), rgba(11, 11, 12, 0.05) 25%, rgba(11, 11, 12, 0.05) 70%, rgba(11, 11, 12, 0.85)),
-      url('assets/empty-wall.jpg');
+      url('assets/empty-wall.jpg?v=2');
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;

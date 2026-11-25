@@ -112,6 +112,7 @@ function startPhoneSplash() {
   requestAnimationFrame(() => {
     splash.classList.add('is-playing');
     playSting().catch(() => {});
+    setTimeout(() => splash.classList.add('is-collage'), reduced ? 200 : 1100);
     setTimeout(() => {
       splash.classList.add('is-done');
       setTimeout(() => splash.remove(), 450);
