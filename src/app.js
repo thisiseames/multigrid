@@ -4053,7 +4053,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   const pageOf = () => (moved ? { for: input, href: moved } : undefined);
   const source = parseSource(input);
   const savedFavorite = listFavorites().find((item) => item.input === input);
-  const reels = Boolean(target.reels) || isReelsFolder(savedFavorite?.group);
+  const reels = Boolean(target.reels) || (isWebsite(input) && isReelsFolder(savedFavorite?.group));
   // A podcast is audio, so it plays in the dock instead of taking a tile.
   if (source.kind === 'audio') {
     openPodcast(input, { title: title || favoriteName(input) || '', from: '' });
@@ -4068,14 +4068,26 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   }
   // Website embeds often carry the match in their URL; use that as a useful label.
   const autoTitle = title || (source.kind === 'iframe' ? eventLabelFor(input) : '');
-  if (target.mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
+  // There is only ever one Reel tile. Opening another Reel replaces it instead
+  // of adding a second vertical tile.
+  let mode = target.mode;
+  let replaceId = target.id;
+  if (mode === 'add' && reels) {
+    const existing = ws.tiles.filter((tile) => tile.reels === true && isStream(tile) && isVisible(tile));
+    if (existing.length) {
+      mode = 'replace';
+      replaceId = existing[0].id;
+      for (const extra of existing.slice(1)) removeTile(ws, extra.id);
+    }
+  }
+  if (mode !== 'replace' && streamCount(ws) >= MAX_STREAMS) {
     toast(`${MAX_STREAMS} streams is the most a workspace can hold. Remove one first.`);
     return;
   }
   let addedId = null;
   let oldSource = null;
-  if (target.mode === 'replace') {
-    const tile = tileById(target.id);
+  if (mode === 'replace') {
+    const tile = tileById(replaceId);
     if (tile) {
       if (tile.input) oldSource = { input: tile.input, name: labelOf(tile) };
       tile.input = input;
@@ -4088,7 +4100,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
       addedId = tile.id;
     }
   } else {
-    let slot = target.mode === 'fill' ? tileById(target.id) : null;
+    let slot = mode === 'fill' ? tileById(replaceId) : null;
     if (!slot || isStream(slot)) slot = makeRoom(ws);
     if (slot.input) oldSource = { input: slot.input, name: labelOf(slot) };
     slot.input = input;
@@ -4314,8 +4326,9 @@ function refreshFavorites() {
 
 const REELS_FOLDER = 'REELS';
 const isReelsFolder = (folder) => String(folder || '').trim().toLocaleLowerCase() === 'reels';
+const isWebsite = (input) => parseSource(input).kind === 'iframe';
 const reelFavorites = () => listFavorites()
-  .filter((item) => isReelsFolder(item.group))
+  .filter((item) => isReelsFolder(item.group) && isWebsite(item.input))
   .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
 function editFavorite(input, suggestedName, anchor) {
@@ -4335,9 +4348,18 @@ function editFavorite(input, suggestedName, anchor) {
         toast(STORAGE_FULL);
         return;
       }
-      if (isReelsFolder(folder)) {
+      if (isReelsFolder(folder) && isWebsite(input)) {
         const tile = ws.tiles.find((candidate) => candidate.input === input);
-        if (tile) {
+        const existing = ws.tiles.find((candidate) => candidate.reels === true
+          && isStream(candidate) && isVisible(candidate) && candidate !== tile);
+        if (tile && existing) {
+          // The one Reel tile takes the newly saved site; the extra tile goes and
+          // the layout stays a vertical column rather than shrinking to a plain grid.
+          addStream(input, { mode: 'replace', id: existing.id, reels: true });
+          removeTile(ws, tile.id);
+          phoneColumn(ws, existing.id);
+          commit();
+        } else if (tile) {
           tile.reels = true;
           if (!isPhoneLayout(ws) || !phoneTile(ws)) phoneColumn(ws, tile.id);
           commit();
