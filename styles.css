@@ -1124,13 +1124,13 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .lineup-team .crest { --size: 22px; width: 22px; height: 22px; }
 .lineup-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 4px 2px 8px; font-size: 11.5px; color: var(--text-2); }
 .lineup-meta b { color: var(--text); font-size: 12.5px; letter-spacing: .02em; }
-.lineup-pitch { position: relative; width: 100%; aspect-ratio: 1.95 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-color: #1b3a27; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 8%, transparent 8% 16%), linear-gradient(110deg, #183622, #245136); box-shadow: inset 0 0 46px rgba(0,0,0,.28); }
+.lineup-pitch { position: relative; width: min(100%, 420px); margin: 0 auto; aspect-ratio: .82 / 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background-color: #1b3a27; background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 8%, transparent 8% 16%), linear-gradient(160deg, #183622, #245136); box-shadow: inset 0 0 46px rgba(0,0,0,.28); }
 .lp-half, .lp-circle, .lp-box, .lp-six, .lp-goal { position: absolute; border-color: rgba(255,255,255,.32); pointer-events: none; }
-.lp-half { right: 0; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.3); border: 0; }
-.lp-circle { right: -9%; top: 50%; width: 18%; aspect-ratio: 1 / 1; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; transform: translateY(-50%); }
-.lp-box { left: 0; top: 20%; width: 16%; height: 60%; border: 1px solid rgba(255,255,255,.3); border-left: 0; }
-.lp-six { left: 0; top: 33%; width: 7%; height: 34%; border: 1px solid rgba(255,255,255,.3); border-left: 0; }
-.lp-goal { left: 0; top: 42%; width: 1.6%; height: 16%; border: 1px solid rgba(255,255,255,.4); border-left: 0; }
+.lp-half { left: 0; right: 0; top: 0; height: 1px; background: rgba(255,255,255,.3); border: 0; }
+.lp-circle { left: 50%; top: 0; width: 30%; aspect-ratio: 1 / 1; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; transform: translate(-50%, -50%); }
+.lp-box { left: 22%; right: 22%; bottom: 0; height: 17%; border: 1px solid rgba(255,255,255,.3); border-bottom: 0; }
+.lp-six { left: 37%; right: 37%; bottom: 0; height: 7%; border: 1px solid rgba(255,255,255,.3); border-bottom: 0; }
+.lp-goal { left: 42%; right: 42%; bottom: 0; height: 1.8%; border: 1px solid rgba(255,255,255,.4); border-bottom: 0; }
 .lp-player { position: absolute; z-index: 2; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; transform: translate(-50%, -50%); }
 .lp-shirt { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--team, var(--accent)); color: #fff; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .lp-name { max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 600; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.95); }
@@ -1151,7 +1151,6 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
   .lineup { width: 100vw; height: 100dvh; max-width: 100vw; max-height: 100dvh; margin: 0; border-radius: 0; border: 0; }
   .lineup-head { padding: calc(12px + env(safe-area-inset-top)) 10px 8px 14px; }
   .lineup-body { padding: 10px 12px calc(16px + env(safe-area-inset-bottom)); }
-  .lineup-pitch { aspect-ratio: 1.42 / 1; }
   .lp-player { width: 62px; }
   .lp-shirt { width: 28px; height: 28px; font-size: 11px; }
   .lp-name { max-width: 62px; font-size: 9px; }

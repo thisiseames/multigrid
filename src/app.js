@@ -9006,11 +9006,12 @@ function lineupPitch(side) {
     el('span', { class: 'lp-goal' }));
   const rows = formationRows(side.formation, side.starters);
   rows.forEach((row, rowIndex) => {
-    const x = rows.length === 1 ? 50 : 10 + (rowIndex / (rows.length - 1)) * 80;
+    // Rows run from the goalkeeper (bottom) to the attack (top); players spread left to right.
+    const y = rows.length === 1 ? 50 : 86 - (rowIndex / (rows.length - 1)) * 74;
     row.forEach((player, index) => {
       pitch.append(el('span', {
         class: 'lp-player',
-        style: `left:${x}%;top:${rowY(row.length, index)}%`,
+        style: `left:${rowY(row.length, index)}%;top:${y}%`,
         title: [player.name, player.position].filter(Boolean).join(' · '),
       },
       el('span', { class: 'lp-shirt', textContent: player.jersey || '•' }),
