@@ -35,6 +35,41 @@ If a sentence needs a second read to know which case applies, it is not finished
 
 **Why:** I described iPhone Reduce Motion as if it were part of the normal opening, so the whole opening sounded like it had no animation. The information was right; the clarity was missing. He had to ask why, then point out it was a secondary phone setting.
 
+## Build only from a complete experience plan (Nov 25)
+Owner: "You went to start building before creating an actual fucking plan… think of the user experience. This is how to use it. This is where to find it."
+
+For any new screen, flow, opening, control or asset change, no code, file edit, commit or deploy until the plan answers all of these in writing:
+
+1. **FIRST FRAME:** what is on screen before anything moves. For an opening, name the first thing seen.
+2. **SEQUENCE:** every step, timing and transition, through the final frame.
+3. **LANDING:** the exact screen it ends on, including the empty/no-data state.
+4. **ASSETS:** every image/file, which screen uses it, and which existing assets must not change.
+5. **CONTROLS:** every switch/button, its exact location, default, on/off behaviour, and how he finds it.
+6. **EXCEPTIONS:** reduced motion, blocked audio, phone/desktop differences, empty/error states.
+7. **UNCHANGED:** what must deliberately stay exactly as it is.
+8. **VERIFY:** the first frame, the transition, the landing, each control off, and the unchanged screen, at laptop and phone width.
+
+Then wait for an explicit "go" to that exact plan. A partial answer ("two is fine") is not a go. A new asset or changed requirement means stop and rewrite the plan, not patch the build.
+
+## Assets belong to screens (Nov 25)
+Before touching an image or file, write this down: "This file is used on X. The new file is for Y. X must not change."
+
+- An asset given for a new feature is not a replacement for an existing screen unless he says so.
+- Never overwrite an existing `assets/...` file to reuse it. Add a new file and name its screen.
+- Open the actual image before designing around it. If it already contains a logo or wordmark, say so and design around it.
+- The plan must list every asset and every screen it touches.
+
+## Setup steps must be executable (Nov 25)
+Any step only he can do must include:
+
+- The exact URL, clickable — not "Google Cloud" or "the settings page".
+- The exact page and button labels, in order.
+- The exact value or name to enter.
+- Where to paste it (the exact menu path).
+- What to send back — never the secret itself.
+
+No short-form setup. If he has to ask "where am I supposed to get that?", the instruction is unfinished.
+
 NEVER: build without a written plan AND his explicit "go" to that exact plan. Move his data, accounts or hosting on my own. Open his browser or accounts for something he didn't ask for. Decide a requirement silently.
 
 BLOCKED on something only he can do: name the one action in one sentence, then stop that thread. Never substitute the weaker answer he already rejected. Never narrate what I won't do.
