@@ -4335,6 +4335,7 @@ const STORAGE_FULL = "Couldn't save. This browser's storage may be full or turne
 
 /** Tile labels and both favorites lists read from saved favorites, so all of them redraw. */
 function refreshFavorites() {
+  ensureLiveFolder();
   render();
   syncGuideButton();
   syncLiveButton();
@@ -4350,6 +4351,25 @@ const reelFavorites = () => listFavorites()
   .filter((item) => isReelsFolder(item.group) && isWebsite(item.input));
 
 /* ---------- Saved TikTok LIVE accounts ---------- */
+
+const LIVE_FOLDER = 'Live';
+const isLiveFolder = (folder) => String(folder || '').trim().toLocaleLowerCase() === 'live';
+const liveFolderName = () => listFolders().find(isLiveFolder) ?? LIVE_FOLDER;
+
+/** Keeps every saved live in the one Live folder, including favorites from before it existed. */
+function ensureLiveFolder() {
+  const list = listFavorites();
+  const folder = liveFolderName();
+  let changed = false;
+  for (const item of list) {
+    if (parseSource(item.input).kind !== 'tiktoklive') continue;
+    if (item.group !== folder) {
+      item.group = folder;
+      changed = true;
+    }
+  }
+  if (changed && !replaceFavorites(list)) toast(STORAGE_FULL);
+}
 
 const liveStatus = new Map();
 let liveTodayDraw = null;
@@ -4462,17 +4482,18 @@ function liveUsernameFrom(value) {
 function editFavorite(input, suggestedName, anchor) {
   const current = listFavorites().find((item) => item.input === input);
   const folders = listFolders();
+  const isLive = parseSource(input).kind === 'tiktoklive';
   // A website can be saved straight into Reels from this box.
   if (parseSource(input).kind === 'iframe' && !folders.some(isReelsFolder)) folders.push(REELS_FOLDER);
   openFavoriteBox({
     anchor,
     title: current ? 'Edit favorite' : 'Add to favorites',
     name: current?.name ?? suggestedName,
-    folder: current?.group ?? '',
+    folder: isLive ? liveFolderName() : current?.group ?? '',
     folders,
     removable: Boolean(current),
     onSave(name, folder) {
-      if (!saveFavorite(input, name, folder)) {
+      if (!saveFavorite(input, name, isLive ? liveFolderName() : folder)) {
         toast(STORAGE_FULL);
         return;
       }
@@ -7377,8 +7398,11 @@ function fillAddFavorites(holder) {
   const podcasts = addFolder === PODCASTS && !query;
   const layouts = addFolder === LAYOUTS && !query;
   const recent = addFolder === RECENT && !query;
-  // Account feeds stay out of All; a folder such as Twitter can still show them.
-  const inAll = (item) => !isAccountSource(parseSource(item.input));
+  // Account feeds and TikTok LIVE stay out of All; their Live/Twitter/TikTok folders still show them.
+  const inAll = (item) => {
+    const source = parseSource(item.input);
+    return !isAccountSource(source) && source.kind !== 'tiktoklive';
+  };
   const shown = query
     ? all.filter((item) => (addFolder || inAll(item)) && (matches(item.name) || (item.group && matches(item.group))))
     : podcasts || layouts || recent || libraryOpen ? [] : all.filter((item) => (addFolder ? item.group.toLocaleLowerCase() === addFolder.toLocaleLowerCase() : inAll(item)));
@@ -11128,6 +11152,7 @@ const syncStore = {
   },
 };
 const syncCameIn = () => {
+  ensureLiveFolder();
   refreshFavorites();
   if ($('sync-box').open) openSyncBox();
 };
@@ -12413,7 +12438,7 @@ function buildLiveMenu() {
         }
         const existing = listFavorites().find((item) => liveAccountOf(item.input) === name.toLocaleLowerCase());
         const liveInput = existing?.input || `tiktoklive:${name}`;
-        if (!existing && !saveFavorite(liveInput, `@${name}`, folderForCategory('TikTok'))) toast(STORAGE_FULL);
+        if (!existing && !saveFavorite(liveInput, `@${name}`, liveFolderName())) toast(STORAGE_FULL);
         refreshFavorites();
         refreshLiveStatuses();
         closePopovers();
@@ -12786,6 +12811,7 @@ setInterval(drawTodayIcon, 60 * 1000);
 buildStarters();
 prepareAutoplaySound();
 if (daypartPreview) homeOpen = true;
+ensureLiveFolder();
 render();
 initDesk();
 if (daypartPreview) toast(`Daypart home: ${daypartFor(previewClock()).label}.`);
