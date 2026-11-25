@@ -6585,6 +6585,7 @@ function showHero(item, { hold = false } = {}) {
   // Older layers fade out under the new one, then go.
   [...layers.children].slice(0, -1).forEach((old) => setTimeout(() => old.remove(), 900));
   hero.classList.toggle('is-matchday', Boolean(item.matchday));
+  hero.dataset.mdPhase = item.phase || '';
   const edition = homeEdition ? el('span', { class: 'hero-edition', textContent: homeEdition }) : null;
   if (item.render) {
     hero.querySelector('.hero-info').replaceChildren(...[edition, ...item.render()].filter(Boolean));
@@ -9696,8 +9697,11 @@ function matchdayHeroItem(phase) {
     } else {
       const place = data?.positions?.[mdSide(match)];
       const moved = !isCalledOff(match) && place?.rank ? tableMove(positionBefore(match.id), place.rank) : '';
-      const line = (data?.stats ?? []).slice(0, 4).map((stat) => `${stat.label} ${stat.home}${stat.unit}–${stat.away}${stat.unit}`).join(' · ');
-      if (line) parts.push(el('p', { class: 'hero-meta', textContent: line }));
+      const stats = (data?.stats ?? []).slice(0, 4).map((stat) => `${stat.label} ${stat.home}${stat.unit}–${stat.away}${stat.unit}`);
+      if (stats.length) parts.push(el('p', { class: 'hero-meta md-stats-line' }, ...stats.flatMap((text, index) => [
+        index ? ' · ' : null,
+        el('span', { class: 'md-stat-bit', textContent: text }),
+      ]).filter(Boolean)));
       parts.push(facts(
         el('div', { class: 'md-fact-col' }, mdScorers(match, data), moved ? el('p', { class: 'hero-meta md-moved', textContent: `${match[mdSide(match)].name}: ${moved}` }) : null),
         mdChanceGraph(match, { width: 260, height: 44 })));
@@ -9713,7 +9717,7 @@ function matchdayHeroItem(phase) {
     return parts.filter(Boolean);
   };
   const xi = (phase === 'buildup' || phase === 'live') ? () => mdLineup(match, data) : null;
-  return { key, matchday: true, label, title, match, render, layer: () => mdArt(match, xi?.()), play: () => (md.broadcast ? mdWatch() : openMatchday()) };
+  return { key, phase, matchday: true, label, title, match, render, layer: () => mdArt(match, xi?.()), play: () => (md.broadcast ? mdWatch() : openMatchday()) };
 }
 
 /** "SKY SPORTS PREMIER LEAGUE" → "Sky Sports Premier League" (favorites are often in capitals). */

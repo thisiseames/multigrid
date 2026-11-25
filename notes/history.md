@@ -485,3 +485,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 25: The desktop TikTok menu now fills the window height: the account list scrolls and the Add bar stays at the bottom.
 - Nov 25: The TikTok dropdown now starts with “Choose followed accounts…” and the imported following count, opening the existing picker. It shows “Import following list…” when no list is imported.
 - Nov 25: Deleting a saved Event Room layout no longer lets the room save itself back. Opening a room creates its saved layout; later room updates only refresh an existing one, so a deleted room stays deleted.
+- Nov 25: The phone full-time Matchday banner is taller so the label and title clear the top bar; each stat segment is nowrap, so “Corners 3–2” moves to the second line instead of splitting.

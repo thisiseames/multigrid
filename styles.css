@@ -3305,6 +3305,7 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .md-centre .md-chance-labels { font-size: 12px; }
 .md-stats { display: flex; flex-direction: column; gap: 9px; }
 .md-stat-line { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: var(--text-2); }
+.md-stat-bit { white-space: nowrap; }
 .md-stat-line b { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
 .md-stat-bar { display: flex; gap: 3px; height: 4px; margin-top: 4px; }
 .md-stat-bar span { min-width: 2px; border-radius: 2px; background: rgba(255, 255, 255, .26); }
@@ -3406,6 +3407,7 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
    desktop right-hand art, and the facts stack so the chances cannot run under it. */
 @media (max-width: 640px) {
   body.is-phone .home-hero.is-matchday { height: min(46vh, 400px); min-height: 390px; }
+  body.is-phone .home-hero.is-matchday[data-md-phase="fulltime"] { height: min(54vh, 470px); min-height: 454px; }
   body.is-phone .home-hero.is-matchday .hero-info { left: 16px; right: 16px; bottom: 44px; width: auto; gap: 8px; }
   body.is-phone .home-hero.is-matchday .md-facts { grid-template-columns: 1fr; gap: 8px; }
   body.is-phone .home-hero.is-matchday .md-facts > * { min-width: 0; }
