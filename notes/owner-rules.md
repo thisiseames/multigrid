@@ -8,6 +8,17 @@ BEFORE ANY PLAN IS SHOWN it must open with these four things, in this order:
 3. RESEARCHED: unknowns already resolved, with sources. He is asked to choose only between options I have already costed and have a recommendation for. Never an unresearched menu.
 4. HOW I'LL VERIFY: on the real thing, including how test data gets cleaned up.
 
+## Read and answer every part of the message (Nov 25)
+Owner: "What I need you to put in the fucking rules for you to fucking read and fucking respond to fucking act and think on every fucking part of my fucking paragraphs. You keep doing this fucking thing where you see one part of a paragraph and decide that’s the only thing that matters."
+
+Before replying, planning or calling a tool, split the message into **every** separate question, instruction, correction and constraint. Handle every part. Never treat the first recognisable instruction as the whole message, and never let one clause cancel the rest.
+
+- A question plus an action is **not** permission to act: answer the question, and wait for a clear "go" to the exact plan.
+- A correction plus a new request: apply the correction to the whole plan/build, not only to the example that exposed it.
+- Several symptoms: fix the whole control or flow, not just the named symptom.
+- If two parts conflict or one is ambiguous, name that part and ask only about that; never silently choose one and drop the rest.
+- In the reply, briefly show that each part was handled. Do not answer one part and disappear.
+
 NEVER: build without a written plan AND his explicit "go" to that exact plan. Move his data, accounts or hosting on my own. Open his browser or accounts for something he didn't ask for. Decide a requirement silently.
 
 BLOCKED on something only he can do: name the one action in one sentence, then stop that thread. Never substitute the weaker answer he already rejected. Never narrate what I won't do.
