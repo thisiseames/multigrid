@@ -165,6 +165,10 @@ body.is-phone .sports-switch { display: none; }
 .reels-item .row-actions button.is-danger:hover { color: var(--danger); }
 .reels-item .row-actions button:disabled { opacity: .2; cursor: default; }
 .reels-item .row-actions button:disabled:hover { background: none; color: var(--text-2); }
+.reels-pick { margin-bottom: 2px; }
+.reels-bluesky { overflow: hidden; padding: 0; }
+.reels-bluesky img { width: 100%; height: 100%; object-fit: cover; }
+.reels-mark { flex: none; display: inline-flex; color: var(--text-2); opacity: .65; }
 .reels-icon { flex: none; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: #1f1f23; color: var(--text-2); }
 .reels-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .reels-text b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2264,7 +2268,7 @@ body.remote-open { overflow: hidden; }
   body.is-phone .popover.reels-menu.is-sheet { display: flex; flex-direction: column; overflow: hidden; }
   body.is-phone .reels-menu.is-sheet .reels-head { flex: none; }
   body.is-phone .reels-menu.is-sheet .reels-list { flex: 1 1 auto; min-height: 0; max-height: none; }
-  body.is-phone .reels-menu.is-sheet .reels-empty { flex: 1 1 auto; }
+  body.is-phone .reels-menu.is-sheet .reels-empty { flex: none; }
   body.is-phone .reels-menu.is-sheet .reels-foot { flex: none; margin-top: auto; }
   .popover.is-sheet .matches-tabs { padding-left: 14px; padding-right: 14px; }
 

@@ -12404,18 +12404,30 @@ function buildReelsMenu(focusInput = null) {
         action('down', `Move ${item.name} down`, index === reels.length - 1, () => move(item, 1)),
         action('trash', `Remove ${item.name} from Reels`, false, () => remove(item), true)));
   };
-  menu.replaceChildren(
+  const blueskyRow = el('li', { class: 'reels-item reels-pick' }, el('button', {
+    type: 'button', class: 'reels-row', title: 'Open Trending on Bluesky',
+    on: {
+      click() {
+        closePopovers();
+        addStream('bluesky:trending');
+      },
+    },
+  },
+  el('span', { class: 'reels-icon reels-bluesky' }, el('img', { src: 'assets/bluesky-logo.svg', alt: '' })),
+  el('span', { class: 'reels-text' }, el('b', { textContent: 'Trending on Bluesky' }), el('small', { textContent: 'Native video feed · English' })),
+  el('span', { class: 'reels-mark' }, icon('next', 14))));
+  menu.replaceChildren(...[
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'Reels' }),
       el('small', { textContent: reels.length ? `${reels.length} ${reels.length === 1 ? 'feed' : 'feeds'}` : 'Vertical feeds' })),
-    reels.length
-      ? el('ul', { class: 'reels-list' }, ...reels.map(row))
-      : el('p', { class: 'reels-empty', textContent: 'Save a website in a folder called REELS to see it here.' }),
+    el('ul', { class: 'reels-list' }, blueskyRow, ...reels.map(row)),
+    reels.length ? null : el('p', { class: 'reels-empty', textContent: 'Save a website in a folder called REELS to add another reel.' }),
     el('div', { class: 'reels-foot' },
       el('button', {
         type: 'button', class: 'reels-add',
         on: { click() { closePopovers(); $('add-button').click(); } },
-      }, icon('plus', 15), el('span', { textContent: 'Add a reel' }))));
+      }, icon('plus', 15), el('span', { textContent: 'Add a reel' }))),
+  ].filter(Boolean));
   const list = menu.querySelector('.reels-list');
   if (list) list.scrollTop = scroll;
   if (focusInput) {
