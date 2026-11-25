@@ -1,5 +1,5 @@
 {
- "updated": 1795568308082,
+ "updated": 1795569867822,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -742,52 +742,6 @@
    "start": 1795271400000,
    "sources": "feeds",
    "videos": []
-  },
-  "401909309": {
-   "league": "NBA",
-   "title": "Bulls 94–98 Wizards",
-   "start": 1795222800000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "2ZuTB161bXo",
-     "title": "Highlights: Washington Wizards win at Chicago Bulls",
-     "rank": 1.5
-    },
-    {
-     "id": "WIldpkMO5aU",
-     "title": "Highlights: AJ Dybantsa secures a double-double at Bulls",
-     "rank": 1.5
-    },
-    {
-     "id": "W1iteyGCueM",
-     "title": "Highlights: Anthony Davis drops 36 points in win over the Chicago Bulls",
-     "rank": 0.5
-    }
-   ]
-  },
-  "401909310": {
-   "league": "NBA",
-   "title": "Thunder 126–120 Pelicans",
-   "start": 1795222800000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "fHiruR-Qz7s",
-     "title": "Zion Williamson Highlights vs. OKC Thunder 11/20/2026",
-     "rank": 0.5
-    },
-    {
-     "id": "YZgEl64afkY",
-     "title": "Saddiq Bey Highlights vs. OKC Thunder 11/20/2026",
-     "rank": 0.5
-    },
-    {
-     "id": "n_gMfgYrgqk",
-     "title": "Jeremiah Fears Highlights vs. OKC Thunder 11/20/2026",
-     "rank": 0.5
-    }
-   ]
   },
   "401909311": {
    "league": "NBA",
