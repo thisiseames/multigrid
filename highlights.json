@@ -1,5 +1,5 @@
 {
- "updated": 1795648401929,
+ "updated": 1795649994882,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -1241,6 +1241,18 @@
  "club": {
   "360": [
    {
+    "id": "c7TixgYRmtY",
+    "title": "Manchester United Are CURSED.",
+    "published": 1795649950000,
+    "source": "Lyes"
+   },
+   {
+    "id": "6fpp8dkhyls",
+    "title": "MAN UNITED WERE ROBBED! THIS IS CORRUPTION!",
+    "published": 1795649493000,
+    "source": "Adikastakes"
+   },
+   {
     "id": "r5kFspNfwjg",
     "title": "PSG, We Are Coming For You! Liverpool Is Back!!!",
     "published": 1795648312000,
@@ -1629,12 +1641,6 @@
     "title": "Jose Mourinho Has Made Real Madrid Inevitable Again.",
     "published": 1795304661000,
     "source": "Adikastakes"
-   },
-   {
-    "id": "7MXNkz0YAsQ",
-    "title": "VINI JR, WELCOME BACK! (Real Madrid 2-1 Celta Vigo)",
-    "published": 1795303340000,
-    "source": "Lyes"
    }
   ]
  }
