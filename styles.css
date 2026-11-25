@@ -184,6 +184,16 @@ body.is-phone .sports-switch { display: none; }
 .reels-add { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
 .reels-add:hover { background: var(--hover); }
 .live-menu, .tiktok-menu { width: 306px; }
+/* Desktop TikTok: fill from the top bar to the bottom of the window. The list scrolls;
+   the header and the Add bar stay visible. */
+@media (min-width: 641px) and (hover: hover) {
+  .tiktok-menu { display: flex; flex-direction: column; overflow: hidden; }
+  .tiktok-menu .reels-head { flex: none; }
+  .tiktok-menu .reels-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+  .tiktok-menu .reels-empty { flex: none; }
+  .tiktok-menu .reels-foot { flex: none; margin-top: 0; }
+}
+
 .live-menu-item { border-radius: 9px; }
 .live-menu-item .reels-row { flex: 1; width: auto; min-width: 0; }
 .live-menu-item .row-actions { opacity: 1; padding-right: 4px; }
