@@ -1195,7 +1195,7 @@ function blueskyVideoPlayer(source, options) {
   const top = el('div', { class: 'bsky-top' },
     el('img', { class: 'bsky-mark', src: 'assets/bluesky-logo.svg', alt: '' }),
     el('span', { class: 'bsky-brand', textContent: 'Bluesky' }),
-    el('span', { class: 'bsky-tag', textContent: 'Trending videos' }));
+    el('span', { class: 'bsky-tag', textContent: 'Trending videos · English' }));
   const overlay = el('div', { class: 'bsky-overlay' },
     top,
     el('div', { class: 'bsky-bottom' },

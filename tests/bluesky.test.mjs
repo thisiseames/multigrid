@@ -10,7 +10,7 @@ const post = (overrides = {}) => ({
     displayName: 'Example',
     avatar: 'https://cdn.bsky.app/avatar.jpg',
   },
-  record: { text: 'A clip from the feed', createdAt: '2026-11-25T12:00:00Z' },
+  record: { text: 'A clip from the feed', createdAt: '2026-11-25T12:00:00Z', langs: ['en'] },
   indexedAt: '2026-11-25T12:01:00Z',
   likeCount: 12,
   repostCount: 3,
@@ -31,6 +31,7 @@ test('a Bluesky video post becomes a playable feed item', () => {
   assert.equal(video.playlist, 'https://video.bsky.app/watch/did/playlist.m3u8');
   assert.equal(video.url, 'https://bsky.app/profile/example.bsky.social/post/3kabc');
   assert.equal(video.text, 'A clip from the feed');
+  assert.equal(video.english, true);
 });
 
 test('video inside a quoted post still counts, and posts without video do not', () => {
@@ -49,16 +50,22 @@ test('video inside a quoted post still counts, and posts without video do not', 
   assert.equal(blueskyVideo({ ...post(), embed: { $type: 'app.bsky.embed.images#view' } }), null);
 });
 
-test('a feed keeps videos, drops duplicates and other posts', () => {
+test('a feed can keep only English videos, drops duplicates and other posts', () => {
   const data = {
     feed: [
       { post: post() },
+      { post: post({ uri: 'at://did:plc:example/app.bsky.feed.post/3kes', record: { text: 'Un video en español', langs: ['es'] } }) },
       { post: post() },
       { post: post({ uri: 'at://did:plc:example/app.bsky.feed.post/3kother', embed: { $type: 'app.bsky.embed.external#view' } }) },
       { post: post({ uri: 'at://did:plc:example/app.bsky.feed.post/3ksecond' }) },
     ],
   };
   assert.deepEqual(blueskyVideos(data).map((video) => video.uri), [
+    'at://did:plc:example/app.bsky.feed.post/3kabc',
+    'at://did:plc:example/app.bsky.feed.post/3kes',
+    'at://did:plc:example/app.bsky.feed.post/3ksecond',
+  ]);
+  assert.deepEqual(blueskyVideos(data, { englishOnly: true }).map((video) => video.uri), [
     'at://did:plc:example/app.bsky.feed.post/3kabc',
     'at://did:plc:example/app.bsky.feed.post/3ksecond',
   ]);

@@ -6,7 +6,7 @@ const API = 'https://public.api.bsky.app/xrpc/app.bsky.feed.getFeed';
 const FEED = 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot';
 const CACHE_MS = 5 * 60000;
 const PAGE_LIMIT = 50;
-const MAX_PAGES = 4;
+const MAX_PAGES = 8;
 
 let cached = null;
 let cachedAt = 0;
@@ -30,6 +30,7 @@ export function blueskyVideo(post) {
   const rkey = String(post.uri || '').split('/').pop();
   const width = Number(video.aspectRatio?.width) || 0;
   const height = Number(video.aspectRatio?.height) || 0;
+  const langs = Array.isArray(post.record?.langs) ? post.record.langs.filter((lang) => typeof lang === 'string') : [];
   return {
     uri: post.uri || '',
     url: handle && rkey ? `https://bsky.app/profile/${encodeURIComponent(handle)}/post/${encodeURIComponent(rkey)}` : 'https://bsky.app/',
@@ -46,16 +47,18 @@ export function blueskyVideo(post) {
     likes: Number(post.likeCount) || 0,
     reposts: Number(post.repostCount) || 0,
     indexedAt: post.indexedAt || '',
+    langs,
+    english: langs.some((lang) => /^en(?:-|$)/i.test(lang)),
   };
 }
 
 /** Every video post in one getFeed response, in the feed's order. */
-export function blueskyVideos(data) {
+export function blueskyVideos(data, { englishOnly = false } = {}) {
   const seen = new Set();
   const videos = [];
   for (const entry of data?.feed || []) {
     const video = blueskyVideo(entry?.post);
-    if (!video || seen.has(video.uri)) continue;
+    if (!video || (englishOnly && !video.english) || seen.has(video.uri)) continue;
     seen.add(video.uri);
     videos.push(video);
   }
@@ -79,7 +82,7 @@ async function fetchVideos() {
     });
     if (!response.ok) throw new Error(`Bluesky answered ${response.status}`);
     const data = await response.json();
-    for (const video of blueskyVideos(data)) {
+    for (const video of blueskyVideos(data, { englishOnly: true })) {
       if (seen.has(video.uri)) continue;
       seen.add(video.uri);
       videos.push(video);
@@ -105,7 +108,7 @@ export function loadBlueskyVideos({ force = false } = {}) {
         return videos;
       }
       if (cached) return cached;
-      throw new Error('No videos in Bluesky trends right now.');
+      throw new Error('No English videos in Bluesky trends right now.');
     })
     .finally(() => { inflight = null; });
   return inflight;
