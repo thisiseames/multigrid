@@ -1346,12 +1346,17 @@ function blueskyVideoPlayer(source, options) {
 /* A compact profile card: header, counts and the latest videos. Nothing from TikTok's page
    is framed; the same public reader used by the feeds supplies the data. */
 function tiktokProfilePlayer(source, options) {
-  const { onOpenVideo } = options;
+  const { muted, volume, autoplay, env, onError, onPlayState, onCapability } = options;
   const username = source.tiktokprofile.username;
   let loading = false;
   let started = false;
   let stopped = false;
   let generation = 0;
+  let wantedMuted = Boolean(muted);
+  let wantedVolume = Number.isFinite(Number(volume)) ? Number(volume) : 100;
+  let video = null;
+  let videoTitle = '';
+  let lastCard = null;
 
   const refresh = el('button', {
     type: 'button', class: 'tik-profile-refresh', title: 'Refresh profile',
@@ -1364,7 +1369,56 @@ function tiktokProfilePlayer(source, options) {
     el('span', { class: 'tik-profile-handle', textContent: `@${username}` }),
     refresh);
   const body = el('div', { class: 'tik-profile-body' });
-  const root = el('div', { class: 'tik-profile' }, top, body);
+  const stage = el('div', { class: 'tik-video-stage' });
+  const back = el('button', {
+    type: 'button', class: 'tik-video-back', title: 'Back to profile',
+    aria: { label: 'Back to profile' },
+    on: { click: () => closeVideo() },
+  }, icon('back', 15), el('span', { textContent: 'Back to profile' }));
+  const layer = el('div', { class: 'tik-video-layer', hidden: true }, stage, back);
+  const root = el('div', { class: 'tik-profile' }, top, body, layer);
+
+  /** A card opens TikTok's own player over the profile, inside this same tile. */
+  function showVideo(item, card) {
+    if (stopped || !item?.id) return;
+    if (video) closeVideo(false);
+    lastCard = card || lastCard;
+    videoTitle = item.title || '';
+    const player = tiktokPlayer({ kind: 'tiktok', tiktok: { id: item.id } }, {
+      muted: wantedMuted,
+      volume: wantedVolume,
+      autoplay: Boolean(autoplay),
+      env,
+      onError,
+      onPlayState,
+    });
+    if (!player) return;
+    video = player;
+    player.el.classList.add('tik-video-frame');
+    stage.replaceChildren(player.el);
+    layer.hidden = false;
+    body.inert = true;
+    top.inert = true;
+    body.setAttribute('aria-hidden', 'true');
+    player.start();
+    onCapability?.();
+  }
+
+  /** Back to the profile, at the same scroll position. */
+  function closeVideo(refocus = true) {
+    if (!video) return;
+    video.destroy();
+    video = null;
+    videoTitle = '';
+    stage.replaceChildren();
+    layer.hidden = true;
+    body.inert = false;
+    top.inert = false;
+    body.removeAttribute('aria-hidden');
+    if (refocus) lastCard?.focus?.({ preventScroll: true });
+    onPlayState?.(false);
+    onCapability?.();
+  }
 
   const line = (className) => el('span', { class: `tik-skel ${className}` });
   const skeleton = () => {
@@ -1445,7 +1499,7 @@ function tiktokProfilePlayer(source, options) {
       return el('button', {
         type: 'button', class: 'tik-card',
         title: video.title || `Open video ${index + 1}`,
-        on: { click: () => { if (!stopped) onOpenVideo?.(video.url, video.title || ''); } },
+        on: { click: (event) => { if (!stopped) showVideo(video, event.currentTarget); } },
       },
       cover,
       el('span', { class: 'tik-card-title', textContent: video.title || 'Open video' }),
@@ -1500,24 +1554,40 @@ function tiktokProfilePlayer(source, options) {
 
   return {
     el: root,
-    canMute: false,
-    canVolume: false,
-    canPause: false,
-    canSeek: false,
-    silent: true,
+    // Only the video overlay has sound or playback controls; the profile itself is silent.
+    get canMute() { return Boolean(video?.canMute); },
+    get canVolume() { return Boolean(video?.canVolume); },
+    get canPause() { return Boolean(video?.canPause); },
+    get canSeek() { return Boolean(video?.canSeek); },
+    get silent() { return !video; },
+    info() {
+      return video ? { live: false, title: videoTitle || `@${username}`, author: 'TikTok video' } : null;
+    },
     start() {
       if (started || stopped) return;
       started = true;
       load(false);
     },
-    setMuted() {},
-    setVolume() {},
-    setPaused() {},
-    seekBy() {},
+    setMuted(next) {
+      wantedMuted = Boolean(next);
+      video?.setMuted(wantedMuted);
+    },
+    setVolume(next) {
+      wantedVolume = Number(next) || 0;
+      video?.setVolume(wantedVolume);
+    },
+    setPaused(next) {
+      video?.setPaused(Boolean(next));
+    },
+    seekBy(seconds) {
+      video?.seekBy(seconds);
+    },
     destroy() {
       stopped = true;
       generation += 1;
       loading = false;
+      video?.destroy();
+      video = null;
     },
   };
 }

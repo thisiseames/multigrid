@@ -227,11 +227,6 @@ const grid = new GridView($('grid'), $('stage'), env, {
     else delete tile.page;
     saveCurrent(ws);
   },
-  // A profile card clicked a video: open it in its own TikTok tile, keeping the profile as it is.
-  onOpenVideo: (input, title) => {
-    closePopovers();
-    addStream(input, { mode: 'add' }, title || '');
-  },
   onCast: (id) => castStream(id),
   // Picture in picture: the small screen becomes the big one.
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
@@ -4103,7 +4098,7 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
   }
   // Website embeds often carry the match in their URL; use that as a useful label.
   const autoTitle = title || (source.kind === 'iframe' ? eventLabelFor(input) : '');
-  // Reels, Live and TikTok share one tall tile. Picking any of them swaps the
+  // Reels, Live, TikTok and profiles share one tall tile. Picking any of them swaps the
   // source in that tile; only the Live menu's new-tile action opts out.
   const vertical = reels || isVerticalSource(source);
   let mode = target.mode;
@@ -4396,14 +4391,18 @@ function ensureLiveFolder() {
 }
 
 const isVerticalSource = (source) => source.kind === 'tiktoklive' || source.kind === 'blueskyvideos'
+  || source.kind === 'tiktokprofile'
   || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
 
-/** The one tall tile Reels, Live and TikTok share. */
+/** The one tall tile Reels, Live, TikTok and profiles share. */
 const sharedVerticalTile = (workspace) => {
   const phone = phoneTile(workspace);
   const tiles = workspace.tiles.filter((tile) => isStream(tile) && isVisible(tile)
     && (tile.reels === true || isVerticalSource(parseSource(tile.input))));
-  return (phone && tiles.includes(phone) ? phone : tiles[0]) ?? null;
+  if (phone && tiles.includes(phone)) return phone;
+  // An older profile tile in a normal grid slot is not the tall viewer; opening a profile
+  // should move it into one instead of replacing that wide tile in place.
+  return tiles.find((tile) => parseSource(tile.input).kind !== 'tiktokprofile') ?? null;
 };
 
 const liveStatus = new Map();
@@ -4522,13 +4521,22 @@ function tiktokUsernameFrom(value) {
   return source.kind === 'tiktok' && source.tiktok?.profile ? source.tiktok.profile : '';
 }
 
-/** Opens a native, read-only TikTok profile tile: header and latest videos, no site in a frame. */
+/** Opens a native, read-only TikTok profile in the shared vertical viewer, with no site in a frame. */
 function openTikTokProfile(name) {
   const input = `tiktokprofile:${name}`;
-  const existing = ws.tiles.find((tile) => tile.input === input && tile.place);
+  const wanted = String(name).toLocaleLowerCase();
+  const existing = ws.tiles.find((tile) => {
+    if (!tile.place || !tile.input) return false;
+    const source = parseSource(tile.input);
+    return source.kind === 'tiktokprofile' && source.tiktokprofile.username.toLocaleLowerCase() === wanted;
+  });
   if (existing) {
-    toast(`@${name}'s profile is already open.`);
-    return;
+    // A profile saved before profiles used the vertical viewer moves into it, not a second tile.
+    if (phoneTile(ws)?.id === existing.id) {
+      toast(`@${name}'s profile is already open.`);
+      return;
+    }
+    removeStream(existing.id);
   }
   addStream(input, { mode: 'add' });
 }

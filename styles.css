@@ -1361,6 +1361,27 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .tik-skel-signature { width: 86%; height: 10px; }
 .tik-profile-stats.is-skeleton .tik-skel-stat { height: 26px; }
 .tik-skel-card { width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; }
+.tik-video-layer { position: absolute; inset: 0; z-index: 5; background: #000; }
+.tik-video-layer[hidden] { display: none; }
+.tik-video-layer::after { content: ''; position: absolute; top: 0; left: 0; right: 0; z-index: 1; height: 64px; background: linear-gradient(rgba(0, 0, 0, .52), rgba(0, 0, 0, 0)); pointer-events: none; }
+.tik-video-stage { position: absolute; inset: 0; }
+.tik-video-stage iframe, .tik-video-frame { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: #000; }
+.tik-video-back { position: absolute; top: 8px; left: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px 0 8px; border-radius: 999px; background: rgba(12, 12, 14, .8); color: #fff; font-size: 12px; font-weight: 650; box-shadow: 0 1px 5px rgba(0, 0, 0, .35); backdrop-filter: blur(8px); }
+.tik-video-back:hover { background: rgba(30, 30, 35, .94); }
+.tik-video-back svg { width: 15px; height: 15px; }
+@media (hover: none) { .tik-video-back { height: 40px; padding: 0 13px 0 10px; font-size: 13px; } }
+.tile.is-phone .tik-profile-body { padding: 10px 10px 16px; }
+.tile.is-phone .tik-profile-top { height: 30px; padding-left: 8px; }
+.tile.is-phone .tik-profile-head { grid-template-columns: 46px minmax(0, 1fr); gap: 9px; }
+.tile.is-phone .tik-profile-avatar-wrap { width: 46px; height: 46px; }
+.tile.is-phone .tik-profile-name b { font-size: 14px; }
+.tile.is-phone .tik-profile-signature { font-size: 10.5px; }
+.tile.is-phone .tik-profile-stats { margin: 10px 0 12px; padding: 8px 0; gap: 4px; }
+.tile.is-phone .tik-profile-stat b { font-size: 12.5px; }
+.tile.is-phone .tik-profile-stat small { font-size: 9px; }
+.tile.is-phone .tik-profile-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 7px 6px; }
+.tile.is-phone .tik-card-title { font-size: 10.5px; }
+.tile.is-phone .tik-card-meta { gap: 2px 6px; font-size: 9px; }
 .grid.stacked .tile-body:has(.tik-profile) { aspect-ratio: auto; height: 72vh; }
 
 .feed-count { align-self: center; min-width: 30px; padding: 0 2px; font-size: 11px; text-align: center; color: var(--text-2); font-variant-numeric: tabular-nums; }

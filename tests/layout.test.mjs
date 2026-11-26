@@ -74,6 +74,14 @@ test('a TikTok LIVE becomes the vertical phone column', () => {
   assert.equal(phoneTile(ws)?.id, ws.tiles[0].id);
 });
 
+test('a TikTok profile becomes the vertical phone column', () => {
+  const ws = withStreams(2, 'equal');
+  ws.tiles[0].input = 'tiktokprofile:@scout2015';
+  phoneColumn(ws, ws.tiles[0].id);
+  assert.equal(ws.presetId, 'phone');
+  assert.equal(phoneTile(ws)?.id, ws.tiles[0].id);
+});
+
 test('a TikTok LIVE keeps the phone column over a profile feed', () => {
   const ws = withStreams(2, 'equal');
   ws.tiles[0].input = 'https://www.tiktok.com/@typicalgamer';

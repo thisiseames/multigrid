@@ -224,13 +224,13 @@ export const visualOrder = (ws) => ws.tiles.filter(isVisible).sort(byPosition);
 
 const orderedStreams = (ws) => [...visualOrder(ws).filter(isStream), ...hiddenTiles(ws)];
 
-/** A stream that is a TikTok account or a website saved in REELS, which plays as a vertical feed. */
+/** A stream that is a TikTok account/profile or a website saved in REELS, which plays as a vertical feed. */
 const isVerticalFeed = (tile) => {
   if (!tile) return false;
   if (tile.reels === true) return true;
   if (!tile.input) return false;
   const source = parseSource(tile.input);
-  return source.kind === 'tiktoklive' || source.kind === 'blueskyvideos'
+  return source.kind === 'tiktoklive' || source.kind === 'blueskyvideos' || source.kind === 'tiktokprofile'
     || (source.kind === 'tiktok' && Boolean(source.tiktok?.profile));
 };
 

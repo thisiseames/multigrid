@@ -1,7 +1,6 @@
-# Native TikTok profile tile (laptop and phone)
+# Native TikTok profile in the vertical viewer
 
-**Status:** DONE, live Nov 25, 2026 (commit 0375a73). Verified on multigrid.club:
-real header/counts, six cards, no TikViewer banner, video opens a second tile and the profile stays.
+**Status:** built; checks pass. Deploy/live check pending.
 
 ## Running cost
 
@@ -14,13 +13,18 @@ limit is about 20 requests a minute, so normal use stays under it.
 
 - **Entry:** every account row in the TikTok dropdown has a small **Profile** action. The
   username field also has a **Profile** button, so a typed account can open a profile directly.
-- **Tile:** a normal grid tile labelled `TikTok · @username`; movable/resizable like every tile.
+- **One vertical viewer:** a profile opens in the existing tall TikTok tile, replacing whatever
+  feed, LIVE or Reel was there. It never adds a normal grid tile. If no tall viewer exists, the
+  first profile creates one.
 - **First frame:** compact profile header — avatar, display name, @handle, verified mark,
   signature, followers, following, total likes and video count.
 - **Below:** the newest six videos, with cover, views, likes, comments and date. The tile body
   scrolls; no TikViewer banner or page chrome.
-- **Video click:** opens that TikTok video in a TikTok player tile; the profile tile stays.
-- **Refresh:** re-fetches the profile and the six videos.
+- **A video stays in the same tile:** tapping a card plays that video over the profile using
+  TikTok's own player. No second tile is created.
+- **Back to profile:** a clear button at the top-left of the video returns to the profile at the
+  same scroll position.
+- **Refresh:** re-fetches the profile and the six videos while the profile is showing.
 - **No:** earnings calculator, creator score, hashtags, top creators.
 
 ## Data
@@ -43,14 +47,17 @@ limit is about 20 requests a minute, so normal use stays under it.
 
 - **Profile action** on TikTok account rows and beside the username field.
 - **Refresh** in the profile header; a subtle spinner while it asks.
+- **Back to profile** while a video plays; the video is thrown away and the profile stays.
+- **Sound, pause and seek** belong to the video while it is open, through the same TikTok player
+  used by normal video tiles. The profile itself is silent.
+- **Saved old profile tiles:** opening that profile again moves it from a normal grid slot into
+  the tall viewer instead of adding another tile.
 - **Loading:** compact skeleton header/cards, no blank flash.
 - **Reader/profile error:** “Profile unavailable” with the reason and **Try again**.
 - **Private account:** public header stays; note explains that only the public header is shown.
 - **No videos:** header still shows; a clear empty-videos line.
-- **Laptop and phone:** normal tile. On a stacked phone layout the profile body gets a taller
-  height. On phone the stream bar says “Latest videos”, not “Playing”.
-- Profile tiles are not popped out; the card is not a stream. Existing TikTok menus, feeds,
-  other tiles and pop-out behaviour are unchanged.
+- **Laptop and phone:** the tall viewer gets a compact profile layout with smaller cards.
+- Existing TikTok menus, normal video links, feeds, other tiles and pop-out behaviour unchanged.
 
 ## Assets and files
 
@@ -58,35 +65,42 @@ limit is about 20 requests a minute, so normal use stays under it.
   fallbacks.
 - `src/tiktok-profile.js` (reader fetch, profile/embed/video parsers, cache)
 - `src/sources.js` (`tiktokprofile:` source)
-- `src/players.js` (native profile tile)
-- `src/grid-view.js` (profile video click bridge)
-- `src/app.js` (menu action, typed Profile button, tile registration, phone bar)
+- `src/players.js` (profile UI, in-tile video overlay, capability handover)
+- `src/layout.js` (profiles count as vertical feeds)
+- `src/app.js` (menu action, typed Profile button, vertical routing, phone bar, old-tile move)
 - `src/popout.js` (profile is not poppable)
 - `src/ui.js` (person, eye, heart, comment icons)
-- `styles.css` (menu action, profile tile, skeleton, phone height)
+- `styles.css` (menu action, profile tile, video overlay, narrow layout, skeleton)
 - `index.html` (help text, file list, CSP hash)
-- `tests/tiktok-profile.test.mjs`, `tests/sources.test.mjs`
+- `tests/tiktok-profile.test.mjs`, `tests/sources.test.mjs`, `tests/layout.test.mjs`
 
 ## Checks
 
 - Parser tests: profile header, verified, counts, video cards, views, dates; embed header and
   videos; video-page engagement; missing/duplicate/invalid data; merge and cache.
-- Add a profile tile from the TikTok menu at 1440 px: real header and counts, six cards, no
-  banner; click a video opens it in a new tile; profile stays.
-- Phone 390 px: 3-column cards, internal scroll, no horizontal overflow; taller stacked body.
+- Profile from the TikTok menu at 1440 px replaces the existing tall TikTok feed; tile count
+  stays the same.
+- Tapping a video keeps the tile count the same, shows TikTok's player over the profile, and
+  **Back to profile** returns with the profile scroll position unchanged.
+- Video sound controls appear only while the video is open; the profile mute control is hidden
+  again after Back.
+- Phone 390 px: profile in the tall column, compact cards, internal scroll, video overlay and
+  Back work with no horizontal overflow.
+- Saved old profile tiles move into the tall viewer when opened again.
 - Reader blocked: clear unavailable state; **Try again** recovers once the reader returns.
 - Typed Profile button: invalid name shows the inline error; valid name opens the profile.
-- Existing TikTok feeds/menu, other tiles, all tests (412 pass).
+- Existing TikTok feeds/menu, normal video links, other tiles, all tests (413 pass).
 
 ## Steps
 
 - [x] Spike the reader/profile/video data (real @speedymorman and others).
-- [x] Write and push the revised plan.
 - [x] Add `src/tiktok-profile.js` parsers/tests.
-- [x] Add `tiktokprofile:` source, player and profile tile UI.
-- [x] Add the Profile action and app open-video bridge.
-- [x] Update index file list/CSP; run tests; verify laptop and phone.
-- [x] Commit/push, check live, mark DONE.
+- [x] Add `tiktokprofile:` source, profile UI and cache.
+- [x] Add the Profile action and typed Profile button.
+- [x] Move profiles into the tall viewer.
+- [x] Replace the second-tile video click with an in-tile player and Back to profile.
+- [x] Update help, product map, file list/CSP; run tests and laptop/phone checks.
+- [ ] Commit/push, check live, mark DONE.
 
 ## Gotchas
 
@@ -96,4 +110,4 @@ limit is about 20 requests a minute, so normal use stays under it.
 - TikTok HTML class names change; parse the embedded JSON and stable video links, not CSS.
 - Public data only; no private profiles, earnings or creator score.
 - The six video requests are the rate-limit cost; do not fetch every listed video.
-- Profile tiles must not be popped out: there is no `onOpenVideo` bridge in the floating window.
+- Profiles must not be popped out: the floating window has no Back to profile path.
