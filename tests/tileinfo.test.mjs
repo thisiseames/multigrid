@@ -58,5 +58,6 @@ test('TikTok videos, profiles and lives have no X-Ray', () => {
   }
   assert.equal(xrayAvailable({ ok: true, kind: 'youtube' }), true);
   assert.equal(xrayAvailable({ ok: true, kind: 'iframe' }), true);
+  assert.equal(xrayAvailable({ ok: true, kind: 'youtubechannel' }), false);
   assert.equal(xrayAvailable({ ok: false, kind: 'iframe' }), false);
 });

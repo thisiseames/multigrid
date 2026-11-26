@@ -183,6 +183,16 @@ test('tiktok live links become a native live source', () => {
   assert.equal(parseSource('tiktoklive:not a name').ok, false);
 });
 
+test('a YouTube channel room is a native source', () => {
+  const id = `UC${'a'.repeat(22)}`;
+  const source = parseSource(`youtubechannel:${id}`);
+  assert.equal(source.ok, true);
+  assert.equal(source.kind, 'youtubechannel');
+  assert.equal(source.youtubechannel.id, id);
+  assert.equal(source.label, 'YouTube · Channel');
+  assert.equal(parseSource('youtubechannel:nope').ok, false);
+});
+
 test('a profile tile opens TikTok public data without the site in a frame', () => {
   for (const input of ['tiktokprofile:@scout2015', 'tiktokprofile:scout2015']) {
     const source = parseSource(input);

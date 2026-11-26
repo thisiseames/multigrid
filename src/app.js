@@ -227,6 +227,21 @@ const grid = new GridView($('grid'), $('stage'), env, {
     else delete tile.page;
     saveCurrent(ws);
   },
+  // A YouTube channel room opens a video, Short or playlist in its own tile.
+  onOpenInput: (input, title) => {
+    closePopovers();
+    addStream(input, { mode: 'add' }, title || '');
+  },
+  // The channel name switches the channel feed to its native room, and Back restores the feed.
+  onChannelRoom: (id, channelId) => {
+    closePopovers();
+    addStream(`youtubechannel:${channelId}`, { mode: 'replace', id });
+  },
+  onBackToFeed: (id, channelId) => {
+    closePopovers();
+    const input = `https://www.youtube.com/channel/${channelId}/videos`;
+    addStream(input, { mode: 'replace', id }, favoriteName(input) || '');
+  },
   onCast: (id) => castStream(id),
   // Picture in picture: the small screen becomes the big one.
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
@@ -393,6 +408,7 @@ function buildStreamMenu(id) {
   const redraw = () => buildStreamMenu(id);
   const then = (action) => () => { closePopovers(); action(); };
   const favorite = favoriteName(tile.input) !== null;
+  const room = view.source?.kind === 'youtubechannel';
   const feed = view.player?.stripButtons;
   const feedLabels = view.player?.stripLabels || ['Previous video', 'Next video'];
   const actions = [
@@ -410,13 +426,13 @@ function buildStreamMenu(id) {
     ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
     xrayAvailable(view.source) ? bigButton('help', 'X-Ray', then(() => openXRay(id))) : null,
-    bigButton('calendar', 'Event Room', then(() => openEventRoom(id))),
+    room ? null : bigButton('calendar', 'Event Room', then(() => openEventRoom(id))),
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
-    bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
+    room ? null : bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
     bigButton('replace', 'Replace', then(() => openSourceDialog({ mode: 'replace', id }))),
     view.source?.kind === 'iframe' ? bigButton('live', 'Find a direct feed', then(() => switchToDirectFeed(id))) : null,
     view.fullButton && !view.fullButton.hidden ? bigButton('expand', 'Fullscreen', then(() => view.toggleFullscreen())) : null,
-    view.source?.openUrl ? bigButton('open', 'Open its site', then(() => window.open(view.source.openUrl, '_blank', 'noopener'))) : null,
+    !room && view.source?.openUrl ? bigButton('open', 'Open its site', then(() => window.open(view.source.openUrl, '_blank', 'noopener'))) : null,
     bigButton('trash', 'Remove', then(() => removeStream(id)), { danger: true }),
   ].filter(Boolean);
   menu.replaceChildren(...[transportRow(tile, view, redraw), volumeSlider(tile, view), el('div', { class: 'sa-grid' }, ...actions)].filter(Boolean));
@@ -2606,7 +2622,8 @@ function renderPhoneBar() {
   if (!wantArt && artSlot.firstElementChild) artSlot.replaceChildren();
   artSlot.hidden = !artSlot.firstElementChild;
   let title = name;
-  let sub = parseSource(tile.input).kind === 'tiktokprofile' ? 'Latest videos' : 'Playing';
+  const phoneKind = parseSource(tile.input).kind;
+  let sub = phoneKind === 'tiktokprofile' ? 'Latest videos' : phoneKind === 'youtubechannel' ? '' : 'Playing';
   if (card?.score) {
     title = card.score.order.map((key) => `${card.score[key].name}${card.score[key].score !== '' ? ` ${card.score[key].score}` : ''}`).join('   ');
     sub = card.score.clock;
@@ -6230,14 +6247,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveP
 
 let addFolder = '';
 const KIND_NAMES = {
-  youtube: 'YouTube', twitch: 'Twitch', tiktok: 'TikTok', tiktokprofile: 'TikTok profile', tiktoklive: 'TikTok Live', blueskyvideos: 'Bluesky videos', kick: 'Kick', x: 'X', file: 'Video file',
+  youtube: 'YouTube', youtubechannel: 'YouTube channel', twitch: 'Twitch', tiktok: 'TikTok', tiktokprofile: 'TikTok profile', tiktoklive: 'TikTok Live', blueskyvideos: 'Bluesky videos', kick: 'Kick', x: 'X', file: 'Video file',
   playlist: 'Video playlist', hls: 'Live stream', iframe: 'Website', audio: 'Podcast', reader: 'Story', note: 'Note',
   podcastshow: 'Podcast',
 };
 const kindName = (item, source) => (nowAndNext(item.name, source) ? 'TV' : KIND_NAMES[source.kind] || 'Stream');
 
-const KIND_ICONS = { youtube: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', tiktokprofile: 'person', tiktoklive: 'live', blueskyvideos: 'play', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
-const NOT_TV_KINDS = new Set(['youtube', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
+const KIND_ICONS = { youtube: 'play', youtubechannel: 'play', twitch: 'chat', kick: 'chat', x: 'chat', tiktok: 'phone', tiktokprofile: 'person', tiktoklive: 'live', blueskyvideos: 'play', hls: 'live', iframe: 'play', audio: 'sound', reader: 'reader', file: 'film', playlist: 'film', note: 'pencil', podcastshow: 'sound' };
+const NOT_TV_KINDS = new Set(['youtube', 'youtubechannel', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'playlist', 'reader', 'audio', 'note', 'podcastshow']);
 
 /** A picture that falls back to the quiet icon if it doesn't load, or is YouTube's grey stand-in. */
 function artPicture(art, url, fallBack, checkStandIn = false) {
@@ -8923,7 +8940,7 @@ const matchDetails = new Map();
 
 // ESPN's channel names that differ from what a favorite would be called.
 const CHANNEL_ALIASES = { USANET: 'USANETWORK', FOXSPORTS1: 'FS1', FS1: 'FOXSPORTS1' };
-const NOT_CHANNELS = new Set(['youtube', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'podcastshow']);
+const NOT_CHANNELS = new Set(['youtube', 'youtubechannel', 'twitch', 'tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'x', 'kick', 'file', 'podcastshow']);
 
 /** A favorite showing one of the game's channels, if there is one. */
 function favoriteForChannels(names) {

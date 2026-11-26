@@ -408,6 +408,17 @@ export function parseSource(raw) {
       tiktokprofile: { username: name },
     };
   }
+  // A native, read-only YouTube channel room. The ID comes from a channel uploads feed.
+  if (/^youtubechannel:/i.test(input)) {
+    const id = input.slice('youtubechannel:'.length).trim();
+    if (!/^UC[\w-]{22}$/.test(id)) return fail(input, "That isn't a YouTube channel ID.");
+    return {
+      ok: true, input, kind: 'youtubechannel',
+      label: 'YouTube · Channel',
+      openUrl: `https://www.youtube.com/channel/${id}`,
+      youtubechannel: { id },
+    };
+  }
   if (input.startsWith('local:')) return parseLocal(input);
   if (input.startsWith('reader:')) return parseReader(input);
   if (input.startsWith('audio:')) return parseAudio(input);

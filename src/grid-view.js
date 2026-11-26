@@ -168,6 +168,9 @@ class TileView {
       onEpisode: (name) => this.grid.handlers.onEpisode?.(this.id, name),
       // The extension says when the page inside moves on, so a reload comes back to it.
       onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
+      // A channel room opens videos in their own tile, and can go back to the channel feed.
+      onOpenInput: (input, title) => this.grid.handlers.onOpenInput?.(input, title),
+      onBackToFeed: (channelId) => this.grid.handlers.onBackToFeed?.(this.id, channelId),
       onError: (message) => {
         if (generation !== this.generation) return;
         this.recover(message);
@@ -457,14 +460,15 @@ class TileView {
   buildStrip() {
     const { handlers } = this.grid;
     const label = this.tile.title || (this.source.ok ? this.source.label : 'Not playable');
-    // Notes and box scores aren't video: no favorite, crop or Cinema.
+    // Notes, box scores and native channel rooms aren't video: no favorite, crop or Cinema.
     const isNote = this.source.kind === 'note' || this.source.kind === 'boxscore';
+    const isRoom = this.source.kind === 'youtubechannel';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
     this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
-    this.cropButton = this.source.ok && !isNote ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
-    this.cinemaButton = this.source.ok && !isNote ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
+    this.cropButton = this.source.ok && !isNote && !isRoom ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
+    this.cinemaButton = this.source.ok && !isNote && !isRoom ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
     // On a phone, this one button opens a sheet with every action in big buttons.
     this.moreButton = iconButton('more', 'Stream options', () => handlers.onStreamMenu?.(this.id, this.moreButton));
@@ -477,13 +481,13 @@ class TileView {
       this.castButton.classList.add('strip-cast');
       this.castButton.hidden = true;
     }
-    // A file lives on this computer, so it can't be sent.
-    this.sendButton = this.source.ok && !isNote && this.source.kind !== 'file' && this.source.kind !== 'playlist' && handlers.onSendToPhone
+    // A file lives on this computer, so it can't be sent. A channel room is a page, not a stream.
+    this.sendButton = this.source.ok && !isNote && !isRoom && this.source.kind !== 'file' && this.source.kind !== 'playlist' && handlers.onSendToPhone
       ? iconButton('phone', 'Send to phone: watch this on your phone', () => handlers.onSendToPhone(this.id)) : null;
     this.sendButton?.classList.add('strip-send');
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
-    this.primaryButton.hidden = isNote;
+    this.primaryButton.hidden = isNote || isRoom;
     const actions = el('div', { class: 'strip-actions' },
       this.primaryButton,
       this.starButton,
@@ -495,9 +499,9 @@ class TileView {
       this.popButton,
       this.castButton,
       this.sendButton,
-      this.source.ok && !isNote ? iconButton('search', 'Fix stream: find another source for this game', () => handlers.onFixStream?.(this.id)) : null,
+      this.source.ok && !isNote && !isRoom ? iconButton('search', 'Fix stream: find another source for this game', () => handlers.onFixStream?.(this.id)) : null,
       iconButton('replace', 'Replace stream', () => handlers.onReplace(this.id)),
-      this.source.ok && this.source.openUrl ? el('a', {
+      this.source.ok && this.source.openUrl && !isRoom ? el('a', {
         href: this.source.openUrl,
         target: '_blank',
         rel: 'noopener noreferrer',
@@ -509,6 +513,9 @@ class TileView {
     // An account feed can be switched from its own name, without going through Add stream.
     this.switchable = (this.source.kind === 'tiktok' && Boolean(this.source.tiktok?.profile))
       || (this.source.kind === 'x' && Boolean(this.source.x?.profile));
+    // A YouTube channel's uploads feed can open its native channel room from the same name.
+    const list = this.source.kind === 'youtube' ? String(this.source.youtube?.list || '') : '';
+    this.channelRoomId = /^UU[\w-]{22}$/.test(list) ? `UC${list.slice(2)}` : '';
     this.labelTextEl = el('span', { class: 'strip-label-text', textContent: label });
     this.labelEl = this.switchable
       ? el('button', {
@@ -518,7 +525,14 @@ class TileView {
         aria: { haspopup: 'menu', expanded: 'false' },
         on: { click: () => handlers.onAccountMenu?.(this.id, this.labelEl) },
       }, this.labelTextEl, icon('chevron'))
-      : el('span', { class: 'strip-label', title: label }, this.labelTextEl);
+      : this.channelRoomId
+        ? el('button', {
+          type: 'button',
+          class: 'strip-label is-switch',
+          title: `${label} — open channel room`,
+          on: { click: () => handlers.onChannelRoom?.(this.id, this.channelRoomId) },
+        }, this.labelTextEl, icon('chevron'))
+        : el('span', { class: 'strip-label', title: label }, this.labelTextEl);
     const strip = el('header', { class: 'strip' },
       el('span', { class: 'strip-grip', aria: { hidden: 'true' } }, icon('grip')),
       this.labelEl,
@@ -549,7 +563,9 @@ class TileView {
       const favorite = favoriteTitle !== null;
       const tileLabel = favoriteTitle ?? this.tile.title ?? this.source.label;
       this.labelTextEl.textContent = tileLabel;
-      this.labelEl.title = this.switchable ? `${tileLabel} — click to switch account` : tileLabel;
+      this.labelEl.title = this.switchable ? `${tileLabel} — click to switch account`
+        : this.channelRoomId ? `${tileLabel} — open channel room`
+          : tileLabel;
       const starLabel = favorite ? 'Edit favorite' : 'Add to favorites';
       this.starButton.title = starLabel;
       this.starButton.setAttribute('aria-label', starLabel);

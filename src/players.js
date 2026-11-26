@@ -15,6 +15,7 @@ import { loadBlueskyVideos } from './bluesky.js';
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
 import { loadTikTokProfile, shortTikTokCount } from './tiktok-profile.js';
+import { loadYouTubeChannel } from './youtube-channel.js';
 import { zliveEmbed } from './zlive.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
 import { el, icon, iconButton } from './ui.js';
@@ -1341,6 +1342,258 @@ function blueskyVideoPlayer(source, options) {
   };
 }
 
+/* ---------- YouTube channel room (native, read-only) ---------- */
+
+/* The channel page's public header and tabs, without YouTube's page in a frame. */
+function youtubeChannelPlayer(source, options) {
+  const { onOpenInput, onBackToFeed } = options;
+  const channelId = source.youtubechannel.id;
+  let started = false;
+  let stopped = false;
+  let loading = false;
+  let generation = 0;
+  let active = 'videos';
+  let current = null;
+
+  const back = el('button', {
+    type: 'button', class: 'yt-room-back', title: 'Back to feed',
+    aria: { label: 'Back to feed' },
+    on: { click: () => { if (!stopped) onBackToFeed?.(channelId); } },
+  }, icon('back', 15), el('span', { textContent: 'Back to feed' }));
+  const refresh = el('button', {
+    type: 'button', class: 'yt-room-refresh', title: 'Refresh channel',
+    aria: { label: 'Refresh channel' },
+    on: { click: () => { load(active, true); } },
+  }, icon('reload', 14));
+  const top = el('div', { class: 'yt-room-top' },
+    back,
+    el('span', { class: 'yt-room-mark' }, icon('play', 14)),
+    el('span', { class: 'yt-room-site', textContent: 'YouTube channel' }),
+    el('span', { class: 'yt-room-handle' }),
+    refresh);
+  const header = el('div', { class: 'yt-room-head' });
+  const tabs = el('div', { class: 'yt-room-tabs' });
+  const panel = el('div', { class: 'yt-room-panel' });
+  const body = el('div', { class: 'yt-room-body' }, header, tabs, panel);
+  const root = el('div', { class: 'yt-room' }, top, body);
+
+  const open = (url, title) => {
+    if (!stopped) onOpenInput?.(url, title || '');
+  };
+
+  const skeleton = () => {
+    header.replaceChildren(
+      el('div', { class: 'yt-room-head-skeleton' },
+        el('span', { class: 'yt-skel yt-skel-banner' }),
+        el('div', { class: 'yt-room-head-row' },
+          el('span', { class: 'yt-skel yt-skel-avatar' }),
+          el('span', { class: 'yt-room-head-lines' },
+            el('span', { class: 'yt-skel yt-skel-title' }),
+            el('span', { class: 'yt-skel yt-skel-meta' }),
+            el('span', { class: 'yt-skel yt-skel-desc' })))));
+    tabs.replaceChildren(...Array.from({ length: 3 }, () => el('span', { class: 'yt-skel yt-skel-tab' })));
+    panel.replaceChildren(el('div', { class: 'yt-room-grid' },
+      ...Array.from({ length: 6 }, () => el('span', { class: 'yt-skel yt-skel-card' }))));
+  };
+
+  const showError = (message, retry = true) => {
+    const button = retry ? el('button', {
+      type: 'button', class: 'yt-room-retry', textContent: 'Try again',
+      on: { click: () => load(active, true) },
+    }) : null;
+    panel.replaceChildren(el('div', { class: 'yt-room-status' },
+      el('span', { class: 'yt-room-status-mark' }, icon('play', 20)),
+      el('b', { class: 'yt-room-status-title', textContent: 'Channel unavailable' }),
+      el('p', { class: 'yt-room-status-text', textContent: message }),
+      button));
+  };
+
+  const paintHeader = (data) => {
+    const info = data.header;
+    top.querySelector('.yt-room-handle').textContent = info.handle ? `@${info.handle}` : '';
+    const banner = el('div', { class: `yt-room-banner${info.banner ? '' : ' is-plain'}` });
+    if (info.banner) {
+      // Keep the dark gradient until the banner has actually loaded; a slow image
+      // must not leave a blank band at the top of the room.
+      const probe = new Image();
+      probe.referrerPolicy = 'no-referrer';
+      probe.addEventListener('load', () => {
+        if (!stopped && banner.isConnected) banner.style.backgroundImage = `url("${info.banner}")`;
+      }, { once: true });
+      probe.src = info.banner;
+    }
+    const avatar = info.avatar
+      ? el('img', { class: 'yt-room-avatar', src: info.avatar, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' })
+      : el('span', { class: 'yt-room-avatar is-fallback' }, icon('play', 20));
+    avatar.addEventListener?.('error', () => {
+      avatar.replaceWith(el('span', { class: 'yt-room-avatar is-fallback' }, icon('play', 20)));
+    }, { once: true });
+    const name = el('span', { class: 'yt-room-name' },
+      el('b', { textContent: info.name }),
+      info.verified ? el('span', { class: 'yt-room-verified', title: 'Verified', aria: { label: 'Verified' } }, icon('check', 11)) : null);
+    const stats = [info.subscribers, info.videos].filter(Boolean);
+    header.replaceChildren(
+      banner,
+      el('div', { class: 'yt-room-head-row' },
+        avatar,
+        el('span', { class: 'yt-room-head-lines' },
+          name,
+          el('span', { class: 'yt-room-subline', textContent: info.handle ? `@${info.handle}` : '' }),
+          stats.length ? el('span', { class: 'yt-room-stats', textContent: stats.join(' · ') }) : null,
+          info.description ? el('p', { class: 'yt-room-desc', textContent: info.description, title: info.description }) : null)));
+  };
+
+  const paintTabs = (available) => {
+    const wanted = ['videos', 'shorts', 'playlists'];
+    const labels = { videos: 'Videos', shorts: 'Shorts', playlists: 'Playlists' };
+    const have = new Set((available || []).map((label) => String(label).toLowerCase()));
+    const shown = wanted.filter((tab) => have.has(tab));
+    if (!shown.length) shown.push('videos');
+    tabs.replaceChildren(...shown.map((tab) => el('button', {
+      type: 'button', class: `yt-room-tab${tab === active ? ' is-on' : ''}`,
+      textContent: labels[tab],
+      on: { click: () => load(tab) },
+    })));
+  };
+
+  const cover = (url, alt = '') => {
+    const holder = el('span', { class: 'yt-room-cover' });
+    if (url) {
+      const img = el('img', { src: url, alt, loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => { img.remove(); holder.classList.add('is-empty'); }, { once: true });
+      holder.append(img);
+    } else {
+      holder.classList.add('is-empty');
+    }
+    return holder;
+  };
+
+  const videoCard = (video) => {
+    const image = cover(video.cover);
+    if (video.live) image.append(el('span', { class: 'yt-room-live', textContent: 'LIVE' }));
+    else if (video.duration) image.append(el('span', { class: 'yt-room-time', textContent: video.duration }));
+    return el('button', {
+      type: 'button', class: 'yt-room-card', title: video.title,
+      on: { click: () => open(video.url, video.title) },
+    }, image,
+    el('span', { class: 'yt-room-card-title', textContent: video.title }),
+    el('span', { class: 'yt-room-card-meta', textContent: [video.views, video.published].filter(Boolean).join(' · ') }));
+  };
+
+  const shortCard = (short) => el('button', {
+    type: 'button', class: 'yt-room-card is-short', title: short.title,
+    on: { click: () => open(short.url, short.title) },
+  }, cover(short.cover),
+  el('span', { class: 'yt-room-card-title', textContent: short.title }),
+  el('span', { class: 'yt-room-card-meta', textContent: short.views || '' }));
+
+  const playlistCard = (playlist) => el('button', {
+    type: 'button', class: 'yt-room-card is-playlist', title: playlist.title,
+    on: { click: () => open(playlist.url, playlist.title) },
+  }, cover(playlist.cover),
+  el('span', { class: 'yt-room-card-title', textContent: playlist.title }),
+  el('span', { class: 'yt-room-card-meta', textContent: playlist.count || 'Playlist' }));
+
+  const paintPanel = (data) => {
+    if (data.tab === 'shorts') {
+      const list = (data.shorts || []).slice(0, 24);
+      panel.replaceChildren(list.length
+        ? el('div', { class: 'yt-room-grid is-shorts' }, ...list.map(shortCard))
+        : el('p', { class: 'yt-room-empty', textContent: 'No Shorts on this channel.' }));
+      return;
+    }
+    if (data.tab === 'playlists') {
+      const list = (data.playlists || []).slice(0, 18);
+      panel.replaceChildren(list.length
+        ? el('div', { class: 'yt-room-grid is-playlists' }, ...list.map(playlistCard))
+        : el('p', { class: 'yt-room-empty', textContent: 'No playlists on this channel.' }));
+      return;
+    }
+    const list = (data.videos || []).slice(0, 12);
+    const lives = list.filter((video) => video.live);
+    const rest = list.filter((video) => !video.live);
+    if (!list.length) {
+      panel.replaceChildren(el('p', { class: 'yt-room-empty', textContent: 'No public videos on this channel.' }));
+      return;
+    }
+    panel.replaceChildren(...[
+      lives.length ? el('section', { class: 'yt-room-live-section' },
+        el('h3', { class: 'yt-room-section-title', textContent: 'Live now' }),
+        el('div', { class: 'yt-room-grid is-live' }, ...lives.map(videoCard))) : null,
+      el('div', { class: 'yt-room-grid' }, ...rest.map(videoCard)),
+    ].filter(Boolean));
+  };
+
+  async function load(tab = 'videos', force = false) {
+    if (loading || stopped) return;
+    const target = ['videos', 'shorts', 'playlists'].includes(tab) ? tab : 'videos';
+    loading = true;
+    const run = ++generation;
+    refresh.disabled = true;
+    refresh.classList.add('is-loading');
+    if (!current) {
+      skeleton();
+    } else if (target !== active) {
+      active = target;
+      paintTabs(current.header.tabs);
+      panel.replaceChildren(el('div', { class: 'yt-room-grid' },
+        ...Array.from({ length: 6 }, () => el('span', { class: 'yt-skel yt-skel-card' }))));
+    }
+    try {
+      const data = await loadYouTubeChannel(channelId, { tab, force });
+      if (stopped || run !== generation) return;
+      current = data;
+      active = data.tab;
+      paintHeader(data);
+      paintTabs(data.header.tabs);
+      paintPanel(data);
+    } catch (error) {
+      if (stopped || run !== generation) return;
+      const message = current
+        ? 'That tab did not load. Try again in a minute.'
+        : /answered 429|busy/i.test(String(error?.message))
+          ? 'The YouTube reader is busy. Try again in a minute.'
+          : "YouTube didn't return that channel. Try again in a minute.";
+      if (!current) {
+        header.replaceChildren();
+        tabs.replaceChildren();
+        showError(message);
+      } else {
+        showError(message, true);
+      }
+    } finally {
+      if (run === generation) {
+        loading = false;
+        refresh.disabled = false;
+        refresh.classList.remove('is-loading');
+      }
+    }
+  }
+
+  return {
+    el: root,
+    canMute: false,
+    canVolume: false,
+    canPause: false,
+    canSeek: false,
+    silent: true,
+    start() {
+      if (started || stopped) return;
+      started = true;
+      load('videos');
+    },
+    setMuted() {},
+    setVolume() {},
+    setPaused() {},
+    seekBy() {},
+    destroy() {
+      stopped = true;
+      generation += 1;
+      loading = false;
+    },
+  };
+}
+
 /* ---------- TikTok profile (native, read-only) ---------- */
 
 /* A compact profile card: header, counts and the latest videos. Nothing from TikTok's page
@@ -2317,6 +2570,7 @@ function notePlayer(source, options) {
 
 const PLAYERS = {
   youtube: youtubePlayer,
+  youtubechannel: youtubeChannelPlayer,
   note: notePlayer,
   twitch: twitchPlayer,
   kick: addressMutedPlayer,
