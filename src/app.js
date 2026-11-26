@@ -7042,6 +7042,7 @@ let homeTimer = null;
 let homeShownAt = 0;
 const HERO_EVERY = 8000;
 let heroItems = [];
+let youtubeTab = 'all';
 let heroAt = 0;
 let heroTimer = null;
 let heroHoldUntil = 0;
@@ -7199,6 +7200,54 @@ function withArt(item, name) {
   return item;
 }
 
+const youtubeViews = (views) => (Number(views) > 0 ? `${viewerCount(Number(views))} views` : '');
+
+function youtubeCard(entry) {
+  return {
+    key: `yt:${entry.id}`,
+    label: 'Trending on YouTube',
+    title: entry.title,
+    meta: [entry.channel, youtubeViews(entry.views)].filter(Boolean).join(' · '),
+    cardMeta: entry.channel,
+    backdrop: entry.thumbnail,
+    playLabel: 'Play',
+    play: () => playFromHome(`https://www.youtube.com/watch?v=${entry.id}`),
+  };
+}
+
+/** One Home row with a category strip; changing a tab redraws only this row. */
+function youtubeRow(categories) {
+  const selected = categories.find((category) => category.id === youtubeTab)
+    ?? categories.find((category) => category.id === 'all')
+    ?? categories[0];
+  youtubeTab = selected.id;
+  const list = el('ul', { class: 'hrow' });
+  const draw = (category) => {
+    list.replaceChildren(...category.entries.slice(0, 12).map((entry) => homeCard(youtubeCard(entry))));
+  };
+  const tabs = el('div', { class: 'youtube-tabs', role: 'tablist', aria: { label: 'YouTube categories' } },
+    ...categories.map((category) => el('button', {
+      type: 'button', role: 'tab',
+      class: `youtube-tab${category.id === selected.id ? ' is-on' : ''}`,
+      aria: { selected: String(category.id === selected.id) },
+      textContent: category.name,
+      on: {
+        click(event) {
+          youtubeTab = category.id;
+          for (const other of tabs.children) {
+            const on = other === event.currentTarget;
+            other.classList.toggle('is-on', on);
+            other.setAttribute('aria-selected', String(on));
+          }
+          draw(category);
+        },
+      },
+    })));
+  draw(selected);
+  return el('section', { class: 'home-row youtube-row' },
+    el('h3', { class: 'home-title', textContent: 'Trending on YouTube' }), tabs, list);
+}
+
 function playFromHome(input, page = '') {
   homeOpen = false;
   addStream(input, { mode: 'add' }, '', page);
@@ -7268,7 +7317,7 @@ async function drawHome() {
   // rows already on screen until the new ones are ready.
   if (firstLoad) paint([phoneEdition]);
 
-  const [sections, , episodes, , , top, catalog, movieJob, showJob, picks] = await Promise.all([
+  const [sections, , episodes, , , top, catalog, movieJob, showJob, picks, youtubeData] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -7279,6 +7328,7 @@ async function drawHome() {
     loadJob('movies.json'),
     loadJob('shows.json'),
     loadPicks().catch(() => null),
+    loadYouTubeTrending().catch(() => null),
   ]);
   if (asked !== homeAsked) return;
   // Matchday: today's game for your team, from the same schedules.
@@ -7463,6 +7513,13 @@ async function drawHome() {
   };
   const pickRows = Object.fromEntries(PICK_ROW_IDS.map((id) => [id, pickRow(id)]));
 
+  const youtubeCategories = (Array.isArray(youtubeData?.categories) ? youtubeData.categories : [])
+    .filter((category) => category && typeof category.id === 'string' && typeof category.name === 'string'
+      && Array.isArray(category.entries) && category.entries.length);
+  const youtubeSection = youtubeCategories.length ? youtubeRow(youtubeCategories) : null;
+  const youtubeTop = (youtubeCategories.find((category) => category.id === 'all')?.entries
+    ?? youtubeCategories[0]?.entries ?? []).slice(0, 3).map(youtubeCard);
+
   const matchday = matchdayHome(now);
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
@@ -7476,7 +7533,9 @@ async function drawHome() {
   const orderedRows = preview ? daypartOrder({ ...preview, rows: previewRows }, visibleRows) : visibleRows;
   const rowElements = new Map(orderedRows.map((row) => [
     row.id,
-    row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []),
+    row.id === 'ten' ? homeRow(row.title, tenTop, tenNote)
+      : row.id === 'youtube' ? youtubeSection
+        : homeRow(row.title, rowItems[row.id] ?? []),
   ]));
   // Only rows with something to show count for the Matchday drop position. An empty/hidden
   // Trending row must not leave the Reaction row above the real bottom rows.
@@ -7500,11 +7559,12 @@ async function drawHome() {
     netflix: netflixTop.slice(0, 3),
     trending: trendingTop.slice(0, 3),
     ...Object.fromEntries(PICK_ROW_IDS.map((id) => [id, (pickRows[id] ?? []).slice(0, 3)])),
+    youtube: youtubeTop,
   };
   const rowForGroup = { teamsLive: 'teams', teamsPost: 'teams' };
   const visibleRowIds = new Set(orderedRows.map((row) => row.id));
-  let heroOrder = preview ? [...preview.hero] : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS];
-  if (preview?.id === 'prime' && fresh.length) heroOrder = ['teamsLive', 'onnow', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'continue', 'teamsPost'];
+  let heroOrder = preview ? [...preview.hero] : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube'];
+  if (preview?.id === 'prime' && fresh.length) heroOrder = ['teamsLive', 'onnow', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube', 'continue', 'teamsPost'];
   let rotation = heroOrder.flatMap((id) => {
     const rowId = rowForGroup[id] ?? id;
     if (!visibleRowIds.has(rowId) || (!preview && !bannerShows(layout, rowId))) return [];
@@ -10802,6 +10862,21 @@ async function loadPicks() {
     const response = await fetch('lists.json', { cache: 'no-cache', signal: AbortSignal.timeout?.(8000) });
     const data = response.ok ? await response.json() : null;
     if (data) picksCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+let youtubeTrendingCache = null;
+
+/** youtube-trending.json, kept for ten minutes so Home redraws do not refetch it. */
+async function loadYouTubeTrending() {
+  if (youtubeTrendingCache && Date.now() - youtubeTrendingCache.at < 10 * 60000) return youtubeTrendingCache.data;
+  try {
+    const response = await fetch('youtube-trending.json', { cache: 'no-cache', signal: AbortSignal.timeout?.(8000) });
+    const data = response.ok ? await response.json() : null;
+    if (data) youtubeTrendingCache = { at: Date.now(), data };
     return data;
   } catch {
     return null;

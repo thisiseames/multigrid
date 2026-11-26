@@ -1,0 +1,44 @@
+# Refreshes youtube-trending.json every three hours: the US mostPopular chart for each approved
+# YouTube category, through the official Data API. Shorts (under three minutes) and live/upcoming
+# items are left out. A category that fails keeps its previous rows; if everything fails the old
+# file stays, and the Home row hides when there is no file.
+name: youtube-trending
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build-youtube-trending.mjs'
+      - 'tools/youtube-trending-rows.mjs'
+      - '.github/workflows/youtube-trending.yml'
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: youtube-trending
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-youtube-trending.mjs
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      - name: Save the YouTube row
+        run: |
+          git config user.name "multigrid-youtube"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f youtube-trending.json ]; then git add youtube-trending.json; fi
+          git diff --cached --quiet && exit 0
+          git commit -m "Update YouTube trending"
+          for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

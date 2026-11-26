@@ -29,29 +29,30 @@ export const HOME_ROWS = [
   { id: 'trending', title: 'Trending in Canada' },
   ...PICK_ROWS,
   { id: 'trailers', title: 'Trending trailers' },
+  { id: 'youtube', title: 'Trending on YouTube' },
 ];
 
 /** The four home editions. Times are local; late wraps past midnight. */
 export const DAYPARTS = [
   {
     id: 'morning', label: 'Morning edition', from: 5, to: 11,
-    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'recent'],
-    hero: ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS],
+    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'youtube', 'recent'],
+    hero: ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube'],
   },
   {
     id: 'afternoon', label: 'Afternoon edition', from: 11, to: 17,
-    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'recent'],
-    hero: ['teamsLive', 'onnow', 'continue', 'fresh', 'teamsPost', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS],
+    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'youtube', 'recent'],
+    hero: ['teamsLive', 'onnow', 'continue', 'fresh', 'teamsPost', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube'],
   },
   {
     id: 'prime', label: 'Prime time', from: 17, to: 23,
-    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'fresh', 'continue', 'recent'],
-    hero: ['teamsLive', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'fresh', 'continue', 'teamsPost'],
+    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'youtube', 'fresh', 'continue', 'recent'],
+    hero: ['teamsLive', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube', 'fresh', 'continue', 'teamsPost'],
   },
   {
     id: 'late', label: 'After hours', from: 23, to: 5,
-    rows: ['continue', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'fresh', 'onnow', 'teams', 'recent'],
-    hero: ['continue', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'fresh', 'onnow', 'teamsLive', 'teamsPost'],
+    rows: ['continue', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'youtube', 'fresh', 'onnow', 'teams', 'recent'],
+    hero: ['continue', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'youtube', 'fresh', 'onnow', 'teamsLive', 'teamsPost'],
   },
 ];
 
@@ -81,6 +82,7 @@ export const BANNER_PARTS = [
   { id: 'netflix', label: 'Top 10 on Netflix', on: false },
   { id: 'trending', label: 'Trending in Canada', on: false },
   ...PICK_ROWS.map((row) => ({ id: row.id, label: row.title, on: false })),
+  { id: 'youtube', label: 'Trending on YouTube', on: false },
 ];
 
 /**
@@ -96,6 +98,12 @@ export function homeLayout(saved) {
     if (PICK_ROW_IDS.includes(row.id)) {
       const last = PICK_ROW_IDS.map((id) => order.indexOf(id)).filter((at) => at >= 0).pop();
       const after = last >= 0 ? last : order.indexOf('trending');
+      if (after >= 0) order.splice(after + 1, 0, row.id);
+      else order.push(row.id);
+      continue;
+    }
+    if (row.id === 'youtube') {
+      const after = order.indexOf('trailers');
       if (after >= 0) order.splice(after + 1, 0, row.id);
       else order.push(row.id);
       continue;
