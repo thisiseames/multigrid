@@ -1,10 +1,11 @@
 // Public TikTok profiles through the same r.jina.ai reader the TikTok feeds already use.
-// One profile request gives the header and up to 48 video cards; six video-page requests add
-// views, likes and comments. No key, login or server. Nothing is cached longer than ten minutes.
+// One profile request gives the header; TikTok's account embed gives ten recent videos, and
+// ten video-page requests add their likes and comments. No key, login or server. Nothing is
+// cached longer than ten minutes.
 
 const READER = 'https://r.jina.ai/';
 const PROFILE_TTL = 10 * 60 * 1000;
-const VIDEO_LIMIT = 6;
+const VIDEO_LIMIT = 10;
 const profileCache = new Map();
 const profileInflight = new Map();
 
@@ -254,7 +255,7 @@ async function fetchProfile(name, signal) {
   };
 }
 
-/** A profile with up to six enriched videos. Cached ten minutes; six video pages per refresh. */
+/** A profile with up to ten enriched videos. Cached ten minutes; ten video pages per refresh. */
 export function loadTikTokProfile(raw, { force = false, signal } = {}) {
   const name = normalName(raw);
   if (!nameOk(name)) return Promise.reject(new Error("That isn't a TikTok username."));

@@ -1474,7 +1474,7 @@ function tiktokProfilePlayer(source, options) {
 
   const render = (data) => {
     const user = data.user;
-    const videos = data.videos.slice(0, 6);
+    const videos = data.videos;
     refresh.hidden = false;
     const fallback = el('span', {
       class: 'tik-profile-avatar-fallback',
@@ -1540,7 +1540,7 @@ function tiktokProfilePlayer(source, options) {
       stats,
       el('div', { class: 'tik-profile-section' },
         el('b', { textContent: 'Latest videos' }),
-        el('small', { textContent: videos.length ? `${videos.length} of ${data.videos.length}` : 'Public videos' })),
+        el('small', { textContent: videos.length ? `${videos.length} ${videos.length === 1 ? 'video' : 'videos'}` : 'Public videos' })),
       videos.length
         ? el('div', { class: 'tik-profile-grid' }, ...videos.map(card))
         : el('p', { class: 'tik-profile-empty', textContent: 'No public videos right now.' }));

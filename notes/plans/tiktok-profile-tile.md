@@ -10,12 +10,15 @@ kept **Try again** and **Back to profile**, and Back still returned to the profi
 **Visual polish (live, commits 9685794 and 92f75c1):** Back to profile sits below the TikTok
 logo/profile name instead of on top of it, with a 35% opaque background (52% on hover).
 
+**Video count (deploy pending):** profiles now show every video TikTok's account embed lists
+(ten, instead of stopping at six) and fetch their likes/comments.
+
 ## Running cost
 
 $0/month. No server, account, key or extension. The profile uses the same `r.jina.ai` reader
 MULTIGRID already uses for TikTok. A refresh asks for the profile page, the account embed and
-the newest six video pages (eight requests), then caches the result for 10 minutes. The reader's
-limit is about 20 requests a minute, so normal use stays under it.
+the ten videos TikTok's embed lists (twelve requests), then caches the result for 10 minutes.
+The reader's limit is about 20 requests a minute, so normal use stays under it.
 
 ## Experience
 
@@ -26,13 +29,14 @@ limit is about 20 requests a minute, so normal use stays under it.
   first profile creates one.
 - **First frame:** compact profile header — avatar, display name, @handle, verified mark,
   signature, followers, following, total likes and video count.
-- **Below:** the newest six videos, with cover, views, likes, comments and date. The tile body
-  scrolls; no TikViewer banner or page chrome.
+- **Below:** every video TikTok's account embed lists (ten), with cover, views, likes, comments
+  and date. The tile body scrolls; no TikViewer banner or page chrome. If the profile page also
+  supplies extra cards, they are shown too.
 - **A video stays in the same tile:** tapping a card plays that video over the profile using
   TikTok's own player. No second tile is created.
 - **Back to profile:** a clear, semi-transparent button below the video's logo/profile name
   returns to the profile at the same scroll position. It no longer covers the TikTok profile row.
-- **Refresh:** re-fetches the profile and the six videos while the profile is showing.
+- **Refresh:** re-fetches the profile and its videos while the profile is showing.
 - **No:** earnings calculator, creator score, hashtags, top creators.
 
 ## Data
@@ -44,7 +48,7 @@ limit is about 20 requests a minute, so normal use stays under it.
   the reliable video list: ten recent videos with IDs, descriptions, covers and view counts
   in `__FRONTITY_CONNECT_STATE__`. The full profile page sometimes leaves out its video cards
   for a logged-out reader, so the tile prefers the embed and falls back to the profile page.
-- Each of the newest six video pages returns `playCount`, `diggCount`, `commentCount` and
+- Each of the newest ten video pages returns `playCount`, `diggCount`, `commentCount` and
   `shareCount` in its own embedded JSON. If one fails, the card keeps the view count already
   known and shows no invented likes or comments.
 - The merged profile is cached for 10 minutes. No key, no login, public profiles only.
@@ -130,7 +134,7 @@ limit is about 20 requests a minute, so normal use stays under it.
   the latest videos working.
 - TikTok HTML class names change; parse the embedded JSON and stable video links, not CSS.
 - Public data only; no private profiles, earnings or creator score.
-- The six video requests are the rate-limit cost; do not fetch every listed video.
+- The ten video requests are the rate-limit cost; do not fetch every listed video.
 - Profiles must not be popped out: the floating window has no Back to profile path.
 - X-Ray is intentionally unavailable for TikTok feeds, videos, profiles and lives. Its hover
   card is the entry point on the laptop, so it must stay absent there; otherwise it covers Back.
