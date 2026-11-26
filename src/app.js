@@ -6581,11 +6581,37 @@ let heroTimer = null;
 let heroHoldUntil = 0;
 let heroKey = '';
 
-/** A picture that only shows once it has loaded; YouTube's grey stand-in counts as missing. */
-function homePicture(url, onFail) {
-  const img = el('img', { src: url, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
-  img.addEventListener('error', () => onFail?.(img), { once: true });
-  img.addEventListener('load', () => { if (img.naturalWidth <= 120) onFail?.(img); else img.classList.add('is-in'); }, { once: true });
+/** A picture that only shows once it has loaded; YouTube's grey stand-in counts as missing.
+    Fallbacks are tried in order, so a missing max-res trailer still gets a smaller picture. */
+function homePicture(url, onFail, fallbacks = []) {
+  const sources = [url, ...fallbacks].filter(Boolean);
+  let at = 0;
+  let done = false;
+  const img = el('img', { src: sources[at], alt: '', decoding: 'async', referrerPolicy: 'no-referrer', loading: 'lazy' });
+  const giveUp = () => {
+    if (done) return;
+    done = true;
+    onFail?.(img);
+  };
+  const next = () => {
+    if (done) return;
+    if (at + 1 < sources.length) {
+      at += 1;
+      img.src = sources[at];
+    } else {
+      giveUp();
+    }
+  };
+  img.addEventListener('error', next);
+  const loaded = () => {
+    if (img.naturalWidth <= 120) {
+      next();
+      return;
+    }
+    img.classList.add('is-in');
+    img.removeEventListener('load', loaded);
+  };
+  img.addEventListener('load', loaded);
   return img;
 }
 
@@ -6606,7 +6632,7 @@ function showHero(item, { hold = false, refresh = false } = {}) {
   const layer = el('div', { class: 'hero-layer' });
   if (item.layer) layer.append(item.layer());
   else if (item.match) layer.append(teamsArt(item.match, 150));
-  else if (item.backdrop) layer.append(homePicture(item.backdrop, () => { layer.replaceChildren(item.art?.() ?? ''); layer.classList.add('is-soft'); }));
+  else if (item.backdrop) layer.append(homePicture(item.backdrop, () => { layer.replaceChildren(item.art?.() ?? ''); layer.classList.add('is-soft'); }, item.backdropFallbacks));
   else { layer.append(item.art?.() ?? ''); layer.classList.add('is-soft'); }
   const layers = hero.querySelector('.hero-layers');
   layers.append(layer);
@@ -6672,7 +6698,7 @@ function homeCard(item) {
   const show = (picture) => art.replaceChildren(picture, ...badges);
   const fill = () => {
     if (item.match) show(teamsArt(item.match, 54));
-    else if (item.backdrop) show(homePicture(item.backdrop, () => show(item.art?.() ?? '')));
+    else if (item.backdrop) show(homePicture(item.backdrop, () => show(item.art?.() ?? ''), item.backdropFallbacks));
     else show(item.art?.() ?? '');
   };
   fill();
@@ -6875,13 +6901,17 @@ async function drawHome() {
     if (!Number.isFinite(at)) return '';
     return `${at <= now ? 'Released' : 'Releases'} ${monthDay.format(new Date(at))}`;
   };
-  const trailerCard = (title, trailer, meta, key) => withArt({
-    key, label: 'Trailer', title, meta, cardMeta: meta,
-    backdrop: `https://i.ytimg.com/vi/${encodeURIComponent(trailer)}/mqdefault.jpg`,
-    art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: 'Trailer' }), el('span', { class: 'title-card-name', textContent: title })),
-    playLabel: 'Play trailer',
-    play: () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`),
-  }, title);
+  const trailerCard = (title, trailer, meta, key) => {
+    const base = `https://i.ytimg.com/vi/${encodeURIComponent(trailer)}`;
+    return withArt({
+      key, label: 'Trailer', title, meta, cardMeta: meta,
+      backdrop: `${base}/maxresdefault.jpg`,
+      backdropFallbacks: [`${base}/sddefault.jpg`, `${base}/hqdefault.jpg`, `${base}/mqdefault.jpg`],
+      art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: 'Trailer' }), el('span', { class: 'title-card-name', textContent: title })),
+      playLabel: 'Play trailer',
+      play: () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`),
+    }, title);
+  };
   const trailerTop = [
     ...(movieJob?.items ?? []).filter((movie) => /^[\w-]{11}$/.test(movie.trailer || '')).map((movie) => ({
       date: Date.parse(`${movie.date}T12:00:00`) || 0,
