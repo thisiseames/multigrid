@@ -1808,8 +1808,12 @@ async function openTvCalendar() {
       el('h3', { textContent: day.label }),
       el('div', { class: 'tvcal-grid' }, ...day.items.map(({ item, episode, aired }) => {
         const art = el('span', { class: 'tvcal-art' });
-        if (episode.image) art.append(el('img', { src: episode.image, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' }));
-        else art.append(icon('guide', 20));
+        const noArt = () => art.replaceChildren(icon('guide', 20));
+        if (episode.image) {
+          const image = el('img', { src: episode.image, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+          image.addEventListener('error', noArt, { once: true });
+          art.append(image);
+        } else noArt();
         return el('button', {
           type: 'button', class: `tvcal-card${aired ? ' is-aired' : ' is-future'}`, title: `${item.name} · ${episodeCode(episode)}`,
           on: { click() {

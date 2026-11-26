@@ -878,11 +878,12 @@ body.is-phone .following-box { width: calc(100vw - 24px); }
 .dialog {
   width: min(460px, calc(100vw - 24px));
   padding: 16px;
-  background: var(--raised);
+  background: #000;
   color: var(--text);
-  border: 1px solid var(--border-strong);
+  border: 1px solid #242427;
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --surface: #0b0b0d;
 }
 .dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
 .dialog h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
@@ -1862,6 +1863,9 @@ body.is-phone #add-button.add-button { border-color: transparent; }
 .ch-tab { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 550; }
 .ch-tab:hover { color: var(--text); }
 .ch-tab.is-on { background: var(--accent); color: var(--accent-ink); }
+.dialog .ch-tab, .dialog .ch-cat { box-shadow: inset 0 0 0 1px #242427; }
+.dialog .ch-tab.is-on, .dialog .ch-cat.is-on { box-shadow: none; }
+.dialog .ch-logo, .dialog .show-row-art, .dialog .tvcal-art { background: #0b0b0d; box-shadow: inset 0 0 0 1px #242427; }
 .ch-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .ch-cat { height: 26px; padding: 0 9px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 11.5px; font-weight: 600; }
 .ch-cat:hover { color: var(--text); }
@@ -2003,13 +2007,14 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .ppv-today .ppv-text b { font-size: 12.5px; }
 @media (max-width: 640px) { .ppv-today .ppv-card { flex-basis: 168px; } }
 /* Command palette */
-.palette { width: min(560px, calc(100vw - 16px)); max-height: min(72dvh, 620px); padding: 12px; margin-top: 10vh; margin-bottom: auto; background: #000; border-color: #242427; }
+.palette { display: flex; flex-direction: column; width: min(560px, calc(100vw - 16px)); max-height: min(84dvh, 760px); padding: 12px; margin-top: 10vh; margin-bottom: auto; background: #000; border-color: #242427; }
+body.is-phone .palette { max-height: calc(100dvh - 150px); }
 .palette-title { display: flex; flex-direction: column; gap: 1px; margin: 0 4px 8px; }
 .palette-title b { font-size: 13px; font-weight: 600; color: var(--text); }
 .palette-title small { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.palette-input { width: 100%; height: 46px; padding: 0 13px; border-radius: 10px; border: 1px solid var(--border-strong); background: #0b0b0d; color: var(--text); font: inherit; font-size: 16px; }
+.palette-input { flex: none; width: 100%; height: 46px; padding: 0 13px; border-radius: 10px; border: 1px solid var(--border-strong); background: #0b0b0d; color: var(--text); font: inherit; font-size: 16px; }
 .palette-input:focus { outline: none; border-color: var(--accent); }
-.palette-results { margin-top: 8px; max-height: calc(72dvh - 100px); overflow-y: auto; overscroll-behavior: contain; }
+.palette-results { flex: 1; min-height: 0; margin-top: 8px; max-height: none; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 8px; }
 .palette-group { margin: 10px 4px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
 .palette-row { display: flex; align-items: center; gap: 4px; }
 .palette-row .palette-item { flex: 1; min-width: 0; }
@@ -2024,9 +2029,9 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 .palette-empty { margin: 16px 4px; font-size: 13px; color: var(--text-2); }
 .palette-hint { margin: 8px 4px 0; font-size: 11px; color: var(--text-2); }
 .ppv-card { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--text); border-radius: 12px; border: 1px solid rgba(255,255,255,.05); background: var(--surface); cursor: pointer; }
-.ppv-card:hover { background: #1d1d21; }
+.ppv-card:hover { background: #0e0e10; }
 .ppv-art-wrap { position: relative; display: block; aspect-ratio: 16 / 9; background: #1f1f23; }
-.ppv-art { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #26262d, #151518); color: var(--text-2); }
+.ppv-art { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #0b0b0d; color: var(--text-2); }
 .ppv-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ppv-art svg { width: 26px; height: 26px; opacity: .4; }
 .ppv-badge { position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 7px; border-radius: 5px; background: rgba(0,0,0,.68); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -3418,7 +3423,7 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 /* Live events (PPV.st, Daddy Live, Matchora): one pill style for every row. Same height and shape
    throughout; the chosen pill is white with dark text, the rest quiet grey. Category pills stay on
    one line and scroll sideways instead of wrapping. The card badges (LIVE, start time) match. */
-#ppv-box .ppv-sources, #ppv-box .mora-dates { display: flex; flex-wrap: nowrap; width: fit-content; max-width: 100%; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, .06); }
+#ppv-box .ppv-sources, #ppv-box .mora-dates { display: flex; flex-wrap: nowrap; width: fit-content; max-width: 100%; gap: 2px; padding: 3px; border-radius: 999px; background: #0b0b0d; box-shadow: inset 0 0 0 1px #242427; }
 #ppv-box .mora-dates { margin-top: 10px; }
 #ppv-box .mora-dates[hidden] { display: none; }
 #ppv-box .ppv-sources .gview, #ppv-box .ch-cat {
@@ -3431,9 +3436,9 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
 }
 #ppv-box .ch-cats:not(.mora-dates)::-webkit-scrollbar { display: none; }
-#ppv-box .ch-cats:not(.mora-dates) .ch-cat { background: rgba(255, 255, 255, .06); }
+#ppv-box .ch-cats:not(.mora-dates) .ch-cat { background: #0b0b0d; box-shadow: inset 0 0 0 1px #242427; }
 #ppv-box .ch-cats:not(.mora-dates) .ch-cat:hover { background: rgba(255, 255, 255, .1); }
-#ppv-box .ppv-sources .gview.is-on, #ppv-box .ch-cat.is-on, #ppv-box .ch-cats:not(.mora-dates) .ch-cat.is-on { background: #f5f5f7; color: #0b0b0d; }
+#ppv-box .ppv-sources .gview.is-on, #ppv-box .ch-cat.is-on, #ppv-box .ch-cats:not(.mora-dates) .ch-cat.is-on { background: #f5f5f7; color: #0b0b0d; box-shadow: none; }
 #ppv-box .ppv-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(0, 0, 0, .72); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; backdrop-filter: blur(6px); }
 #ppv-box .ppv-badge.is-live { background: #e5484d; }
 
