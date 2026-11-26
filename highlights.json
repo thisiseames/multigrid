@@ -1,47 +1,6 @@
 {
- "updated": 1795715674912,
+ "updated": 1795717247247,
  "games": {
-  "401873067": {
-   "league": "NFL",
-   "title": "Chiefs 34–7 Cardinals",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "WwsNx--B79g",
-     "title": "Arizona Cardinals vs Kansas City Chiefs Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "0jVuXuTCoOU",
-     "title": "Arizona Cardinals vs. Kansas City Chiefs Game Highlights | NFL 2026 Season - Week 11",
-     "rank": 2.5
-    },
-    {
-     "id": "8vhrZWvo_A0",
-     "title": "MUST-WATCH Emmett Johnson Highlights from 143-Yard Game vs. Arizona Cardinals",
-     "rank": 1
-    }
-   ]
-  },
-  "401873068": {
-   "league": "NFL",
-   "title": "Panthers 35–33 Ravens",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "wdlsXc0by8U",
-     "title": "Baltimore Ravens vs. Carolina Panthers Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "4YCzM6PQ3cY",
-     "title": "Jesse Minter Recaps Ravens’ Week 11 Loss to Panthers | Baltimore Ravens",
-     "rank": 1.5
-    }
-   ]
-  },
   "401873069": {
    "league": "NFL",
    "title": "Giants 23–18 Jaguars",
@@ -61,83 +20,6 @@
     {
      "id": "qA0F_gDLGEY",
      "title": "Highlights: J.J. McCarthy's Best Plays vs. Jaguars | 2026 Regular Season Week 11 | New York Giants",
-     "rank": 2
-    }
-   ]
-  },
-  "401873070": {
-   "league": "NFL",
-   "title": "Bills 26–9 Dolphins",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "F69kepglAY0",
-     "title": "Miami Dolphins vs. Buffalo Bills Game Highlights | NFL 2026 Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "XS5CN3EekDo",
-     "title": "Eric Wood: Recapping Bills Win Over Miami, Tough Matchup With The Chiefs Ahead",
-     "rank": 2
-    },
-    {
-     "id": "g3fGarzqEEk",
-     "title": "Buffalo Bills Highlights vs. Miami Dolphins | 2026 Regular Season Week 11",
-     "rank": 1
-    }
-   ]
-  },
-  "401873071": {
-   "league": "NFL",
-   "title": "Bears 21–13 Saints",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "TAvO7hOMR70",
-     "title": "New Orleans Saints vs. Chicago Bears Game Highlights | NFL 2026 Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "kV58ISIGVgM",
-     "title": "Kellen Moore Recaps Saints' Loss to Chicago Bears",
-     "rank": 1.5
-    },
-    {
-     "id": "kd3q-mPXjic",
-     "title": "Kellen Moore recaps loss to Bears | New Orleans Saints",
-     "rank": 1.5
-    }
-   ]
-  },
-  "401873072": {
-   "league": "NFL",
-   "title": "Lions 31–21 Buccaneers",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "PWphJLZ89e4",
-     "title": "Tampa Bay Buccaneers vs Detroit Lions Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401873073": {
-   "league": "NFL",
-   "title": "Cowboys 51–30 Titans",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "8oWgHgf_c_w",
-     "title": "Tennessee Titans vs Dallas Cowboys Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "Q_FwFQPkW34",
-     "title": "Javonte Williams' Best plays from 2-TD game vs. Titans | Week 11 Highlights",
      "rank": 2
     }
    ]
@@ -180,24 +62,6 @@
      "id": "WKn9AOYsHIE",
      "title": "Denver Broncos Highlights vs. Las Vegas Raiders | 2026 Regular Season Week 11",
      "rank": 1
-    }
-   ]
-  },
-  "401873076": {
-   "league": "NFL",
-   "title": "Eagles 19–16 Steelers",
-   "start": 1795370400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "9ORFm2xTKNs",
-     "title": "Pittsburgh Steelers vs. Philadelphia Eagles Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "JkLzA5xUpk8",
-     "title": "Pittsburgh Steelers VS Philadelphia Eagles | WEEK 11 Highlights",
-     "rank": 2
     }
    ]
   },
@@ -961,6 +825,11 @@
      "id": "cICYhxnmWHA",
      "title": "Sporting U19s 2-2 Man Utd U19s | Highlights | UEFA Youth League",
      "rank": 2
+    },
+    {
+     "id": "C02Vp7ZJb4w",
+     "title": "Sporting 2-2 Man Utd | Highlights | UEFA Champions League",
+     "rank": 2
     }
    ]
   },
@@ -969,7 +838,13 @@
    "title": "PSG 2–2 AS Roma",
    "start": 1795636800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "wVxDDEYlgbY",
+     "title": "PSG 2-2 ROMA | UCL HIGHLIGHTS 2026-27",
+     "rank": 2
+    }
+   ]
   },
   "401915375": {
    "league": "Champions League",
@@ -1186,6 +1061,12 @@
  },
  "club": {
   "360": [
+   {
+    "id": "C02Vp7ZJb4w",
+    "title": "Sporting 2-2 Man Utd | Highlights | UEFA Champions League",
+    "published": 1795716002000,
+    "source": "Man Utd"
+   },
    {
     "id": "zhH68Wz781Y",
     "title": "'I AM WORRIED!' Can Arsenal Go 9 Points CLEAR Of City?!",
@@ -1445,12 +1326,6 @@
     "source": "Adikastakes"
    },
    {
-    "id": "q1cqGvi8hII",
-    "title": "Should Man Utd follow the Brentford model?  | Transfer Talk",
-    "published": 1795462206000,
-    "source": "Sky Sports News"
-   },
-   {
     "id": "Aqkjt43lZjk",
     "title": "Gary Neville LOSES IT, Domino's TROLL Pochettino & Couple BREAK UP? | DID YOU SEE?",
     "published": 1795461409000,
@@ -1617,18 +1492,6 @@
     "title": "Glad We Sacked Carrick 🙄 Liverpool 4-0 United Review ",
     "published": 1795373295000,
     "source": "Stephen Howson"
-   },
-   {
-    "id": "aqINkzHEPIs",
-    "title": "MAN UNITED ABSOLUTE SHAMBLES! AGT & DOYLE LOVING LIFE!",
-    "published": 1795370513000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "s6QD6etur-w",
-    "title": "AGT IS LOVING LIFE! MAN UNITED DOWN TO 10 MEN & LIVERPOOL STRIKE!",
-    "published": 1795370410000,
-    "source": "DR Sports"
    }
   ]
  }
