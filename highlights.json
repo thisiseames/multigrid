@@ -1,47 +1,6 @@
 {
- "updated": 1795728190080,
+ "updated": 1795729753762,
  "games": {
-  "401873069": {
-   "league": "NFL",
-   "title": "Giants 23–18 Jaguars",
-   "start": 1795382700000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "VFJ5DTTNN9A",
-     "title": "Jacksonville Jaguars vs. New York Giants Game Highlights | NFL 2026 Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "X_iqvwoiR7o",
-     "title": "Highlights: Giants vs. Jaguars | 2026 Regular Season Week 11 | New York Giants",
-     "rank": 2
-    },
-    {
-     "id": "qA0F_gDLGEY",
-     "title": "Highlights: J.J. McCarthy's Best Plays vs. Jaguars | 2026 Regular Season Week 11 | New York Giants",
-     "rank": 2
-    }
-   ]
-  },
-  "401873075": {
-   "league": "NFL",
-   "title": "Broncos 38–24 Raiders",
-   "start": 1795382700000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "i13fzifkiE8",
-     "title": "Las Vegas Raiders vs Denver Broncos Game Highlights | 2026 NFL Season Week 11",
-     "rank": 3.5
-    },
-    {
-     "id": "WKn9AOYsHIE",
-     "title": "Denver Broncos Highlights vs. Las Vegas Raiders | 2026 Regular Season Week 11",
-     "rank": 1
-    }
-   ]
-  },
   "401873077": {
    "league": "NFL",
    "title": "49ers 35–10 Vikings",
@@ -93,6 +52,19 @@
      "id": "bdh8ZF97jJg",
      "title": "Nate Landman, Kyren Williams & Kamren Kinchens Recap Fifth Straight Win After Beating the Packers",
      "rank": 2
+    }
+   ]
+  },
+  "401873081": {
+   "league": "NFL",
+   "title": "Lions 35–39 Bears",
+   "start": 1795716000000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "6mDrkExeNSY",
+     "title": "Chicago Bears vs. Detroit Lions Game Highlights | 2026 NFL Season Week 12",
+     "rank": 3.5
     }
    ]
   },
@@ -1007,6 +979,12 @@
  "club": {
   "360": [
    {
+    "id": "WxrMbJ9d0yk",
+    "title": "'The Easiest Prediction This Weekend!' Can Liverpool SMOKE Everton!",
+    "published": 1795728614000,
+    "source": "DR Sports"
+   },
+   {
     "id": "eMg0ErSypfY",
     "title": "'We Can Win This One!' Flex PRAYS For Man United Win!",
     "published": 1795723202000,
@@ -1353,12 +1331,6 @@
     "title": "You CAN Blame Poch!",
     "published": 1795419864000,
     "source": "Stephen Howson"
-   },
-   {
-    "id": "sMB7bOaYaZw",
-    "title": "Gary Neville & Jamie Carragher react to Liverpool 4-0 Man Utd | Gary Neville Podcast 🎙️",
-    "published": 1795382945000,
-    "source": "Sky Sports Premier League"
    }
   ]
  }
