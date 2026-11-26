@@ -1,5 +1,5 @@
 {
- "updated": 1795701598784,
+ "updated": 1795703162638,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -255,19 +255,6 @@
     }
    ]
   },
-  "401876397": {
-   "league": "Ligue 1",
-   "title": "Paris FC 4–0 Angers",
-   "start": 1795356000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "fTCdiImqoks",
-     "title": "TOTAL RÉGAL | PARIS FC 4-0 ANGERS | RÉSUMÉ J11 LIGUE 1 MCDONALDS",
-     "rank": 2.5
-    }
-   ]
-  },
   "401876400": {
    "league": "Ligue 1",
    "title": "Marseille 2–3 Le Mans",
@@ -297,19 +284,6 @@
     {
      "id": "9DFQV3X392w",
      "title": "Liverpool FC vs. Manchester United | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401879234": {
-   "league": "Premier League",
-   "title": "Hull 2–0 Brighton",
-   "start": 1795356000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "C0wduXuEpow",
-     "title": "Hull City vs. Brighton | PREMIER LEAGUE HIGHLIGHTS | Week 11 | Fubo Canada",
      "rank": 3.5
     }
    ]
