@@ -1,5 +1,5 @@
 {
- "updated": 1795651559090,
+ "updated": 1795653114254,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -496,29 +496,6 @@
      "id": "ZV_1v8zzUbw",
      "title": "MAVERICKS at NUGGETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 24, 2026",
      "rank": 3.5
-    }
-   ]
-  },
-  "401910024": {
-   "league": "NBA",
-   "title": "Knicks 97–96 Trail Blazers",
-   "start": 1795307400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "f3lxi8E6P9M",
-     "title": "TRAIL BLAZERS at KNICKS | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "8tEzmeii0Y0",
-     "title": "Game Highlights: Portland Trail Blazers 96, New York Knicks 97 | Nov. 21, 2026",
-     "rank": 2
-    },
-    {
-     "id": "81vunhLVyLA",
-     "title": "Donovan Clingan Highlights (22 Points, 13 Rebounds) | Trail Blazers 96, Knicks 97 | Nov. 21, 2026",
-     "rank": 0.5
     }
    ]
   },
@@ -1240,6 +1217,12 @@
  },
  "club": {
   "360": [
+   {
+    "id": "Nn0pji_TpnE",
+    "title": "Why Pochettino's Tactics Saved Us from Referee DISASTER! | Paddock Analysis",
+    "published": 1795652404000,
+    "source": "Stretford Paddock"
+   },
    {
     "id": "niK6ZqdZpx0",
     "title": "Mauricio Pochettino Post-Sporting | Press Conference",
