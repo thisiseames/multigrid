@@ -7299,7 +7299,13 @@ async function drawHome() {
     if (asked !== homeAsked) return;
     const keep = home.querySelector('.home-hero');
     const hero = keep ?? el('div', { class: 'home-hero' }, el('div', { class: 'hero-layers' }), el('div', { class: 'hero-shade' }), el('div', { class: 'hero-info' }));
-    home.replaceChildren(hero, el('div', { class: `home-rows${quiet ? ' is-quiet' : ''}` }, ...rows.filter(Boolean)));
+    // The rows live in their own scroll box. Replacing it on a refresh would otherwise jump
+    // back to Continue watching, so carry the reader's scroll position across the redraw.
+    const oldRows = home.querySelector('.home-rows');
+    const scrollTop = oldRows?.scrollTop || 0;
+    const rowsBox = el('div', { class: `home-rows${quiet ? ' is-quiet' : ''}` }, ...rows.filter(Boolean));
+    home.replaceChildren(hero, rowsBox);
+    if (scrollTop) rowsBox.scrollTop = scrollTop;
     // Nothing to show yet (a new device): the wordmark stays in the middle instead of leaving a blank screen.
     $('stage').classList.toggle('has-home', rows.some(Boolean));
   };
