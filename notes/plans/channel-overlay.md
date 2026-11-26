@@ -1,6 +1,6 @@
 # Full-screen TV channel overlay
 
-Status: **BUILT — awaiting live verification** (approved Nov 26, 2026)
+Status: **DONE, live Nov 26, 2026** (`2232e9c`)
 
 ## Cost
 
@@ -49,7 +49,7 @@ existing players.
 - [x] 6. Browser checks: switch on/off, TSN1 live and with no listing, open/close, switch
       channel, Escape, non-TV full-screen. Check the laptop at 1440 and the phone at 390.
 - [x] 7. Update `notes/product-map.md` and `notes/history.md`; run all tests.
-- [ ] 8. Commit, push, wait for Pages, verify live; mark this plan DONE with the commit.
+- [x] 8. Commit, push, wait for Pages, verify live; mark this plan DONE with the commit.
 
 ## Gotchas
 
@@ -82,3 +82,4 @@ existing players.
 
 - Nov 26: Plan written and approved.
 - Nov 26: Built the module, switch, panel, CSS and tests. Laptop 1440 and phone 390 (including the .maximized iPhone path) checked. 473 tests pass.
+- Nov 26: Live at multigrid.club in 2232e9c. Laptop and phone verified: TSN1 tab and panel, switch to TSN2 stays open, switch off removes it, phone panel full width with 44 px controls.
