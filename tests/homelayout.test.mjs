@@ -1,6 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DAYPARTS, HOME_ROWS, bannerShows, daypartFor, daypartOrder, homeLayout, isStandard, layoutData, moveRow, setBanner, setRow } from '../src/homelayout.js';
+import { DAYPARTS, HOME_ROWS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, isStandard, layoutData, moveRow, setBanner, setRow } from '../src/homelayout.js';
+
+test('the Matchday row leads through the match, then drops below Trending and disappears at midnight', () => {
+  const ids = ['continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'trailers'];
+  assert.deepEqual(homeRowOrder(ids, { phase: 'early', matchday: true }), ['matchday', ...ids]);
+  assert.deepEqual(homeRowOrder(ids, { phase: 'buildup', hold: true, matchday: true }), ['matchday', ...ids]);
+  assert.deepEqual(homeRowOrder(ids, { phase: 'fulltime', hold: true, matchday: true }), ['matchday', ...ids]);
+  assert.deepEqual(homeRowOrder(ids, { phase: 'fulltime', hold: false, matchday: true }), [
+    'continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'matchday', 'trailers',
+  ]);
+  assert.deepEqual(homeRowOrder(ids.filter((id) => id !== 'trending'), { phase: 'fulltime', matchday: true }), [
+    'continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trailers', 'matchday',
+  ]);
+  assert.deepEqual(homeRowOrder(ids, { phase: 'off', matchday: false }), ids);
+});
 
 test('the standard layout: every row in order and on; Ten, Top 10 and Trending off in the banner', () => {
   const layout = homeLayout(null);

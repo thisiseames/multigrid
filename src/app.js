@@ -60,7 +60,7 @@ import {
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
-import { BANNER_PARTS, bannerShows, daypartFor, daypartOrder, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
+import { BANNER_PARTS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
@@ -6731,6 +6731,12 @@ const homeRow = (title, items, note = '') => (items.length ? el('section', { cla
   note ? el('p', { class: 'home-note', textContent: note }) : null,
   el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
 
+/** The home is loading: a neutral row instead of a real Continue/Reaction row that would flash. */
+const homeSkeleton = () => el('section', { class: 'home-row home-skeleton', aria: { hidden: 'true' } },
+  el('span', { class: 'home-skel-title' }),
+  el('ul', { class: 'hrow' },
+    ...Array.from({ length: 3 }, () => el('li', { class: 'hcard' }, el('span', { class: 'home-skel-card' })))));
+
 /** Fills in TVmaze's picture and story for an item once they arrive. */
 function withArt(item, name) {
   artFor(name).then((art) => {
@@ -6800,7 +6806,6 @@ async function drawHome() {
     $('stage').classList.toggle('has-home', rows.some(Boolean));
   };
   const layout = loadHomeLayout();
-  const rowOn = (id) => layout.rows.some((row) => row.id === id && row.on);
   const phoneEdition = onPhoneScreen() ? el('div', { class: 'home-edition-phone' },
     el('button', {
       type: 'button',
@@ -6808,9 +6813,8 @@ async function drawHome() {
       aria: { pressed: String(daypartPreview) },
       on: { click: () => setDaypartHome(!daypartPreview) },
     }, icon('today', 15), el('span', { textContent: daypartPreview ? 'Edition · On' : 'Edition · Off' }))) : null;
-  paint([phoneEdition, rowOn('continue') ? homeRow('Continue watching', cont) : null]);
-  // No provisional banner: the first one shown must be the one that belongs there. Painting
-  // Continue watching first and then swapping in Matchday made the banner flash and change height.
+  // No provisional banner or real row: a neutral skeleton holds the space until the final order.
+  paint([phoneEdition, homeSkeleton()]);
 
   const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
@@ -6972,14 +6976,26 @@ async function drawHome() {
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
-  // The owner's order and choice of rows (Edit home); Matchday always leads.
+  // The owner's order and choice of rows (Edit home); Matchday leads until its post-match hold ends.
   const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop, trailers: trailerTop };
   const visibleRows = layout.rows.filter((row) => row.on);
   let previewRows = preview?.rows;
   if (preview?.id === 'morning' && weekend) previewRows = ['teams', 'fresh', 'continue', 'onnow', 'ten', 'netflix', 'trending', 'recent'];
   if (preview?.id === 'prime' && fresh.length) previewRows = ['teams', 'onnow', 'fresh', 'ten', 'netflix', 'trending', 'continue', 'recent'];
   const orderedRows = preview ? daypartOrder({ ...preview, rows: previewRows }, visibleRows) : visibleRows;
-  paint([phoneEdition, matchday.strip, matchdayRow, ...orderedRows.map((row) => (row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []))), preview ? null : editHomeButton()]);
+  const rowElements = new Map(orderedRows.map((row) => [
+    row.id,
+    row.id === 'ten' ? homeRow(row.title, tenTop, tenNote) : homeRow(row.title, rowItems[row.id] ?? []),
+  ]));
+  // Only rows with something to show count for the Matchday drop position. An empty/hidden
+  // Trending row must not leave the Reaction row above the real bottom rows.
+  const shownRowIds = orderedRows.filter((row) => rowElements.get(row.id)).map((row) => row.id);
+  const finalRows = homeRowOrder(shownRowIds, {
+    matchday: Boolean(matchdayRow),
+    phase: matchday.phase,
+    hold: matchday.hold,
+  }).map((id) => (id === 'matchday' ? matchdayRow : rowElements.get(id))).filter(Boolean);
+  paint([phoneEdition, matchday.strip, ...finalRows, preview ? null : editHomeButton()]);
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it. The preview uses the edition's order even when
   // the owner has that part switched off, so the time-aware shape can be judged.
@@ -9336,7 +9352,7 @@ function highlightsButton(match) {
    full-time card tells the story for the rest of the day; other days a slim line counts down. */
 // var, not const: Game mode and the ticker can ask before this part of the file has run.
 var md = { team: matchdayTeam(), // eslint-disable-line no-var
-  match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off' };
+  match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off', hold: false };
 var mdTimer = null; // eslint-disable-line no-var
 const MD_SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=';
 
@@ -9441,8 +9457,13 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && Da
 /** Whatever shows Matchday is redrawn: the home banner and rows, the Game mode tab, the phone sheet. */
 function drawMatchdayViews() {
   const phase = mdPhase();
-  const changed = phase !== md.phase;
+  const match = mdMatch();
+  const hold = phase === 'fulltime'
+    ? Boolean(match && isFulltimeHold(match.id, match.start))
+    : phase === 'buildup' || phase === 'live';
+  const changed = phase !== md.phase || hold !== md.hold;
   md.phase = phase;
+  md.hold = hold;
   const home = $('home');
   if (home && !home.hidden) {
     if (changed || md.drawnData !== Boolean(md.data)) drawHome();

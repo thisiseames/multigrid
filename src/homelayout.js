@@ -107,6 +107,21 @@ export function moveRow(layout, id, step) {
 /** The layout with a row shown or hidden. */
 export const setRow = (layout, id, on) => ({ ...layout, rows: layout.rows.map((row) => (row.id === id ? { ...row, on } : row)) });
 
+/**
+ * Where the dynamic Matchday row sits among the normal rows.
+ * It leads through the match and the two-hour full-time hold. After that it sits directly
+ * below Trending in Canada; if that row is hidden, it goes to the bottom. At midnight the
+ * phase is off and the caller omits the row entirely.
+ */
+export function homeRowOrder(ids, { matchday = false, phase = 'off', hold = false } = {}) {
+  const order = Array.isArray(ids) ? [...ids] : [];
+  if (!matchday) return order;
+  if (!(phase === 'fulltime' && !hold)) return ['matchday', ...order];
+  const at = order.indexOf('trending');
+  order.splice(at >= 0 ? at + 1 : order.length, 0, 'matchday');
+  return order;
+}
+
 /** The layout with a banner part on or off. */
 export const setBanner = (layout, id, on) => ({ ...layout, banner: { ...layout.banner, [id]: on } });
 
