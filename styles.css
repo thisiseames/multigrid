@@ -1383,7 +1383,7 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .tile.is-phone .tik-profile-stats { margin: 10px 0 12px; padding: 8px 0; gap: 4px; }
 .tile.is-phone .tik-profile-stat b { font-size: 12.5px; }
 .tile.is-phone .tik-profile-stat small { font-size: 9px; }
-.tile.is-phone .tik-profile-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 7px 6px; }
+.tile.is-phone .tik-profile-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 6px; }
 .tile.is-phone .tik-card-title { font-size: 10.5px; }
 .tile.is-phone .tik-card-meta { gap: 2px 6px; font-size: 9px; }
 .grid.stacked .tile-body:has(.tik-profile) { aspect-ratio: auto; height: 72vh; }
