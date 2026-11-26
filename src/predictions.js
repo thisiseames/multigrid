@@ -282,5 +282,34 @@ export function pickPredictions(events, now = Date.now(), options = {}) {
     if (picked.length >= MAX_ROWS) break;
     take(row);
   }
+  // The fixed topic picks can stay identical for weeks when a topic has one strong story.
+  // On the daily rotation, swap up to three of the trailing slots for other high-ranked rows,
+  // so Today visibly changes while the lead stories keep their place.
+  if (rotate && picked.length) {
+    const alternatives = unique
+      .filter((row) => !used.has(row.story))
+      .map((row, index) => ({ row, order: hash(`${seed}:${row.story}:${index}`) }))
+      .sort((a, b) => a.order - b.order)
+      .map(({ row }) => row);
+    let cursor = 0;
+    const capOf = (row) => (row.topic === 'Sport' || row.topic === 'Culture' ? 1 : 2);
+    for (let swapped = 0; swapped < Math.min(3, picked.length); swapped += 1) {
+      const at = picked.length - 1 - swapped;
+      const old = picked[at];
+      while (cursor < alternatives.length) {
+        const candidate = alternatives[cursor];
+        cursor += 1;
+        if (used.has(candidate.story)) continue;
+        const sameTopic = candidate.topic === old.topic;
+        if (!sameTopic && (counts[candidate.topic] || 0) >= capOf(candidate)) continue;
+        used.delete(old.story);
+        used.add(candidate.story);
+        counts[old.topic] = Math.max(0, (counts[old.topic] || 0) - 1);
+        counts[candidate.topic] = (counts[candidate.topic] || 0) + 1;
+        picked[at] = candidate;
+        break;
+      }
+    }
+  }
   return picked.slice(0, MAX_ROWS).map(({ story, score, ...row }) => row);
 }

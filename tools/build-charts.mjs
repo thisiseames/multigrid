@@ -19,7 +19,7 @@ const CHARTS = [
   { id: 'latin-albums', name: 'Latin Albums', kind: 'album' },
   { id: 'billboard-u-s-afrobeats-songs', name: 'Afrobeats', kind: 'song' },
 ];
-const TOP = 5;
+const TOP = 10;
 const OUT = new URL('../charts.json', import.meta.url);
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const clean = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();

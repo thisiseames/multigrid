@@ -16,6 +16,7 @@ on:
       - 'guide/channels.json'
       - 'tools/build-guide.mjs'
       - 'tools/build-top10.mjs'
+      - 'tools/build-charts.mjs'
       - 'tools/build-extras.mjs'
       - 'tools/extras-pick.mjs'
       - 'tools/build-recaps.mjs'

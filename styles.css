@@ -767,13 +767,17 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .popover {
   position: fixed;
   z-index: 50;
-  background: var(--raised);
-  border: 1px solid var(--border-strong);
+  background: #000;
+  border: 1px solid #242427;
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   max-height: calc(100dvh - var(--bar) - 16px);
   overflow-y: auto;
+  --surface: #0b0b0d;
+  --raised: #0b0b0d;
 }
+.popover .layout-option.is-current, .popover .layout-custom.is-current { box-shadow: inset 0 0 0 1px #f5f5f7; }
+.popover .sdrop-shape, .popover .reels-icon { background: #0b0b0d; box-shadow: inset 0 0 0 1px #242427; }
 .layout-menu { width: 344px; max-width: calc(100vw - 16px); padding: 8px; }
 .layout-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
 .layout-option {
@@ -2947,12 +2951,12 @@ body.is-phone .chart-card-act { font-size: 10.5px; padding: 0 8px; gap: 5px; }
 /* The MULTIGRID name is a button: it opens the saved layouts. */
 button.wordmark { padding: 6px 4px; border: 0; border-radius: 8px; background: none; color: var(--text); font-family: inherit; cursor: pointer; }
 button.wordmark:hover, button.wordmark[aria-expanded="true"] { background: var(--hover); }
-.saved-drop { width: 300px; max-width: calc(100vw - 16px); padding: 8px; border-radius: 16px; background: linear-gradient(180deg, #1d1d22 0%, #17171a 100%); border: 1px solid var(--border-strong); box-shadow: 0 18px 48px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .35); }
+.saved-drop { width: 300px; max-width: calc(100vw - 16px); padding: 8px; border-radius: 16px; background: #000; border: 1px solid #242427; box-shadow: 0 18px 48px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .35); }
 .sdrop-head { margin: 4px 10px 8px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); }
 .sdrop-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .sdrop-row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 10px; border: 0; border-radius: 12px; background: none; color: var(--text); text-align: left; font-family: inherit; cursor: pointer; }
 .sdrop-row:hover { background: var(--hover); }
-.sdrop-row.is-here { background: rgba(142, 166, 232, .10); }
+.sdrop-row.is-here { background: rgba(255, 255, 255, .08); }
 .sdrop-shape { flex: none; display: inline-flex; padding: 6px; border-radius: 9px; background: rgba(255, 255, 255, .05); color: var(--accent); }
 .sdrop-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sdrop-text b { font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

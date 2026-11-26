@@ -11028,7 +11028,7 @@ function chartsView(data) {
   const note = el('p', { class: 'chart-week' });
   const draw = () => {
     const chart = charts[at];
-    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartCard(entry, chart)));
+    list.replaceChildren(...chart.entries.slice(0, 10).map((entry) => chartCard(entry, chart)));
     note.textContent = chartNote(chart);
   };
   const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
@@ -11199,8 +11199,9 @@ const POLY_TTL = 10 * 60 * 1000;
 
 async function loadPolymarkets() {
   let saved = null;
+  const today = new Date().toDateString();
   try { saved = JSON.parse(localStorage.getItem(POLY_STORE) || 'null'); } catch { /* ask again */ }
-  if (saved && Array.isArray(saved.list) && Date.now() - saved.at < POLY_TTL) return saved.list;
+  if (saved && saved.day === today && Array.isArray(saved.list) && Date.now() - saved.at < POLY_TTL) return saved.list;
   try {
     const response = await fetch('https://gamma-api.polymarket.com/events?closed=false&active=true&archived=false&featured=true&order=volume24hr&ascending=false&limit=30', {
       cache: 'no-cache',
@@ -11210,7 +11211,7 @@ async function loadPolymarkets() {
     const data = await response.json();
     const list = pickPredictions(Array.isArray(data) ? data : [], Date.now(), { rotate: true });
     if (list.length) {
-      try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), list })); } catch { /* not remembered */ }
+      try { localStorage.setItem(POLY_STORE, JSON.stringify({ at: Date.now(), day: today, list })); } catch { /* not remembered */ }
       return list;
     }
   } catch {
@@ -12951,7 +12952,6 @@ function buildSavedDrop() {
       el('span', { class: 'sdrop-text' }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
     })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
-    onPhoneScreen() ? null : recentGridRows(3),
     saveHereRow(),
     clearAllRow(),
     moveRow(),
