@@ -1,5 +1,5 @@
 {
- "updated": 1795714112332,
+ "updated": 1795715674912,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -282,24 +282,6 @@
      "id": "VQq8IoHTYmk",
      "title": "Brentford v Everton | Premier League highlights ▶️",
      "rank": 2
-    }
-   ]
-  },
-  "401882801": {
-   "league": "LaLiga",
-   "title": "Osasuna 1–0 Málaga",
-   "start": 1795368600000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "15YyZiloozk",
-     "title": "CA OSASUNA 1 - 0 MÁLAGA CF | RESUMEN LALIGA EA SPORTS",
-     "rank": 3.5
-    },
-    {
-     "id": "v0s5DSe28jk",
-     "title": "Osasuna 1-0 Málaga | Resumen | Jornada 13 | Club Atlético Osasuna",
-     "rank": 2.5
     }
    ]
   },
