@@ -1,11 +1,11 @@
 # Native TikTok profile in the vertical viewer
 
-**Status:** the vertical viewer is DONE and live (commit 78331ed). A follow-up polish is built
-and verified locally; deploy/live check pending: X-Ray is off for all TikTok tiles, and a video
-TikTok cannot play keeps **Back to profile** and **Try again** instead of replacing the profile.
+**Status:** DONE, live Nov 26, 2026 (vertical viewer 78331ed, X-Ray polish 6c72b6a).
 
-The live vertical viewer was verified: the profile replaces the tall TikTok feed, tapping a
-card plays over the same tile, Back to profile returns, and the tile count stays the same.
+Verified on multigrid.club: the profile replaces the tall TikTok feed; tapping a card plays over
+the same tile; Back to profile returns; the tile count stays the same; TikTok videos show no
+X-Ray hover card and no X-Ray row in the stream sheet. Locally, a forced TikTok player error
+kept **Try again** and **Back to profile**, and Back still returned to the profile.
 
 ## Running cost
 
@@ -118,7 +118,7 @@ limit is about 20 requests a minute, so normal use stays under it.
 - [x] Commit/push, check live, mark DONE.
 - [x] Disable X-Ray for TikTok tiles so it cannot cover Back to profile.
 - [x] Keep Back and Try again when a TikTok video fails.
-- [ ] Commit/push the X-Ray polish, check live, mark DONE.
+- [x] Commit/push the X-Ray polish, check live, mark DONE.
 
 ## Gotchas
 
