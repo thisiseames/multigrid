@@ -54,7 +54,7 @@ import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import { atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
-import { displayTitle, searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
+import { favoriteTitle, searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   deleteFolder, loadCurrent, moveFavorite, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
@@ -133,12 +133,13 @@ const STARTERS = [
 
 let ws = loadCurrent();
 
-// A Find a show favourite saved before the title-case fix kept its lowercase search name.
-// TMDB posters only arrive on that path, so a Series favourite with one is safe to tidy once.
+// Find a show stores a Series favourite in the Favorites convention: all caps and a big poster.
+// TMDB posters only arrive on that path, so a Series favourite with one is safe to tidy.
 for (const item of listFavorites()) {
   if (!/series|shows?\b/i.test(item.group || '') || !/(?:themoviedb\.org|image\.tmdb\.org)\//.test(item.poster || '')) continue;
-  const name = displayTitle(item.name);
-  if (name && name !== item.name) saveFavorite(item.input, name, item.group, item.logo, item.poster);
+  const name = favoriteTitle(item.name);
+  const poster = tmdbPosterUrl(item.poster);
+  if (name !== item.name || poster !== item.poster) saveFavorite(item.input, name, item.group, item.logo, poster);
 }
 
 // A repaired series tile can play 1Flex or Cinejoy while its star and Series card still
@@ -1672,6 +1673,7 @@ function openSeriesSearch({ query = '' } = {}) {
   const add = (item) => {
     const url = source === 'flex' ? flexUrl(item.id, 1, 1) : atlanticUrl(item.id, 1, 1);
     if (!url) return;
+    const name = favoriteTitle(item.title);
     const existing = listFavorites().find((favorite) => seriesLink(favorite.input)?.tmdb === item.id);
     box.close();
     if ($('source-dialog').open) $('source-dialog').close();
@@ -1682,9 +1684,9 @@ function openSeriesSearch({ query = '' } = {}) {
       if (id) toast(`Added ${existing.name}.`);
       return;
     }
-    if (!saveFavorite(url, item.title, 'SERIES', undefined, item.poster || undefined)) { toast(STORAGE_FULL); return; }
-    const id = addStream(url, { mode: 'add' }, item.title, url, null);
-    if (id) toast(`Added ${item.title} to Series.`);
+    if (!saveFavorite(url, name, 'SERIES', undefined, item.poster || undefined)) { toast(STORAGE_FULL); return; }
+    const id = addStream(url, { mode: 'add' }, name, url, null);
+    if (id) toast(`Added ${name} to Series.`);
   };
   const row = (item) => {
     const art = el('span', { class: 'show-row-art' }, icon('tv', 18));

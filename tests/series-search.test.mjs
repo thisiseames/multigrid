@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { displayTitle, parseTmdbSeriesSearch, searchTmdbSeries, tmdbPosterUrl } from '../src/series-search.js';
+import { displayTitle, favoriteTitle, parseTmdbSeriesSearch, searchTmdbSeries, tmdbPosterUrl } from '../src/series-search.js';
 
 const page = `### Search Results
 
@@ -48,6 +48,12 @@ Mark leads a team of office workers whose memories have been surgically divided 
   assert.equal(item.title, 'Severance');
   assert.equal(item.year, 2022);
   assert.match(item.overview, /^Mark leads a team/);
+});
+
+test('Favorites names are upper case, not title case', () => {
+  assert.equal(favoriteTitle('Ozark'), 'OZARK');
+  assert.equal(favoriteTitle('The Office'), 'THE OFFICE');
+  assert.equal(favoriteTitle('iPhone'), 'IPHONE');
 });
 
 test('a lowercase title is capitalized, but real capitals and mixed-case names are kept', () => {

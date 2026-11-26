@@ -44,6 +44,9 @@ export function tmdbPosterUrl(url) {
   return String(url || '').replace(/\/t\/p\/(?:w94_and_h141_face|w154|w300)\//, '/t/p/w342/');
 }
 
+/** Favourites are all caps, not title case: "ozark" and "Ozark" both become "OZARK". */
+export const favoriteTitle = (value) => plain(value).toLocaleUpperCase();
+
 /** TV shows in a TMDB search page, in the order TMDB ranks them. */
 export function parseTmdbSeriesSearch(markdown) {
   const text = String(markdown || '');
