@@ -11,14 +11,14 @@
 // Problems are reported through onError(message). Only a parsed source's address is ever
 // used: nothing pasted by the user reaches the page as HTML.
 
-import { loadBlueskyVideos } from './bluesky.js';
+import { isPetVideo, loadBlueskyVideos } from './bluesky.js';
 import { chooseAgain, findFile, reopen } from './local-files.js';
 import { buildEmbedUrl, isBlockedMixedContent, parseSource } from './sources.js';
 import { loadTikTokProfile, shortTikTokCount } from './tiktok-profile.js';
 import { loadYouTubeChannel } from './youtube-channel.js';
 import { zliveEmbed } from './zlive.js';
 import { parseXProfile, parseXProfileHtml, parseXVideoPage, xPostedAt } from './x-feed.js';
-import { el, icon, iconButton } from './ui.js';
+import { el, icon, iconButton, toast } from './ui.js';
 import { ago, hasKey, itemById, loadIndex, openStory, safeFragment, sourceColor } from './reader.js';
 import { runBoxScore } from './boxscore.js';
 import { DONE_AT, forgetPlace, isPlayed, notePlace, placeOf, rememberMedia, resumePoint, showResumed } from './resume.js';
@@ -741,6 +741,7 @@ function tiktokFeedPlayer(source, options) {
   const frame = makeFrame('about:blank');
   frame.className = 'frame-feed';
   const extension = hasSoundExtension() ? extensionSound(frame, muted, volume) : null;
+  let feed = [];
   let videos = [];
   let index = 0;
   let wanted = muted;
@@ -1152,6 +1153,31 @@ function tiktokLivePlayer(source, options) {
 
 /* ---------- Bluesky trending videos ---------- */
 
+const BSKY_HIDDEN_KEY = 'multigrid.bluesky.hidden.v1';
+const readBskyHidden = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(BSKY_HIDDEN_KEY) || 'null');
+    return {
+      accounts: Array.isArray(value?.accounts) ? value.accounts.filter((item) => typeof item === 'string') : [],
+      words: Array.isArray(value?.words) ? value.words.filter((item) => typeof item === 'string') : [],
+    };
+  } catch {
+    return { accounts: [], words: [] };
+  }
+};
+const writeBskyHidden = (value) => {
+  try { localStorage.setItem(BSKY_HIDDEN_KEY, JSON.stringify(value)); } catch { /* not remembered */ }
+};
+const bskyHiddenHit = (item, hidden) => hidden.accounts.includes(String(item?.handle || '').toLocaleLowerCase())
+  || hidden.words.some((word) => `${item?.text || ''} ${item?.alt || ''}`.toLocaleLowerCase().includes(word));
+const bskyWord = (item) => {
+  const source = `${item?.text || ''} ${item?.alt || ''}`;
+  const tag = source.match(/#([\p{L}\p{N}_]{2,})/u);
+  if (tag) return `#${tag[1]}`;
+  const skip = new Set(['this', 'that', 'with', 'from', 'have', 'your', 'just', 'they', 'what', 'when', 'will', 'were', 'been', 'their', 'there', 'about', 'after', 'before', 'video', 'bluesky', 'today']);
+  return (source.toLocaleLowerCase().match(/[a-z][a-z'-]{3,}/g) || []).find((word) => !skip.has(word)) || '';
+};
+
 const shortCount = (value) => {
   const n = Number(value) || 0;
   if (n >= 1e6) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`;
@@ -1161,6 +1187,7 @@ const shortCount = (value) => {
 
 function blueskyVideoPlayer(source, options) {
   const { muted, volume, autoplay, onError, onPlayState } = options;
+  let feed = [];
   let videos = [];
   let index = 0;
   let hls = null;
@@ -1194,10 +1221,15 @@ function blueskyVideoPlayer(source, options) {
   const likes = el('span', { class: 'bsky-stat' }, icon('star', 12), el('span', { textContent: '' }));
   const reposts = el('span', { class: 'bsky-stat' }, icon('reload', 12), el('span', { textContent: '' }));
   const stats = el('div', { class: 'bsky-stats' }, likes, reposts);
+  const hideButton = el('button', {
+    type: 'button', class: 'bsky-hide', title: 'Not interested', aria: { label: 'Not interested' },
+  }, icon('more', 16));
+  const hideMenu = el('div', { class: 'bsky-hide-menu', hidden: true });
   const top = el('div', { class: 'bsky-top' },
     el('img', { class: 'bsky-mark', src: 'assets/bluesky-logo.svg', alt: '' }),
     el('span', { class: 'bsky-brand', textContent: 'Bluesky' }),
-    el('span', { class: 'bsky-tag', textContent: 'Trending videos · English' }));
+    el('span', { class: 'bsky-tag', textContent: 'Trending videos · English' }),
+    hideButton);
   const overlay = el('div', { class: 'bsky-overlay' },
     top,
     el('div', { class: 'bsky-bottom' },
@@ -1208,8 +1240,9 @@ function blueskyVideoPlayer(source, options) {
   const statusTitle = el('b', { class: 'live-status-title', textContent: 'Trending videos' });
   const statusText = el('p', { class: 'live-status-text', textContent: 'Loading videos…' });
   const retry = el('button', { type: 'button', class: 'live-retry', textContent: 'Try again', hidden: true });
-  const status = el('div', { class: 'live-status bsky-status' }, statusKicker, statusTitle, statusText, retry);
-  const box = el('div', { class: 'bsky-feed' }, video, overlay, status);
+  const clearHidden = el('button', { type: 'button', class: 'live-retry', textContent: 'Clear hidden filters', hidden: true });
+  const status = el('div', { class: 'live-status bsky-status' }, statusKicker, statusTitle, statusText, retry, clearHidden);
+  const box = el('div', { class: 'bsky-feed' }, video, overlay, hideMenu, status);
   const counter = el('span', { class: 'feed-count', textContent: '' });
   overlay.hidden = true;
   avatar.hidden = true;
@@ -1220,6 +1253,12 @@ function blueskyVideoPlayer(source, options) {
     statusTitle.textContent = title;
     statusText.textContent = message;
     retry.hidden = !canRetry;
+    clearHidden.hidden = true;
+  };
+  const showFilterEmpty = () => {
+    setStatus('Bluesky', 'No videos after filters. Try again.', true);
+    const hiddenNow = readBskyHidden();
+    clearHidden.hidden = !(hiddenNow.accounts.length || hiddenNow.words.length);
   };
 
   const cleanup = () => {
@@ -1231,6 +1270,77 @@ function blueskyVideoPlayer(source, options) {
     video.removeAttribute('src');
     video.load();
   };
+
+  const filterFeed = (items, hidden = readBskyHidden()) => items.filter((item) => !isPetVideo(item) && !bskyHiddenHit(item, hidden));
+
+  const openHideMenu = () => {
+    const item = videos[index];
+    if (!item) return;
+    const hidden = readBskyHidden();
+    const account = String(item.handle || '').toLocaleLowerCase();
+    const word = bskyWord(item);
+    const hide = (next, message) => {
+      hideMenu.hidden = true;
+      videos = filterFeed(feed, next);
+      if (!videos.length) {
+        showFilterEmpty();
+        return;
+      }
+      index = Math.min(index, videos.length - 1);
+      show(index);
+      toast(message, {
+        label: 'Undo',
+        run() {
+          if (stopped) return;
+          writeBskyHidden(hidden);
+          videos = filterFeed(feed, hidden);
+          if (!videos.length) { showFilterEmpty(); return; }
+          index = Math.min(index, videos.length - 1);
+          show(index);
+        },
+      });
+    };
+    const buttons = [
+      item.handle ? el('button', {
+        type: 'button',
+        on: { click() { writeBskyHidden({ ...hidden, accounts: [...new Set([...hidden.accounts, account])] }); hide(readBskyHidden(), `Hiding @${item.handle}`); } },
+      }, icon('person', 14), `Hide @${item.handle}`) : null,
+      word ? el('button', {
+        type: 'button',
+        on: { click() { writeBskyHidden({ ...hidden, words: [...new Set([...hidden.words, word.toLocaleLowerCase()])] }); hide(readBskyHidden(), `Hiding “${word}”`); } },
+      }, icon('close', 14), `Hide “${word}”`) : null,
+      hidden.accounts.length || hidden.words.length ? el('button', {
+        type: 'button', class: 'is-quiet',
+        on: {
+          click() {
+            writeBskyHidden({ accounts: [], words: [] });
+            hideMenu.hidden = true;
+            videos = filterFeed(feed, readBskyHidden());
+            if (!videos.length) { showFilterEmpty(); return; }
+            index = Math.min(index, videos.length - 1);
+            show(index);
+          },
+        },
+      }, 'Clear hidden filters') : null,
+    ].filter(Boolean);
+    hideMenu.replaceChildren(...buttons);
+    hideMenu.hidden = false;
+  };
+  hideButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (hideMenu.hidden) openHideMenu();
+    else hideMenu.hidden = true;
+  });
+  clearHidden.addEventListener('click', () => {
+    writeBskyHidden({ accounts: [], words: [] });
+    videos = filterFeed(feed, readBskyHidden());
+    if (!videos.length) {
+      setStatus('Bluesky', 'Only pet videos right now. Try again later.', true);
+      return;
+    }
+    index = 0;
+    show(0);
+  });
 
   const fill = (item) => {
     avatar.hidden = !item.avatar;
@@ -1247,6 +1357,7 @@ function blueskyVideoPlayer(source, options) {
     if (stopped || !videos.length) return;
     index = (at + videos.length) % videos.length;
     const item = videos[index];
+    hideMenu.hidden = true;
     cleanup();
     fill(item);
     setStatus('Bluesky', 'Loading video…');
@@ -1283,7 +1394,12 @@ function blueskyVideoPlayer(source, options) {
       const found = await loadBlueskyVideos();
       if (stopped) return;
       if (!found.length) throw new Error('No videos');
-      videos = found;
+      feed = found;
+      videos = filterFeed(feed);
+      if (!videos.length) {
+        showFilterEmpty();
+        return;
+      }
       show(0);
     } catch {
       if (!stopped) setStatus('Bluesky', 'Trending videos didn’t load. Try again.', true);

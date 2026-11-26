@@ -1296,6 +1296,16 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .bsky-mark { flex: none; width: 19px; height: 19px; border-radius: 5px; }
 .bsky-brand { color: #fff; font-size: 12.5px; font-weight: 700; text-shadow: 0 1px 4px rgba(0, 0, 0, .8); }
 .bsky-tag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 255, 255, .62); font-size: 10.5px; }
+.bsky-hide { flex: none; margin-left: auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0, 0, 0, .48); color: #fff; pointer-events: auto; backdrop-filter: blur(8px); }
+.bsky-hide:hover { background: rgba(0, 0, 0, .72); }
+.bsky-hide-menu { position: absolute; z-index: 4; top: 48px; right: 12px; width: min(230px, calc(100% - 24px)); display: flex; flex-direction: column; gap: 2px; padding: 5px; border: 1px solid #242427; border-radius: 12px; background: #000; box-shadow: 0 12px 30px rgba(0, 0, 0, .6); pointer-events: auto; }
+.bsky-hide-menu[hidden] { display: none; }
+.bsky-hide-menu button { min-height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 9px; border-radius: 8px; color: var(--text); font-size: 12.5px; font-weight: 600; text-align: left; }
+.bsky-hide-menu button:hover { background: rgba(255, 255, 255, .08); }
+.bsky-hide-menu button.is-quiet { color: var(--text-2); font-weight: 500; }
+body.is-phone .bsky-hide { width: 44px; height: 44px; }
+body.is-phone .bsky-hide-menu { top: 58px; }
+body.is-phone .bsky-hide-menu button { min-height: 44px; font-size: 13.5px; }
 .bsky-bottom { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .bsky-author { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .bsky-avatar { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255, 255, 255, .35); }

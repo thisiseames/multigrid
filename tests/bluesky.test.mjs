@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blueskyTopic, blueskyTopics, blueskyVideo, blueskyVideos } from '../src/bluesky.js';
+import { blueskyTopic, blueskyTopics, blueskyVideo, blueskyVideos, isPetVideo } from '../src/bluesky.js';
 
 const post = (overrides = {}) => ({
   uri: 'at://did:plc:example/app.bsky.feed.post/3kabc',
@@ -119,4 +119,11 @@ test('trends drop duplicates and stop at the five-topic limit', () => {
   ]);
   assert.deepEqual(blueskyTopics(data, 2).map((topic) => topic.name), ['The story', 'Second']);
   assert.deepEqual(blueskyTopics({ topics: [] }), []);
+});
+
+test('pet and cute posts are filtered out of the trending feed', () => {
+  assert.equal(isPetVideo({ text: 'My cat did this today', alt: '' }), true);
+  assert.equal(isPetVideo({ text: '', alt: 'A puppy playing in the snow' }), true);
+  assert.equal(isPetVideo({ text: 'Election results are in', alt: 'A map of the country' }), false);
+  assert.equal(isPetVideo({ text: 'Catalog update for the library', alt: '' }), false);
 });

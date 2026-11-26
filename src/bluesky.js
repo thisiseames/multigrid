@@ -21,6 +21,9 @@ const videoView = (embed) => {
   return null;
 };
 
+/** Pet/cute posts are frequent in What's Hot and not what this feed is for. */
+export const isPetVideo = (video) => /\b(cat|cats|kitten|kittens|kitty|dog|dogs|puppy|puppies|pet|pets|animal|animals|cute|meow|purr|doggo|paw|paws)\b/i.test(`${video?.text || ''} ${video?.alt || ''}`);
+
 /** One Bluesky post as a playable video, or null when it has none. */
 export function blueskyVideo(post) {
   const video = videoView(post?.embed);
