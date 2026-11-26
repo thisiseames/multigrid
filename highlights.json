@@ -1,5 +1,5 @@
 {
- "updated": 1795732885210,
+ "updated": 1795734458838,
  "games": {
   "401873077": {
    "league": "NFL",
@@ -65,6 +65,11 @@
      "id": "6mDrkExeNSY",
      "title": "Chicago Bears vs. Detroit Lions Game Highlights | 2026 NFL Season Week 12",
      "rank": 3.5
+    },
+    {
+     "id": "wzcOumJMY2g",
+     "title": "Chicago Bears Highlights vs. Detroit Lions | 2026 Regular Season Week 12",
+     "rank": 0.5
     }
    ]
   },
@@ -327,19 +332,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910030": {
-   "league": "NBA",
-   "title": "Heat 123–113 Thunder",
-   "start": 1795388400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "F8cvs98ZEJ4",
-     "title": "THUNDER at HEAT | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
     }
    ]
   },
@@ -1016,7 +1008,7 @@
    },
    {
     "id": "zhH68Wz781Y",
-    "title": "'I AM WORRIED!' Can Arsenal Go 9 Points CLEAR Of City?!",
+    "title": "'CITY ARE CHEATS! I'm Backing Arsenal!' Rivals DISCUSS Arsenal v Man City",
     "published": 1795713606000,
     "source": "DR Sports"
    },
@@ -1132,12 +1124,6 @@
     "id": "c6HQBUNGdjg",
     "title": "Bruno Fernandes delivers an honest assessment of Man Utd's controversial draw with Sporting 😤",
     "published": 1795645633000,
-    "source": "TNT Sports"
-   },
-   {
-    "id": "jCPoBE0ZRgM",
-    "title": "Huge Controversy in Lisbon! 😱  | Sporting CP 2-2 Man United | UEFA Champions League Highlights",
-    "published": 1795645284000,
     "source": "TNT Sports"
    },
    {
