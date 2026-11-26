@@ -1880,6 +1880,26 @@ body.is-phone #add-button.add-button { border-color: transparent; }
 .ch-empty { margin: 18px 2px; color: var(--text-2); font-size: 13px; }
 body.is-phone .ch-search { min-height: 44px; font-size: 16px; }
 body.is-phone .ch-cat { height: 32px; padding: 0 10px; font-size: 12px; }
+/* Find a show */
+.series-box { width: min(620px, calc(100vw - 16px)); }
+.show-source-tabs { margin-top: 10px; }
+.show-search { margin-top: 8px; }
+.show-results { max-height: 58dvh; }
+.show-row { align-items: flex-start; gap: 10px; padding: 10px 2px; }
+.show-row-art { flex: none; width: 46px; height: 69px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; background: #1f1f23; color: var(--text-2); }
+.show-row-art img { width: 100%; height: 100%; object-fit: cover; }
+.show-row .ch-text { gap: 3px; }
+.show-row .ch-text b { white-space: normal; line-height: 1.2; }
+.show-row .ch-text small { white-space: normal; line-height: 1.3; }
+.show-row-overview { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--text-2); }
+.show-row .ch-add { align-self: center; white-space: nowrap; }
+.show-empty { padding: 6px 2px 0; }
+.show-fallbacks { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.show-fallback { padding: 8px 2px; }
+.show-fallback-icon { flex: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--surface); color: var(--text-2); }
+body.is-phone .series-box { width: calc(100vw - 12px); max-height: calc(100dvh - 12px); }
+body.is-phone .show-results { max-height: 56dvh; }
+body.is-phone .show-row .ch-add { font-size: 11px; }
 /* PPV events and the Daddy Live link picker */
 .ppv-box { width: min(720px, calc(100vw - 16px)); }
 .ppv-sources { width: fit-content; margin-top: 10px; }

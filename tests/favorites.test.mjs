@@ -223,6 +223,23 @@ test('a tile title is kept with the workspace', () => {
   assert.equal(loadCurrent().tiles[0].title, 'A real video title');
 });
 
+test('a repaired tile keeps the favorite it came from, but a normal tile does not', () => {
+  const favorite = 'https://atlantic.bz/watch/153312/1/1';
+  const playing = 'https://www.1flex.org/play?id=153312&type=tv&season=4&episode=1&token=abc';
+  saveCurrent({
+    v: 1, presetId: 'equal', minSlots: 0, started: true, fit: true,
+    cols: [1], rows: [1],
+    tiles: [{ input: playing, muted: true, volume: 100, place: { c: 0, r: 0, cs: 1, rs: 1 }, favorite }],
+  });
+  assert.equal(loadCurrent().tiles[0].favorite, favorite);
+  saveCurrent({
+    v: 1, presetId: 'equal', minSlots: 0, started: true, fit: true,
+    cols: [1], rows: [1],
+    tiles: [{ input: playing, muted: true, volume: 100, place: { c: 0, r: 0, cs: 1, rs: 1 }, favorite: playing }],
+  });
+  assert.equal('favorite' in loadCurrent().tiles[0], false);
+});
+
 test("a series tile remembers the episode it moved on to, but only for its own link", () => {
   const series = 'https://atlantic.example/watch/247718/1/1';
   const ws = emptyWorkspace();

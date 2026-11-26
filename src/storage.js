@@ -62,6 +62,7 @@ function sanitize(raw) {
       primary: tile.primary === true && Boolean(tile.input),
       ...(tile.reels === true ? { reels: true } : {}),
       ...(typeof tile.title === 'string' && tile.title.trim() ? { title: tile.title.trim().slice(0, 300) } : {}),
+      ...(typeof tile.favorite === 'string' && tile.favorite.trim() && tile.favorite !== tile.input ? { favorite: tile.favorite.trim().slice(0, 4000) } : {}),
       ...(keptPage(tile) ? { page: keptPage(tile) } : {}),
       ...(liveEvent(cleanTileEvent(tile.event)) ? { event: liveEvent(cleanTileEvent(tile.event)) } : {}),
       ...(cleanSources(tile.sources).length ? { sources: cleanSources(tile.sources) } : {}),
@@ -128,7 +129,7 @@ function snapshot(ws, { keepEvent = true } = {}) {
     cols: ws.cols,
     rows: ws.rows,
     tiles: ws.tiles.map((tile) => {
-      const { input, muted, volume, place, primary, reels, title } = tile;
+      const { input, muted, volume, place, primary, reels, title, favorite } = tile;
       const page = keptPage(tile);
       const event = keepEvent ? liveEvent(cleanTileEvent(tile.event)) : null;
       const sources = cleanSources(tile.sources);
@@ -137,6 +138,7 @@ function snapshot(ws, { keepEvent = true } = {}) {
         ...(primary && input ? { primary: true } : {}),
         ...(reels === true ? { reels: true } : {}),
         ...(title ? { title } : {}),
+        ...(favorite && favorite !== input ? { favorite } : {}),
         ...(page ? { page } : {}),
         ...(event ? { event } : {}),
         ...(sources.length ? { sources } : {}),
