@@ -7445,6 +7445,7 @@ async function drawHome() {
       .filter((entry) => entry && typeof entry.title === 'string' && (entry.kind === 'film' || entry.kind === 'show'))
       .map((entry) => {
         const add = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind, favorites });
+        const trailer = /^[\w-]{11}$/.test(entry.trailer || '') ? entry.trailer : '';
         const item = {
           key: `p:${list.id}:${entry.rank}:${entry.title}`,
           label: list.name,
@@ -7456,8 +7457,9 @@ async function drawHome() {
           desc: entry.desc || '',
           meta: [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', list.source].filter(Boolean).join(' · '),
           cardMeta: [entry.year || '', list.source].filter(Boolean).join(' · '),
-          playLabel: add.label,
-          play: add.run,
+          playLabel: trailer ? 'Play trailer' : add.label,
+          add: trailer ? add : null,
+          play: trailer ? () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`) : add.run,
           art: () => el('span', { class: 'title-card' },
             el('span', { class: 'title-card-kind', textContent: list.source }),
             el('span', { class: 'title-card-name', textContent: entry.title })),

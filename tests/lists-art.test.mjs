@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addJustWatchArt, bestJustWatchMatch, rowKey } from '../tools/lists-art.mjs';
 
-const node = (title, year, kind = 'MOVIE', backdrop = '/backdrop/1/{profile}/x.{format}', desc = 'About it') => ({
+const node = (title, year, kind = 'MOVIE', backdrop = '/backdrop/1/{profile}/x.{format}', desc = 'About it', clips = []) => ({
   objectType: kind,
-  content: { title, originalReleaseYear: year, shortDescription: desc, backdrops: backdrop ? [{ backdropUrl: backdrop }] : [] },
+  content: { title, originalReleaseYear: year, shortDescription: desc, backdrops: backdrop ? [{ backdropUrl: backdrop }] : [], clips },
 });
 const answer = (...nodes) => ({ data: { searchTitles: { edges: nodes.map((n) => ({ node: n })) } } });
 
@@ -17,6 +17,7 @@ test('JustWatch art needs the same title, kind and year', () => {
     image: 'https://images.justwatch.com/backdrop/9/s1440/odyssey.jpg',
     desc: 'Nolan’s Odyssey',
     year: 2026,
+    trailer: '',
   });
   assert.equal(bestJustWatchMatch(answer(node('The Odyssey', 1997)), { title: 'The Odyssey', year: 2026, kind: 'film' }), null);
   assert.equal(bestJustWatchMatch(answer(node('The Odyssey', 2026, 'SHOW')), { title: 'The Odyssey', year: 2026, kind: 'film' }), null);
@@ -30,7 +31,7 @@ test('a title with no year still matches its exact name and kind', () => {
 test('ampersands and accents compare as words; a missing picture keeps the description', () => {
   assert.equal(bestJustWatchMatch(answer(node('& Sons', 2025)), { title: 'and Sons', year: 2025, kind: 'film' }).image, 'https://images.justwatch.com/backdrop/1/s1440/x.jpg');
   const noPicture = bestJustWatchMatch(answer(node('Sons', 2025, 'MOVIE', '', 'A drama')), { title: 'Sons', year: 2025, kind: 'film' });
-  assert.deepEqual(noPicture, { image: '', desc: 'A drama', year: 2025 });
+  assert.deepEqual(noPicture, { image: '', desc: 'A drama', year: 2025, trailer: '' });
 });
 
 test('RT rows accept the exact title when the list date is not the release year', () => {
@@ -40,7 +41,18 @@ test('RT rows accept the exact title when the list date is not the release year'
     image: 'https://images.justwatch.com/backdrop/3/s1440/slow-horses.jpg',
     desc: 'About it',
     year: 2022,
+    trailer: '',
   });
+});
+
+test('the first official trailer is kept, not a teaser or another site', () => {
+  const clips = [
+    { provider: 'YOUTUBE', externalId: 'zzz123YYY45', name: 'Official Teaser' },
+    { provider: 'YOUTUBE', externalId: 'abc123DEF45', name: 'Official Trailer' },
+    { provider: 'DAILYMOTION', externalId: 'abc123DEF45', name: 'Official Trailer' },
+  ];
+  const found = bestJustWatchMatch(answer(node('The Odyssey', 2026, 'MOVIE', '/backdrop/9/{profile}/odyssey.{format}', 'Nolan’s Odyssey', clips)), { title: 'The Odyssey', year: 2026, kind: 'film' });
+  assert.equal(found.trailer, 'abc123DEF45');
 });
 
 test('art already found is reused; missing art asks JustWatch once per title', async () => {

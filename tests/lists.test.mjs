@@ -120,6 +120,7 @@ test('lists.json carries every category with a title, a safe link and landscape 
       assert.match(entry.url, /^https:\/\/(?:www\.)?(?:imdb|rottentomatoes)\.com\//);
       assert.equal(entry.poster, undefined);
       if (entry.image) assert.match(entry.image, /^https:\/\/images\.justwatch\.com\//);
+      if (entry.trailer) assert.match(entry.trailer, /^[\w-]{11}$/);
       assert.ok(entry.kind === 'film' || entry.kind === 'show');
     }
   }

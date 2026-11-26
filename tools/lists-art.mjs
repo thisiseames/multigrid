@@ -10,6 +10,7 @@ export const JUSTWATCH_SEARCH = `query($country: Country!, $language: Language!,
       objectType
       content(country: $country, language: $language) {
         title originalReleaseYear shortDescription backdrops { backdropUrl }
+        clips(country: $country, language: $language) { sourceUrl externalId provider name }
       }
     } }
   }
@@ -33,6 +34,20 @@ const backdropOf = (content) => {
   return full.replace('{profile}', 's1440').replace('{format}', 'jpg');
 };
 
+/** The first official trailer or teaser on YouTube in JustWatch's clip list, or ''. */
+const trailerOf = (content) => {
+  const clips = Array.isArray(content?.clips) ? content.clips : [];
+  const rank = (name) => /official trailer/i.test(name) ? 0 : /\btrailer\b/i.test(name) ? 1 : /official teaser/i.test(name) ? 2 : /\bteaser\b/i.test(name) ? 3 : 9;
+  return clips.map((clip) => {
+    if (clip?.provider !== 'YOUTUBE') return null;
+    const id = /^[\w-]{11}$/.test(String(clip.externalId || ''))
+      ? String(clip.externalId)
+      : String(clip.sourceUrl || '').match(/[?&]v=([\w-]{11})/)?.[1] || '';
+    const name = String(clip.name || '');
+    return id && rank(name) < 9 ? { id, rank: rank(name) } : null;
+  }).filter(Boolean).sort((a, b) => a.rank - b.rank)[0]?.id || '';
+};
+
 /**
  * The one JustWatch result that is the same title and kind, or null. IMDb rows know the release
  * year, so they only accept a near year. RT's list date is often the article or streaming date,
@@ -54,6 +69,7 @@ export function bestJustWatchMatch(answer, entry, { strictYear = true } = {}) {
       year: Number(node.content?.originalReleaseYear) || 0,
       image: backdropOf(node.content),
       desc: String(node.content?.shortDescription || '').trim().slice(0, 400),
+      trailer: trailerOf(node.content),
     }))
     .filter((found) => found.title === wantedTitle)
     .filter((found) => !strictYear || !wantedYear || !found.year || Math.abs(found.year - wantedYear) <= 1);
@@ -67,7 +83,7 @@ export function bestJustWatchMatch(answer, entry, { strictYear = true } = {}) {
     return b.year - a.year;
   });
   const best = exact[0];
-  return { image: best.image, desc: best.desc, year: best.year };
+  return { image: best.image, desc: best.desc, year: best.year, trailer: best.trailer };
 }
 
 /** Ask JustWatch's public search for one title. */
@@ -86,7 +102,7 @@ export async function askJustWatch(entry, { fetchImpl = fetch } = {}) {
  * Every entry gains image/desc and the title's real year when JustWatch has it. `reuse` keeps a
  * previous picture (IMDb rows); RT rows ask again because their list year is not the release year.
  */
-export async function addJustWatchArt(entries, { previous = [], lookup = askJustWatch, reuse = true } = {}) {
+export async function addJustWatchArt(entries, { previous = [], lookup = askJustWatch, reuse = true, refresh = false } = {}) {
   const old = new Map(previous.map((entry) => [rowKey(entry), entry]));
   const cache = new Map();
   let asked = 0;
@@ -95,9 +111,9 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
   for (const entry of entries) {
     const key = rowKey(entry);
     if (!cache.has(key)) {
-      const kept = reuse ? old.get(key) : null;
+      const kept = reuse && !refresh ? old.get(key) : null;
       if (kept?.image) {
-        cache.set(key, { image: kept.image, desc: kept.desc || '', year: kept.year || 0 });
+        cache.set(key, { image: kept.image, desc: kept.desc || '', year: kept.year || 0, trailer: kept.trailer || '' });
       } else {
         try {
           const art = await lookup(entry);
@@ -116,6 +132,7 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
       ...(art.year ? { year: art.year } : {}),
       ...(art.image ? { image: art.image } : {}),
       ...(art.desc ? { desc: art.desc } : {}),
+      ...(art.trailer ? { trailer: art.trailer } : {}),
     });
   }
   return { entries: out, asked, found };

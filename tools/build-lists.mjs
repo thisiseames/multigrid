@@ -144,6 +144,7 @@ for (const source of SOURCES) {
     const art = await addJustWatchArt(entries, {
       previous: previous?.entries ?? [],
       reuse: !rt,
+      refresh: force,
       lookup: async (entry) => {
         await pause(300);
         return bestJustWatchMatch(await askJustWatch(entry), entry, { strictYear: !rt });
