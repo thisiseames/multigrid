@@ -1,5 +1,5 @@
 {
- "updated": 1795693800108,
+ "updated": 1795698505347,
  "window": {
   "name": "Summer 2026",
   "playlist": "4658365"
@@ -283,22 +283,6 @@
  ],
  "league": [
   {
-   "club": "Coventry City",
-   "player": "Oliver Dovin",
-   "direction": "out",
-   "kind": "Transfer",
-   "date": 1790352540000,
-   "link": "https://www.ccfc.co.uk/news/2026/september/25/oliver-dovin-returns-from-loan-due-to-injury/"
-  },
-  {
-   "club": "Leeds United",
-   "player": "Jean-Matteo Bahoya",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1788306540000,
-   "link": "https://www.leedsunited.com/en/news/jean-matteo-bahoya-becomes-our-final-summer-signing"
-  },
-  {
    "club": "Crystal Palace",
    "player": "Quinten Timber",
    "direction": "in",
@@ -315,20 +299,36 @@
    "link": "https://www.mancity.com/news/mens/enzo-fernandez-signs-for-city-63923893"
   },
   {
-   "club": "Arsenal",
-   "player": "Ethan Nwaneri",
+   "club": "Nottingham Forest",
+   "player": "Morato",
    "direction": "out",
    "kind": "Loan out",
-   "date": 1788286560000,
-   "link": "https://www.arsenal.com/news/ethan-nwaneri-joins-borussia-dortmund-on-loan-aQN7v3e8JvAT"
+   "date": 1788288000000,
+   "link": "https://www.nottinghamforest.co.uk/news/2026/september/01/morato-completes-loan-move-to-west-ham/"
   },
   {
    "club": "Liverpool",
-   "player": "Stefan Bajcetic",
+   "player": "Lucca Brughmans",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1788286440000,
+   "link": "https://www.liverpoolfc.com/news/liverpool-agree-deal-sign-goalkeeper-lucca-brughmans"
+  },
+  {
+   "club": "Ipswich",
+   "player": "Cameron Humphreys",
    "direction": "out",
-   "kind": "Sold",
-   "date": 1788201240000,
-   "link": "https://www.liverpoolfc.com/news/stefan-bajcetic-completes-permanent-transfer-celta-vigo"
+   "kind": "Loan out",
+   "date": 1788269580000,
+   "link": "https://www.itfc.co.uk/news/2026/september/01/NEW-DEAL-AND-LOAN-FOR-CAM/"
+  },
+  {
+   "club": "Everton",
+   "player": "Joel Catesby",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1788191940000,
+   "link": "https://www.evertonfc.com/news/2026/august/31/catesby-joins-accrington-stanley-on-loan/"
   },
   {
    "club": "Man Utd",
@@ -339,44 +339,28 @@
    "link": "https://www.manutd.com/en/news/carlos-baleba-joins-united"
   },
   {
-   "club": "Tottenham Hotspur",
-   "player": "Manor Solomon",
-   "direction": "out",
-   "kind": "Sold",
-   "date": 1786385220000,
-   "link": "https://www.tottenhamhotspur.com/news/1083585/manor-moves-to-west-ham?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Chelsea",
-   "player": "Genesis Antwi",
-   "direction": "out",
-   "kind": "Loan out",
-   "date": 1785781680000,
-   "link": "https://www.chelseafc.com/en/news/article/genesis-antwi-joins-strasbourg-on-loan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Ipswich",
-   "player": "Ali Al-Hamadi",
-   "direction": "out",
-   "kind": "Loan out",
-   "date": 1785411060000,
-   "link": "https://www.itfc.co.uk/news/2026/august/26/Ali-Al-Hamadi-joins-Sheffield-Wednesday-on-loan-from-Ipswich-Town/"
-  },
-  {
-   "club": "Brentford",
-   "player": "Jordan Henderson",
-   "direction": "out",
-   "kind": "Released",
-   "date": 1785330600000,
-   "link": "https://www.brentfordfc.com/en/news/article/first-team-jordan-henderson-leaves-brentford?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Hull City",
-   "player": "Konstantinos Tzolakis",
+   "club": "Coventry City",
+   "player": "Dan Bentley",
    "direction": "in",
    "kind": "Signed",
-   "date": 1784911740000,
-   "link": "https://www.wearehullcity.co.uk/news/2026/august/05/tzolakis-completes-hull-city-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1787139840000,
+   "link": "https://www.ccfc.co.uk/news/2026/august/21/dan-bentley-joins-coventry-city-from-wolverhampton-wanderers/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Aston Villa",
+   "player": "Zepiqueno Redmond",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1786527840000,
+   "link": "https://www.avfc.co.uk/news/2026/july/07/news-redmond-joins-annecy-on-loan/"
+  },
+  {
+   "club": "Sunderland",
+   "player": "Arthur Masuaku",
+   "direction": "out",
+   "kind": "Sold",
+   "date": 1786383060000,
+   "link": "https://www.safc.com/news/2026/august/10/masuaku-makes-turkish-move/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
    "club": "AFC Bournemouth",
@@ -387,60 +371,76 @@
    "link": "https://www.afcb.co.uk/news/2026/august/25/michele-di-gregorio-joins-afc-bournemouth-on-loan/"
   },
   {
-   "club": "Newcastle",
-   "player": "Ousmane Diabate",
+   "club": "Leeds United",
+   "player": "Pascal Struijk",
    "direction": "out",
-   "kind": "Loan out",
-   "date": 1783592580000,
-   "link": "https://www.newcastleunited.com/en/news/newcastle-united-sign-midfielder-ousmane-diabate"
+   "kind": "Sold",
+   "date": 1781545140000,
+   "link": "https://www.leedsunited.com/en/news/pascal-struijk-joins-brighton-and-hove-albion/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Everton",
-   "player": "Hayden Hackney",
-   "direction": "in",
-   "kind": "Signed",
-   "date": 1782484800000,
-   "link": "https://www.evertonfc.com/news/2026/july/02/everton-complete-hackney-deal/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
-  },
-  {
-   "club": "Sunderland",
-   "player": "Bertrand Traore",
+   "club": "Tottenham Hotspur",
+   "player": "Tynan Thompson",
    "direction": "out",
-   "kind": "Released",
+   "kind": "Sold",
    "date": 1781286060000,
-   "link": "https://www.safc.com/news/2026/june/10/sunderland-afc-announce-retained-list-for-2026-27/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "link": "https://www.tottenhamhotspur.com/news/1079069/united-switch-for-tynan?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Nottingham Forest",
-   "player": "Stefan Ortega",
+   "club": "Arsenal",
+   "player": "Josh Nichols",
    "direction": "out",
    "kind": "Released",
-   "date": 1781285520000,
-   "link": "https://www.nottinghamforest.co.uk/news/2026/june/10/nottingham-forest-confirms-retained-list/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1780586160000,
+   "link": "https://www.arsenal.com/news/contract-updates-15-players-depart-summer?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Fulham",
-   "player": "Gonzalo Garcia",
+   "club": "Chelsea",
+   "player": "Denner",
    "direction": "in",
    "kind": "Signed",
-   "date": 1780923060000,
-   "link": "https://www.fulhamfc.com/news/2026/august/03/fulham-sign-gonzalo/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1780483140000,
+   "link": "https://www.chelseafc.com/en/news/article/denner-signs-for-chelsea"
   },
   {
    "club": "Brighton & Hove Albion",
-   "player": "Solly March",
+   "player": "James Milner",
    "direction": "out",
    "kind": "Released",
-   "date": 1779910920000,
-   "link": "https://www.brightonandhovealbion.com/media-article/a-letter-to-albion-fans-from-solly-march?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "date": 1780396980000,
+   "link": "https://www.brightonandhovealbion.com/media-article/albion-pay-tribute-to-james-milner-after-retirement-announcement?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
   },
   {
-   "club": "Aston Villa",
-   "player": "Sil Swinkels",
+   "club": "Brentford",
+   "player": "Romelle Donovan",
    "direction": "out",
-   "kind": "Sold",
-   "date": 1769947380000,
-   "link": "https://www.avfc.co.uk/news/2026/july/02/news-swinkels-departs/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+   "kind": "Loan out",
+   "date": 1770732420000,
+   "link": "https://www.brentfordfc.com/en/news/article/first-team-romelle-donovan-sheffield-united-loan-transfer/?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Hull City",
+   "player": "Hugh Parker",
+   "direction": "out",
+   "kind": "Loan out",
+   "date": 1770732420000,
+   "link": "https://www.wearehullcity.co.uk/news/2026/august/14/parker-joins-scunthorpe-united-on-loan/"
+  },
+  {
+   "club": "Newcastle",
+   "player": "Emil Krafth",
+   "direction": "out",
+   "kind": "Released",
+   "date": 1766753460000,
+   "link": "https://www.newcastleunited.com/en/news/emil-krafth-to-depart-newcastle-united-this-summer?utm_source=premier-league&utm_medium=referral&utm_campaign=pl-referral&utm_term=transfer-watch"
+  },
+  {
+   "club": "Fulham",
+   "player": "Jonah Kusi-Asare",
+   "direction": "in",
+   "kind": "Signed",
+   "date": 1765887480000,
+   "link": "https://www.fulhamfc.com/news/2026/june/27/kusi-asare-signs-permanently/"
   }
  ],
  "spent": "",
