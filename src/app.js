@@ -2555,8 +2555,12 @@ function openPalette(options = {}) {
     const bar = document.querySelector('.topbar')?.getBoundingClientRect().bottom || 64;
     const top = Math.max(bar + 8, (view?.offsetTop || 0) + 8);
     const height = view?.height || window.innerHeight;
+    const available = `${Math.max(260, height - top - 8)}px`;
     box.style.marginTop = `${top}px`;
-    box.style.maxHeight = `${Math.max(260, height - top - 8)}px`;
+    // A max-height alone lets iOS collapse the flex dialog to a short scroll box; an explicit
+    // height makes it fill the space above the keyboard.
+    box.style.height = available;
+    box.style.maxHeight = available;
   };
   fitPalette();
   window.visualViewport?.addEventListener('resize', fitPalette);
@@ -2567,6 +2571,7 @@ function openPalette(options = {}) {
     window.visualViewport?.removeEventListener('resize', fitPalette);
     window.visualViewport?.removeEventListener('scroll', fitPalette);
     box.style.marginTop = '';
+    box.style.height = '';
     box.style.maxHeight = '';
   }, { once: true });
   // Fresh scores redraw the results once they arrive, while the box is open.
