@@ -54,7 +54,7 @@ import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import { atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
-import { searchTmdbSeries } from './series-search.js';
+import { searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   deleteFolder, loadCurrent, moveFavorite, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
@@ -6611,9 +6611,10 @@ function favoriteArt(item, source, highRes = false) {
       () => artPicture(art, `https://icons.duckduckgo.com/ip3/${domain}.ico`, quiet));
   };
   if (item.poster) {
-    // A favourite added from the PPV directory keeps the event's own picture.
+    // A favourite added from the PPV directory keeps the event's own picture. TMDB search
+    // gives a 94 px thumbnail; ask for a card-sized poster so the small-picture guard lets it in.
     art.className = 'fart is-picture';
-    artPicture(art, item.poster, quiet, true);
+    artPicture(art, tmdbPosterUrl(item.poster), quiet, true);
     return art;
   }
   if (item.logo) {

@@ -32,6 +32,18 @@ const yearOf = (value) => Number(String(value || '').match(/\b(19\d{2}|20\d{2})\
 const firstName = (slug) => plain(String(slug || '').replace(/-/g, ' '))
   .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
 
+const displayTitle = (value) => {
+  const text = plain(value);
+  return text && text === text.toLocaleLowerCase()
+    ? text.replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+    : text;
+};
+
+/** A TMDB poster at card size, not the 94 px search thumbnail. */
+export function tmdbPosterUrl(url) {
+  return String(url || '').replace(/\/t\/p\/(?:w94_and_h141_face|w154|w300)\//, '/t/p/w342/');
+}
+
 /** TV shows in a TMDB search page, in the order TMDB ranks them. */
 export function parseTmdbSeriesSearch(markdown) {
   const text = String(markdown || '');
@@ -68,7 +80,7 @@ export function parseTmdbSeriesSearch(markdown) {
     const image = block.match(/!\[(?:Image \d+:\s*)?([^\]]*)\]\(([^)]+)\)/);
     const heading = block.match(/##\s*\[([^\]]+)\]\(/);
     const slug = block.match(/\/tv\/\d+-([^)\s"']+)/)?.[1] || '';
-    const title = plain(entry.title || heading?.[1] || image?.[1] || firstName(slug));
+    const title = displayTitle(entry.title || heading?.[1] || image?.[1] || firstName(slug));
     if (!title) continue;
     // The movies section follows the last TV result; its story must not attach to that show.
     const content = block.split(/https:\/\/www\.themoviedb\.org\/movie\/\d+-/)[0];
@@ -83,7 +95,7 @@ export function parseTmdbSeriesSearch(markdown) {
       id: entry.id,
       title,
       year: Number(date?.[2] || date?.[1] || 0),
-      poster: entry.poster ? decode(entry.poster) : image?.[2] ? decode(image[2]) : '',
+      poster: tmdbPosterUrl(entry.poster ? decode(entry.poster) : image?.[2] ? decode(image[2]) : ''),
       overview: overview.slice(0, 320),
     });
     if (items.length >= 8) break;
