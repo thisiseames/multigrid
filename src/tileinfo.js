@@ -5,9 +5,10 @@
 const clockOf = (time) => new Date(time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?([AP])M/i, (_, half) => ` ${half.toLowerCase()}m`);
 
 // X-Ray has no TikTok data, and its hover card would sit over the profile's Back button.
-const NO_XRAY_KINDS = new Set(['tiktok', 'tiktokprofile', 'tiktoklive', 'youtubechannel']);
+// Bluesky videos use the whole tile for their own controls and hide menu, so the card covers them.
+const NO_XRAY_KINDS = new Set(['tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos', 'youtubechannel']);
 
-/** Whether a tile can open X-Ray at all. TikTok videos, profiles and lives cannot. */
+/** Whether a tile can open X-Ray at all. TikTok, Bluesky videos and channel pages cannot. */
 export function xrayAvailable(source) {
   return Boolean(source?.ok) && !NO_XRAY_KINDS.has(source.kind);
 }

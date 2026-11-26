@@ -52,8 +52,8 @@ test('a film page gets a card (it opens X-Ray on the laptop)', () => {
   assert.deepEqual(tileCard({ kind: 'page', name: 'Dune: Part Two (2024)', film: 'Film' }), { live: false, title: 'Dune: Part Two (2024)', lines: ['Film'], score: null });
 });
 
-test('TikTok videos, profiles and lives have no X-Ray', () => {
-  for (const kind of ['tiktok', 'tiktokprofile', 'tiktoklive']) {
+test('TikTok videos, profiles, lives and Bluesky video feeds have no X-Ray', () => {
+  for (const kind of ['tiktok', 'tiktokprofile', 'tiktoklive', 'blueskyvideos']) {
     assert.equal(xrayAvailable({ ok: true, kind }), false, kind);
   }
   assert.equal(xrayAvailable({ ok: true, kind: 'youtube' }), true);
