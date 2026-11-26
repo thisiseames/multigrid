@@ -1,5 +1,5 @@
 {
- "updated": 1795726633442,
+ "updated": 1795728190080,
  "games": {
   "401873069": {
    "league": "NFL",
@@ -20,29 +20,6 @@
     {
      "id": "qA0F_gDLGEY",
      "title": "Highlights: J.J. McCarthy's Best Plays vs. Jaguars | 2026 Regular Season Week 11 | New York Giants",
-     "rank": 2
-    }
-   ]
-  },
-  "401873074": {
-   "league": "NFL",
-   "title": "Chargers 24–27 Jets",
-   "start": 1795381500000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "6i1IqnSxcw4",
-     "title": "Chargers vs. Jets Full Game Highlights | 2026 Week 11",
-     "rank": 2.5
-    },
-    {
-     "id": "gvZYsXcr_6g",
-     "title": "New York Jets vs. Los Angeles Chargers Highlights | NFL 2026 Season Week 11",
-     "rank": 2
-    },
-    {
-     "id": "bS2Xa4HZYDw",
-     "title": "Harbaugh On Justin Herbert's Status & Jets Recap | LA Chargers",
      "rank": 2
     }
    ]
