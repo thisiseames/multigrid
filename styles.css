@@ -2874,6 +2874,10 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .chart-act { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .chart-act:hover { background: rgba(255, 255, 255, 0.14); }
 .chart-week { margin: 7px 4px 0; font-size: 11.5px; color: var(--text-2); }
+.home-charts .chart-box { max-width: 920px; margin: 0 48px; }
+.home-charts .chart-tabs { padding: 0 0 8px; }
+.home-charts .chart-week { margin: 7px 0 0; }
+body.is-phone .home-charts .chart-box { margin: 0 16px; }
 
 /* Today: flight deals */
 .flight-list { list-style: none; margin: 0; padding: 0; }

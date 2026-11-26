@@ -7317,7 +7317,7 @@ async function drawHome() {
   // rows already on screen until the new ones are ready.
   if (firstLoad) paint([phoneEdition]);
 
-  const [sections, , episodes, , , top, catalog, movieJob, showJob, picks, youtubeData] = await Promise.all([
+  const [sections, , episodes, , , top, catalog, movieJob, showJob, picks, youtubeData, chartsData] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -7329,6 +7329,7 @@ async function drawHome() {
     loadJob('shows.json'),
     loadPicks().catch(() => null),
     loadYouTubeTrending().catch(() => null),
+    loadJob('charts.json'),
   ]);
   if (asked !== homeAsked) return;
   // Matchday: today's game for your team, from the same schedules.
@@ -7519,6 +7520,11 @@ async function drawHome() {
   const youtubeSection = youtubeCategories.length ? youtubeRow(youtubeCategories) : null;
   const youtubeTop = (youtubeCategories.find((category) => category.id === 'all')?.entries
     ?? youtubeCategories[0]?.entries ?? []).slice(0, 3).map(youtubeCard);
+  const homeCharts = chartsView(chartsData);
+  const chartsSection = homeCharts
+    ? el('section', { class: 'home-row home-charts' },
+      el('h3', { class: 'home-title', textContent: 'Charts' }), homeCharts)
+    : null;
 
   const matchday = matchdayHome(now);
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
@@ -7545,7 +7551,7 @@ async function drawHome() {
     phase: matchday.phase,
     hold: matchday.hold,
   }).map((id) => (id === 'matchday' ? matchdayRow : rowElements.get(id))).filter(Boolean);
-  paint([phoneEdition, matchday.strip, ...finalRows, preview ? null : editHomeButton()], { quiet: !firstLoad });
+  paint([phoneEdition, matchday.strip, ...finalRows, preview ? null : chartsSection, preview ? null : editHomeButton()], { quiet: !firstLoad });
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it. The preview uses the edition's order even when
   // the owner has that part switched off, so the time-aware shape can be judged.
@@ -10973,6 +10979,7 @@ function chartRow(entry, chart, list) {
     video ? act('play', 'Watch here', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${video}`); }) : null,
     act('open', 'Spotify', () => openLink(`https://open.spotify.com/search/${encodeURIComponent(query)}`)),
     act('open', 'Amazon Music', () => openLink(`https://music.amazon.com/search/${encodeURIComponent(query)}`)),
+    act('open', 'Apple Music', () => openLink(`https://music.apple.com/ca/search?term=${encodeURIComponent(query)}`)),
     video ? null : act('open', 'YouTube', () => openLink(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`)));
   const main = el('button', {
     type: 'button',
@@ -11630,13 +11637,12 @@ async function fillToday() {
   const body = menu.querySelector('.matches-body');
   if (!body.firstChild) body.replaceChildren(el('div', { class: 'matches-loading' }, ...Array.from({ length: 5 }, () => el('span', { class: 'skeleton' }))));
   const now = Date.now();
-  const [teams, , episodes, news, movies, charts, shows, poly, tube, flights] = await Promise.all([
+  const [teams, , episodes, news, movies, shows, poly, tube, flights] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
     loadIndex(true).catch(() => null),
     loadMovies(),
-    loadJob('charts.json'),
     loadJob('shows.json'),
     loadPolymarkets().catch(() => []),
     newYouTubeUploads().catch(() => []),
@@ -11773,8 +11779,7 @@ async function fillToday() {
   const teamSection = todaySection('Your teams', teamList);
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
-  const chartsSection = todaySection('Charts', chartsView(charts));
-  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
+  const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
     liveHolder,
@@ -11794,7 +11799,6 @@ async function fillToday() {
     moviesSection.section,
     episodesSection.section,
     premieresSection.section,
-    chartsSection,
   ].filter(Boolean);
 
   redrawTodayView = () => {
