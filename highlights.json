@@ -1,5 +1,5 @@
 {
- "updated": 1795662471530,
+ "updated": 1795664028904,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -539,6 +539,49 @@
    "league": "NBA",
    "title": "Knicks 121–102 Cavaliers",
    "start": 1795653000000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "ijXNLi63Xxw",
+     "title": "CAVALIERS at KNICKS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401909320": {
+   "league": "NBA",
+   "title": "Thunder 106–113 Timberwolves",
+   "start": 1795653000000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401909321": {
+   "league": "NBA",
+   "title": "Grizzlies 115–97 Clippers",
+   "start": 1795654800000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "jSJSKu6OZZ8",
+     "title": "Jaylen Wells Highlights vs. LA Clippers",
+     "rank": 1
+    },
+    {
+     "id": "MX14M4zVmoA",
+     "title": "Memphis Grizzlies Highlights vs LA Clippers",
+     "rank": 1
+    },
+    {
+     "id": "Rzi9nk1QVqE",
+     "title": "Ty Jerome Highlights vs LA Clippers",
+     "rank": 1
+    }
+   ]
+  },
+  "401909322": {
+   "league": "NBA",
+   "title": "Bucks 97–104 Nets",
+   "start": 1795654800000,
    "sources": "feeds",
    "videos": []
   },
