@@ -10,8 +10,8 @@ kept **Try again** and **Back to profile**, and Back still returned to the profi
 **Visual polish (live, commits 9685794 and 92f75c1):** Back to profile sits below the TikTok
 logo/profile name instead of on top of it, with a 35% opaque background (52% on hover).
 
-**Video count (deploy pending):** profiles now show every video TikTok's account embed lists
-(ten, instead of stopping at six) and fetch their likes/comments.
+**Video count (live, commit 2661c02):** profiles now show every video TikTok's account embed
+lists (ten, instead of stopping at six) and fetch their likes/comments.
 
 ## Running cost
 
