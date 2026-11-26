@@ -1,0 +1,42 @@
+# Refreshes lists.json once a day: IMDb's MOVIEmeter, Hidden Gems, Most Popular and Popular on
+# Streaming, and Rotten Tomatoes' Certified Fresh, Verified Hot, Best Movies, Best TV and Most
+# Popular TV. Public pages only; no key or backend. A list that fails keeps its last good copy.
+name: lists
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build-lists.mjs'
+      - 'tools/lists-rows.mjs'
+      - '.github/workflows/lists.yml'
+  schedule:
+    - cron: '23 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lists
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --omit=dev
+      - run: node tools/build-lists.mjs
+      - name: Save the lists
+        run: |
+          git config user.name "multigrid-lists"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lists.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update IMDb and Rotten Tomatoes lists"
+          for attempt in 1 2 3; do git pull --rebase && git push && break; sleep 5; done

@@ -87,11 +87,16 @@ export function parseCast(answer, max = 18) {
 }
 
 /** A person by name (from TVmaze's cast): the actor of that name best known on Wikipedia. */
-export function personByNameQuery(name) {
+const PERSON_ROLES = 'wdt:P161|wdt:P57|wdt:P58|wdt:P162|wdt:P170';
+
+export function personByNameQuery(name, { search = false } = {}) {
+  // Search covers directors, writers, producers and creators, not just cast members.
+  const roles = search ? PERSON_ROLES : 'wdt:P161';
   return `SELECT ?p ?links WHERE {
-  ?p rdfs:label ${quote(name)}@en; wdt:P31 wd:Q5.
+  { ?p rdfs:label ${quote(name)}@en. } UNION { ?p rdfs:label ${quote(name)}@mul. }
+  ?p wdt:P31 wd:Q5.
   ?p wikibase:sitelinks ?links.
-  FILTER EXISTS { ?work wdt:P161 ?p. }
+  FILTER EXISTS { ?work ${roles} ?p. }
 } ORDER BY DESC(?links) LIMIT 1`;
 }
 
@@ -113,9 +118,10 @@ export function personInfoQuery(item) {
  * Every film and show a person is in that has a TMDB number (so Atlantic can play it), one row
  * each. Grouped in the query: asking for labels row by row took 19 s for a busy actor; this ~1 s.
  */
-export function personWorksQuery(item) {
+export function personWorksQuery(item, { search = false } = {}) {
+  const roles = search ? PERSON_ROLES : 'wdt:P161';
   return `SELECT ?work (SAMPLE(?en) AS ?workLabel) (SAMPLE(?ml) AS ?mulLabel) (MIN(?d) AS ?date) (SAMPLE(?m) AS ?tmdbm) (SAMPLE(?t) AS ?tmdbtv) (SAMPLE(?i) AS ?imdb) (MAX(?n) AS ?links) (MAX(?a) AS ?above) (SAMPLE(?wart) AS ?article) WHERE {
-  ?work wdt:P161 wd:${item}.
+  ?work ${roles} wd:${item}.
   OPTIONAL { ?work wdt:P4947 ?m. }
   OPTIONAL { ?work wdt:P4983 ?t. }
   FILTER(BOUND(?m) || BOUND(?t))

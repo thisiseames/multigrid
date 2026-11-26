@@ -48,6 +48,17 @@ test('a person from a cast name', () => {
   assert.equal(parsePersonId({ results: { bindings: [] } }), '');
 });
 
+test('People search finds directors and creators, and labels stored in mul', () => {
+  const search = personByNameQuery('Christopher Nolan', { search: true });
+  assert.match(search, /@en/);
+  assert.match(search, /@mul/);
+  assert.match(search, /wdt:P57/);
+  assert.match(search, /wdt:P170/);
+  assert.doesNotMatch(personByNameQuery('Zendaya'), /wdt:P57/);
+  assert.match(personWorksQuery('Q25191', { search: true }), /wdt:P161\|wdt:P57/);
+  assert.doesNotMatch(personWorksQuery('Q25191'), /wdt:P161\|wdt:P57/);
+});
+
 test('a person: who they are and every title Atlantic can play, best known first', () => {
   assert.match(personInfoQuery('Q189489'), /wd:Q189489/);
   assert.match(personWorksQuery('Q189489'), /GROUP BY \?work/);

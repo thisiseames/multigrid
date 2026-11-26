@@ -54,6 +54,7 @@ import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import { atlanticMovieUrl, atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
+import { searchTmdbPeople } from './people-search.js';
 import { bestTmdbMatch, favoriteTitle, searchTmdbTitles, tmdbPosterUrl } from './series-search.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
@@ -1721,12 +1722,222 @@ function homeAddAction({ title, year = 0, kind = '', favorites = listFavorites()
   };
 }
 
+let personSearchBox = null;
+
+/** A person's existing X-Ray profile in its own sheet, with no stream required to search. */
+async function openPersonProfile(person) {
+  if (!personSearchBox) {
+    personSearchBox = el('dialog', { id: 'person-box', class: 'dialog tidy-box xray-box person-box', aria: { label: 'Person' } });
+    personSearchBox.addEventListener('click', (event) => { if (event.target === personSearchBox) personSearchBox.close(); });
+    document.body.append(personSearchBox);
+  }
+  const box = personSearchBox;
+  const head = el('div', { class: 'xr-head' },
+    el('span', { class: 'xr-title', textContent: 'Person' }),
+    iconButton('close', 'Close', () => box.close()));
+  const body = el('div', { class: 'xr-body' }, el('p', { class: 'xr-loading', textContent: 'Loading…' }));
+  box.replaceChildren(head, body);
+  openDialog(box);
+  // Playing a Known for title adds the tile; the person sheet has done its job.
+  body.addEventListener('click', (event) => { if (event.target.closest?.('.xr-titlecard')) box.close(); });
+  const parts = await xrayPerson(null, { name: person.name, photo: person.photo, department: person.department, search: true });
+  if (!box.open) return;
+  body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${person.name} yet.` })]));
+}
+
+let listsBox = null;
+let listsLoad = null;
+let listsTab = '';
+
+/** lists.json, written once a day by the Lists job; retried next time if it is missing. */
+async function loadLists() {
+  if (listsLoad) return listsLoad;
+  listsLoad = fetch('lists.json', { cache: 'no-cache' })
+    .then((answer) => (answer.ok ? answer.json() : null))
+    .catch(() => null);
+  const data = await listsLoad;
+  if (!data) listsLoad = null;
+  return data;
+}
+
+function listsCard(list, entry, box) {
+  const action = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind });
+  const picture = el('span', { class: 'list-poster' });
+  const fallback = el('span', { class: 'list-poster-fallback' }, icon(entry.kind === 'film' ? 'film' : 'guide', 24));
+  const rank = el('span', { class: 'list-rank', textContent: String(entry.rank) });
+  picture.append(fallback);
+  if (entry.poster) {
+    const image = el('img', { src: entry.poster, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
+    image.addEventListener('error', () => image.remove(), { once: true });
+    picture.append(image);
+  }
+  picture.append(rank);
+  return el('article', { class: 'list-card' },
+    el('button', {
+      type: 'button', class: 'list-picture', title: `Open ${entry.title} on ${list.source}`,
+      on: { click: () => openLink(entry.url) },
+    }, picture),
+    el('div', { class: 'list-card-text' },
+      el('b', { textContent: entry.title }),
+      el('small', { textContent: [entry.year || '', list.source].filter(Boolean).join(' · ') })),
+    el('button', {
+      type: 'button', class: 'list-add', title: `${action.label} ${entry.title}`,
+      on: { click() { box.close(); action.run(); } },
+    }, action.label));
+}
+
+/** One sheet with every IMDb and Rotten Tomatoes list, one chip each. */
+async function openLists() {
+  if (!listsBox) {
+    listsBox = el('dialog', { id: 'lists-box', class: 'dialog channel-box lists-box', aria: { label: 'Lists' } });
+    listsBox.addEventListener('click', (event) => { if (event.target === listsBox) listsBox.close(); });
+    document.body.append(listsBox);
+  }
+  const box = listsBox;
+  const body = el('div', { class: 'lists-body' }, el('p', { class: 'ch-empty', textContent: 'Loading lists…' }));
+  box.replaceChildren(
+    el('div', { class: 'ch-head' }, el('h2', { textContent: 'Lists' }), iconButton('close', 'Close', () => box.close())),
+    body);
+  openDialog(box);
+  const data = await loadLists();
+  if (!box.open) return;
+  const lists = (Array.isArray(data?.lists) ? data.lists : [])
+    .filter((list) => list && typeof list.name === 'string' && Array.isArray(list.entries) && list.entries.length);
+  if (!lists.length) {
+    body.replaceChildren(
+      el('p', { class: 'ch-empty', textContent: 'No lists yet. The daily job writes them; try again shortly.' }),
+      el('button', { type: 'button', class: 'list-retry plain-button', textContent: 'Try again', on: { click() { listsLoad = null; openLists(); } } }));
+    return;
+  }
+  let at = lists.findIndex((list) => list.id === listsTab);
+  if (at < 0) at = 0;
+  const when = Number(data.updated) ? ` · updated ${ago(Number(data.updated) * 1000)}` : '';
+  const note = el('p', { class: 'ch-note lists-note' });
+  const grid = el('div', { class: 'lists-grid' });
+  const chips = el('div', { class: 'lists-chips', role: 'tablist', aria: { label: 'IMDb and Rotten Tomatoes lists' } });
+  const draw = () => {
+    const list = lists[at];
+    for (const [index, chip] of [...chips.children].entries()) {
+      const on = index === at;
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-selected', String(on));
+    }
+    note.textContent = `${list.source} · ${list.entries.length} titles${when}`;
+    grid.replaceChildren(...list.entries.map((entry) => listsCard(list, entry, box)));
+  };
+  lists.forEach((list, index) => chips.append(el('button', {
+    type: 'button', role: 'tab', class: 'lists-chip', aria: { selected: String(index === at) },
+    textContent: list.name, title: `${list.source} · ${list.name}`,
+    on: {
+      click(event) {
+        at = index;
+        listsTab = list.id;
+        for (const other of chips.children) {
+          const on = other === event.currentTarget;
+          other.classList.toggle('is-on', on);
+          other.setAttribute('aria-selected', String(on));
+        }
+        draw();
+      },
+    },
+  })));
+  draw();
+  body.replaceChildren(chips, note, grid);
+}
+
+let tvCalendarBox = null;
+
+/** The exact episode URL in the favourite's own source, when season and episode are known. */
+function episodeInputFor(item, episode) {
+  if (!episode?.season || !episode?.number) return item.input;
+  const series = seriesLink(item.input);
+  if (series) {
+    if (series.source === 'flex') return flexUrl(series.tmdb, episode.season, episode.number) || item.input;
+    if (series.source === 'cinejoy') return cinejoyUrl(series.tmdb, episode.season, episode.number) || item.input;
+    return atlanticUrl(series.tmdb, episode.season, episode.number) || item.input;
+  }
+  const atlantic = atlanticTitle(item.input);
+  if (atlantic?.kind === 'show') return atlanticUrl(atlantic.tmdb, episode.season, episode.number) || item.input;
+  return item.input;
+}
+
+/** A week of new episodes from the Series favourites. */
+async function openTvCalendar() {
+  if (!tvCalendarBox) {
+    tvCalendarBox = el('dialog', { id: 'tvcal-box', class: 'dialog channel-box tvcal-box', aria: { label: 'TV calendar' } });
+    tvCalendarBox.addEventListener('click', (event) => { if (event.target === tvCalendarBox) tvCalendarBox.close(); });
+    document.body.append(tvCalendarBox);
+  }
+  const box = tvCalendarBox;
+  const body = el('div', { class: 'tvcal-body' }, el('p', { class: 'ch-empty', textContent: 'Loading your series…' }));
+  box.replaceChildren(
+    el('div', { class: 'ch-head' }, el('h2', { textContent: 'TV calendar' }), iconButton('close', 'Close', () => box.close())),
+    body);
+  openDialog(box);
+  const entries = await episodesForFavorites();
+  if (!box.open) return;
+  const now = Date.now();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const week = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(start);
+    day.setDate(day.getDate() + index);
+    return {
+      key: dayKey(day.getTime()),
+      at: day.getTime(),
+      label: index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
+    };
+  });
+  const byDay = new Map(week.map((day) => [day.key, []]));
+  for (const entry of entries) {
+    const found = [entry.info.next, entry.info.last]
+      .filter((episode) => episode && byDay.has(dayKey(episode.at)));
+    for (const episode of found) {
+      const list = byDay.get(dayKey(episode.at));
+      if (list) list.push({ item: entry.item, episode, aired: episode.at <= now });
+    }
+  }
+  const groups = week.map((day) => ({ ...day, items: byDay.get(day.key).sort((a, b) => a.episode.at - b.episode.at) })).filter((day) => day.items.length);
+  if (!groups.length) {
+    body.replaceChildren(el('p', { class: 'ch-empty', textContent: entries.length ? 'No new episodes for your series this week.' : 'No Series favourites yet.' }));
+    return;
+  }
+  body.replaceChildren(
+    el('p', { class: 'ch-note tvcal-note', textContent: 'Your Series favourites · next 7 days' }),
+    ...groups.map((day) => el('section', { class: 'tvcal-day' },
+      el('h3', { textContent: day.label }),
+      el('div', { class: 'tvcal-grid' }, ...day.items.map(({ item, episode, aired }) => {
+        const art = el('span', { class: 'tvcal-art' });
+        if (episode.image) art.append(el('img', { src: episode.image, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' }));
+        else art.append(icon('guide', 20));
+        return el('button', {
+          type: 'button', class: `tvcal-card${aired ? ' is-aired' : ' is-future'}`, title: `${item.name} · ${episodeCode(episode)}`,
+          on: { click() {
+            box.close();
+            if (aired) {
+              const url = episodeInputFor(item, episode);
+              addStream(url, { mode: 'add' }, item.name, url);
+            } else {
+              const id = addStream(item.input, { mode: 'add' }, item.name, item.input);
+              if (id) openXRay(id);
+            }
+          } },
+        },
+        art,
+        el('b', { textContent: item.name }),
+        el('small', { textContent: [episodeCode(episode), episode.name].filter(Boolean).join(' · ') }),
+        el('small', { class: 'tvcal-when', textContent: `${clock(episode.at)}${aired ? ' · Aired' : ''}` }));
+      })))),
+  );
+}
+
 /** Find a film, show or both by name, then add the chosen result. */
 function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
-  const media = kind === 'film' ? 'film' : kind === 'any' ? 'any' : 'show';
-  const heading = media === 'film' ? 'Find a movie' : media === 'any' ? 'Find a title' : 'Find a show';
-  const sourceOptions = media === 'show' ? ['atlantic', 'flex'] : ['atlantic'];
-  let source = sourceOptions[0];
+  const personMode = kind === 'person';
+  const media = personMode ? 'person' : kind === 'film' ? 'film' : kind === 'any' ? 'any' : 'show';
+  const heading = personMode ? 'Find a person' : media === 'film' ? 'Find a movie' : media === 'any' ? 'Find a title' : 'Find a show';
+  const sourceOptions = personMode ? [] : media === 'show' ? ['atlantic', 'flex'] : ['atlantic'];
+  let source = sourceOptions[0] || 'atlantic';
   let box = document.getElementById('series-box');
   if (!box) {
     box = el('dialog', { id: 'series-box', class: 'dialog channel-box series-box', aria: { label: 'Find a show' } });
@@ -1739,22 +1950,24 @@ function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
   let timer = 0;
   const input = el('input', {
     type: 'search', class: 'ch-search show-search', autocomplete: 'off', spellcheck: 'false',
-    placeholder: media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name',
-    aria: { label: media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name' },
+    placeholder: personMode ? 'Search actors, directors & creators' : media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name',
+    aria: { label: personMode ? 'Search actors, directors and creators' : media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name' },
   });
   const chips = el('div', { class: 'ch-tabs show-source-tabs' });
   const results = el('div', { class: 'ch-results show-results' });
   const note = el('p', {
     class: 'ch-note',
-    textContent: media === 'film'
-      ? 'Results from TMDB. Add to Movies on Atlantic.'
-      : media === 'any'
-        ? 'Results from TMDB. Add to Series or Movies on Atlantic.'
-        : 'Results from TMDB. Add to Series on Atlantic or 1Flex; Cinejoy is the laptop Fix stream fallback.',
+    textContent: personMode
+      ? 'Results from TMDB. Open a person to see what they are known for and play their titles.'
+      : media === 'film'
+        ? 'Results from TMDB. Add to Movies on Atlantic.'
+        : media === 'any'
+          ? 'Results from TMDB. Add to Series or Movies on Atlantic.'
+          : 'Results from TMDB. Add to Series on Atlantic or 1Flex; Cinejoy is the laptop Fix stream fallback.',
   });
   const label = () => SERIES_SOURCE_LABELS[source];
   const drawChips = () => {
-    chips.hidden = sourceOptions.length < 2;
+    chips.hidden = personMode || sourceOptions.length < 2;
     chips.replaceChildren(...sourceOptions.map((value) => el('button', {
       type: 'button',
       class: `ch-tab${source === value ? ' is-on' : ''}`,
@@ -1780,6 +1993,23 @@ function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
     addTitleFavorite(item, { source: chosen });
   };
   const row = (item) => {
+    if (personMode) {
+      const art = el('span', { class: 'show-row-art is-face' }, icon('person', 18));
+      if (item.photo) {
+        const image = el('img', { src: item.photo, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+        image.addEventListener('error', () => image.remove(), { once: true });
+        art.append(image);
+      }
+      return el('button', {
+        type: 'button', class: 'ch-row show-row', title: `Open ${item.name}`,
+        on: { click: () => { box.close(); openPersonProfile(item); } },
+      },
+      art,
+      el('span', { class: 'ch-text' },
+        el('b', { textContent: item.name }),
+        el('small', { textContent: [item.department, item.knownFor].filter(Boolean).join(' · ') })),
+      el('span', { class: 'ch-add', textContent: 'View' }));
+    }
     const itemKind = item.kind === 'film' ? 'film' : 'show';
     const art = el('span', { class: 'show-row-art' }, icon(itemKind === 'film' ? 'film' : 'tv', 18));
     if (item.poster) {
@@ -1799,7 +2029,9 @@ function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
       item.overview ? el('small', { class: 'show-row-overview', textContent: item.overview }) : null),
     el('span', { class: 'ch-add', textContent: addLabel }));
   };
-  const empty = (text, fallback = '') => el('div', { class: 'show-empty' },
+  const empty = (text, fallback = '') => personMode
+    ? el('p', { class: 'ch-empty', textContent: text })
+    : el('div', { class: 'show-empty' },
     el('p', { class: 'ch-empty', textContent: text }),
     fallback ? el('div', { class: 'show-fallbacks' },
       el('button', { type: 'button', class: 'ch-row show-fallback', on: { click: () => searchSite('atlantic', fallback) } },
@@ -1821,17 +2053,17 @@ function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
     }
     const token = ++asked;
     results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching…' }));
-    const answer = await searchTmdbTitles(text, media);
+    const answer = personMode ? await searchTmdbPeople(text) : await searchTmdbTitles(text, media);
     if (token !== asked || !box.open) return;
     items = answer.items;
     if (items.length) {
       paint();
       return;
     }
+    const noun = personMode ? 'people' : media === 'film' ? 'films' : media === 'any' ? 'titles' : 'shows';
     results.replaceChildren(empty(
-      answer.failed ? 'The search could not answer. Try again, or use one of these:'
-        : media === 'film' ? `No films found for “${text}”.` : media === 'any' ? `No titles found for “${text}”.` : `No shows found for “${text}”.`,
-      text,
+      answer.failed ? 'The search could not answer. Try again.' : `No ${noun} found for “${text}”.`,
+      personMode ? '' : text,
     ));
   };
   input.addEventListener('input', () => {
@@ -1857,7 +2089,7 @@ function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
   items = [];
   results.replaceChildren(el('p', {
     class: 'ch-empty',
-    textContent: query ? 'Searching…' : media === 'film' ? 'Type a film name.' : media === 'any' ? 'Type a film or show name.' : 'Type a show name.',
+    textContent: query ? 'Searching…' : personMode ? 'Type an actor, director or creator.' : media === 'film' ? 'Type a film name.' : media === 'any' ? 'Type a film or show name.' : 'Type a show name.',
   }));
   openDialog(box);
   input.focus();
@@ -1980,6 +2212,9 @@ function openPalette(options = {}) {
     { label: 'Add stream', sub: 'Paste a link, iframe or X account', icon: 'plus', run: () => openSourceDialog({ mode: 'add' }) },
     { label: 'Find a live channel', sub: 'Free channel directory', icon: 'search', run: () => openChannelFinder() },
     { label: 'Find a show', sub: 'Add a series from Atlantic or 1Flex', icon: 'play', run: () => openSeriesSearch() },
+    { label: 'Find a person', sub: 'Actors, directors and creators', icon: 'person', run: () => openSeriesSearch({ kind: 'person' }) },
+    { label: 'TV calendar', sub: 'Your series, next 7 days', icon: 'calendar', run: () => openTvCalendar() },
+    { label: 'Lists', sub: 'IMDb and Rotten Tomatoes picks', icon: 'crown', run: () => openLists() },
     { label: 'Browse PPV events', sub: 'Live and upcoming', icon: 'calendar', run: () => openPPV({ mode: 'add' }) },
     { label: 'Mute all', sub: 'Silence every stream', icon: 'muted', run: () => muteAll() },
     { label: 'Fullscreen', sub: 'Hide the bars', icon: 'expand', run: () => $('fullscreen-button').click() },
@@ -3883,8 +4118,11 @@ function closePerson() {
 
 /** A person's page: who they are, what they're known for, and everything else they're in. */
 async function xrayPerson(tile, who) {
-  const id = who.id || await filmsCached(`pid:${who.name}`, () => askWikidata(personByNameQuery(who.name)).then((answer) => (answer ? parsePersonId(answer) || null : null)));
-  const person = id ? await filmsCached(`person:${id}`, () => Promise.all([askWikidata(personInfoQuery(id)), askWikidata(personWorksQuery(id))]).then(([info, works]) => (info && works ? parsePerson(info, works, id) : null))) : null;
+  // A person opened from search may be a director, writer or creator, so look beyond cast credits.
+  const search = Boolean(who.search);
+  const suffix = search ? ':search' : '';
+  const id = who.id || await filmsCached(`pid:${who.name}${suffix}`, () => askWikidata(personByNameQuery(who.name, { search })).then((answer) => (answer ? parsePersonId(answer) || null : null)));
+  const person = id ? await filmsCached(`person:${id}${suffix}`, () => Promise.all([askWikidata(personInfoQuery(id)), askWikidata(personWorksQuery(id, { search }))]).then(([info, works]) => (info && works ? parsePerson(info, works, id) : null))) : null;
   if (!person) return [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${who.name} yet.` })];
   // Their Wikipedia intro names the roles they're known for.
   const intro = person.wiki ? await filmsCached(`intro:${person.wiki}`, () => wikiJson(wikiIntroUrl(person.wiki)).then((answer) => (answer ? parseIntro(answer) || null : null))) : '';
@@ -3895,7 +4133,7 @@ async function xrayPerson(tile, who) {
   const parts = [el('div', { class: 'xr-hero xr-who' },
     photo ? el('img', { class: 'xr-portrait', src: photo, alt: '', referrerPolicy: 'no-referrer', on: { error(event) { event.currentTarget.remove(); } } }) : null,
     el('div', { class: 'xr-hero-text' },
-      el('span', { class: 'xr-kicker', textContent: who.character ? `Plays ${who.character}` : 'Cast' }),
+      el('span', { class: 'xr-kicker', textContent: who.character ? `Plays ${who.character}` : who.department || (who.search ? 'Person' : 'Cast') }),
       el('b', { class: 'xr-name', textContent: person.name || who.name }),
       person.about ? el('small', { textContent: person.about.replace(/^./, (letter) => letter.toUpperCase()) }) : null,
       person.wiki ? el('a', { class: 'xr-more', href: `https://en.wikipedia.org/wiki/${person.wiki}`, target: '_blank', rel: 'noopener noreferrer', textContent: 'Wikipedia' }) : null))];
@@ -11423,6 +11661,7 @@ async function fillToday() {
 
   const moviesSection = dateSection();
   const episodesSection = dateSection();
+  const calendarLink = el('button', { type: 'button', class: 'text-button today-calendar', textContent: 'Calendar', on: { click: () => openTvCalendar() } });
   const premieresSection = dateSection();
   const premiereAll = premieresOf(shows);
 
@@ -11446,6 +11685,7 @@ async function fillToday() {
         .sort((a, b) => (a.info.next?.at || a.info.last?.at || 0) - (b.info.next?.at || b.info.last?.at || 0))
         .map((entry) => episodeTodayRow(entry, now)).filter(Boolean);
     episodesSection.heading.textContent = week ? 'New episodes this week' : 'New episodes today';
+    episodesSection.heading.append(' ', calendarLink);
     episodesSection.list.hidden = !episodeItems.length;
     episodesSection.list.replaceChildren(...episodeItems);
     episodesSection.empty.hidden = true;
@@ -11514,6 +11754,10 @@ async function fillToday() {
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
+  if (chartsSection) {
+    const listsLink = el('button', { type: 'button', class: 'text-button today-calendar', textContent: 'Lists', title: 'IMDb and Rotten Tomatoes lists', on: { click: () => openLists() } });
+    chartsSection.querySelector('h4')?.append(' ', listsLink);
+  }
   const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
@@ -11664,10 +11908,12 @@ function buildToday() {
     if (todayView === 'week') weekLine(line, weather);
   };
   todayChrome = { title, date, line, hoursBox, weekBox, weather: null, drawWeather };
+  const calendarButton = iconButton('calendar', 'TV calendar', () => openTvCalendar());
+  calendarButton.classList.add('today-calendar-button');
   // The markets ticker runs along the bottom, above "Updated", like a TV ticker.
   const markets = el('div', { class: 'mk-bar', hidden: true });
   menu.replaceChildren(
-    el('div', { class: 'today-head' }, title, date, line),
+    el('div', { class: 'today-head' }, title, date, line, calendarButton),
     todayViewBar(),
     hoursBox,
     weekBox,

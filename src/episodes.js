@@ -35,8 +35,8 @@ export function episodeFor(name) {
       const last = show._embedded?.previousepisode;
       const found = {
         show: show.name || name,
-        next: stamp(next) ? { at: stamp(next), season: next.season ?? null, number: next.number ?? null, name: next.name || '' } : null,
-        last: stamp(last) ? { at: stamp(last), season: last.season ?? null, number: last.number ?? null, name: last.name || '' } : null,
+        next: stamp(next) ? { at: stamp(next), season: next.season ?? null, number: next.number ?? null, name: next.name || '', image: next.image?.medium || next.image?.original || '' } : null,
+        last: stamp(last) ? { at: stamp(last), season: last.season ?? null, number: last.number ?? null, name: last.name || '', image: last.image?.medium || last.image?.original || '' } : null,
         checked: Date.now(),
       };
       try {
