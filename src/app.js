@@ -6797,14 +6797,16 @@ async function drawHome() {
   });
 
   // Draw the frame at once; the rest fills in as it arrives.
-  const paint = (rows) => {
+  const paint = (rows, { quiet = false } = {}) => {
     if (asked !== homeAsked) return;
     const keep = home.querySelector('.home-hero');
     const hero = keep ?? el('div', { class: 'home-hero' }, el('div', { class: 'hero-layers' }), el('div', { class: 'hero-shade' }), el('div', { class: 'hero-info' }));
-    home.replaceChildren(hero, el('div', { class: 'home-rows' }, ...rows.filter(Boolean)));
+    home.replaceChildren(hero, el('div', { class: `home-rows${quiet ? ' is-quiet' : ''}` }, ...rows.filter(Boolean)));
     // Nothing to show yet (a new device): the wordmark stays in the middle instead of leaving a blank screen.
     $('stage').classList.toggle('has-home', rows.some(Boolean));
   };
+  // Only a fresh home gets the loading row; a periodic redraw must not flash a skeleton over real rows.
+  const firstLoad = !home.querySelector('.home-rows');
   const layout = loadHomeLayout();
   const phoneEdition = onPhoneScreen() ? el('div', { class: 'home-edition-phone' },
     el('button', {
@@ -6814,7 +6816,7 @@ async function drawHome() {
       on: { click: () => setDaypartHome(!daypartPreview) },
     }, icon('today', 15), el('span', { textContent: daypartPreview ? 'Edition · On' : 'Edition · Off' }))) : null;
   // No provisional banner or real row: a neutral skeleton holds the space until the final order.
-  paint([phoneEdition, homeSkeleton()]);
+  if (firstLoad) paint([phoneEdition, homeSkeleton()]);
 
   const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
@@ -6995,7 +6997,7 @@ async function drawHome() {
     phase: matchday.phase,
     hold: matchday.hold,
   }).map((id) => (id === 'matchday' ? matchdayRow : rowElements.get(id))).filter(Boolean);
-  paint([phoneEdition, matchday.strip, ...finalRows, preview ? null : editHomeButton()]);
+  paint([phoneEdition, matchday.strip, ...finalRows, preview ? null : editHomeButton()], { quiet: !firstLoad });
   // The billboard cycles through what matters most right now. On match day the game leads it, and
   // from the build-up until full time it holds it. The preview uses the edition's order even when
   // the owner has that part switched off, so the time-aware shape can be judged.
