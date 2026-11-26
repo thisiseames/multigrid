@@ -83,3 +83,11 @@ existing players.
 - Nov 26: Plan written and approved.
 - Nov 26: Built the module, switch, panel, CSS and tests. Laptop 1440 and phone 390 (including the .maximized iPhone path) checked. 473 tests pass.
 - Nov 26: Live at multigrid.club in 2232e9c. Laptop and phone verified: TSN1 tab and panel, switch to TSN2 stays open, switch off removes it, phone panel full width with 44 px controls.
+
+## Extension: one-tile wall (Nov 26, approved)
+
+- **Trigger:** exactly one visible stream on a laptop, and it is a TV channel with guide listings. The same GUIDE tab appears without entering full-screen.
+- **Phone:** unchanged; a 16:9 tile is too short for the panel, so the phone keeps the full-screen/maximized version.
+- **Back arrow:** hidden in the one-tile case because there is no full-screen to leave; X, the dimmed video and Escape close the panel. The strip's fullscreen button still works when the panel is closed.
+- **Everything else:** same panel, switch, in-place channel change and unavailable cases. If a second tile appears, the tab disappears.
+- **Verify:** one-tile TSN1 at 1440 (tab, panel, strip fade, no back arrow), two tiles (no tab), full-screen (back arrow returns), switch off, and phone (no one-tile tab).

@@ -610,14 +610,25 @@ class TileView {
     return fullscreen.element() === this.root || this.root.classList.contains('maximized');
   }
 
-  /** Shows the GUIDE tab only in a full-screen TV channel with listings and the switch on. */
+  /** One visible stream on a laptop: the wall is already the channel, no full-screen needed. */
+  get soloChannel() {
+    if (this.grid.isStacked || !this.grid.ws) return false;
+    const streams = visualOrder(this.grid.ws).filter(isStream);
+    return streams.length === 1 && streams[0] === this.tile;
+  }
+
+  get channelSurface() {
+    return this.channelActive || this.soloChannel;
+  }
+
+  /** Shows the GUIDE tab on a full-screen TV channel, or the one stream on the wall. */
   syncChannelOverlay() {
-    const data = this.channelActive && !isPoppedOut(this) && this.source?.ok
+    const data = this.channelSurface && !isPoppedOut(this) && this.source?.ok
       ? this.grid.handlers.channelOverlay?.(this.id) ?? null
       : null;
     if (!data) {
       this.channelOpen = false;
-      this.channel?.classList.remove('is-open');
+      this.channel?.classList.remove('is-open', 'is-solo');
       if (this.channel) this.channel.hidden = true;
       this.root.classList.remove('is-channel-open');
       this.channelPanel?.setAttribute('aria-hidden', 'true');
@@ -626,9 +637,10 @@ class TileView {
     this.channelData = data;
     this.buildChannelOverlay();
     this.channel.hidden = false;
+    this.channel.classList.toggle('is-solo', !this.channelActive && this.soloChannel);
     this.channelTab.querySelector('.channel-tab-live').hidden = !data.live;
     this.channelTab.tabIndex = this.channelOpen ? -1 : 0;
-    this.channelBack.tabIndex = this.channelOpen ? 0 : -1;
+    this.channelBack.tabIndex = this.channelOpen && this.channelActive ? 0 : -1;
     if (this.channelOpen) {
       this.renderChannelPanel(data);
       this.channel.classList.add('is-open');
@@ -695,10 +707,11 @@ class TileView {
     this.channelOpen = true;
     this.renderChannelPanel(this.channelData);
     this.channel.classList.add('is-open');
+    this.channel.classList.toggle('is-solo', !this.channelActive && this.soloChannel);
     this.channelPanel.setAttribute('aria-hidden', 'false');
     this.channelTab.setAttribute('aria-expanded', 'true');
     this.channelTab.tabIndex = -1;
-    this.channelBack.tabIndex = 0;
+    this.channelBack.tabIndex = this.channelActive ? 0 : -1;
     this.root.classList.add('is-channel-open');
     this.channelPanel.focus({ preventScroll: true });
   }
@@ -712,7 +725,7 @@ class TileView {
     if (this.channelTab) this.channelTab.tabIndex = 0;
     if (this.channelBack) this.channelBack.tabIndex = -1;
     this.root.classList.remove('is-channel-open');
-    if (this.channelActive) this.channelTab?.focus({ preventScroll: true });
+    if (this.channelSurface) this.channelTab?.focus({ preventScroll: true });
   }
 
   renderChannelPanel(data) {

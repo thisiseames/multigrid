@@ -4249,6 +4249,7 @@ body.is-phone .tile-info { display: none; }
 .channel-back:hover { background: rgba(0, 0, 0, .82); }
 .channel-back svg { width: 22px; height: 22px; }
 .channel-overlay.is-open .channel-back { opacity: 1; pointer-events: auto; }
+.channel-overlay.is-solo .channel-back { display: none; }
 body.is-phone .channel-panel { width: 100%; padding: max(14px, env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); }
 body.is-phone .channel-panel-head { padding-left: 56px; }
 body.is-phone .channel-icon { width: 44px; height: 44px; }
