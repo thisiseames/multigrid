@@ -7,8 +7,8 @@ the same tile; Back to profile returns; the tile count stays the same; TikTok vi
 X-Ray hover card and no X-Ray row in the stream sheet. Locally, a forced TikTok player error
 kept **Try again** and **Back to profile**, and Back still returned to the profile.
 
-**Visual polish (commit 9685794, lighter background follow-up):** Back to profile sits below the
-TikTok logo/profile name instead of on top of it, with a 35% opaque background (52% on hover).
+**Visual polish (live, commits 9685794 and 92f75c1):** Back to profile sits below the TikTok
+logo/profile name instead of on top of it, with a 35% opaque background (52% on hover).
 
 ## Running cost
 
