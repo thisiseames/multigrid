@@ -2025,7 +2025,11 @@ function openPalette(options = {}) {
       }));
     }
     const repairItems = [];
-    const canCinejoy = !document.body.classList.contains('is-phone') && /Chrome\//.test(navigator.userAgent);
+    // MULTIGRID Sound already lifts frame blocking for the current tab; without it, Cinejoy
+    // would only show a refusal, so the row stays hidden.
+    const canCinejoy = !document.body.classList.contains('is-phone')
+      && /Chrome\//.test(navigator.userAgent)
+      && document.documentElement.dataset.multigridSound === '1';
     if (repair) {
       const tile = tileById(repair.id);
       if (!tile) { box.close(); return; }
@@ -2052,7 +2056,7 @@ function openPalette(options = {}) {
             repairItems.push({
               group: 'This series',
               label: 'Cinejoy',
-              sub: `Watch ${episode} · Chrome + Helper`,
+              sub: `Watch ${episode} · Laptop Chrome`,
               icon: 'play',
               run: () => switchTo(cinejoyUrl(series.tmdb, series.season, series.episode), 'Cinejoy'),
             });
