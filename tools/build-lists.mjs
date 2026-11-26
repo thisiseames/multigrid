@@ -140,9 +140,14 @@ for (const source of SOURCES) {
     let entries = (await source.read()).slice(0, 20);
     if (entries.length < 10) throw new Error(`only ${entries.length} titles`);
     // Landscape art for the Home rows, from JustWatch. Old art is reused; a miss stays a text card.
+    const rt = source.id.startsWith('rt-');
     const art = await addJustWatchArt(entries, {
       previous: previous?.entries ?? [],
-      lookup: async (entry) => { await pause(300); return bestJustWatchMatch(await askJustWatch(entry), entry); },
+      reuse: !rt,
+      lookup: async (entry) => {
+        await pause(300);
+        return bestJustWatchMatch(await askJustWatch(entry), entry, { strictYear: !rt });
+      },
     });
     // The Home rows use landscape art only; portrait posters stay out of the shared file.
     entries = art.entries.map(({ poster, ...entry }) => entry);

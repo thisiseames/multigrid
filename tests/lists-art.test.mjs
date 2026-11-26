@@ -16,6 +16,7 @@ test('JustWatch art needs the same title, kind and year', () => {
   assert.deepEqual(found, {
     image: 'https://images.justwatch.com/backdrop/9/s1440/odyssey.jpg',
     desc: 'Nolan’s Odyssey',
+    year: 2026,
   });
   assert.equal(bestJustWatchMatch(answer(node('The Odyssey', 1997)), { title: 'The Odyssey', year: 2026, kind: 'film' }), null);
   assert.equal(bestJustWatchMatch(answer(node('The Odyssey', 2026, 'SHOW')), { title: 'The Odyssey', year: 2026, kind: 'film' }), null);
@@ -29,7 +30,17 @@ test('a title with no year still matches its exact name and kind', () => {
 test('ampersands and accents compare as words; a missing picture keeps the description', () => {
   assert.equal(bestJustWatchMatch(answer(node('& Sons', 2025)), { title: 'and Sons', year: 2025, kind: 'film' }).image, 'https://images.justwatch.com/backdrop/1/s1440/x.jpg');
   const noPicture = bestJustWatchMatch(answer(node('Sons', 2025, 'MOVIE', '', 'A drama')), { title: 'Sons', year: 2025, kind: 'film' });
-  assert.deepEqual(noPicture, { image: '', desc: 'A drama' });
+  assert.deepEqual(noPicture, { image: '', desc: 'A drama', year: 2025 });
+});
+
+test('RT rows accept the exact title when the list date is not the release year', () => {
+  const show = node('Slow Horses', 2022, 'SHOW', '/backdrop/3/{profile}/slow-horses.{format}');
+  assert.equal(bestJustWatchMatch(answer(show), { title: 'Slow Horses', year: 2026, kind: 'show' }), null);
+  assert.deepEqual(bestJustWatchMatch(answer(show), { title: 'Slow Horses', year: 2026, kind: 'show' }, { strictYear: false }), {
+    image: 'https://images.justwatch.com/backdrop/3/s1440/slow-horses.jpg',
+    desc: 'About it',
+    year: 2022,
+  });
 });
 
 test('art already found is reused; missing art asks JustWatch once per title', async () => {

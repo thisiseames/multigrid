@@ -33,8 +33,12 @@ const backdropOf = (content) => {
   return full.replace('{profile}', 's1440').replace('{format}', 'jpg');
 };
 
-/** The one JustWatch result that is the same title, kind and (when known) year, or null. */
-export function bestJustWatchMatch(answer, entry) {
+/**
+ * The one JustWatch result that is the same title and kind, or null. IMDb rows know the release
+ * year, so they only accept a near year. RT's list date is often the article or streaming date,
+ * not the title's year, so those rows accept the closest exact-title match and keep its real year.
+ */
+export function bestJustWatchMatch(answer, entry, { strictYear = true } = {}) {
   const edges = answer?.data?.searchTitles?.edges;
   if (!Array.isArray(edges)) return null;
   const wantedTitle = keyOfTitle(entry?.title);
@@ -52,17 +56,18 @@ export function bestJustWatchMatch(answer, entry) {
       desc: String(node.content?.shortDescription || '').trim().slice(0, 400),
     }))
     .filter((found) => found.title === wantedTitle)
-    .filter((found) => !wantedYear || !found.year || Math.abs(found.year - wantedYear) <= 1);
+    .filter((found) => !strictYear || !wantedYear || !found.year || Math.abs(found.year - wantedYear) <= 1);
   if (!exact.length) return null;
   exact.sort((a, b) => {
     const exactYear = Number(Boolean(b.year && b.year === wantedYear)) - Number(Boolean(a.year && a.year === wantedYear));
     if (exactYear) return exactYear;
     const picture = Number(Boolean(b.image)) - Number(Boolean(a.image));
     if (picture) return picture;
+    if (wantedYear) return Math.abs(a.year - wantedYear) - Math.abs(b.year - wantedYear) || b.year - a.year;
     return b.year - a.year;
   });
   const best = exact[0];
-  return best.image ? { image: best.image, desc: best.desc } : { image: '', desc: best.desc };
+  return { image: best.image, desc: best.desc, year: best.year };
 }
 
 /** Ask JustWatch's public search for one title. */
@@ -77,8 +82,11 @@ export async function askJustWatch(entry, { fetchImpl = fetch } = {}) {
   return response.json();
 }
 
-/** Every entry gains image/desc when JustWatch has the exact title; old art is reused. */
-export async function addJustWatchArt(entries, { previous = [], lookup = askJustWatch } = {}) {
+/**
+ * Every entry gains image/desc and the title's real year when JustWatch has it. `reuse` keeps a
+ * previous picture (IMDb rows); RT rows ask again because their list year is not the release year.
+ */
+export async function addJustWatchArt(entries, { previous = [], lookup = askJustWatch, reuse = true } = {}) {
   const old = new Map(previous.map((entry) => [rowKey(entry), entry]));
   const cache = new Map();
   let asked = 0;
@@ -87,9 +95,9 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
   for (const entry of entries) {
     const key = rowKey(entry);
     if (!cache.has(key)) {
-      const kept = old.get(key);
+      const kept = reuse ? old.get(key) : null;
       if (kept?.image) {
-        cache.set(key, { image: kept.image, desc: kept.desc || '' });
+        cache.set(key, { image: kept.image, desc: kept.desc || '', year: kept.year || 0 });
       } else {
         try {
           const art = await lookup(entry);
@@ -103,7 +111,12 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
       }
     }
     const art = cache.get(key);
-    out.push({ ...entry, ...(art.image ? { image: art.image } : {}), ...(art.desc ? { desc: art.desc } : {}) });
+    out.push({
+      ...entry,
+      ...(art.year ? { year: art.year } : {}),
+      ...(art.image ? { image: art.image } : {}),
+      ...(art.desc ? { desc: art.desc } : {}),
+    });
   }
   return { entries: out, asked, found };
 }
