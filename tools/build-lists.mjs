@@ -1,4 +1,4 @@
-// Makes lists.json: nine IMDb and Rotten Tomatoes lists, shown together in one Lists sheet.
+// Makes lists.json: the nine IMDb and Rotten Tomatoes rows on the Home screen.
 //   · IMDb's MOVIEmeter and TVMeter charts, Col Needham's Hidden Gems, and the Nielsen
 //     Streaming TV Top 100, read through r.jina.ai (IMDb answers direct requests with a challenge).
 //   · Rotten Tomatoes' Certified Fresh and Verified Hot browse pages, its two "Best of the year"

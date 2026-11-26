@@ -3,6 +3,20 @@
 
 const KEY = 'multigrid.homelayout.v1';
 
+/** The IMDb and Rotten Tomatoes discovery rows, which start directly under Trending in Canada. */
+const PICK_ROWS = [
+  { id: 'imdb-moviemeter', title: 'IMDb MOVIEmeter' },
+  { id: 'imdb-hidden-gems', title: 'IMDb Hidden Gems' },
+  { id: 'imdb-most-popular', title: 'IMDb Most Popular TV' },
+  { id: 'imdb-streaming', title: 'IMDb Popular on Streaming' },
+  { id: 'rt-certified', title: 'RT Certified Fresh' },
+  { id: 'rt-verified-hot', title: 'RT Verified Hot' },
+  { id: 'rt-best-movies', title: 'RT Best Movies 2026' },
+  { id: 'rt-best-tv', title: 'RT Best TV 2026' },
+  { id: 'rt-popular-tv', title: 'RT Most Popular TV' },
+];
+export const PICK_ROW_IDS = PICK_ROWS.map((row) => row.id);
+
 /** Every row the owner can move or hide, in the standard order. */
 export const HOME_ROWS = [
   { id: 'continue', title: 'Continue watching' },
@@ -13,6 +27,7 @@ export const HOME_ROWS = [
   { id: 'ten', title: 'The Multigrid Ten' },
   { id: 'netflix', title: 'Top 10 on Netflix · Canada' },
   { id: 'trending', title: 'Trending in Canada' },
+  ...PICK_ROWS,
   { id: 'trailers', title: 'Trending trailers' },
 ];
 
@@ -20,22 +35,22 @@ export const HOME_ROWS = [
 export const DAYPARTS = [
   {
     id: 'morning', label: 'Morning edition', from: 5, to: 11,
-    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'recent'],
+    rows: ['continue', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'recent'],
     hero: ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'],
   },
   {
     id: 'afternoon', label: 'Afternoon edition', from: 11, to: 17,
-    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', 'trailers', 'recent'],
+    rows: ['teams', 'onnow', 'continue', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'recent'],
     hero: ['teamsLive', 'onnow', 'continue', 'fresh', 'teamsPost', 'ten', 'netflix', 'trending'],
   },
   {
     id: 'prime', label: 'Prime time', from: 17, to: 23,
-    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'continue', 'recent'],
+    rows: ['teams', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'fresh', 'continue', 'recent'],
     hero: ['teamsLive', 'onnow', 'ten', 'netflix', 'trending', 'fresh', 'continue', 'teamsPost'],
   },
   {
     id: 'late', label: 'After hours', from: 23, to: 5,
-    rows: ['continue', 'ten', 'netflix', 'trending', 'trailers', 'fresh', 'onnow', 'teams', 'recent'],
+    rows: ['continue', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers', 'fresh', 'onnow', 'teams', 'recent'],
     hero: ['continue', 'ten', 'netflix', 'trending', 'fresh', 'onnow', 'teamsLive', 'teamsPost'],
   },
 ];
@@ -76,6 +91,14 @@ export function homeLayout(saved) {
   const order = (Array.isArray(saved?.order) ? saved.order : []).filter((id, at, list) => known.has(id) && list.indexOf(id) === at);
   for (const row of HOME_ROWS) {
     if (order.includes(row.id)) continue;
+    // New discovery rows go directly under Trending, in their standard order.
+    if (PICK_ROW_IDS.includes(row.id)) {
+      const last = PICK_ROW_IDS.map((id) => order.indexOf(id)).filter((at) => at >= 0).pop();
+      const after = last >= 0 ? last : order.indexOf('trending');
+      if (after >= 0) order.splice(after + 1, 0, row.id);
+      else order.push(row.id);
+      continue;
+    }
     // The Multigrid Ten slots into the discovery group, after On now, in older saved layouts.
     const after = row.id === 'ten' ? order.indexOf('onnow') : -1;
     if (after >= 0) order.splice(after + 1, 0, row.id);

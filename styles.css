@@ -1902,7 +1902,8 @@ body.is-phone .series-box { width: calc(100vw - 12px); max-height: calc(100dvh -
 body.is-phone .show-results { max-height: 56dvh; }
 body.is-phone .show-row .ch-add { font-size: 11px; }
 /* TV calendar */
-.today-calendar { margin-left: 6px; padding: 0; color: var(--accent); font-size: 10px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.today-calendar { margin-left: 6px; padding: 0; color: #f5f5f7; font-size: 10px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.today-calendar:hover { color: #fff; }
 .tvcal-box { width: min(900px, calc(100vw - 16px)); }
 .tvcal-body { max-height: min(72dvh, 720px); overflow-y: auto; padding: 0 16px 16px; }
 .tvcal-note { margin: 0 0 2px; }
@@ -1913,7 +1914,7 @@ body.is-phone .show-row .ch-add { font-size: 11px; }
 .tvcal-art img { width: 100%; height: 100%; object-fit: cover; }
 .tvcal-card b { font-size: 12.5px; font-weight: 650; line-height: 1.25; color: var(--text); }
 .tvcal-card small { font-size: 11px; line-height: 1.3; color: var(--text-2); }
-.tvcal-card .tvcal-when { color: var(--accent); }
+.tvcal-card .tvcal-when { color: #f5f5f7; }
 .tvcal-card.is-future { opacity: .82; }
 .tvcal-card:hover b { color: #fff; }
 body.is-phone .tvcal-box { width: calc(100vw - 12px); }
@@ -3193,6 +3194,9 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hero-buttons .hero-play { margin-top: 0; }
 .hero-more { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px 0 16px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .16); color: #fff; font: 700 15px/1 var(--font); cursor: pointer; backdrop-filter: blur(8px); }
 .hero-more:hover { background: rgba(255, 255, 255, .26); }
+.hero-poster { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0b0b0d; }
+.hero-poster-bg { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); object-fit: cover; filter: blur(30px) brightness(.45); transform: scale(1.08); }
+.hero-poster-face { position: relative; height: 88%; width: auto; max-width: 34%; object-fit: contain; border-radius: 6px; box-shadow: 0 18px 50px rgba(0, 0, 0, .65); }
 
 .home-rows { position: relative; z-index: 1; margin-top: -110px; padding-bottom: 48px; }
 .home-edition-phone { padding: 0 16px 12px; }
@@ -3250,6 +3254,13 @@ body.is-phone .hcard-art { border-radius: 8px; }
 body.is-phone .hcard-text b { font-size: 13px; }
 body.is-phone .hcard-text small { font-size: 11.5px; }
 body.is-phone .hcard-rank { left: 7px; font-size: 38px; }
+
+/* IMDb and RT rows carry portrait posters, not the wide backdrops the other rows use. */
+.home-row.is-posters .hcard { width: clamp(132px, 11vw, 180px); }
+.home-row.is-posters .hcard-art { aspect-ratio: 2 / 3; }
+.home-row.is-posters .hcard-rank { left: 8px; bottom: 4px; font-size: 42px; }
+body.is-phone .home-row.is-posters .hcard { width: min(31vw, 150px); }
+body.is-phone .home-row.is-posters .hcard-rank { font-size: 34px; }
 body.is-phone .home-edit { padding-bottom: 24px; }
 
 /* A game: the two teams' colours, crests large. */
@@ -4374,37 +4385,6 @@ body.is-phone .roombar { display: none; }
 .xr-similar-text .score { margin-top: 2px; }
 .xr-similar-open { flex: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--text-2); }
 
-/* Lists: every IMDb and Rotten Tomatoes list in one sheet. */
-.lists-box { width: min(920px, calc(100vw - 16px)); }
-.lists-body { max-height: min(76dvh, 760px); overflow-y: auto; padding: 0 16px 16px; }
-.lists-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.lists-chip { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 550; white-space: nowrap; }
-.lists-chip:hover { color: var(--text); }
-.lists-chip.is-on { background: var(--accent); color: var(--accent-ink); }
-.lists-note { margin: 9px 0 0; }
-.lists-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px 12px; margin-top: 12px; }
-.list-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.list-picture { position: relative; display: block; width: 100%; aspect-ratio: 2 / 3; padding: 0; overflow: hidden; border-radius: 9px; background: #1c1c1f; color: var(--text-2); }
-.list-poster { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.list-poster img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
-.list-poster-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
-.list-rank { position: absolute; z-index: 2; left: 6px; top: 6px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
-.list-card-text { display: flex; flex-direction: column; gap: 2px; min-height: 38px; }
-.list-card-text b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px; font-weight: 650; line-height: 1.25; color: var(--text); }
-.list-card-text small { font-size: 10.5px; line-height: 1.3; color: var(--text-2); }
-.list-add { align-self: flex-start; height: 26px; padding: 0 10px; border-radius: 999px; background: rgba(255, 255, 255, .08); color: var(--accent); font-size: 11px; font-weight: 700; white-space: nowrap; }
-.list-add:hover { background: rgba(255, 255, 255, .15); }
-.list-retry { margin-top: 8px; }
-@media (max-width: 980px) { .lists-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 700px) {
-  .lists-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 9px; }
-  .lists-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-  .lists-chips::-webkit-scrollbar { display: none; }
-}
-body.is-phone .lists-box { width: calc(100vw - 12px); max-height: calc(100dvh - 12px); }
-body.is-phone .lists-body { max-height: 72dvh; padding: 0 12px 12px; }
-body.is-phone .lists-chip { height: 34px; padding: 0 13px; font-size: 13px; }
-body.is-phone .list-add { height: 30px; padding: 0 11px; font-size: 12px; }
 .today-calendar-button { align-self: center; margin-left: auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--surface); color: var(--text-2); }
 .today-calendar-button:hover { background: var(--raised); color: var(--text); }
 body.is-phone .today-calendar-button { width: 40px; height: 40px; }

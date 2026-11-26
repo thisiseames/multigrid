@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { imdbChartRows, imdbListRows, imdbStreamingRows, rtBrowseRows, rtEditorialRows } from '../tools/lists-rows.mjs';
+import { PICK_ROW_IDS } from '../src/homelayout.js';
 
 const chart = `# Most popular movies
 
@@ -110,6 +111,8 @@ test('a page with no matching rows gives an empty list', () => {
 test('lists.json carries every category with a title, a safe link and a poster', () => {
   const data = JSON.parse(readFileSync(new URL('../lists.json', import.meta.url), 'utf8'));
   assert.equal(data.lists.length, 9);
+  const ids = data.lists.map((list) => list.id);
+  for (const id of PICK_ROW_IDS) assert.ok(ids.includes(id), id);
   for (const list of data.lists) {
     assert.ok(list.entries.length >= 10, list.id);
     for (const entry of list.entries) {

@@ -63,7 +63,7 @@ import {
   forgetRecentGrid, listRecentGrids, noteRecentGrid, openRecentGrid,
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
-import { BANNER_PARTS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
+import { BANNER_PARTS, PICK_ROW_IDS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
 import { atlanticTarget, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
@@ -1745,106 +1745,6 @@ async function openPersonProfile(person) {
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'xr-loading', textContent: `Nothing more is known about ${person.name} yet.` })]));
 }
 
-let listsBox = null;
-let listsLoad = null;
-let listsTab = '';
-
-/** lists.json, written once a day by the Lists job; retried next time if it is missing. */
-async function loadLists() {
-  if (listsLoad) return listsLoad;
-  listsLoad = fetch('lists.json', { cache: 'no-cache' })
-    .then((answer) => (answer.ok ? answer.json() : null))
-    .catch(() => null);
-  const data = await listsLoad;
-  if (!data) listsLoad = null;
-  return data;
-}
-
-function listsCard(list, entry, box) {
-  const action = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind });
-  const picture = el('span', { class: 'list-poster' });
-  const fallback = el('span', { class: 'list-poster-fallback' }, icon(entry.kind === 'film' ? 'film' : 'guide', 24));
-  const rank = el('span', { class: 'list-rank', textContent: String(entry.rank) });
-  picture.append(fallback);
-  if (entry.poster) {
-    const image = el('img', { src: entry.poster, alt: '', decoding: 'async', referrerPolicy: 'no-referrer' });
-    image.addEventListener('error', () => image.remove(), { once: true });
-    picture.append(image);
-  }
-  picture.append(rank);
-  return el('article', { class: 'list-card' },
-    el('button', {
-      type: 'button', class: 'list-picture', title: `Open ${entry.title} on ${list.source}`,
-      on: { click: () => openLink(entry.url) },
-    }, picture),
-    el('div', { class: 'list-card-text' },
-      el('b', { textContent: entry.title }),
-      el('small', { textContent: [entry.year || '', list.source].filter(Boolean).join(' · ') })),
-    el('button', {
-      type: 'button', class: 'list-add', title: `${action.label} ${entry.title}`,
-      on: { click() { box.close(); action.run(); } },
-    }, action.label));
-}
-
-/** One sheet with every IMDb and Rotten Tomatoes list, one chip each. */
-async function openLists() {
-  if (!listsBox) {
-    listsBox = el('dialog', { id: 'lists-box', class: 'dialog channel-box lists-box', aria: { label: 'Lists' } });
-    listsBox.addEventListener('click', (event) => { if (event.target === listsBox) listsBox.close(); });
-    document.body.append(listsBox);
-  }
-  const box = listsBox;
-  const body = el('div', { class: 'lists-body' }, el('p', { class: 'ch-empty', textContent: 'Loading lists…' }));
-  box.replaceChildren(
-    el('div', { class: 'ch-head' }, el('h2', { textContent: 'Lists' }), iconButton('close', 'Close', () => box.close())),
-    body);
-  openDialog(box);
-  const data = await loadLists();
-  if (!box.open) return;
-  const lists = (Array.isArray(data?.lists) ? data.lists : [])
-    .filter((list) => list && typeof list.name === 'string' && Array.isArray(list.entries) && list.entries.length);
-  if (!lists.length) {
-    body.replaceChildren(
-      el('p', { class: 'ch-empty', textContent: 'No lists yet. The daily job writes them; try again shortly.' }),
-      el('button', { type: 'button', class: 'list-retry plain-button', textContent: 'Try again', on: { click() { listsLoad = null; openLists(); } } }));
-    return;
-  }
-  let at = lists.findIndex((list) => list.id === listsTab);
-  if (at < 0) at = 0;
-  const when = Number(data.updated) ? ` · updated ${ago(Number(data.updated) * 1000)}` : '';
-  const note = el('p', { class: 'ch-note lists-note' });
-  const grid = el('div', { class: 'lists-grid' });
-  const chips = el('div', { class: 'lists-chips', role: 'tablist', aria: { label: 'IMDb and Rotten Tomatoes lists' } });
-  const draw = () => {
-    const list = lists[at];
-    for (const [index, chip] of [...chips.children].entries()) {
-      const on = index === at;
-      chip.classList.toggle('is-on', on);
-      chip.setAttribute('aria-selected', String(on));
-    }
-    note.textContent = `${list.source} · ${list.entries.length} titles${when}`;
-    grid.replaceChildren(...list.entries.map((entry) => listsCard(list, entry, box)));
-  };
-  lists.forEach((list, index) => chips.append(el('button', {
-    type: 'button', role: 'tab', class: 'lists-chip', aria: { selected: String(index === at) },
-    textContent: list.name, title: `${list.source} · ${list.name}`,
-    on: {
-      click(event) {
-        at = index;
-        listsTab = list.id;
-        for (const other of chips.children) {
-          const on = other === event.currentTarget;
-          other.classList.toggle('is-on', on);
-          other.setAttribute('aria-selected', String(on));
-        }
-        draw();
-      },
-    },
-  })));
-  draw();
-  body.replaceChildren(chips, note, grid);
-}
-
 let tvCalendarBox = null;
 
 /** The exact episode URL in the favourite's own source, when season and episode are known. */
@@ -2214,7 +2114,6 @@ function openPalette(options = {}) {
     { label: 'Find a show', sub: 'Add a series from Atlantic or 1Flex', icon: 'play', run: () => openSeriesSearch() },
     { label: 'Find a person', sub: 'Actors, directors and creators', icon: 'person', run: () => openSeriesSearch({ kind: 'person' }) },
     { label: 'TV calendar', sub: 'Your series, next 7 days', icon: 'calendar', run: () => openTvCalendar() },
-    { label: 'Lists', sub: 'IMDb and Rotten Tomatoes picks', icon: 'crown', run: () => openLists() },
     { label: 'Browse PPV events', sub: 'Live and upcoming', icon: 'calendar', run: () => openPPV({ mode: 'add' }) },
     { label: 'Mute all', sub: 'Silence every stream', icon: 'muted', run: () => muteAll() },
     { label: 'Fullscreen', sub: 'Hide the bars', icon: 'expand', run: () => $('fullscreen-button').click() },
@@ -7272,6 +7171,7 @@ function homeCard(item) {
   const show = (picture) => art.replaceChildren(picture, ...badges);
   const fill = () => {
     if (item.match) show(teamsArt(item.match, 54));
+    else if (item.poster) show(homePicture(item.poster, () => show(item.art?.() ?? '')));
     else if (item.backdrop) show(homePicture(item.backdrop, () => show(item.art?.() ?? ''), item.backdropFallbacks));
     else show(item.art?.() ?? '');
   };
@@ -7288,7 +7188,7 @@ function homeCard(item) {
   }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null, item.scores ? scoreChip(item.scores) : null)));
 }
 
-const homeRow = (title, items, note = '') => (items.length ? el('section', { class: 'home-row' },
+const homeRow = (title, items, note = '') => (items.length ? el('section', { class: `home-row${items.some((item) => item.poster) ? ' is-posters' : ''}` },
   el('h3', { class: 'home-title', textContent: title }),
   note ? el('p', { class: 'home-note', textContent: note }) : null,
   el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
@@ -7375,7 +7275,7 @@ async function drawHome() {
   // rows already on screen until the new ones are ready.
   if (firstLoad) paint([phoneEdition]);
 
-  const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
+  const [sections, , episodes, , , top, catalog, movieJob, showJob, picks] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
     loadGuide().catch(() => false),
     episodesForFavorites().catch(() => []),
@@ -7385,6 +7285,7 @@ async function drawHome() {
     loadJob('catalog.json'),
     loadJob('movies.json'),
     loadJob('shows.json'),
+    loadPicks().catch(() => null),
   ]);
   if (asked !== homeAsked) return;
   // Matchday: today's game for your team, from the same schedules.
@@ -7534,12 +7435,49 @@ async function drawHome() {
     ? (tenTaste?.hasTaste ? `Because you finish ${basisText(tenTaste.basis)}` : 'Popular and well rated')
     : '';
 
+  // IMDb and Rotten Tomatoes: one Home row per category, directly under Trending in Canada.
+  const pickLists = new Map((Array.isArray(picks?.lists) ? picks.lists : [])
+    .filter((list) => list && typeof list.id === 'string' && Array.isArray(list.entries) && list.entries.length)
+    .map((list) => [list.id, list]));
+  const pickRow = (id) => {
+    const list = pickLists.get(id);
+    if (!list) return [];
+    return list.entries
+      .filter((entry) => entry && typeof entry.title === 'string' && (entry.kind === 'film' || entry.kind === 'show'))
+      .map((entry) => {
+        const add = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind, favorites });
+        const item = {
+          key: `p:${list.id}:${entry.rank}:${entry.title}`,
+          label: list.name,
+          title: entry.title,
+          kind: entry.kind,
+          year: entry.year || 0,
+          rank: entry.rank,
+          poster: entry.poster,
+          meta: [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', list.source].filter(Boolean).join(' · '),
+          cardMeta: [entry.year || '', list.source].filter(Boolean).join(' · '),
+          playLabel: add.label,
+          play: add.run,
+          art: () => el('span', { class: 'title-card' },
+            el('span', { class: 'title-card-kind', textContent: list.source }),
+            el('span', { class: 'title-card-name', textContent: entry.title })),
+        };
+        if (entry.poster) {
+          item.layer = () => el('div', { class: 'hero-poster' },
+            el('img', { class: 'hero-poster-bg', src: entry.poster, alt: '', on: { error(event) { event.currentTarget.remove(); } } }),
+            el('img', { class: 'hero-poster-face', src: entry.poster, alt: '', on: { error(event) { event.currentTarget.remove(); } } }));
+        }
+        return item;
+      });
+  };
+  const pickRows = Object.fromEntries(PICK_ROW_IDS.map((id) => [id, pickRow(id)]));
+
   const matchday = matchdayHome(now);
   const matchdayRow = matchday.row ? homeRow(matchday.row.title, matchday.row.items) : null;
   matchdayRow?.classList.add('is-matchday');
   md.drawnData = Boolean(md.data);
   // The owner's order and choice of rows (Edit home); Matchday leads until its post-match hold ends.
-  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop, trailers: trailerTop };
+  const rowItems = { continue: cont, recent: recentGridItems(), teams, fresh, onnow: onNow, ten: tenTop, netflix: netflixTop, trending: trendingTop, trailers: trailerTop, ...pickRows };
   const visibleRows = layout.rows.filter((row) => row.on);
   let previewRows = preview?.rows;
   if (preview?.id === 'morning' && weekend) previewRows = ['teams', 'fresh', 'continue', 'onnow', 'ten', 'netflix', 'trending', 'recent'];
@@ -10863,6 +10801,21 @@ function movieDay(date) {
   return dayLabel(new Date(y, m - 1, d, 12).getTime());
 }
 
+let picksCache = null;
+
+/** The IMDb and RT rows (lists.json), kept for ten minutes so a home redraw doesn't refetch it. */
+async function loadPicks() {
+  if (picksCache && Date.now() - picksCache.at < 10 * 60000) return picksCache.data;
+  try {
+    const response = await fetch('lists.json', { cache: 'no-cache', signal: AbortSignal.timeout?.(8000) });
+    const data = response.ok ? await response.json() : null;
+    if (data) picksCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /** One of the files the guide job writes (charts.json, shows.json), or null. */
 async function loadJob(file) {
   try {
@@ -11754,10 +11707,6 @@ async function fillToday() {
   const eventSection = todaySection('Events today', eventList);
   const flightSection = todaySection('Flight deals from Toronto', flightsView(flights));
   const chartsSection = todaySection('Charts', chartsView(charts));
-  if (chartsSection) {
-    const listsLink = el('button', { type: 'button', class: 'text-button today-calendar', textContent: 'Lists', title: 'IMDb and Rotten Tomatoes lists', on: { click: () => openLists() } });
-    chartsSection.querySelector('h4')?.append(' ', listsLink);
-  }
   const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection, chartsSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
