@@ -14,6 +14,7 @@ import { FILM_SHAPE, cinemaBox, cropBox, getCinema, getCrop, setCinema, setCrop,
 import { coverage, el, fullscreen, icon, iconButton } from './ui.js';
 
 const stripHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
+const channelInitials = (name) => String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'TV';
 const template = (tracks) => tracks.map((size) => `minmax(0, ${size}fr)`).join(' ');
 const gridArea = ({ c, r, cs, rs }) => `${r + 1} / ${c + 1} / span ${rs} / span ${cs}`;
 
@@ -42,8 +43,11 @@ class TileView {
       this.infoTimer = setInterval(() => (this.root.matches(':hover') ? this.drawInfo() : clearInterval(this.infoTimer)), 15000);
     });
     this.root.dataset.id = tile.id;
+    this.channel = null;
+    this.channelOpen = false;
+    this.channelData = null;
     this.root.addEventListener('pointerdown', (event) => {
-      if (event.button === 0) this.grid.handlers.onTune?.(this.id);
+      if (event.button === 0 && !event.target.closest('.channel-overlay')) this.grid.handlers.onTune?.(this.id);
     }, true);
     grid.gridEl.append(this.root);
   }
@@ -106,6 +110,7 @@ class TileView {
       this.mount();
     }
     this.syncControls();
+    this.syncChannelOverlay();
   }
 
   mount() {
@@ -118,6 +123,8 @@ class TileView {
     if (!isStream(tile)) {
       this.source = null;
       this.strip = null;
+      this.channelOpen = false;
+      this.root.classList.remove('is-channel-open');
       const addButton = el('button', {
         type: 'button',
         class: 'slot-button',
@@ -133,7 +140,9 @@ class TileView {
     if (this.feedUrl && this.source.kind === 'hls') this.source = { ...this.source, url: this.feedUrl };
     this.body = el('div', { class: 'tile-body' });
     this.strip = this.buildStrip();
+    const channel = this.channel;
     this.root.replaceChildren(this.strip, this.body);
+    if (channel) this.root.append(channel);
     this.grid.attachCorners(this);
 
     if (!this.source.ok) {
@@ -219,6 +228,7 @@ class TileView {
     if (!isStream(this.tile) || !this.root.isConnected) return;
     this.mount();
     this.syncControls();
+    this.syncChannelOverlay();
     this.grid.handlers.onPlayerChanged();
   }
 
@@ -255,6 +265,7 @@ class TileView {
     if (isPoppedOut(this)) return;
     this.mount();
     this.syncControls();
+    this.syncChannelOverlay();
     this.grid.handlers.onPlayerChanged();
   }
 
@@ -585,12 +596,174 @@ class TileView {
   }
 
   syncFullscreen() {
-    if (!this.fullButton) return;
-    const active = fullscreen.element() === this.root || this.root.classList.contains('maximized');
-    const label = active ? 'Exit fullscreen' : 'Fullscreen';
-    this.fullButton.title = label;
-    this.fullButton.setAttribute('aria-label', label);
-    this.fullButton.replaceChildren(icon(active ? 'collapse' : 'expand'));
+    if (this.fullButton) {
+      const active = this.channelActive;
+      const label = active ? 'Exit fullscreen' : 'Fullscreen';
+      this.fullButton.title = label;
+      this.fullButton.setAttribute('aria-label', label);
+      this.fullButton.replaceChildren(icon(active ? 'collapse' : 'expand'));
+    }
+    this.syncChannelOverlay();
+  }
+
+  get channelActive() {
+    return fullscreen.element() === this.root || this.root.classList.contains('maximized');
+  }
+
+  /** Shows the GUIDE tab only in a full-screen TV channel with listings and the switch on. */
+  syncChannelOverlay() {
+    const data = this.channelActive && !isPoppedOut(this) && this.source?.ok
+      ? this.grid.handlers.channelOverlay?.(this.id) ?? null
+      : null;
+    if (!data) {
+      this.channelOpen = false;
+      this.channel?.classList.remove('is-open');
+      if (this.channel) this.channel.hidden = true;
+      this.root.classList.remove('is-channel-open');
+      this.channelPanel?.setAttribute('aria-hidden', 'true');
+      return;
+    }
+    this.channelData = data;
+    this.buildChannelOverlay();
+    this.channel.hidden = false;
+    this.channelTab.querySelector('.channel-tab-live').hidden = !data.live;
+    this.channelTab.tabIndex = this.channelOpen ? -1 : 0;
+    this.channelBack.tabIndex = this.channelOpen ? 0 : -1;
+    if (this.channelOpen) {
+      this.renderChannelPanel(data);
+      this.channel.classList.add('is-open');
+      this.channelPanel.setAttribute('aria-hidden', 'false');
+      this.channelTab.setAttribute('aria-expanded', 'true');
+      this.root.classList.add('is-channel-open');
+    } else {
+      this.channel.classList.remove('is-open');
+      this.channelPanel.setAttribute('aria-hidden', 'true');
+      this.channelTab.setAttribute('aria-expanded', 'false');
+      this.root.classList.remove('is-channel-open');
+    }
+  }
+
+  buildChannelOverlay() {
+    if (this.channel) return;
+    const live = el('span', { class: 'channel-tab-live' },
+      el('span', { class: 'live-dot' }), el('span', { textContent: 'LIVE' }));
+    this.channelTab = el('button', {
+      type: 'button', class: 'channel-tab', tabIndex: 0,
+      title: 'Open the channel guide',
+      aria: { label: 'Open the channel guide', expanded: 'false' },
+      on: { click: () => this.openChannelOverlay() },
+    }, live, el('span', { class: 'channel-tab-text', textContent: 'GUIDE' }), icon('back', 14));
+    this.channelScrim = el('div', {
+      class: 'channel-scrim', aria: { hidden: 'true' },
+      on: { click: () => this.closeChannelOverlay() },
+    });
+    this.channelReload = el('button', {
+      type: 'button', class: 'channel-icon', title: 'Reload this channel', aria: { label: 'Reload this channel' },
+      on: {
+        click: () => {
+          this.channelReload.classList.add('is-spinning');
+          setTimeout(() => this.channelReload?.classList.remove('is-spinning'), 700);
+          this.reload();
+        },
+      },
+    }, icon('reload', 18));
+    const close = el('button', {
+      type: 'button', class: 'channel-icon', title: 'Close guide', aria: { label: 'Close guide' },
+      on: { click: () => this.closeChannelOverlay() },
+    }, icon('close', 18));
+    this.channelBody = el('div', { class: 'channel-body' });
+    this.channelPanel = el('aside', {
+      class: 'channel-panel', tabIndex: -1,
+      aria: { label: 'Channel guide', hidden: 'true' },
+    },
+    el('div', { class: 'channel-head channel-panel-head' },
+      el('span', { class: 'channel-kicker', textContent: 'On now' }),
+      this.channelReload,
+      close),
+    this.channelBody);
+    this.channelBack = el('button', {
+      type: 'button', class: 'channel-back', tabIndex: -1, title: 'Exit fullscreen', aria: { label: 'Exit fullscreen' },
+      on: { click: () => { this.closeChannelOverlay(); this.toggleFullscreen(); } },
+    }, icon('back', 22));
+    this.channel = el('div', { class: 'channel-overlay', hidden: true },
+      this.channelTab, this.channelScrim, this.channelPanel, this.channelBack);
+    this.root.append(this.channel);
+  }
+
+  openChannelOverlay() {
+    if (!this.channelData || this.channelOpen) return;
+    this.channelOpen = true;
+    this.renderChannelPanel(this.channelData);
+    this.channel.classList.add('is-open');
+    this.channelPanel.setAttribute('aria-hidden', 'false');
+    this.channelTab.setAttribute('aria-expanded', 'true');
+    this.channelTab.tabIndex = -1;
+    this.channelBack.tabIndex = 0;
+    this.root.classList.add('is-channel-open');
+    this.channelPanel.focus({ preventScroll: true });
+  }
+
+  closeChannelOverlay() {
+    if (!this.channelOpen) return;
+    this.channelOpen = false;
+    this.channel?.classList.remove('is-open');
+    this.channelPanel?.setAttribute('aria-hidden', 'true');
+    this.channelTab?.setAttribute('aria-expanded', 'false');
+    if (this.channelTab) this.channelTab.tabIndex = 0;
+    if (this.channelBack) this.channelBack.tabIndex = -1;
+    this.root.classList.remove('is-channel-open');
+    if (this.channelActive) this.channelTab?.focus({ preventScroll: true });
+  }
+
+  renderChannelPanel(data) {
+    const mark = (item, className) => {
+      const box = el('span', { class: className });
+      if (item.logo?.url) {
+        const img = el('img', { src: item.logo.url, alt: '', referrerPolicy: 'no-referrer' });
+        img.addEventListener('error', () => {
+          img.remove();
+          box.classList.add('is-text');
+          box.textContent = channelInitials(item.name);
+        }, { once: true });
+        box.append(img);
+      } else {
+        box.classList.add('is-text');
+        box.textContent = channelInitials(item.name);
+      }
+      return box;
+    };
+    const card = el('section', { class: 'channel-card' },
+      mark(data, 'channel-card-mark'),
+      el('div', { class: 'channel-card-text' },
+        el('div', { class: 'channel-card-top' },
+          el('b', { textContent: data.name }),
+          data.live ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE') : null),
+        data.current ? el('span', { class: 'channel-card-show', textContent: data.current.title }) : null,
+        data.current ? el('div', { class: 'channel-card-progress' },
+          el('span', { class: 'gbar' }, el('span', { style: `width:${data.current.progress}%` })),
+          el('small', { textContent: data.current.when })) : null,
+        !data.current && data.next ? el('small', { class: 'channel-card-when', textContent: `Starts ${data.next.at}` }) : null,
+        data.current && data.next
+          ? el('small', { class: 'channel-card-next' }, el('b', { textContent: data.next.at }), data.next.title)
+          : null));
+    const others = el('section', { class: 'channel-others' },
+      el('div', { class: 'channel-head channel-others-head' },
+        el('span', { class: 'channel-kicker', textContent: 'More live channels' }),
+        el('small', { textContent: data.others.length ? String(data.others.length) : '' })),
+      data.others.length
+        ? el('ul', { class: 'channel-list' }, ...data.others.map((item) => el('li', {},
+          el('button', {
+            type: 'button', class: 'channel-row', title: `Watch ${item.name}`,
+            on: { click: () => this.grid.handlers.onChannelSwitch?.(this.id, item.input) },
+          },
+          mark(item, 'channel-row-mark'),
+          el('span', { class: 'channel-row-text' },
+            el('b', { textContent: item.name }),
+            el('small', { textContent: item.title })),
+          icon('next', 14)))))
+        : el('p', { class: 'channel-empty', textContent: 'No other TV channels are live right now.' }));
+    this.channelBody.replaceChildren(card, others);
+    this.channelBody.scrollTop = 0;
   }
 
   toggleFullscreen() {
@@ -703,10 +876,31 @@ export class GridView {
     });
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
+      // The channel Guide closes first; the next Escape leaves full-screen.
+      for (const view of this.views.values()) {
+        if (view.channelOpen) {
+          event.preventDefault();
+          view.closeChannelOverlay();
+          return;
+        }
+      }
+      // A tile in the browser's Fullscreen API leaves on the next Escape. On a phone's
+      // maximized tile the same key removes the class.
+      const full = fullscreen.element();
+      if (full && [...this.views.values()].some((view) => view.root === full)) {
+        event.preventDefault();
+        Promise.resolve(fullscreen.exit()).catch(() => {});
+        return;
+      }
       for (const view of this.views.values()) {
         if (view.root.classList.contains('maximized')) view.toggleFullscreen();
       }
-    });
+    }, true);
+  }
+
+  /** The More/phone switch changed: show or hide every full-screen channel tab. */
+  syncChannelOverlays() {
+    for (const view of this.views.values()) view.syncChannelOverlay();
   }
 
   get isStacked() {

@@ -1,6 +1,6 @@
 # Full-screen TV channel overlay
 
-Status: **BUILDING** (approved Nov 26, 2026)
+Status: **BUILT — awaiting live verification** (approved Nov 26, 2026)
 
 ## Cost
 
@@ -38,17 +38,17 @@ existing players.
 
 ## Build checklist
 
-- [ ] 1. Add the persisted setting and the pure "other live channels" helper in
+- [x] 1. Add the persisted setting and the pure "other live channels" helper in
       `src/channel-overlay.js`; test both.
-- [ ] 2. Add the switch to the laptop More menu (after TV mode) and the phone MULTIGRID drop.
-- [ ] 3. Add the data handler in `app.js`: channel name, logo, current show/progress/next,
+- [x] 2. Add the switch to the laptop More menu (after TV mode) and the phone MULTIGRID drop.
+- [x] 3. Add the data handler in `app.js`: channel name, logo, current show/progress/next,
       other live channels, and the in-place switch action.
-- [ ] 4. Add the GUIDE tab, dim layer, panel, back arrow and open/close state to the
+- [x] 4. Add the GUIDE tab, dim layer, panel, back arrow and open/close state to the
       full-screen tile in `grid-view.js`; keep it open across a channel switch and a reload.
-- [ ] 5. Style it black/glass at laptop width and 390 px; 44 px controls on the phone.
-- [ ] 6. Browser checks: switch on/off, TSN1 live and with no listing, open/close, switch
+- [x] 5. Style it black/glass at laptop width and 390 px; 44 px controls on the phone.
+- [x] 6. Browser checks: switch on/off, TSN1 live and with no listing, open/close, switch
       channel, Escape, non-TV full-screen. Check the laptop at 1440 and the phone at 390.
-- [ ] 7. Update `notes/product-map.md` and `notes/history.md`; run all tests.
+- [x] 7. Update `notes/product-map.md` and `notes/history.md`; run all tests.
 - [ ] 8. Commit, push, wait for Pages, verify live; mark this plan DONE with the commit.
 
 ## Gotchas
@@ -81,3 +81,4 @@ existing players.
 ## Log
 
 - Nov 26: Plan written and approved.
+- Nov 26: Built the module, switch, panel, CSS and tests. Laptop 1440 and phone 390 (including the .maximized iPhone path) checked. 473 tests pass.

@@ -11,6 +11,7 @@ import { GridView } from './grid-view.js';
 import { clock, folderAfter, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
 import { addTikTokAccounts, loadTikTokFeeds, lookupTikTokLive, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
+import { otherLiveChannels, readChannelOverlay, writeChannelOverlay } from './channel-overlay.js';
 import { plays } from './backups.js';
 import { parseFollowingList } from './tiktok-list.js';
 import { parseXList } from './x-feed.js';
@@ -184,6 +185,8 @@ var deskMoving = false;
 // TV mode: hide each tile's strip and hover card, not the app bar. Kept per device.
 var tvMode = (() => { try { return localStorage.getItem('multigrid.tv.v1') === 'on'; } catch { return false; } })();
 document.body.classList.toggle('is-tv', tvMode);
+// The full-screen TV channel overlay (Guide tab and panel). On unless this device turned it off.
+var channelOverlayOn = readChannelOverlay();
 let sourceTarget = null; // { mode: 'add' | 'fill' | 'replace', id? }
 let tunedId = null; // the tile channel surf changes: the one last touched
 const pendingSound = new Set(); // tiles saved with sound, held until the first real click
@@ -194,6 +197,8 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onFixStream: (id) => openPalette({ repair: { id } }),
   labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
   tileInfo: (id, player) => tileInfoCard(id, player),
+  channelOverlay: (id) => channelOverlayFor(id),
+  onChannelSwitch: (id, input) => { addStream(input, { mode: 'replace', id }, favoriteName(input) || ''); },
   onXRay: (id) => openXRay(id),
   onTileArt(id) {
     const tile = tileById(id);
@@ -8305,7 +8310,34 @@ function guideChannels() {
   return { rows, folders };
 }
 
-/** Shows about Man Utd across every favourite TV channel, in time order. */
+/** The full-screen channel overlay: current/next and the other TV channels live now. */
+function channelOverlayFor(id) {
+  if (!isChannelOverlayOn()) return null;
+  const tile = tileById(id);
+  if (!tile || !isStream(tile)) return null;
+  const name = labelOf(tile);
+  const source = parseSource(tile.input);
+  const listing = nowAndNext(name, source);
+  if (!listing) return null;
+  const now = Date.now();
+  const rows = guideSections().sections.flatMap((section) => section.rows);
+  const others = otherLiveChannels(rows, name, now, tile.input)
+    .map((item) => ({ ...item, logo: logoFor(item.name) }));
+  const current = listing.current;
+  const next = listing.next;
+  return {
+    name,
+    logo: logoFor(name),
+    live: Boolean(current),
+    current: current ? {
+      title: current.title,
+      progress: Math.round(progressOf(current) * 100),
+      when: `until ${clock(current.end)} · ${durationText(minutesLeft(current))} left`,
+    } : null,
+    next: next ? { title: next.title, at: clock(next.start) } : null,
+    others,
+  };
+}
 function manUtdResults() {
   const now = Date.now();
   const found = [];
@@ -13008,6 +13040,15 @@ function buildSavedDrop() {
     onPhoneScreen() ? el('button', {
       type: 'button',
       class: 'sdrop-switch',
+      aria: { pressed: String(isChannelOverlayOn()) },
+      on: { click() { setChannelOverlayOn(!isChannelOverlayOn()); buildSavedDrop(); } },
+    },
+    el('span', { class: 'sdrop-shape' }, icon('guide', 18)),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Channel overlay' }), el('small', { textContent: 'Full-screen TV guide' })),
+    el('span', { class: `more-switch${isChannelOverlayOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })) : null,
+    onPhoneScreen() ? el('button', {
+      type: 'button',
+      class: 'sdrop-switch',
       aria: { pressed: String(isOpeningLogoOn()) },
       on: { click() { setOpeningLogoOn(!isOpeningLogoOn()); buildSavedDrop(); } },
     },
@@ -13144,6 +13185,13 @@ function setTvMode(on) {
 }
 const toggleTvMode = () => setTvMode(!tvMode);
 
+/** The full-screen channel Guide tab and panel. Remembered per device. */
+function setChannelOverlayOn(on) {
+  channelOverlayOn = writeChannelOverlay(on);
+  grid.syncChannelOverlays();
+}
+const isChannelOverlayOn = () => channelOverlayOn;
+
 /** The overflow: the occasional switches and actions, out of the bar's way. */
 function buildMoreMenu() {
   const menu = $('more-menu');
@@ -13168,6 +13216,7 @@ function buildMoreMenu() {
     switchRow('Ticker', 'live', isTickerOn(), () => { toggleTicker(); buildMoreMenu(); }),
     switchRow('Game mode', 'live', isGameOn(), () => { toggleGameMode(); buildMoreMenu(); }),
     switchRow('TV mode', 'tiles', tvMode, () => { toggleTvMode(); buildMoreMenu(); }),
+    switchRow('Channel overlay', 'guide', isChannelOverlayOn(), () => { setChannelOverlayOn(!isChannelOverlayOn()); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('Daypart home', 'today', daypartPreview, () => setDaypartHome(!daypartPreview)),
     onPhoneScreen() ? null : switchRow('Desk', 'desk', deskOn, () => { setDesk(!deskOn); buildMoreMenu(); }),
     onPhoneScreen() ? null : switchRow('RedZone', 'expand', isRedZoneOn(), () => { toggleRedZone(); buildMoreMenu(); }),
@@ -13922,6 +13971,7 @@ loadGuide().then(() => {
   syncGuideButton();
   refreshFavoriteLists();
   renderPhoneBar();
+  grid.syncChannelOverlays();
 });
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);
