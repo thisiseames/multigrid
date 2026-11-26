@@ -227,11 +227,6 @@ const grid = new GridView($('grid'), $('stage'), env, {
     else delete tile.page;
     saveCurrent(ws);
   },
-  // A YouTube channel room opens a video, Short or playlist in its own tile.
-  onOpenInput: (input, title) => {
-    closePopovers();
-    addStream(input, { mode: 'add' }, title || '');
-  },
   // The channel name switches the channel feed to its native room, and Back restores the feed.
   onChannelRoom: (id, channelId) => {
     closePopovers();

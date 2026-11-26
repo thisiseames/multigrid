@@ -168,8 +168,7 @@ class TileView {
       onEpisode: (name) => this.grid.handlers.onEpisode?.(this.id, name),
       // The extension says when the page inside moves on, so a reload comes back to it.
       onPage: (href) => this.grid.handlers.onPage?.(this.id, href),
-      // A channel room opens videos in their own tile, and can go back to the channel feed.
-      onOpenInput: (input, title) => this.grid.handlers.onOpenInput?.(input, title),
+      // A channel room can go back to the channel feed.
       onBackToFeed: (channelId) => this.grid.handlers.onBackToFeed?.(this.id, channelId),
       onError: (message) => {
         if (generation !== this.generation) return;

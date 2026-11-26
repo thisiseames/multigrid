@@ -13,7 +13,7 @@
 
 import { loadBlueskyVideos } from './bluesky.js';
 import { chooseAgain, findFile, reopen } from './local-files.js';
-import { buildEmbedUrl, isBlockedMixedContent } from './sources.js';
+import { buildEmbedUrl, isBlockedMixedContent, parseSource } from './sources.js';
 import { loadTikTokProfile, shortTikTokCount } from './tiktok-profile.js';
 import { loadYouTubeChannel } from './youtube-channel.js';
 import { zliveEmbed } from './zlive.js';
@@ -1346,7 +1346,7 @@ function blueskyVideoPlayer(source, options) {
 
 /* The channel page's public header and tabs, without YouTube's page in a frame. */
 function youtubeChannelPlayer(source, options) {
-  const { onOpenInput, onBackToFeed } = options;
+  const { onBackToFeed, muted, volume, autoplay, env, onPlayState, onCapability } = options;
   const channelId = source.youtubechannel.id;
   let started = false;
   let stopped = false;
@@ -1354,6 +1354,12 @@ function youtubeChannelPlayer(source, options) {
   let generation = 0;
   let active = 'videos';
   let current = null;
+  let video = null;
+  let videoUrl = '';
+  let videoTitle = '';
+  let wantedMuted = Boolean(muted);
+  let wantedVolume = Number.isFinite(Number(volume)) ? Number(volume) : 100;
+  let lastCard = null;
 
   const back = el('button', {
     type: 'button', class: 'yt-room-back', title: 'Back to feed',
@@ -1375,10 +1381,76 @@ function youtubeChannelPlayer(source, options) {
   const tabs = el('div', { class: 'yt-room-tabs' });
   const panel = el('div', { class: 'yt-room-panel' });
   const body = el('div', { class: 'yt-room-body' }, header, tabs, panel);
-  const root = el('div', { class: 'yt-room' }, top, body);
+  const stage = el('div', { class: 'yt-video-stage' });
+  const videoBack = el('button', {
+    type: 'button', class: 'tik-video-back yt-video-back', title: 'Back to channel',
+    aria: { label: 'Back to channel' },
+    on: { click: () => closeVideo() },
+  }, icon('back', 15), el('span', { textContent: 'Back to channel' }));
+  const layer = el('div', { class: 'yt-video-layer', hidden: true }, stage, videoBack);
+  const root = el('div', { class: 'yt-room' }, top, body, layer);
 
-  const open = (url, title) => {
-    if (!stopped) onOpenInput?.(url, title || '');
+  /** A video, Short or playlist plays over the channel room, so browsing never fills the grid. */
+  const open = (url, title, card) => {
+    if (stopped || !url) return;
+    lastCard = card || lastCard;
+    videoUrl = url;
+    videoTitle = title || '';
+    if (video) video.destroy();
+    video = null;
+    const parsed = parseSource(url);
+    if (!parsed.ok) return;
+    const player = youtubePlayer(parsed, {
+      muted: wantedMuted,
+      volume: wantedVolume,
+      autoplay: Boolean(autoplay),
+      env,
+      describe: () => ({ input: url, name: videoTitle || parsed.label }),
+      onError: (message) => showVideoError(message),
+      onPlayState,
+      onCapability,
+    });
+    if (!player) return;
+    video = player;
+    player.el.classList.add('yt-video-frame');
+    stage.replaceChildren(player.el);
+    layer.hidden = false;
+    body.inert = true;
+    top.inert = true;
+    player.start();
+    onCapability?.();
+  };
+
+  const showVideoError = (message) => {
+    if (layer.hidden) return;
+    video?.destroy();
+    video = null;
+    const retry = el('button', {
+      type: 'button', class: 'tik-profile-retry', textContent: 'Try again',
+      on: { click: () => open(videoUrl, videoTitle, lastCard) },
+    });
+    stage.replaceChildren(el('div', { class: 'tik-video-status' },
+      el('span', { class: 'yt-room-status-mark' }, icon('play', 20)),
+      el('b', { class: 'tik-video-status-title', textContent: "This YouTube video didn't play." }),
+      el('p', { class: 'tik-video-status-text', textContent: message || 'Try another video, or go back to the channel.' }),
+      retry));
+    onPlayState?.(false);
+    onCapability?.();
+  };
+
+  const closeVideo = (refocus = true) => {
+    if (layer.hidden) return;
+    video?.destroy();
+    video = null;
+    videoUrl = '';
+    videoTitle = '';
+    stage.replaceChildren();
+    layer.hidden = true;
+    body.inert = false;
+    top.inert = false;
+    if (refocus) lastCard?.focus?.({ preventScroll: true });
+    onPlayState?.(false);
+    onCapability?.();
   };
 
   const skeleton = () => {
@@ -1474,7 +1546,7 @@ function youtubeChannelPlayer(source, options) {
     else if (video.duration) image.append(el('span', { class: 'yt-room-time', textContent: video.duration }));
     return el('button', {
       type: 'button', class: 'yt-room-card', title: video.title,
-      on: { click: () => open(video.url, video.title) },
+      on: { click: (event) => open(video.url, video.title, event.currentTarget) },
     }, image,
     el('span', { class: 'yt-room-card-title', textContent: video.title }),
     el('span', { class: 'yt-room-card-meta', textContent: [video.views, video.published].filter(Boolean).join(' · ') }));
@@ -1482,14 +1554,14 @@ function youtubeChannelPlayer(source, options) {
 
   const shortCard = (short) => el('button', {
     type: 'button', class: 'yt-room-card is-short', title: short.title,
-    on: { click: () => open(short.url, short.title) },
+    on: { click: (event) => open(short.url, short.title, event.currentTarget) },
   }, cover(short.cover),
   el('span', { class: 'yt-room-card-title', textContent: short.title }),
   el('span', { class: 'yt-room-card-meta', textContent: short.views || '' }));
 
   const playlistCard = (playlist) => el('button', {
     type: 'button', class: 'yt-room-card is-playlist', title: playlist.title,
-    on: { click: () => open(playlist.url, playlist.title) },
+    on: { click: (event) => open(playlist.url, playlist.title, event.currentTarget) },
   }, cover(playlist.cover),
   el('span', { class: 'yt-room-card-title', textContent: playlist.title }),
   el('span', { class: 'yt-room-card-meta', textContent: playlist.count || 'Playlist' }));
@@ -1572,24 +1644,40 @@ function youtubeChannelPlayer(source, options) {
 
   return {
     el: root,
-    canMute: false,
-    canVolume: false,
-    canPause: false,
-    canSeek: false,
-    silent: true,
+    // Only the video overlay has sound or playback controls; the channel room is silent.
+    get canMute() { return Boolean(video?.canMute); },
+    get canVolume() { return Boolean(video?.canVolume); },
+    get canPause() { return Boolean(video?.canPause); },
+    get canSeek() { return Boolean(video?.canSeek); },
+    get silent() { return !video; },
+    info() {
+      return video?.info?.() ?? null;
+    },
     start() {
       if (started || stopped) return;
       started = true;
       load('videos');
     },
-    setMuted() {},
-    setVolume() {},
-    setPaused() {},
-    seekBy() {},
+    setMuted(next) {
+      wantedMuted = Boolean(next);
+      video?.setMuted(wantedMuted);
+    },
+    setVolume(next) {
+      wantedVolume = Number(next) || 0;
+      video?.setVolume(wantedVolume);
+    },
+    setPaused(next) {
+      video?.setPaused(Boolean(next));
+    },
+    seekBy(seconds) {
+      video?.seekBy(seconds);
+    },
     destroy() {
       stopped = true;
       generation += 1;
       loading = false;
+      video?.destroy();
+      video = null;
     },
   };
 }
