@@ -1,5 +1,5 @@
 {
- "updated": 1795660923105,
+ "updated": 1795662471530,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -522,20 +522,25 @@
    "title": "Hornets 105–107 Bulls",
    "start": 1795651200000,
    "sources": "feeds",
-   "videos": []
-  },
-  "401910028": {
-   "league": "NBA",
-   "title": "Kings 97–96 Celtics",
-   "start": 1795316400000,
-   "sources": "feeds",
    "videos": [
     {
-     "id": "m04w-QZ48rQ",
-     "title": "CELTICS at KINGS | FULL GAME HIGHLIGHTS | November 21, 2026",
+     "id": "7W5dg0c7C3A",
+     "title": "BULLS at HORNETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
      "rank": 3.5
+    },
+    {
+     "id": "Z2U-1bo-j_E",
+     "title": "Game Highlights | Hornets vs Bulls | 11/25/2026",
+     "rank": 2.5
     }
    ]
+  },
+  "401909319": {
+   "league": "NBA",
+   "title": "Knicks 121–102 Cavaliers",
+   "start": 1795653000000,
+   "sources": "feeds",
+   "videos": []
   },
   "401910029": {
    "league": "NBA",
