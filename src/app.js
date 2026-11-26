@@ -54,7 +54,7 @@ import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
 import { atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
-import { searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
+import { displayTitle, searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   deleteFolder, loadCurrent, moveFavorite, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
@@ -132,6 +132,14 @@ const STARTERS = [
 ];
 
 let ws = loadCurrent();
+
+// A Find a show favourite saved before the title-case fix kept its lowercase search name.
+// TMDB posters only arrive on that path, so a Series favourite with one is safe to tidy once.
+for (const item of listFavorites()) {
+  if (!/series|shows?\b/i.test(item.group || '') || !/(?:themoviedb\.org|image\.tmdb\.org)\//.test(item.poster || '')) continue;
+  const name = displayTitle(item.name);
+  if (name && name !== item.name) saveFavorite(item.input, name, item.group, item.logo, item.poster);
+}
 
 // A repaired series tile can play 1Flex or Cinejoy while its star and Series card still
 // belong to the Atlantic favourite it came from. That original link is kept on the tile.

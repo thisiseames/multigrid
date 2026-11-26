@@ -32,12 +32,12 @@ const yearOf = (value) => Number(String(value || '').match(/\b(19\d{2}|20\d{2})\
 const firstName = (slug) => plain(String(slug || '').replace(/-/g, ' '))
   .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
 
-const displayTitle = (value) => {
+export function displayTitle(value) {
   const text = plain(value);
   return text && text === text.toLocaleLowerCase()
     ? text.replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
     : text;
-};
+}
 
 /** A TMDB poster at card size, not the 94 px search thumbnail. */
 export function tmdbPosterUrl(url) {

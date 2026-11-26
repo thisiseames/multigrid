@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseTmdbSeriesSearch, searchTmdbSeries, tmdbPosterUrl } from '../src/series-search.js';
+import { displayTitle, parseTmdbSeriesSearch, searchTmdbSeries, tmdbPosterUrl } from '../src/series-search.js';
 
 const page = `### Search Results
 
@@ -48,6 +48,14 @@ Mark leads a team of office workers whose memories have been surgically divided 
   assert.equal(item.title, 'Severance');
   assert.equal(item.year, 2022);
   assert.match(item.overview, /^Mark leads a team/);
+});
+
+test('a lowercase title is capitalized, but real capitals and mixed-case names are kept', () => {
+  assert.equal(displayTitle('ozark'), 'Ozark');
+  assert.equal(displayTitle('the office'), 'The Office');
+  assert.equal(displayTitle('OZARK'), 'OZARK');
+  assert.equal(displayTitle('iPhone'), 'iPhone');
+  assert.equal(displayTitle('Severance'), 'Severance');
 });
 
 test('the poster is upgraded to card size and a lowercase title is capitalized', () => {
