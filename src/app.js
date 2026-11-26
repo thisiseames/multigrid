@@ -2039,7 +2039,7 @@ function openPalette(options = {}) {
   let lastInputAt = 0;
   let gamesTimer = 0;
   const input = el('input', {
-    type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false',
+    type: 'search', class: 'palette-input', autocomplete: 'off', spellcheck: 'false', autofocus: true,
     placeholder: repair ? `Find another source for ${label}` : 'Find a channel, show, game or action',
   });
   const results = el('div', { class: 'palette-results' });
@@ -2109,6 +2109,7 @@ function openPalette(options = {}) {
     { label: 'Add stream', sub: 'Paste a link, iframe or X account', icon: 'plus', run: () => openSourceDialog({ mode: 'add' }) },
     { label: 'Find a live channel', sub: 'Free channel directory', icon: 'search', run: () => openChannelFinder() },
     { label: 'Find a show', sub: 'Add a series from Atlantic or 1Flex', icon: 'play', run: () => openSeriesSearch() },
+    { label: 'Find a movie', sub: 'Add a film to Movies', icon: 'film', run: () => openSeriesSearch({ kind: 'film' }) },
     { label: 'Find a person', sub: 'Actors, directors and creators', icon: 'person', run: () => openSeriesSearch({ kind: 'person' }) },
     { label: 'TV calendar', sub: 'Your series, next 7 days', icon: 'calendar', run: () => openTvCalendar() },
     { label: 'Browse PPV events', sub: 'Live and upcoming', icon: 'calendar', run: () => openPPV({ mode: 'add' }) },
@@ -2203,7 +2204,7 @@ function openPalette(options = {}) {
         : favoritePool.slice(0, 6)).map(favoriteItem)
       : [];
     const found = showNormal && !repair
-      ? (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6))
+      ? (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 7))
       : [];
     let liveChannels = [];
     let liveMatches = [];
@@ -2538,7 +2539,14 @@ function openPalette(options = {}) {
   }, { once: true });
   if (repair) ensureLive(true);
   paint();
-  input.focus();
+  const focusInput = () => {
+    if (!box.open) return;
+    input.focus({ preventScroll: true });
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* not supported */ }
+  };
+  focusInput();
+  requestAnimationFrame(focusInput);
+  setTimeout(focusInput, 80);
   // Fresh scores redraw the results once they arrive, while the box is open.
   const repaint = () => { if (box.open) schedulePaint(); else scoreWatchers.delete(repaint); };
   scoreWatchers.add(repaint);
