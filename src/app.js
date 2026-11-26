@@ -6597,11 +6597,11 @@ function teamsArt(match, size) {
 }
 
 /** The billboard: the featured title's picture full width, with its name, details, story and Play. */
-function showHero(item, { hold = false } = {}) {
+function showHero(item, { hold = false, refresh = false } = {}) {
   const hero = $('home')?.querySelector('.home-hero');
   if (!hero || !item) return;
   if (hold) heroHoldUntil = Date.now() + 15000;
-  if (heroKey === item.key) return;
+  if (heroKey === item.key && !refresh) return;
   heroKey = item.key;
   const layer = el('div', { class: 'hero-layer' });
   if (item.layer) layer.append(item.layer());
@@ -6615,12 +6615,16 @@ function showHero(item, { hold = false } = {}) {
   [...layers.children].slice(0, -1).forEach((old) => setTimeout(() => old.remove(), 900));
   hero.classList.toggle('is-matchday', Boolean(item.matchday));
   hero.dataset.mdPhase = item.phase || '';
+  const info = hero.querySelector('.hero-info');
+  // A late picture or a score refresh updates the same banner quietly; only a new banner animates in.
+  if (refresh) info.dataset.quiet = '1';
+  else info.removeAttribute('data-quiet');
   const edition = homeEdition ? el('span', { class: 'hero-edition', textContent: homeEdition }) : null;
   if (item.render) {
-    hero.querySelector('.hero-info').replaceChildren(...[edition, ...item.render()].filter(Boolean));
+    info.replaceChildren(...[edition, ...item.render()].filter(Boolean));
     return;
   }
-  hero.querySelector('.hero-info').replaceChildren(...[
+  info.replaceChildren(...[
     edition,
     el('span', { class: 'hero-label', textContent: item.label }),
     el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
@@ -6692,7 +6696,8 @@ function withArt(item, name) {
     item.backdrop ||= art.backdrop;
     item.desc ||= art.summary;
     item.refresh?.();
-    if (heroKey === item.key) { heroKey = ''; showHero(item); }
+    // Artwork arriving for the banner already on screen updates it in place, without a re-entry.
+    if (heroKey === item.key) showHero(item, { refresh: true });
   });
   return item;
 }
@@ -6762,8 +6767,8 @@ async function drawHome() {
       on: { click: () => setDaypartHome(!daypartPreview) },
     }, icon('today', 15), el('span', { textContent: daypartPreview ? 'Edition · On' : 'Edition · Off' }))) : null;
   paint([phoneEdition, rowOn('continue') ? homeRow('Continue watching', cont) : null]);
-  heroItems = cont.slice(0, 3);
-  if (heroItems.length && !heroKey) showHero(heroItems[0]);
+  // No provisional banner: the first one shown must be the one that belongs there. Painting
+  // Continue watching first and then swapping in Matchday made the banner flash and change height.
 
   const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
@@ -9771,7 +9776,12 @@ function refreshMatchdayHero() {
   const hero = $('home')?.querySelector('.home-hero');
   if (!hero) return;
   if (item.key !== heroKey) { heroKey = ''; showHero(item); return; }
-  hero.querySelector('.hero-info')?.replaceChildren(...item.render());
+  const info = hero.querySelector('.hero-info');
+  if (info) {
+    // The same banner is already on screen: update the score/countdown without replaying its entrance.
+    info.dataset.quiet = '1';
+    info.replaceChildren(...item.render());
+  }
   const layer = hero.querySelector('.hero-layer.is-on');
   const hasXi = Boolean(layer?.querySelector('.md-xi'));
   const wantXi = (phase === 'buildup' || phase === 'live') && (md.data?.lineups ?? []).length > 0;

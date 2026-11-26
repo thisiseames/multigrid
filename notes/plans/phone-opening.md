@@ -61,5 +61,8 @@ sound is the existing generated Web Audio sting; the opening background is the p
 - `empty-wall.jpg` is the logo collage for the clear-all wall; `opening-collage.jpg` is the
   plain opening image. Never swap or overwrite them.
 - The iOS launch screen is separate from the web splash. Black `apple-touch-startup-image`
-  files and a black first paint stop the white flash before the opening.
+  files, a black first paint and `color-scheme: dark` stop the white flash before the opening.
+- iOS reads `apple-touch-startup-image` when the app is added to the Home Screen. An existing
+  install can keep an older launch frame until it is removed and added again. The Home Screen
+  app has separate local storage, so back up/sync before re-adding it.
 - iOS will usually block the cold-launch sound; the logo is the reliable part.

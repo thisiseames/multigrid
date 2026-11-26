@@ -21,5 +21,6 @@ test('app.js rescues a page cached before the start-up version check', () => {
 test('the iPhone launch screen is black, not white', () => {
   assert.match(page, /apple-touch-startup-image/);
   assert.match(page, /assets\/startup-1170x2532\.png/);
-  assert.match(page, /html, body \{ background: #000; \}/);
+  assert.match(page, /html, body \{ background: #000; color-scheme: dark; \}/);
+  assert.match(page, /<meta name="color-scheme" content="dark">/);
 });

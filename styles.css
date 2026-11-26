@@ -3034,7 +3034,7 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 #stage.is-empty-wall::after { z-index: 3; transition: top .9s cubic-bezier(.2, .7, .2, 1), font-size .9s cubic-bezier(.2, .7, .2, 1); }
 #stage.is-empty-wall.has-home::after { top: 40px; font-size: 18px; text-shadow: 0 2px 18px rgba(0, 0, 0, .6); }
 
-.home-hero { position: relative; height: clamp(380px, 66vh, 760px); overflow: hidden; }
+.home-hero { position: relative; height: clamp(380px, 66vh, 760px); overflow: hidden; transition: height .55s cubic-bezier(.2, .7, .2, 1); }
 .hero-layers, .hero-layer { position: absolute; inset: 0; }
 .hero-layer { opacity: 0; transition: opacity .9s ease; }
 .hero-layer.is-on { opacity: 1; }
@@ -3051,6 +3051,8 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
   linear-gradient(to bottom, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, 0) 22%); }
 .hero-info { position: absolute; left: 48px; bottom: 150px; width: min(560px, 48%); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .hero-info > * { animation: home-in .6s ease both; }
+/* A score, countdown or late picture updating the banner already on screen must not replay it. */
+.hero-info[data-quiet="1"] > *, .hero-info[data-quiet="1"] .hero-buttons > * { animation: none; }
 .hero-edition { font-size: 10.5px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: rgba(255, 255, 255, .55); }
 .hero-label { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
 .hero-title { margin: 0; font-size: clamp(30px, 3.6vw, 52px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; color: #fff; text-shadow: 0 2px 24px rgba(0, 0, 0, .5); }
@@ -3077,7 +3079,7 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .home-row:nth-child(3) { animation-delay: .2s; }
 .home-row:nth-child(4) { animation-delay: .3s; }
 @keyframes home-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .home-row, .hero-info > *, .hero-layer.is-on img.is-in { animation: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .home-hero { transition: none; } .home-row, .hero-info > *, .hero-layer.is-on img.is-in { animation: none; opacity: 1; } }
 .home-title { margin: 0 0 12px; padding: 0 48px; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #fff; }
 .home-note { margin: -6px 0 12px; padding: 0 48px; font-size: 12px; color: rgba(255, 255, 255, .55); }
 .hrow { list-style: none; margin: 0; padding: 4px 48px 8px; display: flex; gap: 14px; overflow-x: auto; scroll-padding-inline: 48px; scroll-snap-type: x proximity; scrollbar-width: none; }
