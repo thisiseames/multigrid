@@ -1,5 +1,5 @@
 {
- "updated": 1795654663012,
+ "updated": 1795656218200,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -509,75 +509,6 @@
      "id": "ZrlEGz6KlW0",
      "title": "HEAT at 76ERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
      "rank": 3.5
-    }
-   ]
-  },
-  "401910025": {
-   "league": "NBA",
-   "title": "Mavericks 110–100 Clippers",
-   "start": 1795309200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "K6rwrBbq2C0",
-     "title": "CLIPPERS at MAVERICKS | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "CWA0nOxfFOI",
-     "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
-     "rank": 2
-    },
-    {
-     "id": "-xTQiZP7Ai4",
-     "title": "Mavericks Highlights vs. Los Angeles Clippers | November 21, 2026",
-     "rank": 2
-    }
-   ]
-  },
-  "401910026": {
-   "league": "NBA",
-   "title": "Timberwolves 104–95 Grizzlies",
-   "start": 1795309200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "p6sCv2RIrwQ",
-     "title": "GRIZZLIES at TIMBERWOLVES | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "h-d1ldEnZRg",
-     "title": "Isaiah Stewart Highlights vs Minnesota Timberwolves",
-     "rank": 0.5
-    },
-    {
-     "id": "pe09QoL5jog",
-     "title": "Ty Jerome Highlights vs Minnesota Timberwolves",
-     "rank": 0.5
-    }
-   ]
-  },
-  "401910027": {
-   "league": "NBA",
-   "title": "Spurs 114–91 Pelicans",
-   "start": 1795309200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "7Zl2RWGcoqs",
-     "title": "PELICANS at SPURS | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "Yj-3KgHgPWM",
-     "title": "PELICANS at SPURS | FULL GAME HIGHLIGHTS | November 21, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "rPT-JxFzbBA",
-     "title": "HIGHLIGHTS: WEMBY DROPS 50 POINTS IN SPURS WIN OVER PELICANS",
-     "rank": 1
     }
    ]
   },
@@ -1637,12 +1568,6 @@
     "title": "19th 🙄",
     "published": 1795346675000,
     "source": "Stephen Howson"
-   },
-   {
-    "id": "lEU8A2gJMgU",
-    "title": "Leeds DOMINATE Chelsea! | Xabi Alonso Outclassed By Daniel Farke?",
-    "published": 1795310138000,
-    "source": "DR Sports"
    }
   ]
  }
