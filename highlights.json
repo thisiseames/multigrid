@@ -1,5 +1,5 @@
 {
- "updated": 1795671829341,
+ "updated": 1795673386113,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -648,14 +648,36 @@
    "title": "Warriors 129–110 Kings",
    "start": 1795662000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "0vg4rEM49HY",
+     "title": "KINGS at WARRIORS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401909325": {
    "league": "NBA",
    "title": "Trail Blazers 116–111 Spurs",
    "start": 1795662000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "pGbbg2LRLlE",
+     "title": "SPURS at TRAIL BLAZERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "a18OjcZy5ZM",
+     "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
+     "rank": 2.5
+    },
+    {
+     "id": "uj_MQ1SpU0k",
+     "title": "Highlights: San Antonio Spurs vs Portland Trail Blazers",
+     "rank": 1.5
+    }
+   ]
   },
   "401910029": {
    "league": "NBA",
