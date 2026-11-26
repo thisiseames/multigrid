@@ -1370,8 +1370,8 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .tik-video-status-mark { width: 34px; height: 34px; border-radius: 8px; opacity: .9; }
 .tik-video-status-title { font-size: 15px; }
 .tik-video-status-text { max-width: 280px; margin: 0; color: var(--text-2); font-size: 11.5px; line-height: 1.5; }
-.tik-video-back { position: absolute; top: 76px; left: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px 0 8px; border-radius: 999px; background: rgba(12, 12, 14, .35); color: #fff; font-size: 12px; font-weight: 650; text-shadow: 0 1px 3px rgba(0, 0, 0, .45); box-shadow: 0 1px 4px rgba(0, 0, 0, .16); backdrop-filter: blur(8px); }
-.tik-video-back:hover { background: rgba(30, 30, 35, .52); }
+.tik-video-back { position: absolute; top: 76px; left: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px 0 8px; border-radius: 999px; background: rgba(238, 238, 242, .24); color: rgba(240, 241, 246, .86); font-size: 12px; font-weight: 650; text-shadow: 0 1px 2px rgba(0, 0, 0, .28); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); backdrop-filter: blur(8px); }
+.tik-video-back:hover { background: rgba(245, 245, 250, .34); color: rgba(255, 255, 255, .94); }
 .tik-video-back svg { width: 15px; height: 15px; }
 @media (hover: none) { .tik-video-back { height: 40px; padding: 0 13px 0 10px; font-size: 13px; } }
 .tile.is-phone .tik-profile-body { padding: 10px 10px 16px; }
