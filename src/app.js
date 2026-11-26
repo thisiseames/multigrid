@@ -7171,7 +7171,6 @@ function homeCard(item) {
   const show = (picture) => art.replaceChildren(picture, ...badges);
   const fill = () => {
     if (item.match) show(teamsArt(item.match, 54));
-    else if (item.poster) show(homePicture(item.poster, () => show(item.art?.() ?? '')));
     else if (item.backdrop) show(homePicture(item.backdrop, () => show(item.art?.() ?? ''), item.backdropFallbacks));
     else show(item.art?.() ?? '');
   };
@@ -7188,7 +7187,7 @@ function homeCard(item) {
   }, art, el('span', { class: 'hcard-text' }, el('b', { textContent: item.title }), item.cardMeta || item.meta ? el('small', { textContent: item.cardMeta || item.meta }) : null, item.scores ? scoreChip(item.scores) : null)));
 }
 
-const homeRow = (title, items, note = '') => (items.length ? el('section', { class: `home-row${items.some((item) => item.poster) ? ' is-posters' : ''}` },
+const homeRow = (title, items, note = '') => (items.length ? el('section', { class: 'home-row' },
   el('h3', { class: 'home-title', textContent: title }),
   note ? el('p', { class: 'home-note', textContent: note }) : null,
   el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
@@ -7453,7 +7452,8 @@ async function drawHome() {
           kind: entry.kind,
           year: entry.year || 0,
           rank: entry.rank,
-          poster: entry.poster,
+          backdrop: entry.image || '',
+          desc: entry.desc || '',
           meta: [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', list.source].filter(Boolean).join(' · '),
           cardMeta: [entry.year || '', list.source].filter(Boolean).join(' · '),
           playLabel: add.label,
@@ -7462,11 +7462,6 @@ async function drawHome() {
             el('span', { class: 'title-card-kind', textContent: list.source }),
             el('span', { class: 'title-card-name', textContent: entry.title })),
         };
-        if (entry.poster) {
-          item.layer = () => el('div', { class: 'hero-poster' },
-            el('img', { class: 'hero-poster-bg', src: entry.poster, alt: '', on: { error(event) { event.currentTarget.remove(); } } }),
-            el('img', { class: 'hero-poster-face', src: entry.poster, alt: '', on: { error(event) { event.currentTarget.remove(); } } }));
-        }
         return item;
       });
   };
@@ -7508,11 +7503,12 @@ async function drawHome() {
     ten: tenTop.slice(0, 3),
     netflix: netflixTop.slice(0, 3),
     trending: trendingTop.slice(0, 3),
+    ...Object.fromEntries(PICK_ROW_IDS.map((id) => [id, (pickRows[id] ?? []).slice(0, 3)])),
   };
   const rowForGroup = { teamsLive: 'teams', teamsPost: 'teams' };
   const visibleRowIds = new Set(orderedRows.map((row) => row.id));
-  let heroOrder = preview ? [...preview.hero] : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending'];
-  if (preview?.id === 'prime' && fresh.length) heroOrder = ['teamsLive', 'onnow', 'fresh', 'ten', 'netflix', 'trending', 'continue', 'teamsPost'];
+  let heroOrder = preview ? [...preview.hero] : ['teamsLive', 'continue', 'fresh', 'teamsPost', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS];
+  if (preview?.id === 'prime' && fresh.length) heroOrder = ['teamsLive', 'onnow', 'fresh', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'continue', 'teamsPost'];
   let rotation = heroOrder.flatMap((id) => {
     const rowId = rowForGroup[id] ?? id;
     if (!visibleRowIds.has(rowId) || (!preview && !bannerShows(layout, rowId))) return [];

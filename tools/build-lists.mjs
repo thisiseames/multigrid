@@ -3,6 +3,8 @@
 //     Streaming TV Top 100, read through r.jina.ai (IMDb answers direct requests with a challenge).
 //   · Rotten Tomatoes' Certified Fresh and Verified Hot browse pages, its two "Best of the year"
 //     guides, and its Most Popular TV page, read from the public pages themselves.
+//   · Landscape backdrops and one-line stories from JustWatch's public search, matched by title,
+//     kind and year; no match leaves a text card instead of wrong art.
 // No key and no backend. A list that fails keeps its last good copy; a run that changes nothing
 // leaves the file alone, so the Action only commits when the lists really moved.
 // Run by .github/workflows/lists.yml.
@@ -16,6 +18,7 @@ import {
   rtBrowseRows,
   rtEditorialRows,
 } from './lists-rows.mjs';
+import { addJustWatchArt, askJustWatch, bestJustWatchMatch } from './lists-art.mjs';
 
 const FILE = new URL('../lists.json', import.meta.url);
 const UA = 'MULTIGRID-lists/1.0 (personal TV app; github.com/thisiseames/multigrid)';
@@ -134,8 +137,16 @@ for (const source of SOURCES) {
   const previous = kept.get(source.id);
   try {
     if (source.id.startsWith('rt-')) await pause(800);
-    const entries = (await source.read()).slice(0, 20);
+    let entries = (await source.read()).slice(0, 20);
     if (entries.length < 10) throw new Error(`only ${entries.length} titles`);
+    // Landscape art for the Home rows, from JustWatch. Old art is reused; a miss stays a text card.
+    const art = await addJustWatchArt(entries, {
+      previous: previous?.entries ?? [],
+      lookup: async (entry) => { await pause(300); return bestJustWatchMatch(await askJustWatch(entry), entry); },
+    });
+    // The Home rows use landscape art only; portrait posters stay out of the shared file.
+    entries = art.entries.map(({ poster, ...entry }) => entry);
+    if (art.asked) console.log(`  JustWatch art: ${art.found}/${art.asked} found`);
     lists.push({ id: source.id, source: source.source, name: source.name, kind: source.kind, url: source.url, entries });
     console.log(`${source.source} · ${source.name}: ${entries.length} titles, first ${entries[0].title}`);
   } catch (error) {

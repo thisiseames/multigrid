@@ -3194,9 +3194,6 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc
 .hero-buttons .hero-play { margin-top: 0; }
 .hero-more { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px 0 16px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .16); color: #fff; font: 700 15px/1 var(--font); cursor: pointer; backdrop-filter: blur(8px); }
 .hero-more:hover { background: rgba(255, 255, 255, .26); }
-.hero-poster { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0b0b0d; }
-.hero-poster-bg { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); object-fit: cover; filter: blur(30px) brightness(.45); transform: scale(1.08); }
-.hero-poster-face { position: relative; height: 88%; width: auto; max-width: 34%; object-fit: contain; border-radius: 6px; box-shadow: 0 18px 50px rgba(0, 0, 0, .65); }
 
 .home-rows { position: relative; z-index: 1; margin-top: -110px; padding-bottom: 48px; }
 .home-edition-phone { padding: 0 16px 12px; }
@@ -3255,12 +3252,6 @@ body.is-phone .hcard-text b { font-size: 13px; }
 body.is-phone .hcard-text small { font-size: 11.5px; }
 body.is-phone .hcard-rank { left: 7px; font-size: 38px; }
 
-/* IMDb and RT rows carry portrait posters, not the wide backdrops the other rows use. */
-.home-row.is-posters .hcard { width: clamp(132px, 11vw, 180px); }
-.home-row.is-posters .hcard-art { aspect-ratio: 2 / 3; }
-.home-row.is-posters .hcard-rank { left: 8px; bottom: 4px; font-size: 42px; }
-body.is-phone .home-row.is-posters .hcard { width: min(31vw, 150px); }
-body.is-phone .home-row.is-posters .hcard-rank { font-size: 34px; }
 body.is-phone .home-edit { padding-bottom: 24px; }
 
 /* A game: the two teams' colours, crests large. */

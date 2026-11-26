@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DAYPARTS, HOME_ROWS, PICK_ROW_IDS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, isStandard, layoutData, moveRow, setBanner, setRow } from '../src/homelayout.js';
+import { BANNER_PARTS, DAYPARTS, HOME_ROWS, PICK_ROW_IDS, bannerShows, daypartFor, daypartOrder, homeLayout, homeRowOrder, isStandard, layoutData, moveRow, setBanner, setRow } from '../src/homelayout.js';
 
 test('the Matchday row leads through the match, then drops below Trending and disappears at midnight', () => {
   const ids = ['continue', 'recent', 'teams', 'fresh', 'onnow', 'ten', 'netflix', 'trending', ...PICK_ROW_IDS, 'trailers'];
@@ -23,6 +23,7 @@ test('the standard layout: every row in order and on; Ten, Top 10 and Trending o
   assert.equal(layout.banner.teams, true);
   assert.equal(layout.banner.ten, false);
   assert.equal(layout.banner.netflix, false);
+  assert.equal(layout.banner[PICK_ROW_IDS[0]], false);
   assert.ok(isStandard(layout));
 });
 
@@ -34,6 +35,25 @@ test('a saved layout: its order, The Ten after On now, unknown and repeated ids 
   assert.equal(layout.banner.teams, true);
   assert.deepEqual(layoutData(layout).hidden, ['onnow']);
   assert.deepEqual(homeLayout('nonsense').rows.length, HOME_ROWS.length);
+});
+
+test('the IMDb and RT rows are banner options, off by default and tied to their row', () => {
+  const layout = homeLayout(null);
+  for (const id of PICK_ROW_IDS) {
+    assert.ok(BANNER_PARTS.some((part) => part.id === id), id);
+    assert.equal(layout.banner[id], false, id);
+    let on = setBanner(layout, id, true);
+    assert.equal(bannerShows(on, id), true, id);
+    on = setRow(on, id, false);
+    assert.equal(bannerShows(on, id), false, id);
+  }
+});
+
+test('every edition can cycle the new rows after Trending in Canada', () => {
+  for (const part of DAYPARTS) {
+    const after = part.hero.indexOf('trending') + 1;
+    assert.deepEqual(part.hero.slice(after, after + PICK_ROW_IDS.length), PICK_ROW_IDS, part.id);
+  }
 });
 
 test('moving, hiding and the banner', () => {

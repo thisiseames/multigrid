@@ -108,7 +108,7 @@ test('a page with no matching rows gives an empty list', () => {
   assert.deepEqual(rtEditorialRows(''), []);
 });
 
-test('lists.json carries every category with a title, a safe link and a poster', () => {
+test('lists.json carries every category with a title, a safe link and landscape art', () => {
   const data = JSON.parse(readFileSync(new URL('../lists.json', import.meta.url), 'utf8'));
   assert.equal(data.lists.length, 9);
   const ids = data.lists.map((list) => list.id);
@@ -118,7 +118,8 @@ test('lists.json carries every category with a title, a safe link and a poster',
     for (const entry of list.entries) {
       assert.ok(entry.title, list.id);
       assert.match(entry.url, /^https:\/\/(?:www\.)?(?:imdb|rottentomatoes)\.com\//);
-      if (entry.poster) assert.match(entry.poster, /^https:\/\//);
+      assert.equal(entry.poster, undefined);
+      if (entry.image) assert.match(entry.image, /^https:\/\/images\.justwatch\.com\//);
       assert.ok(entry.kind === 'film' || entry.kind === 'show');
     }
   }
