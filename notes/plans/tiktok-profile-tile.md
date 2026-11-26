@@ -1,6 +1,8 @@
 # Native TikTok profile in the vertical viewer
 
-**Status:** built; checks pass. Deploy/live check pending.
+**Status:** DONE, live Nov 26, 2026 (commit 78331ed). Verified on multigrid.club: the profile
+replaces the tall TikTok feed, tapping a card plays over the same tile, Back to profile returns,
+and the tile count stays the same throughout.
 
 ## Running cost
 
@@ -100,7 +102,7 @@ limit is about 20 requests a minute, so normal use stays under it.
 - [x] Move profiles into the tall viewer.
 - [x] Replace the second-tile video click with an in-tile player and Back to profile.
 - [x] Update help, product map, file list/CSP; run tests and laptop/phone checks.
-- [ ] Commit/push, check live, mark DONE.
+- [x] Commit/push, check live, mark DONE.
 
 ## Gotchas
 
