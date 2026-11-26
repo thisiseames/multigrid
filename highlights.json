@@ -1,5 +1,5 @@
 {
- "updated": 1795667145367,
+ "updated": 1795668699276,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -233,6 +233,19 @@
     {
      "id": "C3ZJX7on7OE",
      "title": "Cincinnati Bengals vs Washington Commanders Game Highlights | 2026 NFL Season Week 11",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401873079": {
+   "league": "NFL",
+   "title": "Rams 26–13 Packers",
+   "start": 1795654800000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "__40m4hxmdA",
+     "title": "Green Bay Packers vs Los Angeles Rams Game Highlights | 2026 NFL Season Week 12",
      "rank": 3.5
     }
    ]
@@ -601,9 +614,9 @@
      "rank": 2
     },
     {
-     "id": "E1ABKHTFE1A",
-     "title": "Highlights: Jaime Jaquez Jr. Scores 21 Points vs. Nets | 11.25.26",
-     "rank": 1
+     "id": "2CKKzHDJt6k",
+     "title": "HIGHLIGHTS: Julius Randle & Noah Clowney Lead Nets to 104-97 Road Win in Milwaukee",
+     "rank": 2
     }
    ]
   },
@@ -612,7 +625,23 @@
    "title": "Rockets 116–104 Suns",
    "start": 1795656600000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "d1ml5nG4h0M",
+     "title": "SUNS at ROCKETS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "6IvvdId4zg8",
+     "title": "Alperen Sengun (23 points) Highlights vs. Phoenix Suns",
+     "rank": 1
+    },
+    {
+     "id": "H28HKYfwVrw",
+     "title": "Houston Rockets Highlights vs. Phoenix Suns",
+     "rank": 1
+    }
+   ]
   },
   "401910029": {
    "league": "NBA",
@@ -1246,7 +1275,9 @@
   "ucl:21922": "",
   "ucl:83": "UC14UlmYlSNiQCBe9Eookf_A",
   "ucl:494": "",
-  "ucl:102": ""
+  "ucl:102": "",
+  "nfl:14": "UCyJ6yZdVUkBvt2vl4R03jcA",
+  "nfl:9": "UCJtI-l6La0zniodFtSHYrBg"
  },
  "club": {
   "360": [
