@@ -61,7 +61,7 @@ import {
 } from './storage.js';
 import { linkLabel, nextName, tidyIssues } from './tidy.js';
 import { BANNER_PARTS, bannerShows, daypartFor, daypartOrder, homeLayout, loadHomeLayout, moveRow as moveHomeRow, saveHomeLayout, setBanner, setRow } from './homelayout.js';
-import { atlanticTarget, openLabel, topCharts, topLine } from './top10.js';
+import { atlanticTarget, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
 import { similarFor } from './similar.js';
@@ -6858,9 +6858,9 @@ async function drawHome() {
       desc: entry.desc,
       backdrop: entry.image,
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
-      // Netflix's row stays in MULTIGRID: no "Open on Netflix" button in its banner.
-      playLabel: entry.trailer ? 'Play trailer' : netflix ? null : openLabel(entry),
-      link: !netflix && entry.trailer && entry.url ? { label: openLabel(entry), url: entry.url } : null,
+      // Both chart rows stay in MULTIGRID: no "Open on [streaming service]" button in the banner.
+      playLabel: entry.trailer ? 'Play trailer' : null,
+      link: null,
       atlantic,
       play: () => (entry.trailer ? playFromHome(`https://www.youtube.com/watch?v=${entry.trailer}`) : entry.url && openLink(entry.url)),
     };
