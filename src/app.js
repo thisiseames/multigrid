@@ -70,7 +70,7 @@ import {
   channelFamily, channelKey, channelName, channelFromInput, gameForName, gameForTile, gameLink,
   gamesOnNow, mergeGames, resolveGameSources, sameGame, sourceIdentity, sourcesForChannel,
 } from './game-links.js';
-import { leftText, tileCard } from './tileinfo.js';
+import { leftText, tileCard, xrayAvailable } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
 import { findScore, normTitle, scoreLine, shardKey, votesText } from './scores.js';
 import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
@@ -409,7 +409,7 @@ function buildStreamMenu(id) {
     // With two small screens (they have no top bar), the big one's sheet swaps either of them in.
     ...pipInsetsFor(id).map((inset) => bigButton('pip', `Swap: ${labelOf(inset)}`, then(() => swapPip(inset.id)))),
     view.canPopOut ? bigButton('popout', isPoppedOut(view) ? 'Bring back' : 'Pop out', then(() => view.popOut()), { on: isPoppedOut(view) }) : null,
-    bigButton('help', 'X-Ray', then(() => openXRay(id))),
+    xrayAvailable(view.source) ? bigButton('help', 'X-Ray', then(() => openXRay(id))) : null,
     bigButton('calendar', 'Event Room', then(() => openEventRoom(id))),
     bigButton('reload', 'Reload', then(() => { view.reload(); toast(`Reloaded ${labelOf(tile)}.`); })),
     bigButton('search', 'Fix stream', then(() => openPalette({ repair: { id } }))),
@@ -2918,7 +2918,7 @@ function xrayHolder() {
 
 function openXRay(id) {
   const tile = tileById(id);
-  if (!tile) return;
+  if (!tile || !xrayAvailable(parseSource(tile.input))) return;
   if (deskOn) setDesk(false);
   xr.id = id;
   xr.people = [];
@@ -4276,7 +4276,7 @@ function cardElement({ card, art }, { first = '' } = {}) {
 
 function tileInfoCard(id, player) {
   const tile = tileById(id);
-  if (!tile || onPhoneScreen()) return null;
+  if (!tile || onPhoneScreen() || !xrayAvailable(parseSource(tile.input))) return null;
   const data = streamCard({ input: tile.input, name: labelOf(tile), event: tile.event, player });
   return data ? cardElement(data) : null;
 }

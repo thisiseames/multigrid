@@ -1346,7 +1346,7 @@ function blueskyVideoPlayer(source, options) {
 /* A compact profile card: header, counts and the latest videos. Nothing from TikTok's page
    is framed; the same public reader used by the feeds supplies the data. */
 function tiktokProfilePlayer(source, options) {
-  const { muted, volume, autoplay, env, onError, onPlayState, onCapability } = options;
+  const { muted, volume, autoplay, env, onPlayState, onCapability } = options;
   const username = source.tiktokprofile.username;
   let loading = false;
   let started = false;
@@ -1357,6 +1357,7 @@ function tiktokProfilePlayer(source, options) {
   let video = null;
   let videoTitle = '';
   let lastCard = null;
+  let lastVideo = null;
 
   const refresh = el('button', {
     type: 'button', class: 'tik-profile-refresh', title: 'Refresh profile',
@@ -1381,15 +1382,17 @@ function tiktokProfilePlayer(source, options) {
   /** A card opens TikTok's own player over the profile, inside this same tile. */
   function showVideo(item, card) {
     if (stopped || !item?.id) return;
-    if (video) closeVideo(false);
+    if (video) video.destroy();
+    video = null;
     lastCard = card || lastCard;
+    lastVideo = item;
     videoTitle = item.title || '';
     const player = tiktokPlayer({ kind: 'tiktok', tiktok: { id: item.id } }, {
       muted: wantedMuted,
       volume: wantedVolume,
       autoplay: Boolean(autoplay),
       env,
-      onError,
+      onError: (message) => showVideoError(message),
       onPlayState,
     });
     if (!player) return;
@@ -1404,12 +1407,31 @@ function tiktokProfilePlayer(source, options) {
     onCapability?.();
   }
 
+  /** A video TikTok can't play stays in the overlay, with Back and Try again still available. */
+  function showVideoError(message) {
+    if (layer.hidden) return;
+    video?.destroy();
+    video = null;
+    const retry = el('button', {
+      type: 'button', class: 'tik-profile-retry', textContent: 'Try again',
+      on: { click: () => { if (lastVideo && !stopped) showVideo(lastVideo, lastCard); } },
+    });
+    stage.replaceChildren(
+      el('div', { class: 'tik-video-status' },
+        el('img', { class: 'tik-video-status-mark', src: 'assets/tiktok-logo.svg', alt: '' }),
+        el('b', { class: 'tik-video-status-title', textContent: "This TikTok video didn't play." }),
+        el('p', { class: 'tik-video-status-text', textContent: message || 'Try another video, or open this one on TikTok.' }),
+        retry));
+    onCapability?.();
+  }
+
   /** Back to the profile, at the same scroll position. */
   function closeVideo(refocus = true) {
-    if (!video) return;
-    video.destroy();
+    if (layer.hidden) return;
+    video?.destroy();
     video = null;
     videoTitle = '';
+    lastVideo = null;
     stage.replaceChildren();
     layer.hidden = true;
     body.inert = false;
@@ -1561,7 +1583,7 @@ function tiktokProfilePlayer(source, options) {
     get canSeek() { return Boolean(video?.canSeek); },
     get silent() { return !video; },
     info() {
-      return video ? { live: false, title: videoTitle || `@${username}`, author: 'TikTok video' } : null;
+      return layer.hidden ? null : { live: false, title: videoTitle || `@${username}`, author: 'TikTok video' };
     },
     start() {
       if (started || stopped) return;

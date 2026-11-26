@@ -1,8 +1,11 @@
 # Native TikTok profile in the vertical viewer
 
-**Status:** DONE, live Nov 26, 2026 (commit 78331ed). Verified on multigrid.club: the profile
-replaces the tall TikTok feed, tapping a card plays over the same tile, Back to profile returns,
-and the tile count stays the same throughout.
+**Status:** the vertical viewer is DONE and live (commit 78331ed). A follow-up polish is built
+and verified locally; deploy/live check pending: X-Ray is off for all TikTok tiles, and a video
+TikTok cannot play keeps **Back to profile** and **Try again** instead of replacing the profile.
+
+The live vertical viewer was verified: the profile replaces the tall TikTok feed, tapping a
+card plays over the same tile, Back to profile returns, and the tile count stays the same.
 
 ## Running cost
 
@@ -52,6 +55,10 @@ limit is about 20 requests a minute, so normal use stays under it.
 - **Back to profile** while a video plays; the video is thrown away and the profile stays.
 - **Sound, pause and seek** belong to the video while it is open, through the same TikTok player
   used by normal video tiles. The profile itself is silent.
+- **X-Ray is off** for TikTok feeds, videos, profiles and lives. It has no TikTok data, and its
+  hover card covered the profile's **Back** button. The stream sheet's X-Ray row is gone too.
+- **A video TikTok can't play:** the overlay stays open with the reason, **Try again** and
+  **Back to profile**; it never destroys the profile tile.
 - **Saved old profile tiles:** opening that profile again moves it from a normal grid slot into
   the tall viewer instead of adding another tile.
 - **Loading:** compact skeleton header/cards, no blank flash.
@@ -72,9 +79,11 @@ limit is about 20 requests a minute, so normal use stays under it.
 - `src/app.js` (menu action, typed Profile button, vertical routing, phone bar, old-tile move)
 - `src/popout.js` (profile is not poppable)
 - `src/ui.js` (person, eye, heart, comment icons)
-- `styles.css` (menu action, profile tile, video overlay, narrow layout, skeleton)
+- `src/tileinfo.js` (X-Ray availability for TikTok tiles)
+- `styles.css` (menu action, profile tile, video overlay/error, narrow layout, skeleton)
 - `index.html` (help text, file list, CSP hash)
-- `tests/tiktok-profile.test.mjs`, `tests/sources.test.mjs`, `tests/layout.test.mjs`
+- `tests/tiktok-profile.test.mjs`, `tests/sources.test.mjs`, `tests/layout.test.mjs`,
+  `tests/tileinfo.test.mjs`
 
 ## Checks
 
@@ -86,12 +95,16 @@ limit is about 20 requests a minute, so normal use stays under it.
   **Back to profile** returns with the profile scroll position unchanged.
 - Video sound controls appear only while the video is open; the profile mute control is hidden
   again after Back.
+- Hovering a TikTok profile or video shows no X-Ray card, so **Back to profile** stays clear;
+  the stream sheet has no X-Ray row for TikTok tiles.
+- A forced TikTok player error keeps the overlay, **Try again** and **Back to profile**; Back
+  still returns to the profile.
 - Phone 390 px: profile in the tall column, compact cards, internal scroll, video overlay and
   Back work with no horizontal overflow.
 - Saved old profile tiles move into the tall viewer when opened again.
 - Reader blocked: clear unavailable state; **Try again** recovers once the reader returns.
 - Typed Profile button: invalid name shows the inline error; valid name opens the profile.
-- Existing TikTok feeds/menu, normal video links, other tiles, all tests (413 pass).
+- Existing TikTok feeds/menu, normal video links, other tiles, all tests (414 pass).
 
 ## Steps
 
@@ -103,6 +116,9 @@ limit is about 20 requests a minute, so normal use stays under it.
 - [x] Replace the second-tile video click with an in-tile player and Back to profile.
 - [x] Update help, product map, file list/CSP; run tests and laptop/phone checks.
 - [x] Commit/push, check live, mark DONE.
+- [x] Disable X-Ray for TikTok tiles so it cannot cover Back to profile.
+- [x] Keep Back and Try again when a TikTok video fails.
+- [ ] Commit/push the X-Ray polish, check live, mark DONE.
 
 ## Gotchas
 
@@ -113,3 +129,5 @@ limit is about 20 requests a minute, so normal use stays under it.
 - Public data only; no private profiles, earnings or creator score.
 - The six video requests are the rate-limit cost; do not fetch every listed video.
 - Profiles must not be popped out: the floating window has no Back to profile path.
+- X-Ray is intentionally unavailable for TikTok feeds, videos, profiles and lives. Its hover
+  card is the entry point on the laptop, so it must stay absent there; otherwise it covers Back.

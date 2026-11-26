@@ -4,6 +4,14 @@
 
 const clockOf = (time) => new Date(time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?([AP])M/i, (_, half) => ` ${half.toLowerCase()}m`);
 
+// X-Ray has no TikTok data, and its hover card would sit over the profile's Back button.
+const NO_XRAY_KINDS = new Set(['tiktok', 'tiktokprofile', 'tiktoklive']);
+
+/** Whether a tile can open X-Ray at all. TikTok videos, profiles and lives cannot. */
+export function xrayAvailable(source) {
+  return Boolean(source?.ok) && !NO_XRAY_KINDS.has(source.kind);
+}
+
 /** "38 min left", "1 hr 5 min left". */
 export function leftText(seconds) {
   const minutes = Math.max(1, Math.round(seconds / 60));
