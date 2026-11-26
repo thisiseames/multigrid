@@ -13319,7 +13319,7 @@ function buildTikTokMenu() {
     const sub = account.sub && !(String(account.sub).trim().startsWith('@') && handle(account.sub) === handle(account.label))
       ? account.sub
       : '';
-    return el('li', { class: 'tiktok-menu-item' },
+    const item = el('li', { class: 'tiktok-menu-item' },
       el('button', {
         type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
         on: {
@@ -13342,13 +13342,36 @@ function buildTikTokMenu() {
           },
         },
       }, icon('person', 14), el('span', { textContent: 'Profile' })));
+    item.dataset.search = `${account.username} ${account.label} ${account.sub}`.toLocaleLowerCase();
+    return item;
   };
+  const listBox = list.length ? el('ul', { class: 'reels-list' }, ...list.map(row)) : null;
+  const noMatches = el('p', { class: 'reels-empty', hidden: true });
+  const noAccounts = list.length ? null : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' });
+  const count = el('small', { textContent: list.length ? `${list.length} ${list.length === 1 ? 'account' : 'accounts'}` : 'TikTok feeds' });
   const input = el('input', {
     id: 'tiktok-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
-    placeholder: '@username or TikTok link', aria: { label: 'TikTok username or link' },
+    placeholder: 'Search saved accounts or add @username', aria: { label: 'Search saved TikTok accounts or add a username' },
   });
   const error = el('p', { class: 'live-add-error', hidden: true });
-  input.addEventListener('input', () => { error.hidden = true; });
+  const filterRows = () => {
+    const query = input.value.trim().replace(/^@/, '').toLocaleLowerCase();
+    let shown = 0;
+    if (listBox) {
+      for (const item of listBox.children) {
+        const hit = !query || item.dataset.search.includes(query);
+        item.hidden = !hit;
+        if (hit) shown += 1;
+      }
+      listBox.hidden = Boolean(query) && shown === 0;
+    }
+    if (noMatches) {
+      noMatches.hidden = !query || shown > 0;
+      noMatches.textContent = query ? `No saved accounts match “${input.value.trim()}”.` : '';
+    }
+    count.textContent = query ? `${shown} of ${list.length}` : `${list.length} ${list.length === 1 ? 'account' : 'accounts'}`;
+  };
+  input.addEventListener('input', () => { error.hidden = true; filterRows(); });
   const typedName = () => {
     const name = tiktokUsernameFrom(input.value);
     if (!name) {
@@ -13392,7 +13415,7 @@ function buildTikTokMenu() {
   menu.replaceChildren(
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'TikTok' }),
-      el('small', { textContent: list.length ? `${list.length} ${list.length === 1 ? 'account' : 'accounts'}` : 'TikTok feeds' })),
+      count),
     el('button', {
       type: 'button',
       class: 'reels-add tiktok-following',
@@ -13402,9 +13425,9 @@ function buildTikTokMenu() {
     el('span', { class: 'reels-text' },
       el('b', { textContent: following.length ? 'Choose followed accounts…' : 'Import following list…' }),
       following.length ? el('small', { textContent: `(${following.length})` }) : null)),
-    list.length
-      ? el('ul', { class: 'reels-list' }, ...list.map(row))
-      : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' }),
+    listBox,
+    noAccounts,
+    noMatches,
     el('div', { class: 'reels-foot' }, form, error));
   tiktokAvatarObserver?.disconnect();
   tiktokAvatarObserver = null;
