@@ -7,6 +7,9 @@ the same tile; Back to profile returns; the tile count stays the same; TikTok vi
 X-Ray hover card and no X-Ray row in the stream sheet. Locally, a forced TikTok player error
 kept **Try again** and **Back to profile**, and Back still returned to the profile.
 
+**Visual polish (deploy pending):** Back to profile now sits below the TikTok logo/profile name
+instead of on top of it, with a more transparent background.
+
 ## Running cost
 
 $0/month. No server, account, key or extension. The profile uses the same `r.jina.ai` reader
@@ -27,8 +30,8 @@ limit is about 20 requests a minute, so normal use stays under it.
   scrolls; no TikViewer banner or page chrome.
 - **A video stays in the same tile:** tapping a card plays that video over the profile using
   TikTok's own player. No second tile is created.
-- **Back to profile:** a clear button at the top-left of the video returns to the profile at the
-  same scroll position.
+- **Back to profile:** a clear, semi-transparent button below the video's logo/profile name
+  returns to the profile at the same scroll position. It no longer covers the TikTok profile row.
 - **Refresh:** re-fetches the profile and the six videos while the profile is showing.
 - **No:** earnings calculator, creator score, hashtags, top creators.
 
