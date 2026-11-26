@@ -12619,9 +12619,14 @@ function buildTikTokMenu() {
   const list = [...accounts.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
   const following = tiktokFollowing();
   const artJobs = new Map();
+  // The following export has handles only. Do not print the same @handle twice.
+  const handle = (value) => String(value || '').trim().replace(/^@/, '').toLocaleLowerCase();
   const row = (account) => {
     const art = el('span', { class: 'reels-icon tiktok-row-art' }, icon('music', 18));
     artJobs.set(art, account.username);
+    const sub = account.sub && !(String(account.sub).trim().startsWith('@') && handle(account.sub) === handle(account.label))
+      ? account.sub
+      : '';
     return el('li', { class: 'tiktok-menu-item' },
       el('button', {
         type: 'button', class: 'reels-row tiktok-row', title: `Open ${account.label}`,
@@ -12633,7 +12638,7 @@ function buildTikTokMenu() {
         },
       },
       art,
-      el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), el('small', { textContent: account.sub }))),
+      el('span', { class: 'reels-text' }, el('b', { textContent: account.label }), sub ? el('small', { textContent: sub }) : null)),
       el('button', {
         type: 'button', class: 'tiktok-profile-action',
         title: `Open ${account.label} profile`,

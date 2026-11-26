@@ -490,3 +490,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 25: Added `color-scheme: dark` to the first paint for the iOS Home Screen white flash. iOS caches `apple-touch-startup-image` when the app is added, so an existing install can keep the white frame until it is removed and added again; its local storage is separate, so back up/sync first.
 - Nov 25: The Top 10 on Netflix and Trending in Canada banners no longer show “Open on [streaming service]” buttons. Trailer and Atlantic buttons still show.
 - Nov 25: Trending trailers now use YouTube’s 1280×720 `maxresdefault.jpg` for their banner and cards, falling back to `sddefault`, `hqdefault`, then `mqdefault` when a video has no max-res image. Home pictures load lazily.
+- Nov 25: The TikTok account menu no longer repeats the same @handle on both lines. The larger white handle stays; a real display name still shows underneath.
