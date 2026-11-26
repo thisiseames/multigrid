@@ -2890,7 +2890,7 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .chart-card-rank { position: absolute; z-index: 2; left: 8px; bottom: 8px; display: flex; align-items: baseline; gap: 6px; padding: 3px 8px; border-radius: 8px; background: rgba(0, 0, 0, .72); backdrop-filter: blur(6px); }
 .chart-card-rank b { font-size: 20px; font-weight: 800; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
 .chart-card-rank .chart-move { font-size: 10px; }
-.chart-card-text { display: flex; flex-direction: column; gap: 2px; min-height: 38px; }
+.chart-card-text { display: flex; flex-direction: column; gap: 2px; height: 56px; min-height: 56px; overflow: hidden; }
 .chart-card-text b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; font-weight: 650; line-height: 1.25; color: var(--text); }
 .chart-card-text small { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chart-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
@@ -2900,6 +2900,7 @@ body.is-phone.remote-open .sent-card { bottom: calc(16px + env(safe-area-inset-b
 .chart-card-act span { overflow: hidden; text-overflow: ellipsis; }
 body.is-phone .home-charts .chart-box { margin: 0 16px; }
 body.is-phone .chart-card { width: 150px; }
+body.is-phone .chart-card-text { height: 54px; min-height: 54px; }
 body.is-phone .chart-card-text b { font-size: 13px; }
 body.is-phone .chart-card-actions { grid-template-columns: 1fr; }
 body.is-phone .chart-card-act { font-size: 10.5px; padding: 0 8px; gap: 5px; }
