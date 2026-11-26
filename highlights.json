@@ -1,5 +1,5 @@
 {
- "updated": 1795723514783,
+ "updated": 1795725072169,
  "games": {
   "401873069": {
    "league": "NFL",
@@ -378,19 +378,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910029": {
-   "league": "NBA",
-   "title": "Hawks 107–97 Pistons",
-   "start": 1795379400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "wQ8QMIYmWeA",
-     "title": "PISTONS at HAWKS | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
     }
    ]
   },
@@ -1205,18 +1192,6 @@
     "source": "MinaFootball"
    },
    {
-    "id": "yjkyFegfvd8",
-    "title": "REFEREE DRAMA! Man United ‘ROBBED’ by Two HUGE Calls Against Sporting?! 😳",
-    "published": 1795643552000,
-    "source": "TNT Sports"
-   },
-   {
-    "id": "ftAcQ4UuYF8",
-    "title": "DRAMA! Man United concede two penalties in three minutes vs Sporting",
-    "published": 1795640745000,
-    "source": "TNT Sports"
-   },
-   {
     "id": "aAC5KPrmWDE",
     "title": "Man Utd’s defensive crisis: what is going wrong? | Soccer Special",
     "published": 1795638669000,
@@ -1413,30 +1388,6 @@
     "title": "Pochettino, Welcome To The Circus.",
     "published": 1795380111000,
     "source": "Lyes"
-   },
-   {
-    "id": "RhpqV5PkdpI",
-    "title": "\"POCH IS 7 YEARS TOO LATE\" Culture Cams On Man United!",
-    "published": 1795379421000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "A8IxwaSPeqw",
-    "title": "Jamie Carragher & Gary Neville Liverpool 4-0 Man Utd Comms Cam 🎥",
-    "published": 1795378833000,
-    "source": "Sky Sports Premier League"
-   },
-   {
-    "id": "5krueaMRsfU",
-    "title": "Liverpool Beat 10-Men Man United Just 4-0 At Anfield. I’M ANGRY 😡",
-    "published": 1795378748000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "S5ZPNxHJNL8",
-    "title": "19th Place & Humiliation At Anfield | Liverpool 4-0 Manchester United (REACTION)",
-    "published": 1795378327000,
-    "source": "MinaFootball"
    }
   ]
  }
