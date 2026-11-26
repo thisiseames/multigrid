@@ -1,5 +1,5 @@
 {
- "updated": 1795664028904,
+ "updated": 1795665583217,
  "games": {
   "401873067": {
    "league": "NFL",
@@ -553,7 +553,13 @@
    "title": "Thunder 106–113 Timberwolves",
    "start": 1795653000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "vWLULGo65pw",
+     "title": "TIMBERWOLVES at THUNDER | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401909321": {
    "league": "NBA",
@@ -561,6 +567,11 @@
    "start": 1795654800000,
    "sources": "feeds",
    "videos": [
+    {
+     "id": "gN2-ZSIz7ck",
+     "title": "CLIPPERS at GRIZZLIES | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    },
     {
      "id": "jSJSKu6OZZ8",
      "title": "Jaylen Wells Highlights vs. LA Clippers",
@@ -570,11 +581,6 @@
      "id": "MX14M4zVmoA",
      "title": "Memphis Grizzlies Highlights vs LA Clippers",
      "rank": 1
-    },
-    {
-     "id": "Rzi9nk1QVqE",
-     "title": "Ty Jerome Highlights vs LA Clippers",
-     "rank": 1
     }
    ]
   },
@@ -583,7 +589,23 @@
    "title": "Bucks 97–104 Nets",
    "start": 1795654800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "kz3nvPo8EjQ",
+     "title": "NETS at BUCKS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 25, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "XIqGfDos7xc",
+     "title": "Highlights: Bucks 97 - Nets 104 | 11.25.26",
+     "rank": 2
+    },
+    {
+     "id": "E1ABKHTFE1A",
+     "title": "Highlights: Jaime Jaquez Jr. Scores 21 Points vs. Nets | 11.25.26",
+     "rank": 1
+    }
+   ]
   },
   "401910029": {
    "league": "NBA",
