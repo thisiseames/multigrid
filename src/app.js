@@ -6731,12 +6731,6 @@ const homeRow = (title, items, note = '') => (items.length ? el('section', { cla
   note ? el('p', { class: 'home-note', textContent: note }) : null,
   el('ul', { class: 'hrow' }, ...items.map(homeCard))) : null);
 
-/** The home is loading: a neutral row instead of a real Continue/Reaction row that would flash. */
-const homeSkeleton = () => el('section', { class: 'home-row home-skeleton', aria: { hidden: 'true' } },
-  el('span', { class: 'home-skel-title' }),
-  el('ul', { class: 'hrow' },
-    ...Array.from({ length: 3 }, () => el('li', { class: 'hcard' }, el('span', { class: 'home-skel-card' })))));
-
 /** Fills in TVmaze's picture and story for an item once they arrive. */
 function withArt(item, name) {
   artFor(name).then((art) => {
@@ -6815,8 +6809,9 @@ async function drawHome() {
       aria: { pressed: String(daypartPreview) },
       on: { click: () => setDaypartHome(!daypartPreview) },
     }, icon('today', 15), el('span', { textContent: daypartPreview ? 'Edition · On' : 'Edition · Off' }))) : null;
-  // No provisional banner or real row: a neutral skeleton holds the space until the final order.
-  if (firstLoad) paint([phoneEdition, homeSkeleton()]);
+  // No provisional banner or row. A fresh home waits for the final order; a refresh keeps the
+  // rows already on screen until the new ones are ready.
+  if (firstLoad) paint([phoneEdition]);
 
   const [sections, , episodes, , , top, catalog, movieJob, showJob] = await Promise.all([
     loadTab(MATCH_TABS.find((tab) => tab.mine), now).catch(() => null),
@@ -7142,7 +7137,9 @@ function syncHome(show) {
   }
   if (fresh) {
     homeShownAt = Date.now();
-    home.replaceChildren();
+    // Keep the last rows on a re-open; a cold home has nothing to keep and waits for the final order.
+    if (home.querySelector('.home-rows')) $('stage').classList.add('has-home');
+    else home.replaceChildren();
     // The rows come in as the wordmark settles (its animation runs 1.6 s).
     homeTimer = setTimeout(() => drawHome(), 1500);
   }
@@ -9468,8 +9465,12 @@ function drawMatchdayViews() {
   md.hold = hold;
   const home = $('home');
   if (home && !home.hidden) {
-    if (changed || md.drawnData !== Boolean(md.data)) drawHome();
-    else refreshMatchdayHero();
+    if (changed) {
+      drawHome();
+    } else {
+      if (md.drawnData !== Boolean(md.data)) refreshMatchdayRow();
+      refreshMatchdayHero();
+    }
   }
   if (!$('gamebar').hidden && (gameTab === 'matchday' || changed)) {
     drawGamebar();
@@ -9837,6 +9838,27 @@ function titleCase(name) {
 function mdArt(match, xi) {
   return el('div', { class: `md-art${xi ? ' has-xi' : ''}` },
     xi || el('div', { class: 'md-art-crests' }, crestOf(match.home, 150), el('span', { class: 'md-art-v', textContent: 'v' }), crestOf(match.away, 150)));
+}
+
+/** Replaces only the Matchday row when its data catches up; Continue watching stays untouched. */
+function refreshMatchdayRow() {
+  const home = $('home');
+  if (!home || home.hidden) return;
+  const row = home.querySelector('.home-rows > .home-row.is-matchday');
+  const fresh = matchdayHome();
+  if (!fresh.row) {
+    row?.remove();
+    md.drawnData = Boolean(md.data);
+    return;
+  }
+  if (!row) {
+    drawHome();
+    return;
+  }
+  const next = homeRow(fresh.row.title, fresh.row.items);
+  next.classList.add('is-matchday', 'is-quiet');
+  row.replaceWith(next);
+  md.drawnData = Boolean(md.data);
 }
 
 /** Keeps the banner's countdown, score and chances current without redrawing the picture. */
