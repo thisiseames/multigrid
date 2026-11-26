@@ -6624,16 +6624,20 @@ function showHero(item, { hold = false, refresh = false } = {}) {
     info.replaceChildren(...[edition, ...item.render()].filter(Boolean));
     return;
   }
+  // null means the banner has no main button (Top 10 on Netflix without a trailer).
+  const primaryLabel = item.playLabel === null ? '' : (item.playLabel || 'Play');
+  const buttons = [
+    primaryLabel ? el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(primaryLabel.startsWith('Open on') ? 'open' : 'play', 16), el('span', { textContent: primaryLabel })) : null,
+    item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null,
+    item.atlantic ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.atlantic.url) } }, icon('open', 16), el('span', { textContent: item.atlantic.label })) : null,
+  ].filter(Boolean);
   info.replaceChildren(...[
     edition,
     el('span', { class: 'hero-label', textContent: item.label }),
     el('h2', { class: `hero-title${item.title.length > 40 ? ' is-long' : ''}`, textContent: item.title }),
     item.meta ? el('p', { class: 'hero-meta', textContent: item.meta }) : null,
     item.desc ? el('p', { class: 'hero-desc', textContent: item.desc }) : null,
-    el('div', { class: 'hero-buttons' },
-      el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(item.playLabel?.startsWith('Open on') ? 'open' : 'play', 16), el('span', { textContent: item.playLabel || 'Play' })),
-      item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null,
-      item.atlantic ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.atlantic.url) } }, icon('open', 16), el('span', { textContent: item.atlantic.label })) : null),
+    buttons.length ? el('div', { class: 'hero-buttons' }, ...buttons) : null,
   ].filter(Boolean));
 }
 
@@ -6845,16 +6849,18 @@ async function drawHome() {
   const charts = topCharts(top);
   const chartRow = (id, label) => (charts.find((chart) => chart.id === id)?.entries ?? []).map((entry) => {
     const atlantic = atlanticTarget(entry.title, favorites);
+    const netflix = id === 'netflix';
     const item = {
       key: `t:${id}:${entry.rank}:${entry.title}`, label: `#${entry.rank} · ${label}`, title: entry.title, rank: entry.rank,
       meta: [topLine(entry), scoreLine(entry)].filter(Boolean).join(' · '),
-      cardMeta: topLine(entry, { withService: id !== 'netflix' }) || entry.service,
+      cardMeta: topLine(entry, { withService: !netflix }) || entry.service,
       scores: entry,
       desc: entry.desc,
       backdrop: entry.image,
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
-      playLabel: entry.trailer ? 'Play trailer' : openLabel(entry),
-      link: entry.trailer && entry.url ? { label: openLabel(entry), url: entry.url } : null,
+      // Netflix's row stays in MULTIGRID: no "Open on Netflix" button in its banner.
+      playLabel: entry.trailer ? 'Play trailer' : netflix ? null : openLabel(entry),
+      link: !netflix && entry.trailer && entry.url ? { label: openLabel(entry), url: entry.url } : null,
       atlantic,
       play: () => (entry.trailer ? playFromHome(`https://www.youtube.com/watch?v=${entry.trailer}`) : entry.url && openLink(entry.url)),
     };
