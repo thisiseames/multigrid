@@ -2547,6 +2547,28 @@ function openPalette(options = {}) {
   focusInput();
   requestAnimationFrame(focusInput);
   setTimeout(focusInput, 80);
+  // On a phone the keyboard shrinks the visual viewport, not the layout viewport. Keep the
+  // palette above the keyboard and give the results the remaining height.
+  const fitPalette = () => {
+    if (!onPhoneScreen()) return;
+    const view = window.visualViewport;
+    const bar = document.querySelector('.topbar')?.getBoundingClientRect().bottom || 64;
+    const top = Math.max(bar + 8, (view?.offsetTop || 0) + 8);
+    const height = view?.height || window.innerHeight;
+    box.style.marginTop = `${top}px`;
+    box.style.maxHeight = `${Math.max(260, height - top - 8)}px`;
+  };
+  fitPalette();
+  window.visualViewport?.addEventListener('resize', fitPalette);
+  window.visualViewport?.addEventListener('scroll', fitPalette);
+  const settle = setTimeout(() => { if (box.open) { paint(); fitPalette(); } }, 220);
+  box.addEventListener('close', () => {
+    clearTimeout(settle);
+    window.visualViewport?.removeEventListener('resize', fitPalette);
+    window.visualViewport?.removeEventListener('scroll', fitPalette);
+    box.style.marginTop = '';
+    box.style.maxHeight = '';
+  }, { once: true });
   // Fresh scores redraw the results once they arrive, while the box is open.
   const repaint = () => { if (box.open) schedulePaint(); else scoreWatchers.delete(repaint); };
   scoreWatchers.add(repaint);
