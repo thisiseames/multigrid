@@ -10971,39 +10971,39 @@ function chartMove(entry) {
   return mark('same', '–', `Same as last week`);
 }
 
-function chartRow(entry, chart, list) {
+function chartCard(entry, chart) {
   const query = `${entry.artist} ${entry.title}`.trim();
   const video = chart.kind === 'song' && /^[\w-]{11}$/.test(entry.video || '') ? entry.video : '';
-  const act = (name, label, onClick) => el('button', { type: 'button', class: 'chart-act', on: { click: onClick } }, icon(name, 14), label);
-  const actions = el('div', { class: 'chart-actions', hidden: true },
-    video ? act('play', 'Watch here', () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${video}`); }) : null,
-    act('open', 'Spotify', () => openLink(`https://open.spotify.com/search/${encodeURIComponent(query)}`)),
-    act('open', 'Amazon Music', () => openLink(`https://music.amazon.com/search/${encodeURIComponent(query)}`)),
-    act('open', 'Apple Music', () => openLink(`https://music.apple.com/ca/search?term=${encodeURIComponent(query)}`)),
-    video ? null : act('open', 'YouTube', () => openLink(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`)));
-  const main = el('button', {
-    type: 'button',
-    class: 'trow-main',
-    aria: { expanded: 'false' },
-    on: {
-      click() {
-        const opening = actions.hidden;
-        // One open at a time.
-        for (const other of list.querySelectorAll('.chart-actions')) other.hidden = true;
-        for (const other of list.querySelectorAll('.trow-main')) other.setAttribute('aria-expanded', 'false');
-        actions.hidden = !opening;
-        main.setAttribute('aria-expanded', String(opening));
-      },
-    },
-  },
-  el('span', { class: 'chart-rank' }, el('b', { textContent: String(entry.rank) }), chartMove(entry)),
-  /^https:\/\/charts-static\.billboard\.com\//.test(entry.image || '')
-    ? el('span', { class: 'fart is-picture chart-cover' }, el('img', { src: entry.image, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }))
-    : el('span', { class: 'fart is-icon chart-cover' }, icon('music', 18)),
-  el('span', { class: 'trow-text' },
-    el('span', { class: 'trow-title', textContent: entry.title }),
-    entry.artist ? el('span', { class: 'trow-sub', textContent: entry.artist }) : null));
-  return el('li', { class: 'trow' }, main, actions);
+  const watch = () => { closePopovers(); addStream(`https://www.youtube.com/watch?v=${video}`); };
+  const act = (name, label, title, onClick) => el('button', {
+    type: 'button', class: 'chart-card-act', title, aria: { label: title },
+    on: { click: onClick },
+  }, icon(name, 12), el('span', { textContent: label }));
+  const art = el('span', { class: 'chart-card-art' }, icon('music', 30));
+  if (/^https:\/\/charts-static\.billboard\.com\//.test(entry.image || '')) {
+    const image = el('img', { src: entry.image, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+    image.addEventListener('error', () => image.remove(), { once: true });
+    art.append(image);
+  }
+  const cover = el('button', {
+    type: 'button', class: 'chart-card-cover',
+    title: video ? `Play ${entry.title}` : `Open ${entry.title} on YouTube Music`,
+    on: { click: video ? watch : () => openLink(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`) },
+  }, art,
+  el('span', { class: 'chart-card-rank' },
+    el('b', { textContent: String(entry.rank) }), chartMove(entry)));
+  return el('article', { class: 'chart-card' },
+    cover,
+    el('div', { class: 'chart-card-text' },
+      el('b', { textContent: entry.title }),
+      entry.artist ? el('small', { textContent: entry.artist }) : null),
+    el('div', { class: 'chart-card-actions' },
+      video
+        ? act('play', 'Watch', 'Watch the video', watch)
+        : act('open', 'YouTube', 'Search YouTube Music', () => openLink(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`)),
+      act('open', 'Spotify', 'Search Spotify', () => openLink(`https://open.spotify.com/search/${encodeURIComponent(query)}`)),
+      act('open', 'Amazon Music', 'Search Amazon Music', () => openLink(`https://music.amazon.com/search/${encodeURIComponent(query)}`)),
+      act('open', 'Apple Music', 'Search Apple Music', () => openLink(`https://music.apple.com/ca/search?term=${encodeURIComponent(query)}`))));
 }
 
 /** Under a Billboard list: its week. */
@@ -11018,11 +11018,11 @@ function chartsView(data) {
   const charts = (Array.isArray(data?.charts) ? data.charts : []).filter((chart) => typeof chart.name === 'string' && Array.isArray(chart.entries) && chart.entries.length);
   if (!charts.length) return null;
   let at = chartTab < charts.length ? chartTab : 0;
-  const list = el('ul', { class: 'rlist chart-list' });
+  const list = el('div', { class: 'chart-cards' });
   const note = el('p', { class: 'chart-week' });
   const draw = () => {
     const chart = charts[at];
-    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartRow(entry, chart, list)));
+    list.replaceChildren(...chart.entries.slice(0, 5).map((entry) => chartCard(entry, chart)));
     note.textContent = chartNote(chart);
   };
   const tabs = el('div', { class: 'chart-tabs addp-pills', role: 'tablist' }, ...charts.map((chart, index) => el('button', {
