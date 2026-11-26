@@ -1,0 +1,49 @@
+name: youtube-api-check
+
+on:
+  push:
+    paths:
+      - '.github/workflows/youtube-api-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call YouTube Data API
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          if [ -z "$YOUTUBE_API_KEY" ]; then
+            echo "::error::YOUTUBE_API_KEY is not set"
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/yt.json -w "%{http_code}" -G "https://www.googleapis.com/youtube/v3/videos" \
+            --data-urlencode "part=snippet" \
+            --data-urlencode "chart=mostPopular" \
+            --data-urlencode "regionCode=US" \
+            --data-urlencode "maxResults=1" \
+            --data-urlencode "key=$YOUTUBE_API_KEY")
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then
+            python3 - <<'PY'
+import json
+try:
+    data = json.load(open('/tmp/yt.json'))
+    message = data.get('error', {}).get('message', 'unknown error')
+except Exception:
+    message = 'could not parse the response'
+print(f"::error::{message}")
+PY
+            exit 1
+          fi
+          python3 - <<'PY'
+import json
+data = json.load(open('/tmp/yt.json'))
+item = (data.get('items') or [{}])[0]
+print('OK:', item.get('snippet', {}).get('title', '(no title)'))
+PY
