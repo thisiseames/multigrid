@@ -25,7 +25,9 @@ export function seriesLink(input) {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
   const host = url.hostname.toLocaleLowerCase().replace(/^www\./, '');
   const parts = url.pathname.split('/').filter(Boolean);
-  if (host === ATLANTIC_HOST && parts[0] === 'watch' && parts.length >= 2) {
+  // Atlantic films are /watch/<tmdb>; only the four-part /watch/<tmdb>/<season>/<episode>
+  // shape is a series. The film is read by films.js as an Atlantic film.
+  if (host === ATLANTIC_HOST && parts[0] === 'watch' && parts.length >= 4) {
     const tmdb = tmdbId(parts[1]);
     return tmdb ? { source: 'atlantic', tmdb, season: integer(parts[2]), episode: integer(parts[3]), url: url.href } : null;
   }
@@ -59,6 +61,12 @@ export function flexUrl(tmdb, season = 1, episode = 1, tokenValue = token()) {
 export function atlanticUrl(tmdb, season = 1, episode = 1) {
   const id = tmdbId(tmdb);
   return id ? `https://atlantic.bz/watch/${id}/${integer(season)}/${integer(episode)}` : '';
+}
+
+/** An Atlantic film link: films have no season or episode. */
+export function atlanticMovieUrl(tmdb) {
+  const id = tmdbId(tmdb);
+  return id ? `https://atlantic.bz/watch/${id}` : '';
 }
 
 /** A Cinejoy watch link for one episode. */

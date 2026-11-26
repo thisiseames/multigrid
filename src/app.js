@@ -53,8 +53,8 @@ import { loadMatchora } from './matchora.js';
 import { ZLIVE_CATEGORIES, loadZlive as loadZliveManifest, zliveEmbed } from './zlive.js';
 import { followedShowInput, isPodcastShowInput, loadPodcastCharts, lookupShowEpisodes, sameShowName, searchEpisodes, searchShows, showIdFromInput } from './podcasts.js';
 import { audioInput, channelFavoriteInput, episodeOf, episodePage, isBlockedMixedContent, isYouTubeChannelPage, orderPlaylist, parseSource, playlistInput, PLAYLIST_LIMIT, readerInput } from './sources.js';
-import { atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
-import { favoriteTitle, searchTmdbSeries, tmdbPosterUrl } from './series-search.js';
+import { atlanticMovieUrl, atlanticUrl, cinejoyUrl, flexUrl, SERIES_SOURCE_LABELS, seriesLink, seriesSearchUrl } from './series-sources.js';
+import { bestTmdbMatch, favoriteTitle, searchTmdbTitles, tmdbPosterUrl } from './series-search.js';
 import {
   TRANSFER_PREFIX, deleteSaved, favoriteName, findSaved, folderForCategory, importFavorites, isFolderClosed, isMixerOpen, isOneSound, setOneSound, listFavorites, listFolders, listSaved,
   deleteFolder, loadCurrent, moveFavorite, newFavorites, openSaved, promoteFavoriteSource, removeFavorite, removeFavoriteSource, renameFolder, renameSaved, restoreSavedItem,
@@ -1632,28 +1632,130 @@ function seriesForTile(tile) {
   return { ...link, favorite, name: favorite?.name || tile.title || labelOf(tile) };
 }
 
-/** Find a show by name, then add it to Series on Atlantic or 1Flex. */
-function openSeriesSearch({ query = '' } = {}) {
+/** The TMDB number and kind in a saved title, whichever source it came from. */
+function titleFavoriteInfo(input) {
+  const series = seriesLink(input);
+  if (series) return { kind: 'show', tmdb: series.tmdb, source: series.source };
+  const atlantic = atlanticTitle(input);
+  if (atlantic) return { kind: atlantic.kind === 'film' ? 'film' : 'show', tmdb: Number(atlantic.tmdb), source: 'atlantic' };
+  return null;
+}
+
+/** A saved title with this name, optionally only a film or only a show. */
+function savedTitleFavorite(title, kind = '', favorites = listFavorites()) {
+  const key = titleKey(title);
+  if (!key) return null;
+  for (const favorite of favorites) {
+    if (titleKey(favorite.name) !== key) continue;
+    const info = titleFavoriteInfo(favorite.input);
+    if (!info || (kind && info.kind !== kind)) continue;
+    return { ...favorite, ...info };
+  }
+  return null;
+}
+
+function openSavedTitle(saved) {
+  if (!saved?.input) return;
+  if (ws.tiles.some((tile) => tile.input === saved.input || tile.favorite === saved.input)) {
+    toast(`${saved.name} is already on the wall.`);
+    return;
+  }
+  playFromHome(saved.input);
+}
+
+/** Puts one exact TMDB film or show into its folder and onto the wall. */
+function addTitleFavorite(item, { source = 'atlantic', favorites = listFavorites() } = {}) {
+  const kind = item?.kind === 'film' ? 'film' : 'show';
+  const name = favoriteTitle(item?.title || '');
+  const id = Number(item?.id);
+  if (!name || !Number.isInteger(id) || id <= 0) return null;
+  const existing = favorites.find((favorite) => {
+    const info = titleFavoriteInfo(favorite.input);
+    return info && info.kind === kind && Number(info.tmdb) === id;
+  });
+  if (existing) {
+    if (ws.tiles.some((tile) => tile.input === existing.input || tile.favorite === existing.input)) {
+      toast(`${existing.name} is already on the wall.`);
+      return null;
+    }
+    const added = addStream(existing.input, { mode: 'add' }, existing.name, existing.input, null);
+    if (added) toast(`Added ${existing.name}.`);
+    return added;
+  }
+  const url = kind === 'film' ? atlanticMovieUrl(id) : source === 'flex' ? flexUrl(id, 1, 1) : atlanticUrl(id, 1, 1);
+  if (!url) return null;
+  const folder = kind === 'film' ? 'MOVIES' : 'SERIES';
+  if (!saveFavorite(url, name, folder, undefined, item.poster || undefined)) { toast(STORAGE_FULL); return null; }
+  const added = addStream(url, { mode: 'add' }, name, url, null);
+  if (added) toast(`Added ${name} to ${kind === 'film' ? 'Movies' : 'Series'}.`);
+  return added;
+}
+
+const homeAddPending = new Set();
+
+/** One click from a home title: exact TMDB match, or the picker when it is ambiguous. */
+async function addHomeTitle({ title, year = 0, kind = '' }) {
+  const key = `${titleKey(title)}|${kind || 'any'}`;
+  if (homeAddPending.has(key)) return;
+  homeAddPending.add(key);
+  try {
+    const saved = savedTitleFavorite(title, kind);
+    if (saved) { openSavedTitle(saved); return; }
+    toast(`Finding ${title}…`);
+    const wanted = kind === 'film' || kind === 'show' ? kind : 'any';
+    const answer = await searchTmdbTitles(title, wanted);
+    const match = bestTmdbMatch(answer.items, { title, year, kind: wanted });
+    if (match) addTitleFavorite(match, { source: 'atlantic' });
+    else openSeriesSearch({ query: title, kind: wanted, year });
+  } finally {
+    homeAddPending.delete(key);
+  }
+}
+
+function homeAddAction({ title, year = 0, kind = '', favorites = listFavorites() }) {
+  const saved = savedTitleFavorite(title, kind, favorites);
+  const word = kind === 'film' ? 'movie' : kind === 'show' ? 'show' : 'title';
+  return {
+    label: `${saved ? 'Open' : 'Add'} ${word}`,
+    run: saved ? () => openSavedTitle(saved) : () => addHomeTitle({ title, year, kind }),
+  };
+}
+
+/** Find a film, show or both by name, then add the chosen result. */
+function openSeriesSearch({ query = '', kind = 'show', year = 0 } = {}) {
+  const media = kind === 'film' ? 'film' : kind === 'any' ? 'any' : 'show';
+  const heading = media === 'film' ? 'Find a movie' : media === 'any' ? 'Find a title' : 'Find a show';
+  const sourceOptions = media === 'show' ? ['atlantic', 'flex'] : ['atlantic'];
+  let source = sourceOptions[0];
   let box = document.getElementById('series-box');
   if (!box) {
     box = el('dialog', { id: 'series-box', class: 'dialog channel-box series-box', aria: { label: 'Find a show' } });
     box.addEventListener('click', (event) => { if (event.target === box) box.close(); });
     document.body.append(box);
   }
-  let source = 'atlantic';
+  box.setAttribute('aria-label', heading);
   let items = [];
   let asked = 0;
   let timer = 0;
   const input = el('input', {
     type: 'search', class: 'ch-search show-search', autocomplete: 'off', spellcheck: 'false',
-    placeholder: 'Search TV shows by name', aria: { label: 'Search TV shows by name' },
+    placeholder: media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name',
+    aria: { label: media === 'film' ? 'Search films by name' : media === 'any' ? 'Search films and TV shows' : 'Search TV shows by name' },
   });
   const chips = el('div', { class: 'ch-tabs show-source-tabs' });
   const results = el('div', { class: 'ch-results show-results' });
-  const note = el('p', { class: 'ch-note', textContent: 'Results from TMDB. Add to Series on Atlantic or 1Flex; Cinejoy is the laptop Fix stream fallback.' });
+  const note = el('p', {
+    class: 'ch-note',
+    textContent: media === 'film'
+      ? 'Results from TMDB. Add to Movies on Atlantic.'
+      : media === 'any'
+        ? 'Results from TMDB. Add to Series or Movies on Atlantic.'
+        : 'Results from TMDB. Add to Series on Atlantic or 1Flex; Cinejoy is the laptop Fix stream fallback.',
+  });
   const label = () => SERIES_SOURCE_LABELS[source];
   const drawChips = () => {
-    chips.replaceChildren(...['atlantic', 'flex'].map((value) => el('button', {
+    chips.hidden = sourceOptions.length < 2;
+    chips.replaceChildren(...sourceOptions.map((value) => el('button', {
       type: 'button',
       class: `ch-tab${source === value ? ' is-on' : ''}`,
       textContent: SERIES_SOURCE_LABELS[value],
@@ -1671,40 +1773,31 @@ function openSeriesSearch({ query = '' } = {}) {
     }
   };
   const add = (item) => {
-    const url = source === 'flex' ? flexUrl(item.id, 1, 1) : atlanticUrl(item.id, 1, 1);
-    if (!url) return;
-    const name = favoriteTitle(item.title);
-    const existing = listFavorites().find((favorite) => seriesLink(favorite.input)?.tmdb === item.id);
+    const itemKind = item.kind === 'film' ? 'film' : 'show';
+    const chosen = itemKind === 'show' ? source : 'atlantic';
     box.close();
     if ($('source-dialog').open) $('source-dialog').close();
-    if (existing) {
-      const onWall = ws.tiles.some((tile) => tile.input === existing.input || tile.favorite === existing.input);
-      if (onWall) { toast(`${existing.name} is already on the wall.`); return; }
-      const id = addStream(existing.input, { mode: 'add' }, existing.name, existing.input, null);
-      if (id) toast(`Added ${existing.name}.`);
-      return;
-    }
-    if (!saveFavorite(url, name, 'SERIES', undefined, item.poster || undefined)) { toast(STORAGE_FULL); return; }
-    const id = addStream(url, { mode: 'add' }, name, url, null);
-    if (id) toast(`Added ${name} to Series.`);
+    addTitleFavorite(item, { source: chosen });
   };
   const row = (item) => {
-    const art = el('span', { class: 'show-row-art' }, icon('tv', 18));
+    const itemKind = item.kind === 'film' ? 'film' : 'show';
+    const art = el('span', { class: 'show-row-art' }, icon(itemKind === 'film' ? 'film' : 'tv', 18));
     if (item.poster) {
       const image = el('img', { src: item.poster, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
       image.addEventListener('error', () => image.remove(), { once: true });
       art.append(image);
     }
+    const addLabel = media === 'show' ? `Add on ${label()}` : `Add ${itemKind === 'film' ? 'movie' : 'show'}`;
     return el('button', {
-      type: 'button', class: 'ch-row show-row', title: `Add ${item.title} on ${label()}`,
+      type: 'button', class: 'ch-row show-row', title: `${addLabel} · ${item.title}`,
       on: { click: () => add(item) },
     },
     art,
     el('span', { class: 'ch-text' },
       el('b', { textContent: item.title }),
-      el('small', { textContent: [item.year || '', 'TV series'].filter(Boolean).join(' · ') }),
+      el('small', { textContent: [item.year || '', itemKind === 'film' ? 'Film' : 'TV series'].filter(Boolean).join(' · ') }),
       item.overview ? el('small', { class: 'show-row-overview', textContent: item.overview }) : null),
-    el('span', { class: 'ch-add', textContent: `Add on ${label()}` }));
+    el('span', { class: 'ch-add', textContent: addLabel }));
   };
   const empty = (text, fallback = '') => el('div', { class: 'show-empty' },
     el('p', { class: 'ch-empty', textContent: text }),
@@ -1712,9 +1805,9 @@ function openSeriesSearch({ query = '' } = {}) {
       el('button', { type: 'button', class: 'ch-row show-fallback', on: { click: () => searchSite('atlantic', fallback) } },
         el('span', { class: 'show-fallback-icon' }, icon('search', 16)),
         el('span', { class: 'ch-text' }, el('b', { textContent: 'Search Atlantic' }), el('small', { textContent: `Find “${fallback}” on Atlantic's own site` }))),
-      el('button', { type: 'button', class: 'ch-row show-fallback', on: { click: () => searchSite('flex', fallback) } },
+      sourceOptions.includes('flex') ? el('button', { type: 'button', class: 'ch-row show-fallback', on: { click: () => searchSite('flex', fallback) } },
         el('span', { class: 'show-fallback-icon' }, icon('search', 16)),
-        el('span', { class: 'ch-text' }, el('b', { textContent: 'Search 1Flex' }), el('small', { textContent: `Find “${fallback}” on 1Flex's own site` })))) : null);
+        el('span', { class: 'ch-text' }, el('b', { textContent: 'Search 1Flex' }), el('small', { textContent: `Find “${fallback}” on 1Flex's own site` }))) : null) : null);
   const paint = () => {
     if (!items.length) return;
     results.replaceChildren(...items.map(row));
@@ -1723,19 +1816,23 @@ function openSeriesSearch({ query = '' } = {}) {
     const text = String(value || '').trim();
     if (text.length < 2) {
       items = [];
-      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Type at least two letters of a show name.' }));
+      results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Type at least two letters of a name.' }));
       return;
     }
     const token = ++asked;
     results.replaceChildren(el('p', { class: 'ch-empty', textContent: 'Searching…' }));
-    const answer = await searchTmdbSeries(text);
+    const answer = await searchTmdbTitles(text, media);
     if (token !== asked || !box.open) return;
     items = answer.items;
     if (items.length) {
       paint();
       return;
     }
-    results.replaceChildren(empty(answer.failed ? 'The search could not answer. Try again, or use one of these:' : `No shows found for “${text}”.`, text));
+    results.replaceChildren(empty(
+      answer.failed ? 'The search could not answer. Try again, or use one of these:'
+        : media === 'film' ? `No films found for “${text}”.` : media === 'any' ? `No titles found for “${text}”.` : `No shows found for “${text}”.`,
+      text,
+    ));
   };
   input.addEventListener('input', () => {
     clearTimeout(timer);
@@ -1750,7 +1847,7 @@ function openSeriesSearch({ query = '' } = {}) {
     }
   });
   box.replaceChildren(
-    el('div', { class: 'ch-head' }, el('h2', { textContent: 'Find a show' }), iconButton('close', 'Close', () => box.close())),
+    el('div', { class: 'ch-head' }, el('h2', { textContent: heading }), iconButton('close', 'Close', () => box.close())),
     chips,
     input,
     results,
@@ -1758,7 +1855,10 @@ function openSeriesSearch({ query = '' } = {}) {
   drawChips();
   input.value = query;
   items = [];
-  results.replaceChildren(el('p', { class: 'ch-empty', textContent: query ? 'Searching…' : 'Type a show name.' }));
+  results.replaceChildren(el('p', {
+    class: 'ch-empty',
+    textContent: query ? 'Searching…' : media === 'film' ? 'Type a film name.' : media === 'any' ? 'Type a film or show name.' : 'Type a show name.',
+  }));
   openDialog(box);
   input.focus();
   if (query.trim()) search(query);
@@ -6887,10 +6987,11 @@ function showHero(item, { hold = false, refresh = false } = {}) {
   }
   // null means the banner has no main button (Top 10 on Netflix without a trailer).
   const primaryLabel = item.playLabel === null ? '' : (item.playLabel || 'Play');
+  const primaryIcon = primaryLabel.startsWith('Open') ? 'open' : primaryLabel.startsWith('Add') ? 'plus' : 'play';
   const buttons = [
-    primaryLabel ? el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(primaryLabel.startsWith('Open on') ? 'open' : 'play', 16), el('span', { textContent: primaryLabel })) : null,
+    primaryLabel ? el('button', { type: 'button', class: 'hero-play', on: { click: () => item.play() } }, icon(primaryIcon, 16), el('span', { textContent: primaryLabel })) : null,
     item.link ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.link.url) } }, icon('open', 16), el('span', { textContent: item.link.label })) : null,
-    item.atlantic ? el('button', { type: 'button', class: 'hero-more', on: { click: () => openLink(item.atlantic.url) } }, icon('open', 16), el('span', { textContent: item.atlantic.label })) : null,
+    item.add ? el('button', { type: 'button', class: 'hero-more', on: { click: () => item.add.run() } }, icon(item.add.label.startsWith('Open') ? 'open' : 'plus', 16), el('span', { textContent: item.add.label })) : null,
   ].filter(Boolean);
   info.replaceChildren(...[
     edition,
@@ -7110,21 +7211,22 @@ async function drawHome() {
   // What Canada is watching: Netflix's Top 10, and the most popular titles on every service.
   const charts = topCharts(top);
   const chartRow = (id, label) => (charts.find((chart) => chart.id === id)?.entries ?? []).map((entry) => {
-    const atlantic = atlanticTarget(entry.title, favorites);
     const netflix = id === 'netflix';
+    const add = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind, favorites });
+    const trailer = entry.trailer;
     const item = {
       key: `t:${id}:${entry.rank}:${entry.title}`, label: `#${entry.rank} · ${label}`, title: entry.title, rank: entry.rank,
+      kind: entry.kind || '', year: entry.year || 0,
       meta: [topLine(entry), scoreLine(entry)].filter(Boolean).join(' · '),
       cardMeta: topLine(entry, { withService: !netflix }) || entry.service,
       scores: entry,
       desc: entry.desc,
       backdrop: entry.image,
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.service || label }), el('span', { class: 'title-card-name', textContent: entry.title })),
-      // Both chart rows stay in MULTIGRID: no "Open on [streaming service]" button in the banner.
-      playLabel: entry.trailer ? 'Play trailer' : null,
-      link: null,
-      atlantic,
-      play: () => (entry.trailer ? playFromHome(`https://www.youtube.com/watch?v=${entry.trailer}`) : entry.url && openLink(entry.url)),
+      // Both chart rows stay in MULTIGRID: the second button adds the title, not a streaming-site link.
+      playLabel: trailer ? 'Play trailer' : add.label,
+      add: trailer ? add : null,
+      play: trailer ? () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`) : add.run,
     };
     return withArt(item, entry.title);
   });
@@ -7169,13 +7271,15 @@ async function drawHome() {
     .filter((entry) => entry.trailer)
     .map((entry) => [titleKey(entry.title), entry.trailer]));
   const tenTop = tenEntries.map((entry) => {
-    const atlantic = atlanticTarget(entry.title, favorites);
     const trailer = trailerByTitle.get(titleKey(entry.title)) || '';
+    const add = homeAddAction({ title: entry.title, year: entry.year, kind: entry.kind, favorites });
     const sub = [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', (entry.genres || []).slice(0, 2).join(' · ')].filter(Boolean).join(' · ');
     return {
       key: `x:${entry.rank}:${entry.title}`,
       label: 'The Multigrid Ten',
       title: entry.title,
+      kind: entry.kind,
+      year: entry.year || 0,
       rank: entry.rank,
       meta: [sub, scoreLine(entry)].filter(Boolean).join(' · '),
       cardMeta: sub,
@@ -7183,9 +7287,9 @@ async function drawHome() {
       desc: entry.desc,
       backdrop: entry.image,
       art: () => el('span', { class: 'title-card' }, el('span', { class: 'title-card-kind', textContent: entry.kind === 'film' ? 'Film' : 'Series' }), el('span', { class: 'title-card-name', textContent: entry.title })),
-      playLabel: trailer ? 'Play trailer' : atlantic?.label || 'Open in Atlantic',
-      atlantic: trailer ? atlantic : null,
-      play: () => (trailer ? playFromHome(`https://www.youtube.com/watch?v=${trailer}`) : atlantic ? openLink(atlantic.url) : null),
+      playLabel: trailer ? 'Play trailer' : add.label,
+      add: trailer ? add : null,
+      play: trailer ? () => playFromHome(`https://www.youtube.com/watch?v=${trailer}`) : add.run,
     };
   });
   const tenNote = tenTop.length

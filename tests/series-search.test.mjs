@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { displayTitle, favoriteTitle, parseTmdbSeriesSearch, searchTmdbSeries, tmdbPosterUrl } from '../src/series-search.js';
+import { bestTmdbMatch, displayTitle, favoriteTitle, parseTmdbMultiJson, parseTmdbSearch, parseTmdbSeriesSearch, searchTmdbSeries, searchTmdbTitles, tmdbPosterUrl } from '../src/series-search.js';
 
 const page = `### Search Results
 
@@ -25,6 +25,8 @@ test('TMDB TV search results keep their id, title, year, poster and story', () =
   assert.equal(items.length, 2);
   assert.deepEqual(items[0], {
     id: 153312,
+    kind: 'show',
+    media: 'tv',
     title: 'Tulsa King',
     year: 2022,
     poster: 'https://media.themoviedb.org/t/p/w342/y13WOeZ2rz2Ezpws0RJ0I8sQpG4.jpg',
@@ -117,4 +119,93 @@ test('a one-letter query is not sent', async () => {
   const result = await searchTmdbSeries('a', { fetchImpl: async () => { called = true; } });
   assert.deepEqual(result, { items: [], failed: false });
   assert.equal(called, false);
+});
+
+const moviePage = `### Search Results
+
+[![Image 1: The Odyssey](https://media.themoviedb.org/t/p/w94_and_h141_face/odyssey.jpg)](https://www.themoviedb.org/movie/12345-the-odyssey)
+
+[](https://www.themoviedb.org/movie/12345-the-odyssey)
+July 17, 2026
+
+A hero tries to find his way home after the Trojan War.
+`;
+
+test('a movie search parses films as films, and TV-only keeps only shows', () => {
+  const films = parseTmdbSearch(moviePage);
+  assert.equal(films.length, 1);
+  assert.equal(films[0].kind, 'film');
+  assert.equal(films[0].media, 'movie');
+  assert.equal(films[0].title, 'The Odyssey');
+  assert.equal(films[0].year, 2026);
+  assert.equal(parseTmdbSeriesSearch(moviePage).length, 0);
+});
+
+test('a mixed search keeps TV and film apart, even when their numbers are the same', () => {
+  const mixed = `${page}
+
+[![Image 9: The Odyssey](https://media.themoviedb.org/t/p/w94_and_h141_face/odyssey.jpg)](https://www.themoviedb.org/movie/153312-the-odyssey)
+
+[](https://www.themoviedb.org/movie/153312-the-odyssey)
+July 17, 2026
+
+A hero tries to find his way home after the Trojan War.`;
+  const items = parseTmdbSearch(mixed);
+  assert.deepEqual(items.map((item) => [item.kind, item.id, item.title]).slice(0, 3), [
+    ['show', 153312, 'Tulsa King'],
+    ['show', 130385, 'Naked and Afraid of Love'],
+    ['film', 153312, 'The Odyssey'],
+  ]);
+});
+
+test('one-click match takes only one exact title and year; anything else goes to the picker', () => {
+  const items = [
+    { id: 1, kind: 'show', title: 'The Body', year: 2026 },
+    { id: 2, kind: 'film', title: 'The Body', year: 2026 },
+    { id: 3, kind: 'show', title: 'Bodies', year: 2023 },
+    { id: 4, kind: 'show', title: 'The Body', year: 2019 },
+  ];
+  assert.equal(bestTmdbMatch(items, { title: 'The Body', year: 2026, kind: 'show' })?.id, 1);
+  assert.equal(bestTmdbMatch(items, { title: 'The Body', year: 2026, kind: 'any' }), null);
+  assert.equal(bestTmdbMatch(items, { title: 'The Body', year: 2019, kind: 'show' })?.id, 4);
+  assert.equal(bestTmdbMatch(items, { title: 'The Body', year: 2020, kind: 'show' }), null);
+  assert.equal(bestTmdbMatch(items, { title: 'Bodies', kind: 'show' })?.id, 3);
+  assert.equal(bestTmdbMatch(items, { title: 'Unknown', kind: 'show' }), null);
+});
+
+test('the movie and mixed searches ask TMDB for the right pages', async () => {
+  const calls = [];
+  const fetchImpl = async (url) => { calls.push(url); return { ok: true, text: async () => moviePage }; };
+  const film = await searchTmdbTitles('The Odyssey film test', 'film', { fetchImpl });
+  const any = await searchTmdbTitles('The Odyssey any test', 'any', { fetchImpl });
+  assert.equal(film.items[0].kind, 'film');
+  assert.equal(any.items[0].kind, 'film');
+  assert.match(calls[0], /\/search\/movie\?query=The%20Odyssey%20film%20test$/);
+  assert.match(calls[1], /\/search\/multi\?query=The%20Odyssey%20any%20test$/);
+});
+
+const multiJson = `Title:
+URL Source: https://www.themoviedb.org/search/multi?query=The%20Body
+
+Markdown Content:
+{"results":[{"id":291507,"media_type":"tv","name":"The Body","first_air_date":"2026-11-11","poster_path":"/195kCuy.jpg","overview":"On Halloween night, a dance squad sees ghosts."},{"id":28308,"media_type":"movie","title":"The Body","release_date":"2001-12-20","poster_path":"/lCTA1B.jpg","overview":"A skeleton is found in Jerusalem."},{"id":4794871,"media_type":"person","name":"The Body"}]}`;
+
+test('the mixed search reads TMDB JSON and keeps only TV and films', () => {
+  const items = parseTmdbMultiJson(multiJson);
+  assert.deepEqual(items.map((item) => [item.kind, item.id, item.title]), [
+    ['show', 291507, 'The Body'],
+    ['film', 28308, 'The Body'],
+  ]);
+  assert.equal(items[0].poster, 'https://image.tmdb.org/t/p/w342/195kCuy.jpg');
+});
+
+test('a mixed search with two exact titles stays ambiguous, and the picker decides', async () => {
+  const fetchImpl = async () => ({ ok: true, text: async () => multiJson });
+  const answer = await searchTmdbTitles('The Body mixed test', 'any', { fetchImpl });
+  assert.equal(answer.items.length, 2);
+  assert.equal(bestTmdbMatch(answer.items, { title: 'The Body', kind: 'any' }), null);
+  assert.equal(bestTmdbMatch(answer.items, { title: 'The Body', kind: 'show' })?.id, 291507);
+  const show = await searchTmdbTitles('The Body mixed show test', 'show', { fetchImpl: async () => ({ ok: true, text: async () => page }) });
+  assert.equal(show.items.length, 2);
+  assert.equal(show.items[0].kind, 'show');
 });

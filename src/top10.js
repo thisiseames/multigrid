@@ -18,6 +18,8 @@ export function topCharts(data) {
         .map((entry) => ({
           rank: entry.rank,
           title: entry.title,
+          kind: entry.kind === 'film' ? 'film' : entry.kind === 'show' ? 'show' : '',
+          year: Number(entry.year) > 0 ? Number(entry.year) : 0,
           season: String(entry.season || ''),
           weeks: Number(entry.weeks) || 0,
           service: String(entry.service || ''),

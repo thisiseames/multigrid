@@ -78,6 +78,8 @@ test('top10.json in the app: only safe links, pictures and trailers; ten at most
   assert.equal(chart.entries[0].url, '');
   assert.equal(chart.entries[0].image, '');
   assert.equal(chart.entries[0].trailer, '');
+  assert.equal(chart.entries[0].kind, '');
+  assert.equal(chart.entries[0].year, 0);
   assert.equal(chart.kind, 'title');
   assert.deepEqual(topCharts(null), []);
 });

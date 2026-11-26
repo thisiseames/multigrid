@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { atlanticUrl, cinejoyUrl, flexUrl, seriesLink, seriesSearchUrl } from '../src/series-sources.js';
+import { atlanticMovieUrl, atlanticUrl, cinejoyUrl, flexUrl, seriesLink, seriesSearchUrl } from '../src/series-sources.js';
 
 test('an Atlantic watch link carries its TMDB id, season and episode', () => {
   assert.deepEqual(
@@ -11,8 +11,8 @@ test('an Atlantic watch link carries its TMDB id, season and episode', () => {
     { ...seriesLink('https://www.atlantic.bz/watch/247718/2/8'), url: undefined },
     { source: 'atlantic', tmdb: 247718, season: 2, episode: 8, url: undefined },
   );
-  assert.equal(seriesLink('https://atlantic.bz/watch/153312').season, 1);
-  assert.equal(seriesLink('https://atlantic.bz/watch/153312').episode, 1);
+  // A film is /watch/<tmdb>; it must not become a series with a made-up episode.
+  assert.equal(seriesLink('https://atlantic.bz/watch/153312'), null);
 });
 
 test('a Cinejoy watch link uses the same TMDB id shape', () => {
@@ -43,6 +43,8 @@ test('other links, missing ids and bad addresses are not series links', () => {
 
 test('the builders make the exact links the three sites use', () => {
   assert.equal(atlanticUrl(153312, 4, 1), 'https://atlantic.bz/watch/153312/4/1');
+  assert.equal(atlanticMovieUrl(153312), 'https://atlantic.bz/watch/153312');
+  assert.equal(atlanticMovieUrl(0), '');
   assert.equal(cinejoyUrl(153312, 4, 1), 'https://cinejoy.pk/watch/tv/153312/4/1');
   assert.equal(flexUrl(153312, 4, 1, 'test-token'), 'https://www.1flex.org/play?id=153312&type=tv&season=4&episode=1&token=test-token');
   assert.equal(atlanticUrl(0), '');

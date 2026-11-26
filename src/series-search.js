@@ -1,9 +1,13 @@
-// Find a TV show by name. TMDB's public search page is read through the same r.jina.ai reader
-// MULTIGRID already uses for YouTube and TikTok; that gives the exact TMDB number Atlantic,
+// Find a film or TV show by name. TMDB's public search pages are read through the same r.jina.ai
+// reader MULTIGRID already uses for YouTube and TikTok; that gives the exact TMDB number Atlantic,
 // Cinejoy and 1Flex all use. No key, account or server, and results are cached for ten minutes.
 
 const READER = 'https://r.jina.ai/';
-const SEARCH = 'https://www.themoviedb.org/search/tv?query=';
+const SEARCH = {
+  show: 'https://www.themoviedb.org/search/tv?query=',
+  film: 'https://www.themoviedb.org/search/movie?query=',
+  any: 'https://www.themoviedb.org/search/multi?query=',
+};
 const TTL = 10 * 60 * 1000;
 const cache = new Map();
 const inflight = new Map();
@@ -27,8 +31,6 @@ const plain = (value) => decode(String(value || '')
   .replace(/\s+/g, ' ')
   .trim());
 
-const yearOf = (value) => Number(String(value || '').match(/\b(19\d{2}|20\d{2})\b/)?.[1] || 0);
-
 const firstName = (slug) => plain(String(slug || '').replace(/-/g, ' '))
   .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
 
@@ -47,32 +49,43 @@ export function tmdbPosterUrl(url) {
 /** Favourites are all caps, not title case: "ozark" and "Ozark" both become "OZARK". */
 export const favoriteTitle = (value) => plain(value).toLocaleUpperCase();
 
-/** TV shows in a TMDB search page, in the order TMDB ranks them. */
-export function parseTmdbSeriesSearch(markdown) {
+const titleKey = (value) => String(value || '')
+  .toLocaleLowerCase()
+  .normalize('NFKD')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ')
+  .replace(/^(?:the|a|an)\s+/, '')
+  .trim();
+
+/** Films and TV shows in a TMDB search page, in the order TMDB ranks them. */
+export function parseTmdbSearch(markdown) {
   const text = String(markdown || '');
   if (!text) return [];
   // One result can be a linked poster, a heading, an empty link or all three. The linked poster
   // starts the block when there is one; a heading or empty link starts it otherwise.
   const found = new Map();
-  const add = (id, at, title = '', poster = '') => {
+  const add = (media, id, at, title = '', poster = '') => {
     const number = Number(id);
-    if (!Number.isInteger(number) || number <= 0) return;
-    const entry = found.get(number);
+    if ((media !== 'tv' && media !== 'movie') || !Number.isInteger(number) || number <= 0) return;
+    const key = `${media}:${number}`;
+    const entry = found.get(key);
     if (!entry || at < entry.at) {
-      found.set(number, { id: number, at, title: title || entry?.title || '', poster: poster || entry?.poster || '' });
+      found.set(key, {
+        id: number, media, kind: media === 'tv' ? 'show' : 'film', at,
+        title: title || entry?.title || '', poster: poster || entry?.poster || '',
+      });
       return;
     }
     if (!entry.title) entry.title = title;
     if (!entry.poster) entry.poster = poster;
   };
-  for (const match of text.matchAll(/\[!\[(?:Image \d+:\s*)?([^\]]*)\]\(([^)]+)\)\]\(https:\/\/www\.themoviedb\.org\/tv\/(\d+)-[^)]+\)/g)) {
-    add(match[3], match.index, match[1], match[2]);
+  for (const match of text.matchAll(/\[!\[(?:Image \d+:\s*)?([^\]]*)\]\(([^)]+)\)\]\(https:\/\/www\.themoviedb\.org\/(tv|movie)\/(\d+)-[^)]+\)/g)) {
+    add(match[3], match[4], match.index, match[1], match[2]);
   }
-  for (const match of text.matchAll(/##\s*\[([^\]]+)\]\(https:\/\/www\.themoviedb\.org\/tv\/(\d+)-[^)]+\)/g)) {
-    add(match[2], match.index, match[1]);
+  for (const match of text.matchAll(/##\s*\[([^\]]+)\]\(https:\/\/www\.themoviedb\.org\/(tv|movie)\/(\d+)-[^)]+\)/g)) {
+    add(match[2], match[3], match.index, match[1]);
   }
-  for (const match of text.matchAll(/https:\/\/www\.themoviedb\.org\/tv\/(\d+)-[^\s)"']+/g)) {
-    add(match[1], match.index);
+  for (const match of text.matchAll(/https:\/\/www\.themoviedb\.org\/(tv|movie)\/(\d+)-[^\s)"']+/g)) {
+    add(match[1], match[2], match.index);
   }
   const blocks = [...found.values()].sort((a, b) => a.at - b.at);
   const items = [];
@@ -82,20 +95,20 @@ export function parseTmdbSeriesSearch(markdown) {
     const block = text.slice(entry.at, end);
     const image = block.match(/!\[(?:Image \d+:\s*)?([^\]]*)\]\(([^)]+)\)/);
     const heading = block.match(/##\s*\[([^\]]+)\]\(/);
-    const slug = block.match(/\/tv\/\d+-([^)\s"']+)/)?.[1] || '';
+    const slug = block.match(/\/(?:tv|movie)\/\d+-([^)\s"']+)/)?.[1] || '';
     const title = displayTitle(entry.title || heading?.[1] || image?.[1] || firstName(slug));
     if (!title) continue;
-    // The movies section follows the last TV result; its story must not attach to that show.
-    const content = block.split(/https:\/\/www\.themoviedb\.org\/movie\/\d+-/)[0];
-    const date = content.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+(19\d{2}|20\d{2})\b/)
-      || content.match(/\b(19\d{2}|20\d{2})\b/);
-    const after = date ? content.slice(date.index + date[0].length) : content;
+    const date = block.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+(19\d{2}|20\d{2})\b/)
+      || block.match(/\b(19\d{2}|20\d{2})\b/);
+    const after = date ? block.slice(date.index + date[0].length) : block;
     const overview = after.split(/\n\s*\n/)
       .map((line) => plain(line))
       .find((line) => line.length > 20
         && !/^(watch now|play|similar shows|on apple tv|there are no .* that matched your query\.?|tip:)\b/i.test(line)) || '';
     items.push({
       id: entry.id,
+      kind: entry.kind,
+      media: entry.media,
       title,
       year: Number(date?.[2] || date?.[1] || 0),
       poster: tmdbPosterUrl(entry.poster ? decode(entry.poster) : image?.[2] ? decode(image[2]) : ''),
@@ -106,19 +119,71 @@ export function parseTmdbSeriesSearch(markdown) {
   return items;
 }
 
-/** Search TMDB for TV shows. A failed page is reported, not cached as an empty result. */
-export async function searchTmdbSeries(query, { fetchImpl = fetch } = {}) {
+/** TV shows only, for the existing Find a show sheet. */
+export function parseTmdbSeriesSearch(markdown) {
+  return parseTmdbSearch(markdown).filter((item) => item.kind === 'show');
+}
+
+/** The multi-search page answers with TMDB's JSON, not the HTML search page. */
+export function parseTmdbMultiJson(text) {
+  const raw = String(text || '');
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start < 0 || end <= start) return [];
+  let answer;
+  try { answer = JSON.parse(raw.slice(start, end + 1)); } catch { return []; }
+  const items = [];
+  for (const result of Array.isArray(answer?.results) ? answer.results : []) {
+    const kind = result.media_type === 'tv' ? 'show' : result.media_type === 'movie' ? 'film' : '';
+    const id = Number(result.id);
+    const title = displayTitle(result.name || result.title);
+    if (!kind || !Number.isInteger(id) || id <= 0 || !title) continue;
+    const date = String(result.first_air_date || result.release_date || '');
+    items.push({
+      id,
+      kind,
+      media: kind === 'show' ? 'tv' : 'movie',
+      title,
+      year: Number(date.slice(0, 4)) || 0,
+      poster: result.poster_path ? `https://image.tmdb.org/t/p/w342${result.poster_path}` : '',
+      overview: plain(result.overview || '').slice(0, 320),
+    });
+    if (items.length >= 8) break;
+  }
+  return items;
+}
+
+/** The one exact title/year match, or null when the picker should decide. */
+export function bestTmdbMatch(items, { title = '', year = 0, kind = 'any' } = {}) {
+  const wanted = kind === 'film' ? 'film' : kind === 'show' ? 'show' : '';
+  const key = titleKey(title);
+  if (!key) return null;
+  const pool = (Array.isArray(items) ? items : []).filter((item) => item
+    && Number(item.id) > 0 && (!wanted || item.kind === wanted) && titleKey(item.title) === key);
+  if (!pool.length) return null;
+  if (Number(year) > 0) {
+    const exact = pool.filter((item) => Number(item.year) === Number(year));
+    return exact.length === 1 ? exact[0] : null;
+  }
+  return pool.length === 1 ? pool[0] : null;
+}
+
+/** Search TMDB for films, shows, or both. A failed page is reported, not cached as no results. */
+export async function searchTmdbTitles(query, kind = 'show', { fetchImpl = fetch } = {}) {
   const text = String(query || '').trim();
   if (text.length < 2) return { items: [], failed: false };
-  const key = text.toLocaleLowerCase();
+  const wanted = kind === 'film' ? 'film' : kind === 'any' ? 'any' : 'show';
+  const key = `${wanted}|${text.toLocaleLowerCase()}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return { items: hit.items.map((item) => ({ ...item })), failed: false };
   if (inflight.has(key)) return inflight.get(key);
   const asked = (async () => {
     try {
-      const response = await fetchImpl(`${READER}${SEARCH}${encodeURIComponent(text)}`, { cache: 'no-store' });
+      const response = await fetchImpl(`${READER}${SEARCH[wanted]}${encodeURIComponent(text)}`, { cache: 'no-store' });
       if (!response.ok) throw new Error(`TMDB search ${response.status}`);
-      const items = parseTmdbSeriesSearch(await response.text());
+      const raw = await response.text();
+      const all = wanted === 'any' && /{\s*"results"\s*:/.test(raw) ? parseTmdbMultiJson(raw) : parseTmdbSearch(raw);
+      const items = wanted === 'any' ? all : all.filter((item) => item.kind === wanted);
       cache.set(key, { at: Date.now(), items });
       return { items: items.map((item) => ({ ...item })), failed: false };
     } catch {
@@ -130,3 +195,5 @@ export async function searchTmdbSeries(query, { fetchImpl = fetch } = {}) {
   inflight.set(key, asked);
   return asked;
 }
+
+export const searchTmdbSeries = (query, options = {}) => searchTmdbTitles(query, 'show', options);
