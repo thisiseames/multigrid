@@ -2093,13 +2093,6 @@ function openPalette(options = {}) {
       }),
     };
   };
-  const layoutItem = (item) => ({
-    group: 'Layouts',
-    label: item.name,
-    sub: `${item.workspace.tiles.filter((tile) => tile.input).length} streams`,
-    icon: 'saved',
-    run: () => closeAnd(() => restore(item)),
-  });
   const ppvItem = (event) => ({
     group: 'PPV events',
     label: event.name,
@@ -2204,9 +2197,6 @@ function openPalette(options = {}) {
       ? (query
         ? favoritePool.filter((item) => has(item.name, query) || has(item.group || '', query)).sort((a, b) => rank(a.name) - rank(b.name)).slice(0, 8)
         : favoritePool.slice(0, 6)).map(favoriteItem)
-      : [];
-    const layouts = showNormal && !repair
-      ? (query ? listSaved().filter((item) => has(item.name, query)).slice(0, 5) : listSaved().slice(0, 4)).map(layoutItem)
       : [];
     const found = showNormal && !repair
       ? (query ? actions.filter((item) => has(item.label, query) || has(item.sub, query)).slice(0, 8) : actions.slice(0, 6))
@@ -2484,7 +2474,7 @@ function openPalette(options = {}) {
       }
     }
     const ppvItems = !repair && !query ? ppv.slice(0, 4).map(ppvItem) : [];
-    items = [...repairItems, ...favorites, ...liveChannels, ...gameItems, ...sportsItems, ...liveMatches, ...ppvItems, ...layouts, ...found];
+    items = [...repairItems, ...found, ...favorites, ...liveChannels, ...gameItems, ...sportsItems, ...liveMatches, ...ppvItems];
     const groups = new Map();
     for (const item of items) groups.set(item.group, [...(groups.get(item.group) || []), item]);
     const loading = (repair || query.length >= 2) && livePending > 0;
