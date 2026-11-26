@@ -2008,6 +2008,7 @@ body.is-phone .pod-show-actions .pod-follow, body.is-phone .pod-show-actions .po
 @media (max-width: 640px) { .ppv-today .ppv-card { flex-basis: 168px; } }
 /* Command palette */
 .palette { display: flex; flex-direction: column; width: min(560px, calc(100vw - 16px)); max-height: min(84dvh, 760px); padding: 12px; margin-top: 10vh; margin-bottom: auto; background: #000; border-color: #242427; }
+.palette:not([open]) { display: none; }
 body.is-phone .palette { max-height: calc(100dvh - 150px); }
 .palette-title { display: flex; flex-direction: column; gap: 1px; margin: 0 4px 8px; }
 .palette-title b { font-size: 13px; font-weight: 600; color: var(--text); }
