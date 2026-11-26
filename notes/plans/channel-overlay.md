@@ -91,3 +91,4 @@ existing players.
 - **Back arrow:** hidden in the one-tile case because there is no full-screen to leave; X, the dimmed video and Escape close the panel. The strip's fullscreen button still works when the panel is closed.
 - **Everything else:** same panel, switch, in-place channel change and unavailable cases. If a second tile appears, the tab disappears.
 - **Verify:** one-tile TSN1 at 1440 (tab, panel, strip fade, no back arrow), two tiles (no tab), full-screen (back arrow returns), switch off, and phone (no one-tile tab).
+- Nov 26: DONE, live in 8c830dc. Single-tile laptop verified: tab without full-screen, panel opens, no back arrow, strip returns on close; two tiles and a phone single tile get no tab.
