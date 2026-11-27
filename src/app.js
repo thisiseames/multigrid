@@ -9,7 +9,7 @@ import {
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
 import { clock, folderAfter, guideKey, guideUpdated, loadGuide, logoFor, nowAndNext, showsBetween } from './guide.js';
-import { addTikTokAccounts, loadTikTokFeeds, lookupTikTokLive, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
+import { addTikTokAccounts, createPlayer, loadTikTokFeeds, lookupTikTokLive, newestUpload, readerStoryPage, removeTikTokAccounts, saveTikTokFollowing, tiktokAccounts, tiktokFollowing } from './players.js';
 import { channelTitle, eventLabelFor, extraFeedFor } from './channels.js';
 import { otherLiveChannels, readChannelOverlay, writeChannelOverlay } from './channel-overlay.js';
 import { plays } from './backups.js';
@@ -77,6 +77,8 @@ import {
 import { leftText, tileCard, xrayAvailable } from './tileinfo.js';
 import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js';
 import { findScore, normTitle, scoreLine, shardKey, votesText } from './scores.js';
+import { musicAlbumTitle, musicArtistGroups } from './music.js';
+import { loadYouTubePlaylist } from './youtube-channel.js';
 import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { atlanticLink, atlanticTitle, castQuery, filmQuery, knownFor, parseCast, parseFilm, parseIntro, parsePerson, parsePersonId, parseSummary as parseWikiSummary, parseWikiImages, personByNameQuery, personInfoQuery, personWorksQuery, runtimeText, sparqlUrl, wikiImagesUrl, wikiIntroUrl, wikiSummaryUrl } from './films.js';
@@ -2816,8 +2818,8 @@ function openFollowingPicker() {
 function buildSoundMenu() {
   const menu = $('sound-menu');
   const tiles = ws.tiles.filter((tile) => isStream(tile) && isVisible(tile) && grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
-  const anyAudible = muteableTiles().some((tile) => !tile.muted) || podcastAssignedSound();
-  const hasSound = muteableTiles().length > 0 || Boolean(podcastState);
+  const anyAudible = muteableTiles().some((tile) => !tile.muted) || podcastAssignedSound() || Boolean(musicState && !musicState.muted);
+  const hasSound = muteableTiles().length > 0 || Boolean(podcastState) || Boolean(musicState);
   const toggle = (label, on, onClick) => el('button', { type: 'button', class: `sa-switch${on ? ' is-on' : ''}`, aria: { pressed: String(on) }, on: { click() { onClick(); buildSoundMenu(); } } },
     el('span', { class: 'mixer-one-track', aria: { hidden: 'true' } }), el('span', { textContent: label }));
   const head = el('div', { class: 'sa-switches' },
@@ -2833,7 +2835,20 @@ function buildSoundMenu() {
       reachable ? transportRow(tile, view, buildSoundMenu) : null,
       volumeSlider(tile, view));
   });
-  menu.replaceChildren(head, cards.length ? el('ul', { class: 'sa-cards' }, ...cards) : el('p', { class: 'match-quiet is-empty', textContent: podcastState ? 'The podcast is in its dock.' : 'Nothing is playing.' }));
+  const musicCard = musicState ? el('li', { class: `sa-card is-music${musicState.muted ? ' is-muted' : ''}` },
+    el('div', { class: 'sa-card-name' },
+      el('b', { textContent: musicCurrentTrack()?.title || musicState.trackTitle || 'Music' }),
+      el('small', { textContent: `Music · ${musicState.artist}` })),
+    el('div', { class: 'sa-transport' },
+      el('button', { type: 'button', class: 'sa-round', title: musicPaused ? 'Play music' : 'Pause music', aria: { label: musicPaused ? 'Play music' : 'Pause music' }, on: { click() { musicToggle(); buildSoundMenu(); } } }, icon(musicPaused ? 'play' : 'pause', 24)),
+      el('button', { type: 'button', class: 'sa-round', title: musicState.muted ? 'Unmute music' : 'Mute music', aria: { label: musicState.muted ? 'Unmute music' : 'Mute music' }, on: { click() { musicToggleMute(); buildSoundMenu(); } } }, icon(musicState.muted ? 'muted' : 'sound', 24))),
+    el('input', {
+      class: 'sa-volume', type: 'range', min: '0', max: '100', step: '1',
+      value: String(musicState.muted ? 0 : musicState.volume),
+      aria: { label: 'Music volume' },
+      on: { input(event) { musicSetVolume(event.currentTarget.value); }, change() { buildSoundMenu(); } },
+    })) : null;
+  menu.replaceChildren(head, musicCard || cards.length ? el('ul', { class: 'sa-cards' }, ...[musicCard, ...cards].filter(Boolean)) : el('p', { class: 'match-quiet is-empty', textContent: podcastState ? 'The podcast is in its dock.' : 'Nothing is playing.' }));
 }
 
 /** Makes a stream the primary one, or stops it being primary. */
@@ -4550,7 +4565,7 @@ function changeVolume(id, volume) {
 
 function muteAll() {
   const reachable = muteableTiles();
-  const muted = reachable.some((tile) => !tile.muted) || podcastAssignedSound();
+  const muted = reachable.some((tile) => !tile.muted) || podcastAssignedSound() || Boolean(musicState && !musicState.muted);
   // Asking for every stream's sound means One sound has to step aside.
   if (!muted && isOneSound()) setOneSound(false);
   for (const tile of reachable) {
@@ -4560,11 +4575,13 @@ function muteAll() {
     }
   }
   const podcastChanged = setPodcastMuted(muted);
+  const musicChanged = setMusicMuted(muted);
   commit();
   const others = ws.tiles.filter((tile) => isVisible(tile) && isStream(tile) && !reachable.includes(tile));
   const playing = others.filter((tile) => grid.viewFor(tile.id)?.player && !grid.viewFor(tile.id).player.silent);
   if (!reachable.length) {
-    if (podcastChanged) toast(muted ? 'Podcast muted.' : 'Podcast unmuted.');
+    if (musicChanged) toast(muted ? 'Music muted.' : 'Music unmuted.');
+    else if (podcastChanged) toast(muted ? 'Podcast muted.' : 'Podcast unmuted.');
     else toast('None of these tiles have sound that can be controlled from here.');
   } else if (playing.length) {
     const names = playing.slice(0, 2).map(labelOf).join(', ');
@@ -4865,6 +4882,7 @@ function refreshFavorites() {
   render();
   syncGuideButton();
   syncLiveButton();
+  syncMusicButton();
   liveTodayDraw?.();
   if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
@@ -6688,6 +6706,7 @@ function openPodcast(input, extra = {}) {
   const source = parseSource(input);
   if (!source.ok || source.kind !== 'audio') return;
   const restore = Boolean(extra.restore);
+  if (musicState && !musicPaused) musicPause();
   if (podcastState && podcastAudio && podcastState.url === source.url) {
     drawPodcastDock();
     if (!restore) {
@@ -6732,6 +6751,544 @@ function restorePodcast() {
 // Save the place when the tab is put away, so closing mid-episode loses nothing.
 window.addEventListener('pagehide', savePodcastPlace);
 document.addEventListener('visibilitychange', () => { if (document.hidden) savePodcastPlace(); });
+
+
+/* ---------- Music player ---------- */
+
+const MUSIC_STORE = 'multigrid.music.v1';
+const musicTracks = new Map();
+const musicTrackAsks = new Set();
+let musicState = null;
+let musicPlayer = null;
+let musicMenuView = { mode: 'root' };
+let musicPaused = true;
+let musicScrubbing = false;
+let musicVolumeSliding = false;
+let musicTimer = null;
+let musicPendingSeek = 0;
+let musicLastSave = 0;
+
+const musicLibrary = () => musicArtistGroups(listFavorites().filter((item) => item.group.toLocaleLowerCase() === 'music'));
+const musicListOf = (album) => parseSource(album?.input || '').youtube?.list || '';
+const musicCurrentTrack = () => musicState?.tracks?.[musicState.index] || null;
+const musicAlbumFromState = () => (musicState ? { input: musicState.albumInput, name: musicState.albumName, poster: musicState.cover } : null);
+const musicGroupFromState = () => (musicState ? { channel: { name: musicState.artist, input: '' }, albums: [] } : null);
+const musicClock = (value) => {
+  const seconds = Math.max(0, Math.round(Number(value) || 0));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+};
+const readMusicStore = () => {
+  try { return JSON.parse(localStorage.getItem(MUSIC_STORE) || 'null'); } catch { return null; }
+};
+const writeMusicStore = (value) => {
+  try {
+    if (value) localStorage.setItem(MUSIC_STORE, JSON.stringify(value));
+    else localStorage.removeItem(MUSIC_STORE);
+  } catch { /* not remembered */ }
+};
+const saveMusic = () => {
+  if (!musicState) { writeMusicStore(null); return; }
+  const info = musicPlayer?.info?.();
+  if (info && Number.isFinite(info.at)) musicState.at = Math.max(0, Math.floor(info.at));
+  writeMusicStore({
+    albumInput: musicState.albumInput,
+    albumName: musicState.albumName,
+    artist: musicState.artist,
+    list: musicState.list,
+    tracks: musicState.tracks,
+    index: musicState.index,
+    at: musicState.at,
+    volume: musicState.volume,
+    muted: musicState.muted,
+    trackTitle: musicState.trackTitle,
+    cover: musicState.cover,
+  });
+};
+
+function syncMusicButton() {
+  const button = $('music-button');
+  if (!button) return;
+  button.hidden = !musicLibrary().length && !musicState;
+  button.classList.toggle('is-playing', Boolean(musicState && !musicPaused));
+  button.classList.toggle('has-music', Boolean(musicState));
+}
+
+function musicPause() {
+  if (!musicPaused) {
+    musicPaused = true;
+    musicPlayer?.setPaused(true);
+    saveMusic();
+    paintMusic();
+  }
+}
+
+function musicToggle() {
+  if (!musicState) return;
+  if (!musicPlayer) {
+    beginMusic(musicGroupFromState(), musicAlbumFromState(), musicState.tracks, musicState.index, musicState.at);
+    return;
+  }
+  const next = musicPaused;
+  musicPaused = !next;
+  musicPlayer.setPaused(!next);
+  paintMusic();
+  saveMusic();
+}
+
+function musicStep(delta) {
+  if (!musicState) return;
+  const button = musicPlayer?.stripButtons?.[delta < 0 ? 0 : 2];
+  if (button && !button.hidden) { button.click(); return; }
+  if (musicState.tracks.length) {
+    const index = Math.max(0, Math.min(musicState.tracks.length - 1, musicState.index + delta));
+    if (index !== musicState.index) beginMusic(musicGroupFromState(), musicAlbumFromState(), musicState.tracks, index, 0);
+    return;
+  }
+  button?.click();
+}
+
+function musicToggleMute() {
+  if (!musicState) return;
+  musicState.muted = !musicState.muted;
+  musicPlayer?.setMuted(musicState.muted);
+  saveMusic();
+  paintMusic();
+  renderSound();
+}
+
+function setMusicMuted(muted) {
+  if (!musicState || musicState.muted === muted) return false;
+  musicState.muted = muted;
+  musicPlayer?.setMuted(muted);
+  saveMusic();
+  paintMusic();
+  renderSound();
+  return true;
+}
+
+function musicSetVolume(value) {
+  if (!musicState) return;
+  const volume = Math.min(100, Math.max(0, Math.round(Number(value) || 0)));
+  musicState.volume = volume;
+  musicPlayer?.setVolume(volume);
+  if (volume > 0 && musicState.muted) musicState.muted = false;
+  if (musicPlayer) musicPlayer.setMuted(musicState.muted);
+  saveMusic();
+  paintMusic();
+}
+
+function seekMusic(value) {
+  const info = musicPlayer?.info?.();
+  if (!info) return;
+  const target = Math.max(0, Number(value) || 0);
+  if (Math.abs(target - (info.at || 0)) > 0.5) musicPlayer.seekBy(target - (info.at || 0));
+  paintMusic();
+}
+
+function closeMusic() {
+  clearInterval(musicTimer);
+  musicTimer = null;
+  musicPlayer?.destroy();
+  musicPlayer = null;
+  musicState = null;
+  musicPaused = true;
+  musicPendingSeek = 0;
+  writeMusicStore(null);
+  const dock = $('music-dock');
+  if (dock) {
+    dock.hidden = true;
+    dock.classList.remove('has-video');
+  }
+  syncMusicButton();
+  paintMusic();
+  renderSound();
+}
+
+function startMusicTimer() {
+  if (musicTimer) return;
+  musicTimer = setInterval(() => {
+    if (!musicPlayer || !musicState) return;
+    const info = musicPlayer.info?.();
+    if (!info) return;
+    if (musicPendingSeek && Number(info.length) > 0) {
+      const delta = musicPendingSeek - (Number(info.at) || 0);
+      if (Math.abs(delta) > 2) musicPlayer.seekBy(delta);
+      musicPendingSeek = 0;
+    }
+    const counter = musicPlayer.stripButtons?.[1]?.textContent || '';
+    const shown = Number(counter.split('/')[0]);
+    if (Number.isInteger(shown) && shown > 0 && musicState.tracks.length) {
+      const index = shown - 1;
+      if (index >= 0 && index < musicState.tracks.length && index !== musicState.index) {
+        musicState.index = index;
+        musicState.trackTitle = musicState.tracks[index].title;
+        musicState.cover = musicState.tracks[index].cover || musicState.cover;
+      }
+    }
+    if (!musicState.tracks.length && info.title) musicState.trackTitle = info.title;
+    if (Date.now() - musicLastSave > 10000 && !musicPaused) {
+      musicLastSave = Date.now();
+      saveMusic();
+    }
+    paintMusic();
+  }, 1000);
+}
+
+function beginMusic(group, album, tracks, index, at = 0) {
+  const list = musicListOf(album);
+  if (!list) { toast('This album has no YouTube playlist.'); return; }
+  const queue = Array.isArray(tracks) ? tracks : [];
+  const chosen = Number.isInteger(index) ? Math.min(Math.max(0, index), Math.max(0, queue.length - 1)) : 0;
+  const track = queue[chosen] || null;
+  const url = track
+    ? `https://www.youtube.com/watch?v=${track.id}&list=${list}`
+    : `https://www.youtube.com/playlist?list=${list}`;
+  const source = parseSource(url);
+  if (!source.ok) { toast(source.error || "That music link can't play here."); return; }
+  const volume = Number(musicState?.volume) || 100;
+  const muted = Boolean(musicState?.muted);
+  musicPlayer?.destroy();
+  musicPlayer = null;
+  musicState = {
+    albumInput: album.input,
+    albumName: album.name || musicState?.albumName || 'Music',
+    artist: group.channel.name,
+    list,
+    tracks: queue,
+    index: chosen,
+    at: Number(at) || 0,
+    volume,
+    muted,
+    trackTitle: track?.title || album.name || 'Music',
+    cover: track?.cover || album.poster || '',
+  };
+  musicPaused = false;
+  musicPendingSeek = Number(at) || 0;
+  musicPlayer = createPlayer(source, {
+    muted,
+    volume,
+    autoplay: true,
+    env,
+    describe: () => ({ input: track?.url || `https://www.youtube.com/playlist?list=${list}`, name: track?.title || album.name || 'Music' }),
+    onError(message) { toast(message); },
+    onCapability() { paintMusic(); syncMusicButton(); },
+    onPlayState(paused) { musicPaused = paused; paintMusic(); saveMusic(); renderSound(); },
+  });
+  if (!musicPlayer) {
+    musicState = null;
+    toast("That song couldn't start.");
+    syncMusicButton();
+    return;
+  }
+  if (podcastAudio && !podcastAudio.paused) podcastAudio.pause();
+  drawMusicDock();
+  const holder = $('music-dock')?.querySelector('.music-video');
+  if (holder) holder.replaceChildren(musicPlayer.el);
+  musicPlayer.start();
+  musicPlayer.setVolume(volume);
+  musicPlayer.setMuted(muted);
+  startMusicTimer();
+  saveMusic();
+  paintMusic();
+  syncMusicButton();
+  if (musicMenuView.mode === 'album' && musicMenuView.album?.input === album.input) buildMusicMenu();
+}
+
+function musicArtistArt(group) {
+  const holder = el('span', { class: 'music-artist-art' });
+  holder.append(favoriteArt(group.channel, parseSource(group.channel.input), true));
+  return holder;
+}
+
+function musicAlbumArt(album) {
+  const holder = el('span', { class: 'music-artist-art is-cover' });
+  if (album?.poster) holder.append(el('img', { src: album.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }));
+  else holder.append(icon('music', 20));
+  return holder;
+}
+
+function musicNowArt(cover) {
+  const holder = el('span', { class: 'music-now-art' });
+  if (cover) {
+    const img = el('img', { src: cover, alt: '', referrerPolicy: 'no-referrer' });
+    img.addEventListener('error', () => { holder.replaceChildren(icon('music', 18)); }, { once: true });
+    holder.append(img);
+  } else holder.append(icon('music', 18));
+  return holder;
+}
+
+function musicSeekInput() {
+  const input = el('input', {
+    type: 'range', min: '0', max: '0', step: '1', value: '0',
+    class: 'music-now-seek', aria: { label: 'Seek in this song' },
+  });
+  input.addEventListener('pointerdown', () => { musicScrubbing = true; });
+  input.addEventListener('input', () => seekMusic(Number(input.value)));
+  input.addEventListener('pointerup', () => { musicScrubbing = false; });
+  input.addEventListener('pointercancel', () => { musicScrubbing = false; });
+  input.addEventListener('change', () => { musicScrubbing = false; });
+  return input;
+}
+
+function musicVolumeInput() {
+  const input = el('input', {
+    type: 'range', min: '0', max: '100', step: '1', value: '100',
+    class: 'music-now-volume', aria: { label: 'Music volume' },
+  });
+  input.addEventListener('pointerdown', () => { musicVolumeSliding = true; });
+  input.addEventListener('input', () => musicSetVolume(input.value));
+  input.addEventListener('pointerup', () => { musicVolumeSliding = false; });
+  input.addEventListener('pointercancel', () => { musicVolumeSliding = false; });
+  input.addEventListener('change', () => { musicVolumeSliding = false; });
+  return input;
+}
+
+function musicControls({ compact = false } = {}) {
+  const prev = iconButton('back', 'Previous song', () => musicStep(-1));
+  prev.classList.add('music-now-prev');
+  const play = iconButton('play', 'Play', musicToggle);
+  play.classList.add('music-now-play');
+  const next = iconButton('next', 'Next song', () => musicStep(1));
+  next.classList.add('music-now-next');
+  const mute = iconButton('sound', 'Mute music', musicToggleMute);
+  mute.classList.add('music-now-mute');
+  const open = compact ? null : iconButton('music', 'Open music', openMusicMenu);
+  open?.classList.add('music-now-open');
+  const close = compact ? null : iconButton('close', 'Close music player', closeMusic);
+  close?.classList.add('music-now-close');
+  return el('span', { class: 'music-now-controls' }, prev, play, next, mute, open, close);
+}
+
+function musicNowBar() {
+  if (!musicState) return el('div', { class: 'music-now is-empty' }, el('span', { textContent: 'Choose a song to start the player.' }));
+  const seek = musicSeekInput();
+  const time = el('small', { class: 'music-now-time' });
+  const title = el('b', { class: 'music-now-title' });
+  const sub = el('small', { class: 'music-now-artist' });
+  return el('div', { class: 'music-now is-menu' },
+    el('span', { class: 'music-now-art' }),
+    el('span', { class: 'music-now-text' }, title, sub),
+    musicControls(),
+    el('span', { class: 'music-now-line' }, seek, time),
+    musicVolumeInput());
+}
+
+function drawMusicDock() {
+  const dock = $('music-dock');
+  if (!dock) return;
+  if (!musicState) { dock.hidden = true; return; }
+  if (!dock.dataset.ready) {
+    const holder = el('span', { class: 'music-video' });
+    const title = el('b', { class: 'music-now-title' });
+    const sub = el('small', { class: 'music-now-artist' });
+    const seek = musicSeekInput();
+    const time = el('small', { class: 'music-now-time' });
+    const controls = musicControls({ compact: true });
+    const open = iconButton('music', 'Open music', openMusicMenu);
+    open.classList.add('music-now-open');
+    const close = iconButton('close', 'Close music player', closeMusic);
+    close.classList.add('music-now-close');
+    controls.append(open, close);
+    dock.replaceChildren(
+      holder,
+      el('span', { class: 'music-now-art' }),
+      el('span', { class: 'music-now-text' }, title, sub),
+      controls,
+      el('span', { class: 'music-now-line' }, seek, time));
+    dock.dataset.ready = '1';
+  }
+  dock.hidden = false;
+  const holder = dock.querySelector('.music-video');
+  if (holder && musicPlayer?.el && holder.firstChild !== musicPlayer.el) holder.replaceChildren(musicPlayer.el);
+  dock.classList.toggle('has-video', Boolean(musicPlayer?.el));
+  paintMusic();
+}
+
+function paintMusic() {
+  const state = musicState;
+  const track = musicCurrentTrack();
+  const title = track?.title || state?.trackTitle || '';
+  const artist = state?.artist || '';
+  const cover = track?.cover || state?.cover || '';
+  const info = musicPlayer?.info?.() || null;
+  const playing = Boolean(state && !musicPaused);
+  for (const node of document.querySelectorAll('.music-now-title')) node.textContent = title || 'Music';
+  for (const node of document.querySelectorAll('.music-now-artist')) node.textContent = artist || (state ? 'Music' : '');
+  for (const node of document.querySelectorAll('.music-now-art')) {
+    if (!node.isConnected) continue;
+    if (node.dataset.cover === cover || (!cover && node.dataset.cover === 'icon')) continue;
+    node.dataset.cover = cover || 'icon';
+    node.replaceChildren();
+    if (cover) {
+      const img = el('img', { src: cover, alt: '', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => { node.replaceChildren(icon('music', 18)); }, { once: true });
+      node.append(img);
+    } else node.append(icon('music', 18));
+  }
+  for (const node of document.querySelectorAll('.music-now-play')) {
+    node.replaceChildren(icon(playing ? 'pause' : 'play'));
+    node.title = playing ? 'Pause' : 'Play';
+    node.setAttribute('aria-label', node.title);
+    node.disabled = !state;
+  }
+  for (const node of document.querySelectorAll('.music-now-prev, .music-now-next')) node.disabled = !state;
+  for (const node of document.querySelectorAll('.music-now-mute')) {
+    node.replaceChildren(icon(state?.muted ? 'muted' : 'sound'));
+    node.title = state?.muted ? 'Unmute music' : 'Mute music';
+    node.setAttribute('aria-label', node.title);
+    node.disabled = !state;
+  }
+  for (const node of document.querySelectorAll('.music-now-seek')) {
+    const length = Number(info?.length) || 0;
+    node.max = String(Math.round(length));
+    if (!musicScrubbing) node.value = String(Math.max(0, Math.round(Number(info?.at) || 0)));
+    node.disabled = !length;
+  }
+  for (const node of document.querySelectorAll('.music-now-time')) {
+    node.textContent = info && Number(info.length) > 0 ? `${musicClock(info.at)} / ${musicClock(info.length)}` : '';
+  }
+  for (const node of document.querySelectorAll('.music-now-volume')) {
+    if (!musicVolumeSliding) node.value = String(state?.muted ? 0 : state?.volume ?? 100);
+    node.disabled = !state;
+  }
+  for (const node of document.querySelectorAll('[data-music-track]')) {
+    const [list, index] = node.dataset.musicTrack.split('|');
+    node.classList.toggle('is-current', Boolean(state && state.list === list && state.index === Number(index)));
+  }
+  const button = $('music-button');
+  button?.classList.toggle('is-playing', playing);
+  button?.classList.toggle('has-music', Boolean(state));
+  $('music-dock')?.classList.toggle('has-video', Boolean(musicPlayer?.el));
+}
+
+function loadMusicTracks(album, group) {
+  const list = musicListOf(album);
+  if (!list) { musicTracks.set('', { error: true }); buildMusicMenu(); return; }
+  if (musicTrackAsks.has(list)) return;
+  musicTrackAsks.add(list);
+  loadYouTubePlaylist(list)
+    .then((data) => { musicTracks.set(list, { tracks: data.tracks, title: data.title }); })
+    .catch(() => { musicTracks.set(list, { error: true }); })
+    .finally(() => {
+      musicTrackAsks.delete(list);
+      if (musicMenuView.mode === 'album' && musicMenuView.album?.input === album.input) buildMusicMenu();
+    });
+}
+
+function buildMusicMenu() {
+  const menu = $('music-menu');
+  const groups = musicLibrary();
+  const mode = musicMenuView.mode;
+  if (mode !== 'root' && !musicMenuView.group) musicMenuView = { mode: 'root' };
+  const group = musicMenuView.group || null;
+  const album = musicMenuView.album || null;
+  const title = musicMenuView.mode === 'album' && album ? musicAlbumTitle(group.channel.name, album.name)
+    : musicMenuView.mode === 'artist' && group ? group.channel.name : 'Music';
+  const back = musicMenuView.mode === 'root' ? null : iconButton('back', 'Back', () => {
+    musicMenuView = musicMenuView.mode === 'album' ? { mode: 'artist', group } : { mode: 'root' };
+    buildMusicMenu();
+  });
+  const head = el('div', { class: 'music-head' },
+    back,
+    el('span', { class: 'music-head-text' },
+      el('b', { textContent: title }),
+      el('small', { textContent: musicMenuView.mode === 'album' ? `${group.channel.name} · Album` : musicMenuView.mode === 'artist' ? 'Artist' : `${groups.length} artist${groups.length === 1 ? '' : 's'}` })),
+    iconButton('close', 'Close', () => closePopovers()));
+  let body;
+  if (musicMenuView.mode === 'root') {
+    body = groups.length
+      ? el('section', { class: 'music-artist-section' },
+        el('ul', {}, ...groups.map((entry) => el('li', {},
+          el('button', {
+            type: 'button', class: 'music-artist-pick', title: `Open ${entry.channel.name}`,
+            on: { click() { musicMenuView = { mode: 'artist', group: entry }; buildMusicMenu(); } },
+          },
+          musicArtistArt(entry),
+          el('span', { class: 'music-artist-text' }, el('b', { textContent: entry.channel.name }), el('small', { textContent: `${entry.albums.length} album${entry.albums.length === 1 ? '' : 's'}` })),
+          icon('next', 14))))))
+      : el('p', { class: 'music-empty', textContent: 'No music yet. Add an artist channel and its albums to the MUSIC folder.' });
+  } else if (musicMenuView.mode === 'artist') {
+    body = el('div', {},
+      el('div', { class: 'music-artist-hero' },
+        favoriteArt(group.channel, parseSource(group.channel.input), true),
+        el('div', {}, el('span', { textContent: 'Artist' }), el('b', { textContent: group.channel.name }), el('small', { textContent: `${group.albums.length} album${group.albums.length === 1 ? '' : 's'}` }))),
+      el('section', { class: 'music-artist-section' },
+        el('h3', { textContent: 'Albums' }),
+        el('ul', {}, ...group.albums.map((item) => el('li', {},
+          el('button', {
+            type: 'button', class: 'music-artist-pick', title: `Open ${musicAlbumTitle(group.channel.name, item.name)}`,
+            on: { click() { musicMenuView = { mode: 'album', group, album: item }; buildMusicMenu(); } },
+          },
+          musicAlbumArt(item),
+          el('span', { class: 'music-artist-text' }, el('b', { textContent: musicAlbumTitle(group.channel.name, item.name) }), el('small', { textContent: 'Album playlist' })),
+          icon('next', 14)))))));
+  } else {
+    const list = musicListOf(album);
+    const cached = musicTracks.get(list);
+    let songs;
+    if (cached?.tracks) {
+      songs = el('section', { class: 'music-artist-section' },
+        el('h3', { textContent: 'Songs' }),
+        el('ul', {}, ...cached.tracks.map((track, index) => {
+          const row = el('button', {
+            type: 'button', class: 'music-artist-pick music-track', title: `Play ${track.title}`,
+            on: { click() { beginMusic(group, album, cached.tracks, index, 0); } },
+          },
+          el('span', { class: 'music-track-num', textContent: String(index + 1) }),
+          el('span', { class: 'music-artist-text' }, el('b', { textContent: track.title }), el('small', { textContent: track.length || 'Song' })),
+          icon('play', 14));
+          row.dataset.musicTrack = `${list}|${index}`;
+          return el('li', {}, row);
+        })));
+    } else if (cached?.error) {
+      songs = el('div', { class: 'music-empty' },
+        el('p', { textContent: "Couldn't load the song list. The album can still play in YouTube's own player." }),
+        el('button', { type: 'button', class: 'music-play-album', textContent: 'Play album', on: { click: () => beginMusic(group, album, [], 0, 0) } }));
+    } else {
+      songs = el('p', { class: 'music-empty', textContent: 'Loading songs…' });
+      if (list && !musicTrackAsks.has(list)) loadMusicTracks(album, group);
+    }
+    body = el('div', {},
+      el('div', { class: 'music-artist-hero' },
+        musicAlbumArt(album),
+        el('div', {}, el('span', { textContent: 'Album' }), el('b', { textContent: musicAlbumTitle(group.channel.name, album.name) }), el('small', { textContent: `${group.channel.name}${cached?.tracks?.length ? ` · ${cached.tracks.length} songs` : ''}` }))),
+      songs);
+  }
+  menu.replaceChildren(head, el('div', { class: 'music-body' }, body), musicNowBar());
+  paintMusic();
+}
+
+function openMusicMenu() {
+  if (!$('music-menu').hidden) { closePopovers(); return; }
+  togglePopover($('music-button'), $('music-menu'), buildMusicMenu);
+}
+
+function restoreMusic() {
+  const saved = readMusicStore();
+  if (!saved?.list || !saved.albumInput) return;
+  const tracks = Array.isArray(saved.tracks) ? saved.tracks.filter((track) => track && track.id) : [];
+  const index = Math.min(Math.max(0, Number(saved.index) || 0), Math.max(0, tracks.length - 1));
+  musicState = {
+    albumInput: saved.albumInput,
+    albumName: saved.albumName || 'Music',
+    artist: saved.artist || 'Music',
+    list: saved.list,
+    tracks,
+    index,
+    at: Math.max(0, Number(saved.at) || 0),
+    volume: Number.isFinite(Number(saved.volume)) ? Math.min(100, Math.max(0, Number(saved.volume))) : 100,
+    muted: Boolean(saved.muted),
+    trackTitle: tracks[index]?.title || saved.trackTitle || saved.albumName || 'Music',
+    cover: tracks[index]?.cover || saved.cover || '',
+  };
+  musicPaused = true;
+  drawMusicDock();
+  syncMusicButton();
+  paintMusic();
+}
+
+window.addEventListener('pagehide', saveMusic);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveMusic(); });
 
 /* ---------- Add stream: favorites as cards ---------- */
 
@@ -7830,22 +8387,6 @@ function attachScore(into, name, options = {}, known = {}) {
 /** Favorites that are films or shows: anything in a series/films folder, or a series page. */
 function isTitleFavorite(item, source) {
   return isSeriesFolder(item.group || '') || /\b(movies?|films?|cinema)\b/i.test(item.group || '') || Boolean(episodeOf(source?.url || ''));
-}
-
-/** Group a MUSIC folder's channel plus its prefixed album playlists as one artist. */
-function musicArtistGroups(items) {
-  const channels = items.filter((item) => {
-    const source = parseSource(item.input);
-    return source.kind === 'youtube' && isYouTubeChannelPage(item.input);
-  });
-  return channels.map((channel) => {
-    const prefix = `${channel.name.trim()} · `.toLocaleLowerCase();
-    const albums = items.filter((item) => {
-      const source = parseSource(item.input);
-      return source.kind === 'youtube' && source.youtube?.list && !isYouTubeChannelPage(item.input) && item.name.trim().toLocaleLowerCase().startsWith(prefix);
-    });
-    return albums.length ? { channel, albums } : null;
-  }).filter(Boolean);
 }
 
 function musicArtistRow(group, getTarget) {
@@ -13166,6 +13707,7 @@ function buildSavedDrop() {
     onPhoneScreen() ? el('div', { class: 'sdrop-sep' }) : null,
     onPhoneScreen() ? phoneDropRow('phone', 'Reels', 'Vertical feeds', () => $('reels-button').click()) : null,
     onPhoneScreen() ? phoneDropRow('sound', 'Sound', 'Mixer and mute', () => $('mixer-button').click()) : null,
+    onPhoneScreen() && musicLibrary().length ? phoneDropRow('headphones', 'Music', 'Artists and albums', () => $('music-button').click()) : null,
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
     el('div', { class: 'sdrop-sep' }),
     el('button', {
@@ -13748,6 +14290,7 @@ function buildLiveMenu() {
 
 $('live-button').addEventListener('click', () => togglePopover($('live-button'), $('live-menu'), buildLiveMenu));
 $('tiktok-button').addEventListener('click', () => togglePopover($('tiktok-button'), $('tiktok-menu'), buildTikTokMenu));
+$('music-button').addEventListener('click', () => togglePopover($('music-button'), $('music-menu'), buildMusicMenu));
 setTimeout(() => refreshLiveStatuses(), 2000);
 setInterval(() => { if (!document.hidden) refreshLiveStatuses(); }, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveStatuses(); });
@@ -14085,6 +14628,8 @@ function initDesk() {
 
 hydrateIcons();
 restorePodcast();
+restoreMusic();
+syncMusicButton();
 
 /* Today's icon: a calendar page showing today's date, redrawn when the day changes. */
 function drawTodayIcon() {

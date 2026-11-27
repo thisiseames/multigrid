@@ -23,6 +23,7 @@ const TITLES = {
   'sound-menu': 'Sound',
   'reels-menu': 'Reels',
   'tiktok-menu': 'TikTok',
+  'music-menu': 'Music',
 };
 // Which tab lights up while a panel is open.
 const TAB_OF = {
@@ -61,6 +62,7 @@ function showSheet(menu) {
   $('sheet-title').textContent = menu.dataset.title || TITLES[menu.id];
   const sports = menu.id === 'matches-menu' || menu.id === 'standings-menu' || menu.id === 'transfers-menu' || menu.id === 'team-menu';
   document.body.classList.toggle('sports-sheet', Boolean(sheet && sports));
+  document.body.classList.toggle('music-sheet', Boolean(sheet && menu.id === 'music-menu'));
   $('sheet-title').hidden = sports;
   $('sheet-switch').hidden = !sports;
   for (const button of $('sheet-switch').querySelectorAll('button')) {

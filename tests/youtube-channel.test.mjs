@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadYouTubeChannel, readYouTubeChannel, readYouTubePlaylists, readYouTubeShorts, readYouTubeVideos } from '../src/youtube-channel.js';
+import { loadYouTubeChannel, readYouTubeChannel, readYouTubePlaylist, readYouTubePlaylists, readYouTubeShorts, readYouTubeVideos } from '../src/youtube-channel.js';
 
 const CHANNEL = `UC${'a'.repeat(22)}`;
 const page = (data) => `<!doctype html><html><body><script>var ytInitialData = ${JSON.stringify(data)};</script></body></html>`;
@@ -171,4 +171,49 @@ test('channel loads are cached, and force asks again', async () => {
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+
+test('a playlist page becomes a song list in order', () => {
+  const playlist = {
+    header: { playlistHeaderRenderer: { title: { simpleText: 'Test Album' } } },
+    contents: {
+      playlistVideoListRenderer: { contents: [
+        { playlistVideoRenderer: { videoId: 'bbbbbbbbbbb', index: { simpleText: '2' }, title: { runs: [{ text: 'Second song' }] }, lengthText: { simpleText: '3:02' }, thumbnail: { thumbnails: [{ url: 'https://example.test/2.jpg', width: 480, height: 360 }] } } },
+        { playlistVideoRenderer: { videoId: 'aaaaaaaaaaa', index: { simpleText: '1' }, title: { runs: [{ text: 'First song' }] }, lengthText: { simpleText: '2:41' }, thumbnail: { thumbnails: [{ url: 'https://example.test/1.jpg', width: 480, height: 360 }] } } },
+        { playlistVideoRenderer: { videoId: 'bbbbbbbbbbb', index: { simpleText: '2' }, title: { runs: [{ text: 'Second song again' }] } } },
+      ] },
+    },
+  };
+  const data = readYouTubePlaylist(page(playlist));
+  assert.equal(data.title, 'Test Album');
+  assert.deepEqual(data.tracks.map((track) => [track.id, track.title, track.length]), [
+    ['aaaaaaaaaaa', 'First song', '2:41'],
+    ['bbbbbbbbbbb', 'Second song', '3:02'],
+  ]);
+  assert.deepEqual(data.tracks.map((track) => track.url), [
+    'https://www.youtube.com/watch?v=aaaaaaaaaaa',
+    'https://www.youtube.com/watch?v=bbbbbbbbbbb',
+  ]);
+  assert.equal(readYouTubePlaylist('<html>no data</html>'), null);
+  assert.equal(readYouTubePlaylist(page({ contents: {} })), null);
+});
+
+
+test('a current playlist page (lockup rows) becomes the same song list', () => {
+  const badge = (text) => ({ thumbnailBottomOverlayViewModel: { badges: [{ thumbnailBadgeViewModel: { text } }] } });
+  const lockup = (id, title, length) => ({
+    lockupViewModel: {
+      contentId: id,
+      contentType: 'LOCKUP_CONTENT_TYPE_VIDEO',
+      metadata: { lockupMetadataViewModel: { title: { simpleText: title } } },
+      contentImage: { thumbnailViewModel: { image: { sources: [{ url: `https://example.test/${id}.jpg`, width: 480, height: 360 }] }, overlays: [badge(length)] } },
+    },
+  });
+  const data = readYouTubePlaylist(page({ contents: { playlistVideoListRenderer: { contents: [lockup('ccccccccccc', 'Lockup song', '4:05'), lockup('ddddddddddd', 'Another song', '2:10')] } } }));
+  assert.deepEqual(data.tracks.map((track) => [track.id, track.title, track.length]), [
+    ['ccccccccccc', 'Lockup song', '4:05'],
+    ['ddddddddddd', 'Another song', '2:10'],
+  ]);
+  assert.deepEqual(data.tracks.map((track) => track.cover), ['https://example.test/ccccccccccc.jpg', 'https://example.test/ddddddddddd.jpg']);
 });

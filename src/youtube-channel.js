@@ -240,6 +240,83 @@ export function readYouTubePlaylists(html) {
   return playlists;
 }
 
+/** A public playlist page's title and tracks, for the music player. */
+export function readYouTubePlaylist(html) {
+  const data = initialData(html);
+  if (!data) return null;
+  let title = '';
+  const tracks = [];
+  const seen = new Set();
+  walk(data, (node) => {
+    const header = node?.playlistHeaderRenderer || node?.playlistMetadataRenderer;
+    if (!title && header) title = textOf(header.title);
+    const lockup = node?.lockupViewModel;
+    if (lockup?.contentType === 'LOCKUP_CONTENT_TYPE_VIDEO') {
+      const id = clean(lockup.contentId);
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      tracks.push({
+        id,
+        url: `https://www.youtube.com/watch?v=${id}`,
+        title: textOf(lockup.metadata?.lockupMetadataViewModel?.title) || id,
+        length: badgeTexts(lockup).find((text) => /^\d+:\d{2}(?::\d{2})?$/.test(text)) || '',
+        cover: largest(lockup.contentImage?.thumbnailViewModel?.image?.sources)
+          || largest(lockup.contentImage?.collectionThumbnailViewModel?.primaryThumbnail?.thumbnailViewModel?.image?.sources),
+        index: tracks.length + 1,
+      });
+      return;
+    }
+    const item = node?.playlistVideoRenderer;
+    if (!item?.videoId || seen.has(item.videoId)) return;
+    seen.add(item.videoId);
+    tracks.push({
+      id: item.videoId,
+      url: `https://www.youtube.com/watch?v=${item.videoId}`,
+      title: textOf(item.title) || item.videoId,
+      length: textOf(item.lengthText),
+      cover: largest(item.thumbnail?.thumbnails),
+      index: Number(textOf(item.index)) || tracks.length + 1,
+    });
+  });
+  if (!tracks.length) return null;
+  tracks.sort((a, b) => a.index - b.index);
+  return { title, tracks };
+}
+
+/** A playlist's track list, cached ten minutes. The caller supplies a list ID or URL. */
+export function loadYouTubePlaylist(raw, { force = false, signal } = {}) {
+  const text = String(raw || '').trim();
+  const list = text.match(/[?&]list=([\w-]{6,})/)?.[1] || text;
+  if (!/^[\w-]{6,}$/.test(list)) return Promise.reject(new Error("That isn't a YouTube playlist."));
+  const key = `playlist:${list}`;
+  const known = cache.get(key);
+  if (!force && known && Date.now() - known.at < TTL) return Promise.resolve(known.data);
+  if (inflight.has(key)) return inflight.get(key);
+  const timeout = AbortSignal.timeout?.(45000);
+  const both = signal && timeout && AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal || timeout;
+  const ask = fetch(`${READER}https://www.youtube.com/playlist?list=${list}`, {
+    headers: { 'X-Return-Format': 'html', Accept: 'text/html' },
+    signal: both,
+    cache: 'no-cache',
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error(`YouTube reader answered ${response.status}.`);
+      return response.text();
+    })
+    .then((html) => {
+      const data = readYouTubePlaylist(html);
+      if (!data) throw new Error("YouTube didn't return that playlist.");
+      return { id: list, ...data };
+    })
+    .then((data) => {
+      cache.set(key, { at: Date.now(), data });
+      return data;
+    })
+    .finally(() => inflight.delete(key));
+  inflight.set(key, ask);
+  return ask;
+}
+
 /** One channel page: header, its tabs, and the requested tab's items. */
 export function readYouTubeChannel(html, tab = 'videos') {
   const data = initialData(html);

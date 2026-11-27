@@ -1,6 +1,6 @@
 # Music player
 
-Status: **BUILDING** (approved Nov 27, 2026)
+Status: **DONE, live Nov 27, 2026**
 
 ## Cost
 
@@ -61,18 +61,18 @@ other artist/album favourites added to the MUSIC folder:
 
 ## Build checklist
 
-- [ ] 1. Extract `musicArtistGroups` and add `musicAlbumTitle` in `src/music.js`; test both.
-- [ ] 2. Add `readYouTubePlaylist` / `loadYouTubePlaylist` in `youtube-channel.js`; fixture
+- [x] 1. Extract `musicArtistGroups` and add `musicAlbumTitle` in `src/music.js`; test both.
+- [x] 2. Add `readYouTubePlaylist` / `loadYouTubePlaylist` in `youtube-channel.js`; fixture
       and tests.
-- [ ] 3. Add the Music top-bar button, menu and mini-player shell in `index.html`/CSS; phone
+- [x] 3. Add the Music top-bar button, menu and mini-player shell in `index.html`/CSS; phone
       drop row and sheet title.
-- [ ] 4. Build the library menu: artists, albums, song list, current queue; play a chosen
+- [x] 4. Build the library menu: artists, albums, song list, current queue; play a chosen
       song; loading/failure states.
-- [ ] 5. Build the player state: createPlayer, play/pause, next/previous, progress, volume,
+- [x] 5. Build the player state: createPlayer, play/pause, next/previous, progress, volume,
       mute, saved track/place; podcast hand-off.
-- [ ] 6. Browser checks: laptop 1440 and phone 390; both artists; album songs; click a song;
+- [x] 6. Browser checks: laptop 1440 and phone 390; both artists; album songs; click a song;
       next/previous; close/reopen; reload; track-list failure; podcast hand-off.
-- [ ] 7. Full tests, notes, commit, live verification.
+- [x] 7. Full tests, notes, commit, live verification.
 
 ## Gotchas
 
@@ -91,3 +91,4 @@ other artist/album favourites added to the MUSIC folder:
   mute/volume; close and reopen the menu; reload paused; album track-list failure fallback.
 - TV/series/YouTube panels and the podcast dock still work.
 - `~/.local/node22/bin/node --test tests/*.test.mjs`.
+- Nov 27: Built, tested at laptop 1440 and phone 390, Sound card, podcast hand-off and paused reload; 477 tests.

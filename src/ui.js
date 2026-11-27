@@ -42,6 +42,7 @@ const ICON_PATHS = {
   pitch: '<rect x="1.8" y="3" width="12.4" height="10" rx="1.2"/><path d="M8 3v10M1.8 6h2v4h-2M14.2 6h-2v4h2"/><circle cx="8" cy="8" r="1.4"/>',
   plane: '<path d="M2.2 8.2 13.6 2.3 9.5 14l-1.8-4.4-4.3-1.4z"/><path d="M7.7 9.6 11.7 3.4"/>',
   music: '<path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.3" cy="12" r="1.7"/><circle cx="11.3" cy="10.5" r="1.7"/>',
+  headphones: '<path d="M3 9V7.2a5 5 0 0 1 10 0V9"/><rect x="1.5" y="8.5" width="3.4" height="5" rx="1.5"/><rect x="11.1" y="8.5" width="3.4" height="5" rx="1.5"/>',
   person: '<circle cx="8" cy="5.2" r="2.6"/><path d="M3.4 13.2a4.6 4.6 0 0 1 9.2 0"/>',
   eye: '<path d="M1.7 8S4.1 4.2 8 4.2 14.3 8 14.3 8 11.9 11.8 8 11.8 1.7 8 1.7 8z"/><circle cx="8" cy="8" r="1.7"/>',
   heart: '<path d="M8 13.2S2.4 9.9 2.4 6.1A2.9 2.9 0 0 1 8 4.9a2.9 2.9 0 0 1 5.6 1.2c0 3.8-5.6 7.1-5.6 7.1z"/>',
