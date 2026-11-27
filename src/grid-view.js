@@ -4,7 +4,7 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, cinemaSpot, findDividers, fitLiveStage, fitStage, isPipPreset, isScreenLives, isStream, moveLine, phoneTile, screenLivesColumns, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitLiveStage, fitStage, isPipPreset, isScreenLives, isStream, moveLine, phoneTile, pipInsetCount, screenLivesColumns, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
@@ -1025,18 +1025,24 @@ export class GridView {
     const pip = isPipPreset(ws.presetId) && !this.isStacked;
     const shown = placed.filter((tile) => tile.place);
     const main = pip ? (shown.find((tile) => tile.primary && isStream(tile)) ?? shown[0]) : null;
-    const insets = pip ? shown.filter((tile) => tile !== main).slice(0, ws.presetId === 'pip2' ? 2 : 1) : [];
+    const insets = pip ? shown.filter((tile) => tile !== main).slice(0, pipInsetCount(ws.presetId)) : [];
     const kind = main && isStream(main) ? parseSource(main.input).kind : '';
     this.gridEl.classList.toggle('is-pip', pip);
+    this.gridEl.classList.toggle('is-pip3', pip && ws.presetId === 'pip3');
     this.gridEl.classList.toggle('is-pip-beside', pip && (kind === 'twitch' || kind === 'youtube'));
-    const lowerLive = insets[0] && parseSource(insets[0].input).kind === 'tiktoklive';
+    const isLiveInset = (tile) => parseSource(tile.input).kind === 'tiktoklive';
+    const livesBelow = (index) => insets.slice(0, index).filter(isLiveInset).length;
     for (const view of this.views.values()) {
+      const upper = insets[1] === view.tile;
+      const upper2 = insets[2] === view.tile;
+      const below = upper ? livesBelow(1) : upper2 ? livesBelow(2) : 0;
       view.root.classList.toggle('is-pip-main', view.tile === main);
       view.root.classList.toggle('is-pip-inset', insets.includes(view.tile));
-      view.root.classList.toggle('is-pip-upper', insets[1] === view.tile);
-      view.root.classList.toggle('is-live-pip', insets.includes(view.tile)
-        && parseSource(view.tile.input).kind === 'tiktoklive');
-      view.root.classList.toggle('is-pip-over-live', insets[1] === view.tile && Boolean(lowerLive));
+      view.root.classList.toggle('is-pip-upper', upper);
+      view.root.classList.toggle('is-pip-upper2', upper2);
+      view.root.classList.toggle('is-live-pip', insets.includes(view.tile) && isLiveInset(view.tile));
+      view.root.classList.toggle('is-pip-one-live-below', (upper || upper2) && below === 1);
+      view.root.classList.toggle('is-pip-two-lives-below', upper2 && below === 2);
     }
   }
 

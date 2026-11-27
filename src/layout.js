@@ -151,6 +151,10 @@ export const PRESETS = [
   { id: 'pip2', name: 'Picture in picture ×2', hint: 'Two small screens in the corner of the big one', fixed: 3,
     build: () => ({ cols: [1], rows: [1], slots: [0, 1, 2].map(() => ({ c: 0, r: 0, cs: 1, rs: 1 })) }),
     diagram: { cols: [3, 1], rows: [2, 1, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 3 }, { c: 1, r: 2, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
+  // The same again, with a third small screen at the top of the corner stack.
+  { id: 'pip3', name: 'Picture in picture ×3', hint: 'Three small screens in the corner of the big one', fixed: 4,
+    build: () => ({ cols: [1], rows: [1], slots: [0, 1, 2, 3].map(() => ({ c: 0, r: 0, cs: 1, rs: 1 })) }),
+    diagram: { cols: [3, 1], rows: [2, 1, 1, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 4 }, { c: 1, r: 3, cs: 1, rs: 1 }, { c: 1, r: 2, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
   // Live Room only: exactly two vertical tiles, side by side or stacked. The normal layout
   // picker filters them out; they exist so a two-up room keeps two slots instead of growing.
@@ -213,8 +217,10 @@ export const isStream = (tile) => Boolean(tile.input);
 export const isVisible = (tile) => Boolean(tile.place);
 export const streamCount = (ws) => ws.tiles.filter(isStream).length;
 export const hiddenTiles = (ws) => ws.tiles.filter((tile) => isStream(tile) && !isVisible(tile));
-/** Picture in picture, with one small screen or two. */
-export const isPipPreset = (id) => id === 'pip' || id === 'pip2';
+/** How many small screens a picture-in-picture layout shows. */
+export const pipInsetCount = (id) => (id === 'pip3' ? 3 : id === 'pip2' ? 2 : id === 'pip' ? 1 : 0);
+/** Picture in picture, with one, two or three small screens. */
+export const isPipPreset = (id) => pipInsetCount(id) > 0;
 export const primaryTile = (ws) => ws.tiles.find((tile) => tile.primary && isStream(tile)) ?? null;
 
 /** How much of the stage a place covers, as a share of each axis multiplied together. */

@@ -3177,14 +3177,19 @@ body.is-phone .desk { display: none !important; }
 .grid.is-pip-beside .tile.is-pip-inset { margin: 0 0 14px 0; }
 /* On a phone, Swap screens is in the stream's ⋯ sheet. */
 body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 0; }
-/* Two small screens: the second sits right above the first, the same gap between them as from the edge.
-   A margin's % is of the width, so this is exactly one small screen's 16:9 height (21% × 9/16). */
+/* Small screens stack up the corner, the same gap between them as from the edge. A margin's %
+   is of the width, so 21% × 9/16 is exactly one small 16:9 screen's height. */
 .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(28px + 21% * 9 / 16); }
 body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(20px + 25% * 9 / 16); }
+.grid.is-pip .tile.is-pip-inset.is-pip-upper2 { margin-bottom: calc(42px + 42% * 9 / 16); }
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper2 { margin-bottom: calc(30px + 50% * 9 / 16); }
 /* A TikTok LIVE in picture-in-picture is a tall card, not a wide one: its picture fills the
    whole inset, with a compact name/LIVE overlay instead of black bars around a phone video. */
 .grid.is-pip { --pip-live-height: min(34vh, 320px); }
 body.is-phone .grid.is-pip { --pip-live-height: min(24vh, 190px); }
+/* Three live insets stack from the bottom, so each is shorter to keep the top one on screen. */
+.grid.is-pip.is-pip3 { --pip-live-height: min(26vh, 240px); }
+body.is-phone .grid.is-pip.is-pip3 { --pip-live-height: min(18vh, 150px); }
 .grid.is-pip .tile.is-pip-inset.is-live-pip {
   width: calc(var(--pip-live-height) * 9 / 16);
   height: var(--pip-live-height);
@@ -3206,11 +3211,24 @@ body.is-phone .grid.is-pip .tile.is-pip-inset.is-live-pip { margin: 0 10px 10px 
 .grid.is-pip .tile.is-pip-inset.is-live-pip .live-status-title { font-size: 12px; }
 .grid.is-pip .tile.is-pip-inset.is-live-pip .live-status-text { font-size: 10px; }
 .grid.is-pip .tile.is-pip-inset.is-live-pip .live-retry { min-height: 26px; padding: 0 8px; font-size: 11px; }
-.grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-over-live {
+/* A live screen is taller than a wide one. Each screen above it clears that live height. */
+.grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-one-live-below {
   margin-bottom: calc(28px + var(--pip-live-height));
 }
-body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-over-live {
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-one-live-below {
   margin-bottom: calc(20px + var(--pip-live-height));
+}
+.grid.is-pip .tile.is-pip-inset.is-pip-upper2.is-pip-one-live-below {
+  margin-bottom: calc(42px + var(--pip-live-height) + 21% * 9 / 16);
+}
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper2.is-pip-one-live-below {
+  margin-bottom: calc(30px + var(--pip-live-height) + 25% * 9 / 16);
+}
+.grid.is-pip .tile.is-pip-inset.is-pip-upper2.is-pip-two-lives-below {
+  margin-bottom: calc(42px + var(--pip-live-height) + var(--pip-live-height));
+}
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper2.is-pip-two-lives-below {
+  margin-bottom: calc(30px + var(--pip-live-height) + var(--pip-live-height));
 }
 /* In the sound row, each small screen's own Swap. */
 .channel-swap { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 8px; color: var(--text-2); font-size: 12px; font-weight: 600; }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitLiveStage, fitStage, hiddenTiles,
-  isScreenLives, isStream, makeRoom, moveLine, phoneColumn, phoneTile, presetById, removeTile, resizeTile, canResize, screenLivesColumns, showHidden, streamCount, swapTiles, visualOrder,
+  isPipPreset, isScreenLives, isStream, makeRoom, moveLine, phoneColumn, phoneTile, pipInsetCount, presetById, removeTile, resizeTile, canResize, screenLivesColumns, showHidden, streamCount, swapTiles, visualOrder,
 } from '../src/layout.js';
 
 function withStreams(n, presetId = 'equal') {
@@ -32,8 +32,8 @@ test('every preset covers the grid exactly, for 0 to 16 streams', () => {
   for (const preset of PRESETS) {
     for (let n = 0; n <= MAX_STREAMS; n++) {
       const ws = withStreams(n, preset.id);
-      // Picture in picture puts both screens in one cell on purpose; the grid draws the second small.
-      if (preset.id !== 'pip' && preset.id !== 'pip2') assertTiled(ws, `${preset.id} n=${n}`);
+      // Picture in picture puts every screen in one cell on purpose; the grid draws the small ones.
+      if (!isPipPreset(preset.id)) assertTiled(ws, `${preset.id} n=${n}`);
       assert.equal(streamCount(ws), n, `${preset.id} n=${n} lost a stream`);
       const visible = ws.tiles.filter((tile) => tile.place).length;
       const hidden = hiddenTiles(ws).length;
@@ -387,6 +387,17 @@ test('picture in picture ×2: one big cell with all three screens in it, the res
   assert.deepEqual([ws.cols, ws.rows], [[1], [1]]);
   const shown = ws.tiles.filter((tile) => tile.place);
   assert.equal(shown.length, 3);
+  assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
+  assert.equal(hiddenTiles(ws).length, 1);
+});
+
+test('picture in picture ×3: one big cell with all four screens in it, the rest waiting in Hidden', () => {
+  assert.equal(pipInsetCount('pip3'), 3);
+  assert.equal(isPipPreset('pip3'), true);
+  const ws = withStreams(5, 'pip3');
+  assert.deepEqual([ws.cols, ws.rows], [[1], [1]]);
+  const shown = ws.tiles.filter((tile) => tile.place);
+  assert.equal(shown.length, 4);
   assert.ok(shown.every((tile) => JSON.stringify(tile.place) === JSON.stringify({ c: 0, r: 0, cs: 1, rs: 1 })));
   assert.equal(hiddenTiles(ws).length, 1);
 });

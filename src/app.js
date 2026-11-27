@@ -4,7 +4,7 @@
 
 import {
   MAX_STREAMS, PRESETS, applyPreset, primaryTile, emptyWorkspace, enterCustom, fitToStreams, forgetPrevious, hiddenTiles, isPhoneLayout, isPipPreset, isStream, isVisible, makeRoom,
-  phoneColumn, phoneTile, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles, visualOrder,
+  phoneColumn, phoneTile, pipInsetCount, presetById, presetDiagram, reflowPhone, removeTile, resizeTile, setPrimary, showHidden, streamCount, swapTiles, visualOrder,
 } from './layout.js';
 import { openFavoriteBox } from './favorite-box.js';
 import { GridView } from './grid-view.js';
@@ -453,17 +453,17 @@ function swapPip(id) {
   commit();
 }
 
-/** The small screens, when this is the big one of two small ones. */
+/** The small screens, when this is the big one of two or three small ones. */
 function pipInsetsFor(id) {
-  if (ws.presetId !== 'pip2' || !grid.viewFor(id)?.root.classList.contains('is-pip-main')) return [];
+  if (pipInsetCount(ws.presetId) < 2 || !grid.viewFor(id)?.root.classList.contains('is-pip-main')) return [];
   return ws.tiles.filter((tile) => tile.input && grid.viewFor(tile.id)?.root.classList.contains('is-pip-inset'));
 }
 
-/** With two small screens, each small stream's row in the sound row gets its own Swap. */
-function markMixerSwaps(two) {
+/** With two or three small screens, each small stream's row in the sound row gets its own Swap. */
+function markMixerSwaps(many) {
   for (const channel of $('mixer').querySelectorAll('.channel[data-tile]')) {
     const id = channel.dataset.tile;
-    const want = two && grid.viewFor(id)?.root.classList.contains('is-pip-inset');
+    const want = many && grid.viewFor(id)?.root.classList.contains('is-pip-inset');
     const button = channel.querySelector('.channel-swap');
     if (!want) { button?.remove(); continue; }
     if (button) continue;
@@ -3140,7 +3140,7 @@ function renderSound() {
   const insetCount = document.querySelectorAll('.grid.is-pip .tile.is-pip-inset').length;
   const onPhone = document.body.classList.contains('is-phone');
   mixerSwap.hidden = insetCount !== 1 || onPhone;
-  markMixerSwaps(insetCount === 2 && !onPhone);
+  markMixerSwaps(insetCount > 1 && !onPhone);
   if (!$('sound-menu').hidden && !soundSliding) buildSoundMenu();
   syncTicker(playing.length > 0);
   remoteSync();
@@ -3324,7 +3324,7 @@ function muteOthers(id) {
    in redzone.js. Clicking a tile yourself pauses it for 5 minutes. Switching it off puts the
    layout, the primary tile and the sound back as they were. */
 const REDZONE_KEY = 'multigrid.redzone.v1';
-const BIG_SLOT_PRESETS = new Set(['featured', 'focus', 'trio', 'overtwo', 'duo', 'pinwheel', 'phoneBottom', 'phoneSide', 'pip', 'pip2']);
+const BIG_SLOT_PRESETS = new Set(['featured', 'focus', 'trio', 'overtwo', 'duo', 'pinwheel', 'phoneBottom', 'phoneSide', 'pip', 'pip2', 'pip3']);
 const ESPN_SITE = 'https://site.api.espn.com/apis/site/v2/sports';
 var rz = { timer: null, big: null, pausedUntil: 0, history: new Map() }; // eslint-disable-line no-var
 const readRedZone = () => { try { return JSON.parse(localStorage.getItem(REDZONE_KEY) || '{}') || {}; } catch { return {}; } };
