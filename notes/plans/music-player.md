@@ -1,6 +1,6 @@
 # Music player
 
-Status: **DONE, live Nov 27, 2026**
+Status: **DONE, live Nov 27, 2026** (`39e3db1`)
 
 ## Cost
 
@@ -92,3 +92,4 @@ other artist/album favourites added to the MUSIC folder:
 - TV/series/YouTube panels and the podcast dock still work.
 - `~/.local/node22/bin/node --test tests/*.test.mjs`.
 - Nov 27: Built, tested at laptop 1440 and phone 390, Sound card, podcast hand-off and paused reload; 477 tests.
+- Nov 27: Live at multigrid.club in 39e3db1. Laptop and phone menus, artist/album/song, dock, Sound card and paused restore verified.
