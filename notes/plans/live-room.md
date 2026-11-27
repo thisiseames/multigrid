@@ -1,6 +1,6 @@
 # TikTok Live Room
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (3e749d9).**
 
 ## Goal
 
@@ -64,9 +64,9 @@ live player, live status and layout code.
 - [x] Local browser checks at 1440 and 390.
 - [x] Live site check, then mark DONE.
 
-Built locally: the rail is only lives, fitted to 432–447 px for the tested formats at 1440,
-with the wall at 993–1008 px. The formats/× live in the Live menu and the panel has no title
-or footer. The wall stayed 2 × 2 with its tiles throughout.
+Live: the rail is only lives, 432 px for 2 × 2 at 1440, with the wall at 1008 px. The panel has
+0 format buttons and 0 Add controls; the formats/× are in the Live menu. The wall stayed 2 × 2
+with its tiles throughout. At 390 the rail is hidden and the phone layout is unchanged.
 
 ## Gotchas
 
