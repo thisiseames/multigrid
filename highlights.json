@@ -1,5 +1,5 @@
 {
- "updated": 1795737575411,
+ "updated": 1795739140121,
  "games": {
   "401873077": {
    "league": "NFL",
@@ -332,70 +332,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910031": {
-   "league": "NBA",
-   "title": "Wizards 116–96 Magic",
-   "start": 1795392000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "6LGBQv5bPz8",
-     "title": "MAGIC at WIZARDS | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "NU0cFKUTJdY",
-     "title": "POSTGAME HIGHLIGHTS: ORLANDO MAGIC VS. WASHINGTON WIZARDS 11.22.26 PRESENTED BY PLANET FITNESS",
-     "rank": 2
-    },
-    {
-     "id": "1_Whs7_gdUg",
-     "title": "FULL GAME HIGHLIGHTS: ORLANDO MAGIC VS. WASHINGTON WIZARDS 11.22.26",
-     "rank": 2
-    }
-   ]
-  },
-  "401910032": {
-   "league": "NBA",
-   "title": "Bulls 145–151 Nuggets",
-   "start": 1795392000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "fku0QvOiRm8",
-     "title": "NUGGETS at BULLS | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "r7Dn_36ZhYo",
-     "title": "Nikola Jokić Delivers A MASTERCLASS | Game Highlights DEN vs. CHI",
-     "rank": 2
-    },
-    {
-     "id": "UxtB4QET7i0",
-     "title": "Nuggets DOMINATE Overtime Denver Nuggets vs. Chicago Bulls | OT Highlights 📺",
-     "rank": 1.5
-    }
-   ]
-  },
-  "401910033": {
-   "league": "NBA",
-   "title": "Jazz 114–116 Mavericks",
-   "start": 1795392000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "HiWq0b23dbk",
-     "title": "MAVERICKS at JAZZ | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "CWA0nOxfFOI",
-     "title": "Mavericks Highlights at Utah Jazz | November 22, 2026",
-     "rank": 1.5
     }
    ]
   },
