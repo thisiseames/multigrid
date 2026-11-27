@@ -717,6 +717,32 @@ export function fitStage(ws, width, height, stripHeight, cinema = null) {
 }
 
 /**
+ * A wall made only of TikTok lives: each live is a 9:16 body plus its strip. Fill the stage
+ * height first; if the columns would be wider than the stage, fit the width and leave the
+ * spare height above and below. Returns null for every other wall or a picture-in-picture grid.
+ */
+export function fitLiveStage(ws, width, height, stripHeight) {
+  if (!ws.fit || isPipPreset(ws.presetId)) return null;
+  const shown = ws.tiles.filter((tile) => tile.place && isStream(tile));
+  if (!shown.length || !shown.every((tile) => parseSource(tile.input).kind === 'tiktoklive')) return null;
+  const colUnits = sum(ws.cols);
+  const rowUnits = sum(ws.rows);
+  const strips = ws.rows.length * stripHeight;
+  const available = Math.max(0, height - strips);
+  let bodyHeight = available / rowUnits;
+  let bodyWidth = bodyHeight * (9 / 16);
+  let fittedWidth = bodyWidth * colUnits;
+  let fittedHeight = height;
+  if (fittedWidth > width) {
+    fittedWidth = width;
+    bodyWidth = width / colUnits;
+    bodyHeight = bodyWidth * (16 / 9);
+    fittedHeight = bodyHeight * rowUnits + strips;
+  }
+  return { width: Math.round(fittedWidth), height: Math.round(fittedHeight) };
+}
+
+/**
  * The big spot shaped like a film. Only when it spans the full width: then its rows are made as
  * tall as the film needs, and every other row keeps the normal TV shape. Returns the stage size
  * and the row sizes to draw with.

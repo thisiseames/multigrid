@@ -1340,7 +1340,9 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .grid.stacked .tile-body:has(.frame-reel) { aspect-ratio: 9 / 16; max-height: 78vh; }
 .grid.stacked .tile-body:has(.live-tile) { aspect-ratio: 9 / 16; max-height: 78vh; }
 .live-tile { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #000; }
-.live-video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+/* Fill the live tile, not letterbox it: a vertical live already fits; a group/landscape
+   live is cropped at the sides rather than leaving bars above and below. */
+.live-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; }
 .live-overlay {
   position: absolute; inset: 0; z-index: 1;
   display: flex; flex-direction: column; justify-content: space-between;
@@ -3158,6 +3160,37 @@ body.is-phone .grid.is-pip .tile.is-pip-inset { width: 25%; margin: 0 10px 10px 
    A margin's % is of the width, so this is exactly one small screen's 16:9 height (21% × 9/16). */
 .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(28px + 21% * 9 / 16); }
 body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper { margin-bottom: calc(20px + 25% * 9 / 16); }
+/* A TikTok LIVE in picture-in-picture is a tall card, not a wide one: its picture fills the
+   whole inset, with a compact name/LIVE overlay instead of black bars around a phone video. */
+.grid.is-pip { --pip-live-height: min(34vh, 320px); }
+body.is-phone .grid.is-pip { --pip-live-height: min(24vh, 190px); }
+.grid.is-pip .tile.is-pip-inset.is-live-pip {
+  width: calc(var(--pip-live-height) * 9 / 16);
+  height: var(--pip-live-height);
+  margin: 0 14px 14px 0;
+}
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-live-pip { margin: 0 10px 10px 0; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .tile-body { flex: 1 1 auto; aspect-ratio: auto; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-video { object-fit: cover; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-overlay { padding: 7px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-head { gap: 5px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-avatar { width: 20px; height: 20px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-name { font-size: 10px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-handle,
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-viewers { display: none; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-badge { padding: 2px 4px; font-size: 8px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-title { font-size: 10px; -webkit-line-clamp: 1; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-status { padding: 10px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-status-kicker { font-size: 8px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-status-title { font-size: 12px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-status-text { font-size: 10px; }
+.grid.is-pip .tile.is-pip-inset.is-live-pip .live-retry { min-height: 26px; padding: 0 8px; font-size: 11px; }
+.grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-over-live {
+  margin-bottom: calc(28px + var(--pip-live-height));
+}
+body.is-phone .grid.is-pip .tile.is-pip-inset.is-pip-upper.is-pip-over-live {
+  margin-bottom: calc(20px + var(--pip-live-height));
+}
 /* In the sound row, each small screen's own Swap. */
 .channel-swap { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px; border-radius: 8px; color: var(--text-2); font-size: 12px; font-weight: 600; }
 .channel-swap:hover { background: var(--hover); color: var(--text); }

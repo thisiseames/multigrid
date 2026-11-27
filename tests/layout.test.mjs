@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitStage, hiddenTiles,
+  PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitLiveStage, fitStage, hiddenTiles,
   isStream, makeRoom, moveLine, phoneColumn, phoneTile, presetById, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
 } from '../src/layout.js';
 
@@ -293,6 +293,46 @@ test('fit: uniform grids aim for 16:9 and near-misses fill', () => {
   assert.deepEqual(fitStage(grid, 1440, 856, 26), { width: 1440, height: 856 });
   const custom = enterCustom(withStreams(2, 'row'));
   assert.deepEqual(fitStage(custom, 1000, 700, 26), { width: 1000, height: 700 });
+});
+
+test('a wall of TikTok lives fills the stage height with 9:16 bodies', () => {
+  const row = withStreams(3, 'row');
+  row.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
+  const live = fitLiveStage(row, 1440, 856, 26);
+  assert.equal(live.height, 856);
+  assert.ok(live.width < 1440);
+  const bodyHeight = 856 - 26;
+  assert.ok(Math.abs(live.width / row.cols.length / bodyHeight - 9 / 16) < 0.01);
+
+  const four = withStreams(4, 'row');
+  four.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
+  const wide = fitLiveStage(four, 1440, 856, 26);
+  assert.equal(wide.width, 1440);
+  assert.ok(wide.height < 856);
+  assert.ok(Math.abs(1440 / 4 / (wide.height - 26) - 9 / 16) < 0.01);
+
+  const grid = withStreams(4, 'grid2');
+  grid.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
+  const twoByTwo = fitLiveStage(grid, 1440, 856, 26);
+  assert.equal(twoByTwo.height, 856);
+  assert.ok(Math.abs(twoByTwo.width / 2 / ((856 - 52) / 2) - 9 / 16) < 0.01);
+
+  const single = withStreams(1, 'single');
+  single.tiles[0].input = 'tiktoklive:@solo';
+  assert.equal(fitLiveStage(single, 1440, 856, 26).height, 856);
+
+  const mixed = withStreams(3, 'row');
+  mixed.tiles[0].input = 'tiktoklive:@live';
+  mixed.tiles[1].input = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  mixed.tiles[2].input = 'tiktoklive:@live2';
+  assert.equal(fitLiveStage(mixed, 1440, 856, 26), null);
+
+  const pip = withStreams(2, 'pip');
+  pip.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
+  assert.equal(fitLiveStage(pip, 1440, 856, 26), null);
+  const custom = enterCustom(withStreams(2, 'row'));
+  custom.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
+  assert.equal(fitLiveStage(custom, 1440, 856, 26), null);
 });
 
 test('phone layouts keep the primary stream in a video slot, not the phone column', () => {

@@ -4,7 +4,7 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, cinemaSpot, findDividers, fitStage, isPipPreset, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitLiveStage, fitStage, isPipPreset, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
@@ -1020,10 +1020,14 @@ export class GridView {
     const kind = main && isStream(main) ? parseSource(main.input).kind : '';
     this.gridEl.classList.toggle('is-pip', pip);
     this.gridEl.classList.toggle('is-pip-beside', pip && (kind === 'twitch' || kind === 'youtube'));
+    const lowerLive = insets[0] && parseSource(insets[0].input).kind === 'tiktoklive';
     for (const view of this.views.values()) {
       view.root.classList.toggle('is-pip-main', view.tile === main);
       view.root.classList.toggle('is-pip-inset', insets.includes(view.tile));
       view.root.classList.toggle('is-pip-upper', insets[1] === view.tile);
+      view.root.classList.toggle('is-live-pip', insets.includes(view.tile)
+        && parseSource(view.tile.input).kind === 'tiktoklive');
+      view.root.classList.toggle('is-pip-over-live', insets[1] === view.tile && Boolean(lowerLive));
     }
   }
 
@@ -1088,8 +1092,9 @@ export class GridView {
       return;
     }
     const box = this.stageEl.getBoundingClientRect();
+    const live = fitLiveStage(this.ws, box.width, box.height, stripHeight());
     const cinema = this.isCustom ? null : cinemaSpot(this.ws, (tile) => getCinema(tile.input));
-    const size = fitStage(this.ws, box.width, box.height, stripHeight(), cinema);
+    const size = live ?? fitStage(this.ws, box.width, box.height, stripHeight(), cinema);
     this.gridEl.style.width = `${size.width}px`;
     this.gridEl.style.height = `${size.height}px`;
     this.gridEl.style.gridTemplateRows = size.rows ? template(size.rows) : template(this.ws.rows);
