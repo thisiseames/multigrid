@@ -1,6 +1,6 @@
 # Phone Live menu
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (81afc9a).**
 
 ## Goal
 
@@ -45,7 +45,9 @@ feeds and add box as the laptop Live menu.
 - [x] Desktop Live menu and TikTok rail unchanged.
 - [x] Full tests (507).
 - [x] Local 390/1440 browser checks.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live: the 390 px sheet shows Live, the three tabs Twitch/Kick/YouTube, 44 px form and row actions, and no TikTok or “null”. A Twitch add saved to the phone wall; a TikTok live link was refused with the laptop message. Desktop still shows all four tabs.
 
 ## Gotchas
 
