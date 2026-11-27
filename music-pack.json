@@ -1,0 +1,768 @@
+{
+ "name": "Music pack",
+ "note": "Official artist channels and studio albums for the MUSIC folder.",
+ "items": [
+  {
+   "input": "https://www.youtube.com/channel/UCs6eXM7s8Vl5WcECcRHc2qQ/videos",
+   "name": "KANYE WEST",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/jh05JitmhiTaAuBp7AAtTETeO3Zl7bDa-KwcSnZYymMpNF984oQ4k3ZQq1KBPhoKOXHS8B761WM=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mvz7Tr6ZqTX0GKxE4lP5ifCaE9Sx-AEjc",
+   "name": "KANYE WEST · THE COLLEGE DROPOUT",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/0tTCyDcqCFtvEs95I_HhisHOkj1IlmnJ_3tplZhfoYQGp1NVgekJ9gO-ZFHhQCzK6ycHJR9dUQfstUUK=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ljZc-x7bxToE4yodl2ujs7w0pBU9tyqKc",
+   "name": "KANYE WEST · LATE REGISTRATION",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/c-AY0SDYVHyA9v9YnM8E8gCkxiyaTud8--8LclhnS6w-xnM9D-Imgquv3PgoZp6TTrXgOvCgs-8kMoLv7w=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n4negEHWAKSsnUfvxnK-hbGuYASJ1IBa4",
+   "name": "KANYE WEST · GRADUATION",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/LENzUxyoVSRKUEZrw6nG5cOajuDDnFaIQIbD3LW95HaLLNOW4IHHvpGl0nmCoyFpiQE93jtT2FJTJk2Oqg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nz1xgXV49PGli0x8q3Y1XxparfuNRbe18",
+   "name": "KANYE WEST · 808S & HEARTBREAK",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/exflW3HncdenT5gT0RFYTF4PfxoC2UIAjC3gdVO9troE_u8bW7g8tqvqas9x_hozALD5wu_rYbm0k1Jk=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lh6e__g89bgNq1BF7EM9GMlXMLzwvatgA",
+   "name": "KANYE WEST · MY BEAUTIFUL DARK TWISTED FANTASY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/tSZcuqpZPhJIK8ItC4tkokRmIA6zEo408LFJnWb-3Nm8fv5adFiE1ArPTd_UqhaC-o8KI8tMNZIuFEo=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kruMNaIC1LpQ16H50h0YBrINB4jtvVUCg",
+   "name": "KANYE WEST · WATCH THE THRONE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/qkeWTzaodhaFlvDPZFxEFxnmSdAK4w50oJy6UOcsdWLF0Z5-cVs6ozB-WGz22jbdO_Djm6SYhnaaVOUY=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lJ0yXPKvCREyQl6Bcxp6I8CAfrD-yX-VA",
+   "name": "KANYE WEST · YEEZUS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/IlOU83T0SWGj7h7qpDaZJwwGVfKnky9Veu8Nm6JzxzmvoWOFJQusAdTKhAqYla-3ZJBgIVWAhrDMikSfbA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kPR4FKADrZ1hZftipUfdMuBIup-mumHHE",
+   "name": "KANYE WEST · THE LIFE OF PABLO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/aPKvJlUpWx0i61bLgr5VGYadl7jzK-mtJTt5utKUkZgjLB98IHqIaptWpsJpJQ-fLIYIZ0j7cJN2cYjs4Q=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_muY3sZz_bPKYuLgpQT-XpRkJlg5Ic73dw",
+   "name": "KANYE WEST · YE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/tpValRI48hXKycZyjpJOQAVsmGqV7w3lUGECnFpcOypZpduwWnlzdiowfgGkiAr1Sy2K4nSny2eore-7=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mo_SIUnjlx4i6w5-P_SHrA9Cib9kkclXA",
+   "name": "KANYE WEST · KIDS SEE GHOSTS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/xRhLzotVKyeBwYPHcWDFzD-ndNcPLXIH9ZVNy_C7Lpt66dZ_lfR47boH7ussxcYOkYBwvbo5_KRKUYFi=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nEFBjGaOppv2c3YRocckDXUNhmD-SjPTg",
+   "name": "KANYE WEST · JESUS IS KING",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/J2oSU6vw-2wolksQfk-NrjUzljrwugnl6TecdTvUt6LHsBaeHhv2ywA1HkqYKzfCCr3ObUUt5Ky3iN9W=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mt1CozrMsSYFHXkkpeHkmk5hmxdsXRTnw",
+   "name": "KANYE WEST · DONDA",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/gd7qsOzpy8aoUf0SV1E-LZiUjo03QYiDNFRwSwQc3h5rBG8JHuk1P_nsB7I9A4rS_cMpyU18D8SEOA7iDw=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mNUEpNDbh1ac9F7xEU1nfybrr2k2nfXcE",
+   "name": "KANYE WEST · VULTURES 1",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/cT2p-tm7iHbZsUn0bpW4E5QjdxwdsxUxI9TFei7d6dEjql_PEGeVtZMlOtrta2pPjCCwq05nd5C2_B-v=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mDy8I7F_YYy9DfSyLZNf1ZvtpPmmZSpfc",
+   "name": "KANYE WEST · VULTURES 2",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/S646JX6qXL-aDmnBm3yzqdlIMvPlS5fJbDpWtUIeciiwlcsQChKExT0YcX9w6ZmEZAP4QrOmB8xZCOzUYA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n2MS9bY7gjMFX9-u3KoyTEFV_fA5-jNG4",
+   "name": "KANYE WEST · BULLY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/bkKS0_cba9hOrMz_BEMCmhnsm88AyUNpZ0K5lpjO07ctU7giLt-sXht5bmbwTmxRnjqSUDygDbdcQ9OB=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCmBA_wu8xGg1OfOkfW13Q0Q/videos",
+   "name": "BAD BUNNY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Ys37SrZ6B7RUW8_X3YvQet7VCFNnWa5C5PXe09OgIoY9UkTt1GpP_zap1-w2VF5gZcyS5xQmbJs=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nDCKBMpaMTYjj1HeWnltHV-mvQ8U_QTc0",
+   "name": "BAD BUNNY · X 100PRE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/gCb7PCwLzDCQZwC40gIkni0sk-Bo1phK8k73qjmY_cGs9hoM-J7ZceSakSGo7F95NGOBy40Zw7xGtcGiBg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kQ0AoJdc_0oZHQn01MSOold3bCaVP6HxM",
+   "name": "BAD BUNNY · OASIS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Rw2pqT1wp-Qp1J-Mex8gS1z1OZEy9fFF-OL4gULrMD9aW64bRkikpKr9qLcJeJK_ktsobZk57ZUjO7Br=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nyoZjlkJzDU43lpdOdsbTyANK4NfU8OFg",
+   "name": "BAD BUNNY · YHLQMDLG",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/XpWJTYX00QxfPD-IkSCV96gTbg3dThLJJaC-kydccq22xlFc82fWC7e9O5A7dCcX2O7OTLMTr3lWIuM=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lZ_sOzsE6zU262uuuaPb-vVJJYcbs-b4I",
+   "name": "BAD BUNNY · EL ÚLTIMO TOUR DEL MUNDO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Iysj4pTBhx_j4Uk2xzUoq6IN9rfnb6GlaZp9g4rvLndsJXLY5IxpIlX3YHC_at2h6lVdMNkoLplmWvhfkQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lPKZ-lFNR8-6kDNPm3zxJc6ipsS7ibrc0",
+   "name": "BAD BUNNY · UN VERANO SIN TI",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/0Ke36SSY53TQbmpqzKP4hMPoGiWYQiGI0KJ2CzcwjW4ore9vUMUmyzEi7irEU2MR3FCpNPdwIIuNslS6hg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lbbMHrQCjNimMpxeeIIOf2YODT9tXnjKk",
+   "name": "BAD BUNNY · NADIE SABE LO QUE VA A PASAR MAÑANA",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/wLNbSrba-Qu4IFD4zLkjmxn2IqtDN1tQEWSh_QgrlBTy1GhDLai3JGjEmQ9K-6sWttkzQFBrmO2Mj4_1iw=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lyHAnjFoQ3oA99xB_bjZRFiSu43NthCfY",
+   "name": "BAD BUNNY · DEBÍ TIRAR MÁS FOTOS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/yBcpSTWxVqyJr7enMy7HFv14Yb8p1jI5AS5o49Cvbeyc6zjvCvdLn_0_iAxz50MqxLx6hQDngWBeaC26=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UC2qWxZHgnlwDvcmLqP23jrA/videos",
+   "name": "FALL OUT BOY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/21xokFOT8_h18SLXGZATt847RbmqmdQWw_hbLnUrF7gBGnvYgeVzgIZqTXK7IM6NP23LPVqIIA=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m7lKXvNqleI3JOyzrJq3FTbHK7jBn7LL0",
+   "name": "FALL OUT BOY · TAKE THIS TO YOUR GRAVE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/qczYnw2gII_C8KpjE5PAXJPtWq-kXMg2_fQBvI4rRo3otKIgJPaHNTz2co4jBYmK0XFtWGmlPiwsIGU=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nFasRETrVE7IH7RG_bdSg2Hecpxe94UXY",
+   "name": "FALL OUT BOY · FROM UNDER THE CORK TREE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/JM-ZCXPByV_ZtMEcJ6daaQZRZm0EE2c-ndAOuz39XuMde8Ns7C7MbnnAe8xI3QtyrlOSMrZ23A6IZ6qJ=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lo_BNh08nuDjR6sV62qedL4utR7oNDxuI",
+   "name": "FALL OUT BOY · INFINITY ON HIGH",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/xgxVFoIkLyQUIoiduh-mw4LQ2ja5s3w3b64zQGDg68oR4ad3wlkAuvpI-Ftppo0yAxcIFgrLGdnSKR4=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nMOjCqabRGosrH7wt-fRehCOH-dKgJv0k",
+   "name": "FALL OUT BOY · FOLIE À DEUX",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/jQFxr9CZftIa2HArY95y39M0NcyGIFbi_ZRqENUjOiCWHxRl5f9A3t6Jwt_fNLa_KIcHOJfSJ0FudWRQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n2JFgLuFjU4cfiFl4DaXZ4b4UkUrYqBKE",
+   "name": "FALL OUT BOY · SAVE ROCK AND ROLL",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/LXwcLiYgeVLXuBFNakvDY1OQk-peMmgVldpwpuvWes2iUIuUbzBgAwpgBUd2btCfav_jxlBqvHa2XPU=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mI_ni61v5xJGet3aQP1sXKIZnao28mx_0",
+   "name": "FALL OUT BOY · AMERICAN BEAUTY/AMERICAN PSYCHO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/dTaLSBJmPtDdl69KdOGmYmfEb6EEwGkaEcm3j3ksWgdppIUjfNnVLE_jxLTkJl7KBliu5_YjMPfGLDuV=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_khhPw3Ji5jus_U-NJWFk2pIjv9aCLo-gQ",
+   "name": "FALL OUT BOY · MANIA",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/5-qyEVZXwTRljJ2AtbgGdzvNoo_JXDOr6NIdpJWMzwT5AyaTwmGcEYdhBy30aipbNjNKc6aanIzmiCSv=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nBfO6zyFE9U0NbTFIumQEgdtbsalPBToQ",
+   "name": "FALL OUT BOY · SO MUCH (FOR) STARDUST",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/qKbrr-JHBgCtKr8UcXhLQH1jE9TIoNLCa8zNq3Ondt6Z-KlLIAlQ8YFPQQpqQ_mpN0kOPnepUXw9nXyRXw=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCbfUA3UGxAWL3muD004g0WQ/videos",
+   "name": "TORY LANEZ",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/ytc/AIdro_kY0cOc0o_iLvtvF5yc7SnUPDERv72fKBpheSeHOAmGyZI=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nyPNwZ2WH3ZFX_MNixif5hZaJpwMswLLQ",
+   "name": "TORY LANEZ · ALONE AT PROM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/OMi3C0C0qrJeXD5U21Bp-_zsiluwe14IJQheMfP3TwtJR_y1rWC0U8XKK4MI0DCSw_-wDMBlpc7zZDA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lqicC23mNMTM6ewHKYLvtNTCotwGkX3CA",
+   "name": "TORY LANEZ · SORRY 4 WHAT",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/dmQCMUYNKQk9rHwUhZF-Kya7NG7YNT8bwrRcN73dSlec2gGnKJp6YMCtuRZJLcdozP06JpqSOuMydlE=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nIb2Xjar3KIYZnplXZB7X4eL048Ml0i5Q",
+   "name": "TORY LANEZ · PETERSON",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/X9VAExrHpe9oaXf5x9YSUUKyiKnr4B6JO3mImYYJpIBBBZUox01WxwgXaf6HpNK56VBBzTRTtolJK200=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m4iv62b5l49-5LBeSWlSiA46Jvw7iU6C0",
+   "name": "TORY LANEZ · THE NEW TORONTO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/7sXwZYehzALerdWXcIcZ8xwyYwmb23RDN2_J7filXL2USJVsK9kh5CDrQ8pMlKRbXWuzvLrM9hfoKcbq=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mSPeMZ5Q-1GybtWXzV5Vuhhs9GxIY34UM",
+   "name": "TORY LANEZ · THE NEW TORONTO 2",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/yhQYmU1kKXZDDbbt1H1COxxW0JXpsjFqHHrZEBoMWu9oLfA8mSWjGlFZfUB-eD2CkqJXph8DXSaEkdP-gg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mycYtNaYCEj3bzzc62g0hmw3irVjDsxBw",
+   "name": "TORY LANEZ · MADE YOU THINK I WAS GONE ...BUT",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/AX4yVJEYW0qhdq1Nu4TU2lXdq7uYu-hR8WMHgnkeZ-fklWZQl_VOAYp2YjVTLtaPzAIJPKuW7697r-E9=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_k5Fylrh86fEVUt5Azw8pA80GE3IthNE0s",
+   "name": "TORY LANEZ · MEMORIES DON'T DIE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/uXirnBSjm8rxnipwpolRaxATkl89AtyeKLquRTWb_WRZ62G7CCtoWpPrf5wec9o7wqZsd92n1NgDOMk=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nqaj9b_t5XRTgevTsF0CHasj8xVRGJoB8",
+   "name": "TORY LANEZ · CHIXTAPE 5",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/UToVjj_4UWTk-9uO9VbSD5mlGj-w0RtqauQer3Rxi-EMiNCNPhpe7SkNbNKOwJVYAU-1vGqWC_Mjmqring=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kk82WwpjIVxTkLTAsBg43H6RocVyqYvA0",
+   "name": "TORY LANEZ · THE NEW TORONTO 3",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/QCKKuIPUdx18WTjDHBTJHUAUDaAVMiks27tf_cCMRrS9pzxJHT0cM3F9DZH8VoJJqXk9NdLktnhtAq8=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCOA-JHiXyQhzpx18TJvC_hg/videos",
+   "name": "YUNG BLEU",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/SlO1Abg30ADipsOSn_BbCrebHa4SV3HcoXtEuQUsV1UpDGPMkN2Ahj0IR96GFjX2XBc9M4bx-w=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kYph00Uek6-opDMlkCgvLIZDcmRvQ-mnY",
+   "name": "YUNG BLEU · MOON BOY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/XtVN22s2rLwBtVNWfFU6V2lKuYDMsF4j_OBNk8B1ye1Y9H25OOGrgUz3_Vr11wCfpzRrudFF-Eu0staO4A=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mVdOkiis0YoPpuRqUwKZb52JNcbDbp0BU",
+   "name": "YUNG BLEU · TANTRA",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/cN3F7XRdNQDVxwBXfcZ2Z8lc9e40Yz4HbFEGvvOCZrcw5Bu3noKwEMOQy-Bwx-snBeM2FP49maWSnCI=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lC0A1co0nOpUD2-FoQJVZdehVmGHZbhpk",
+   "name": "YUNG BLEU · LOVE SCARS II",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/MFKA3KG9Kw5j7pcbv0F1eL0He_luSrJf3s1m7P4QyKiMjg3f6mKqrf7TFQY8JunymJHUV3YkSdoM29E2=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mIM1cFjSlKFAN8Voc747kyo3TugDo5yEk",
+   "name": "YUNG BLEU · JEREMY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/MGCsUpCXc7m3nVlv6ABqOw6Il7DhH5aB_grwUK8eklxjvll-BIxXXgOthLlshOComfYTUT7NTokxKEE=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lzE4PwXvwAKQcxPSymkFyJfmuXPfogv_8",
+   "name": "YUNG BLEU · WHAT MAKES US HUMAN",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/99zr9wxAKGVQ5T8qxxw76vTZsENxontjFbwqGtDsIcDbBXqxxokRyuPCuYuVMHwblEac2pugmxHHIu8=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mFyBaM5b2wfoqn520uspPXF6v3sMOiero",
+   "name": "YUNG BLEU · BLEUSKI",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/A92s8mjlbKnG3ZRih41zL1v6cBfM8JLDP7CuXXKzL6gdhbsw255S8wj4LdZY9vd2J-TJvSKVAW0wcxE=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nkVM2v9lYQPkCvktqkRelGMsYk-5xajRU",
+   "name": "YUNG BLEU · THERAPY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/TgHkkDUcIBqtm9x-yq_8uOHm8RWxgz58T43WUfCeTU7N0i_Ug6EunCsQTofFGwQXW4O9Y931BdlUfdA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nQUoipvzf5Mnu6MivQG8YGbMqhhi7qRjA",
+   "name": "YUNG BLEU · WORLD AT WAR",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/jaD8FaIooM-f2bF3A6SvYcC971iR-bhFenlMOe3IcU5TY5GM-Ikvj4yG_2jNsr_EBdJmwkor0QEdkshB7w=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kxDWu7KeWfixXi8DuQn0BzJKr_d6dWxtI",
+   "name": "YUNG BLEU · BLEU VANDROSS 4",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/fbCYOlq-zftVm4DDOgTmkj8gEhr9PpgYM6vGIvYMrCjiP_va5dv1YiUL57hqjFFiBZDTY1aDx4YVW9c1eA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCz8FPpkJMwayyReSDLTX8IQ/videos",
+   "name": "NICKELBACK",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/kjPoMfjh6uz6WDwOLFU51DrnKTPUny5g_lrbsdRpFUl92NMinj1_N_vC-U5wB1lTFba0w1oMAvc=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l_NP7lbJGc6x83OsTRmV2VzxQdmg_Ls5c",
+   "name": "NICKELBACK · CURB",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/QwnmzCfsjxcf6souaERTq7IgiWgYI-VqUDKf1leLm23TOykdcAzkO84eiV1vyO-eRnUzfeu39mRSy70=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ksdGo5T1bHpRvTZIs1wg0ABCpgTGOoays",
+   "name": "NICKELBACK · THE STATE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/JvlgEq7fK9s7_lh15bXZPWkZXmGkKie1eFPHmgb9SqqlJvbzJyqPS-njut0q3Nwqjpo9ipxmQCFNoJkX=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kpaRAhf4uRNrTdSHzD5jEH81SpWPo0agE",
+   "name": "NICKELBACK · SILVER SIDE UP",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/KC2tDiFdec41kaIEy0hD0BGaNbcFX6dqmz-bJKs9miDv0zGaEtbTc0x5TRStshVO8Ep_6T8mmyyJaXGbFg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n1IxyEnj2fBd_w66LBxbfSRUsosO3wkoQ",
+   "name": "NICKELBACK · THE LONG ROAD",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/kA8O8CxTR16kd9NdAb_O50VjC0fk8tW4ezz9zAzzOmp2ia9MtBkDfG1zAe2ydBq3vaUplh9Hlha4gv0=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_k4ptremgFSHjzT2OXLKUnFU564tSNs9lU",
+   "name": "NICKELBACK · ALL THE RIGHT REASONS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/6Q219So0V8mtO-_oAipyQbBJyFGcTdGwAFXPYlKdaSIXei6kJIS35ik97NtN-c_RdYcNH5Th78N7FuY_=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lqDuNO1iDjfN_i1osUMZ95iFKfy2mwrko",
+   "name": "NICKELBACK · DARK HORSE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/llPK5DhXKyddFTfdQbS6JsN3UBRX9_3LIwOA-TPnpqHhVEVr_ChkZsfAUAFbr9CzwPnTlgWmyVj8ewI=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l7qsoh8AtKQmkJg5kaYyTFWSb1eIprZBQ",
+   "name": "NICKELBACK · HERE AND NOW",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/n7iiI8lKXEUOcLq3c9Jq2WRpV1yRDGysknlJahEGMYhkYuercM28KpirTWZ2TcGKwVo73nC4e9JHaFGW=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mPaYNACUcMe23nAJKN8hcXYtaucZcH0bI",
+   "name": "NICKELBACK · NO FIXED ADDRESS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Igs-y7vit19JJ2xgQ1-FufmbDdzpJsqol8mR0Vr4u2yNJVM9TD0tQoiAPaPZBqMFmV3zp5w3TdBSZHCy=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n-UnbCWdacovMwx5OD3ph7aPjlCZHDWpU",
+   "name": "NICKELBACK · FEED THE MACHINE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Rk2UC5RBKAwHRledABSzxCMSkQrywHTEadaYymk-eHUsoA__LGcKfsoCmYOrerzFy6F0Oks-98Pvtsp9ag=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lpALRBjMrqKLqfiltM0MG6auYg2xJhfCM",
+   "name": "NICKELBACK · GET ROLLIN'",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/ACGK3sD8oSmSuseotqd-ifLtyRJzqGSWje3QW3ahdCHJlzrAUDMawmXDx1mvKZCYM99WM6CK_-VK4Fs=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_k6RtpWY27xQS4fW8nOdb3RrbCWVvUejyY",
+   "name": "NICKELBACK · EVERYTHING UNDER THE SUN",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/58_bOJKNvegCwtq7wLKydwrhG_9_Qqt-xvN_79zGjB9fXkENcwW3GDPj7nlIyZhXkIVqcvBnGs3FgcMs=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UC0WP5P-ufpRfjbNrmOWwLBQ/videos",
+   "name": "THE WEEKND",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/WHvw1ak1FcJaHeEiTmG2iN0dqEjjPxAtT_tA8ruJ3MlNr9I-RHsAur1iAenYeQN_d6LNPH2Z8Ic=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nCMr1Lw6Mm-Ga9yfnF0aKahguhkQTl_Qo",
+   "name": "THE WEEKND · HOUSE OF BALLOONS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/VW7wbxNbC_2EyHz9s1FNWuWYVWuxMJ03FZhCQdPB3WTxcoCxKpi173jIVHujpzJdDtkDMKz712wFvpo8=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n7BMx0qi5Wk-ncXweaX8GWx35hrpqQKoA",
+   "name": "THE WEEKND · THURSDAY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/UOnvsVjHwhElV3x5giwweJtqDYSui8TG2PCuxpUC4RxzF0EYyqzjOFav_5GZE2Af7z8bzj3NKoCKJert=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n-BEjSRmiFQ9qz85TVG4NVLXhgZsYIt5c",
+   "name": "THE WEEKND · ECHOES OF SILENCE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/rpP2EuhfRvnoHXuCWk1af2RRdF6yXgkJQrYd4U9tcF2mAZDTpDDHFjYn8JwkDtBHvwp97YtgK1CAMXmm=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n1QQiwVYy7zoYTjG-r9QgJhKFtJDqXSag",
+   "name": "THE WEEKND · KISS LAND",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/kLevyszGNbIkjyziQ4wbRWrZHLS4rYax8FgZclHDmx8NMmWlSeGcoBAdNYwXePnY2SWBHL1uW-NcZZM=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lk6BlY9kHpbz8Etlf72uJFqetTA5l7duM",
+   "name": "THE WEEKND · BEAUTY BEHIND THE MADNESS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/RNsC4IIArffVIpusLyonzKv_ijRbLmZYXkrQtKNrtLomjWr_sGnvPoDRoNSSDzq9F_ax-TOFmxuYS6hMRg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nl-XrT4Q4vuhtuzHGfIuY5a0Rao4J8LdM",
+   "name": "THE WEEKND · STARBOY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/dcxXIIlest09vnvKznWM9VWQXu1EL7lKxBzXGzwgmVjmMNBm1dEWT_0qn1xrEZYyKF_qRE1TLq8P_JY_mQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l4UqNJCpAF3kNaV37LHdRc_A07MmVdiSU",
+   "name": "THE WEEKND · AFTER HOURS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/JDKz3Anlyo49xBhFcFx13QD_Tk4-kqdiYTo15gtkL93nE8biWyZ7o0BPyW6RnXVxcXaJ5DgU5nJ_0NjJ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nF6-ijLz9eO-DMZzhzneNclNBj74Jvjgo",
+   "name": "THE WEEKND · DAWN FM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/5teqUPmWiFmagN0RggBKRXSW1zUj5_fVCEhbVhN6qt519EyHj6njy1x8dnJcRWNhQ5cl4dZgGaxbyqgv=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kkKeSGVtKNzSp4XxbiwqgAPI4xy6GY5EA",
+   "name": "THE WEEKND · HURRY UP TOMORROW",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/9ds8ikP1c3pkqRFeztLdUu5w3wUZrhYD2U9pUM5eStacumTocYtHieEGcAKQo5CsBvSB_m4bVCUAs_eXJA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCBGPpIZG2IEkEOm_s8BOoQw/videos",
+   "name": "VEGEDREAM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/WEn-GF-EScuEVUps55MIebr8DNzJA-l7pF2lKL8TAHpZLg6E0eAz5Gp3umuBNQTwHrIQd8lbOg=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l6CjfvXDTh-65MRQvNLnGGCcnjdSzaJ_U",
+   "name": "VEGEDREAM · MARCHAND DE SABLE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/uYUB7i7SjproeDRPNsZLsgpqhbAJZgfs-hlAby2hxuSX9Z5rpAO26fxqkrqXqp6x8I83Kh0WcqyluPg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ncBQJGJlRZ4Ui56KRFkxUxIks_JiCpkZY",
+   "name": "VEGEDREAM · MARCHAND DE SABLE 2",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/qUeUOYQwc-uu5CTmhrAUqRHWP3jZ5Ymjuxv3cxtoLDb-dImIpmg0F-qCu6Qb6XuNGWcWko8IGzRqAJ8=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nydGsQDFnXGtLJcuW1qZAII0dEqdrxOTU",
+   "name": "VEGEDREAM · ATEGBAN",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/63X4W5FK_sMqbo_3sL67Jnw1Pd3YThozv3skoxMSvoRkUuSLCPvsd0IxeZGnrKZnl22qb-nm6ZY6P9QGtg=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lNiDcs4uEk2Gbl0aLen0hdfhnwDiy9th0",
+   "name": "VEGEDREAM · LA BOÎTE DE PANDORE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/IA66oGSXrCx35JaIqbJF47MR6GRaeg8Xe8g7XB59GNIL66uPHrkzUkNPQXOKA9t7NvZFDkE4zKjl3or5tQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kv-pCPNucfpjrG3N2VfwjVUl4ocNwkgf4",
+   "name": "VEGEDREAM · DE L'AUTRE CÔTÉ",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/kOWr01ACbUS3f9FQC4gL3SnsO37-fNkC47KuGg5SdAtgCx46n6P2284wPUgpiW9llQlSfTEx7s1a1gYL=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ/videos",
+   "name": "CHILDISH GAMBINO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/vf5ZDGzkV1VdhEepvUik3FXzzCd0QZa4c75R3SEg9zvfRMWvMuCUlGNv7gHtZkf64YPMhZN6WJY=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lt9A6zXSBvC1ezASBCCchEa8HEUBaQ3oY",
+   "name": "CHILDISH GAMBINO · CAMP",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/WZCSACp5t5Eq1QKuoU2lVAvVQkfCG67fo7cOZvp0ayG57ZxAb-yynrMzp7Y18lCbtF1n9IIJsFlBngWs=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mwiF6SrK1dFnTxbj3uC0GAX535j19lfyY",
+   "name": "CHILDISH GAMBINO · BECAUSE THE INTERNET",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/imsnQiAXGvJMtlJeJQ15pf8zUJfxWBoG8k5_DuC9DfX7WON95JlaxmQonxNLjWWCu-PVHIuUrE9YGIU=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n5Ch9o2xojDhqgDIvpVjZns4uJ7vfI8K8",
+   "name": "CHILDISH GAMBINO · \"AWAKEN, MY LOVE!\"",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/_XNR0tQJeSPCJu9gwgjzNrBj49jnTwo-5hgUORU6zsSJe0t8_0-WPsCcOuXnl8oYgkRnUM_R79TR_CYr=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mLDVofLlPDFVp0v8JS2YSKWQpQ33ycBRM",
+   "name": "CHILDISH GAMBINO · 3.15.20",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/TUM1CV5HcdRSP-rP3nxf98cWo1vnvph1n9AHr3DTnYdlY4A_R_4VyNMTlDzB3-WjZb0SSeA31yqAEnVm=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kNUaUBUfl1c8JdDeUYbpbfQ4H9RzpH2Iw",
+   "name": "CHILDISH GAMBINO · ATAVISTA",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/KfkJ-vAKvPDDzVShSbtgiCoqsGlpl4eRF79x1n984yuaQP7JydrTk5Oz8XN9sgpx7qA3Y81WkiWJp_Vx=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l-q3kdFY9wiIsqNl5c7C-KRW2MMrdl93Y",
+   "name": "CHILDISH GAMBINO · BANDO STONE AND THE NEW WORLD",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/n717eTJqWQo_jMIOJqG4qq_nf9-FPQsIs5BdidWswHn3nsUwUZnf13CO2fb1Opb1ac2u-zDQ-JUSVEKD=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UC5OrDvL9DscpcAstz7JnQGA/videos",
+   "name": "MICHAEL JACKSON",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/nvt02XjPB-lklNBuV8rI9BQOgD1l7geYdJBzTkgoFJTgdK_Fzv_eaoQ9jV4Vb9DWFks0QFzeog=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kcoRvXuX8AWWr5W2HyOPnwp4i11UfdryY",
+   "name": "MICHAEL JACKSON · OFF THE WALL",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/aNw8bKlmEJtVXKFJZDMvPOMTwkd9Z-J03X7SFsW8o7bePgNfeq9_cCJ6oWaGz9jA0MDh2zl3WfC-ybFa=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l1U925dsiDi2DqlG-KCbODG6BaibpxbQE",
+   "name": "MICHAEL JACKSON · THRILLER",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/URvHCfI2iyGAlAwqqBFeaFhU9DeKk_iuX40OIIIj8Zp0wIT3BVsJ2JRMwLLbUB9EZS7t7oDlMrI2S3OvGA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m9ELAPGUnHtlIMV6T_bDb6YsiSKu5cI7M",
+   "name": "MICHAEL JACKSON · BAD",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/LjzTyOPVIWPWb1jNKky5hVKh8pCPcX0WfCqeMpJ93PyPEEgrFuqEF7wHMt-NDXCZYo1T7o8La0pPMxCl=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nsZm9AscLdmJf4wE2Af8D3JvFzfPCKdEs",
+   "name": "MICHAEL JACKSON · DANGEROUS",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/acFvHA1OEoI0HBPPG33zidd9n9aG1OTvo7XQQeFjEeQObGv6R3464BvFijHerp3Sit5UeHvQnx6LMoE=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kUDpgk4yWnyIVfpftIeU0icvhlKAROmx0",
+   "name": "MICHAEL JACKSON · HISTORY: PAST, PRESENT AND FUTURE, BOOK I",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/R7pwf7-lcPvK3dxv8jMkUd4SlbVmrM-nZOFEJqnHGLQFBl4lqj1gyeWSFO5X9HZxgUhTh4KM8n0l7j_k=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lQq3vGlP81JruELvDx3izUej85ZXIhoLA",
+   "name": "MICHAEL JACKSON · INVINCIBLE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/L0nwBz3JF8kFa1-1PAOiLC6pB49lsRc3QRCbj1gvU3uCNf4SXnLUGtAFBha1CZ02mhQzMJrcl-rJ0pSG=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kXHwwXXwwkkL5ykTRfCwhlVnVrDLmYuoM",
+   "name": "MICHAEL JACKSON · BEN",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Md5zk7tGaqEq5EkIV5EzviOB2noevJwPYoOzrMa17-rj2y3czWNMRyF523hS8ZNBDg7CwUzYWzGt1uHdgw=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lQ8TSB_rhhPtD4BkkzldvfPC4SUHRaCnk",
+   "name": "MICHAEL JACKSON · MUSIC & ME",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/33_r_7savr68acaP1Df50BpQyv_ZO3uZIMT-BAASqmswcXF_9xXupUifxNzxY6Ia1nXyL5VmOIfvxgAhDA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_knPdvpVRBQUtQRgUYqSAQgjBVIblRN8es",
+   "name": "MICHAEL JACKSON · FOREVER, MICHAEL",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/jRGXDrL7W4-oRAHRZEbH0-nSj1R-3exJhtn9qSRYXtw6Za3p49Zbxua_equ9K1x9Nd4n5Z22SqYBDiEX7g=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCO9zJy7HWrIS3ojB4Lr7Yqw/videos",
+   "name": "LIL WAYNE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/3xcvthXtAR9PjlpYaZ2TT1aiDeaDZ4hPEjEEoaZtaGG-GRLaWgwnUYt3eK0fxi2aYTj0pMzte7s=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kAVtvVLu5XvZmVYNPdxUzF-83fy_rMzgE",
+   "name": "LIL WAYNE · THA CARTER IV",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/uYK9mlOJs3J9zcsaTcngUrft0NMFMrnmsreQ0-7rlTW3T9pcd-KWxqTwAP_XIK14bwYNUmeSan7xx3U9=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mpQSUUQdDP7s4kSU1vq5xsH7gkcREl3SA",
+   "name": "LIL WAYNE · THA CARTER V",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/-9DZ8VX2ciH2CNiSBLBHYy-GqxkqHkVD34sOzELNdZDJfbpbgYMC1FnfbVer551YMeGWw0GEiT86UhBW=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ke285FtsIANN6UTNLhb5122gXk7b3i4bw",
+   "name": "LIL WAYNE · THA CARTER VI",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/3hkhuo9Fx13OQZyY2MRT9Mn15ggBbTip4VRa0tUaUsnSp8vU_NVk1Djq26koByBr1LJwL7dF_p8sZHE=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ldnJ1sSuN0tjtv8htqHZ3jJKWY54QVhR0",
+   "name": "LIL WAYNE · I AM NOT A HUMAN BEING II",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/V36fvLfhmhA9BjFBDQwge1Emrd_yIUDA9pW0OgxCxrwNOUfiNAf-0kohkilIjTgz_t1SbNgZ2VvBkF4x=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nBwoCggkfVuTQUKfrUrOJeMhExWpaEhAQ",
+   "name": "LIL WAYNE · FUNERAL",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/UFEsIO_GZ3V5QkpEUiJPNLOX9HdDMv4xtF7IgycUD47o6f0nb8wfTe51OEaqktVLrWtcifGlzNZWtaWO=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_ktpm3E2O2nEcals8LN5d6BSbCh6BZVFzo",
+   "name": "LIL WAYNE · THA CARTER",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/QeWFIhfJnw44f--lwb69StjuSwIn6LVagBQB6rTJRFCrhRAWlotUpmAZiM9i46hbLCr73sIVwQlAcyyd=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m0lgiKCw01S4pTX3-EXprUS1hvROzxCdk",
+   "name": "LIL WAYNE · THA CARTER II",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/z11G-tjH8bmIG2bcORHuy_lDvexVpIfi-MgaGIGatukv-OtPJnnkbhzMyr-vnB5mx-kls-BOxrM_V9k=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_l5qljrKq3mEB3RptCD3tiLqRsTjgbxlNc",
+   "name": "LIL WAYNE · THA CARTER III",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/IRcpxDdezOlyNZSlYoFERHO7M6asJPAjTOK9v451eyWzO2Bym1F3F4qsiS2zbvXF5AqHJWLNjBTE83mB6g=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UC6IBMCQ6-d7p41KHxOsq4RA/videos",
+   "name": "AKON",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/IA-GGQcqI_J8DfDHUzYKY1xVhVOC0Dvqu8lIS6GS-OVlmUIL-O5gOGCihEzCz-sU7M1KxC2jtw=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kJQr1Hx5sBfDV84CMMOcvjg4pX0Ve1Nq8",
+   "name": "AKON · TROUBLE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/U9NvTSPKt54NC76MNr3mc7uq5ixRB_unT-8QDjjBxLdoFMgV0Cq8XoxswhJifk2F0WGS0sKS2Ma7BD-h=w544-h544-s-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_nB6ibVN9Z8r6HNZcG9pFmBQitqB7rf4ek",
+   "name": "AKON · KONVICTED",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/8YpOe-KpMwRdIzwm_ZrTPdTgAjlyP_SLYbxllrVbkgrPlSK9AttBdoI-eqShjOxinLMGw-vl5FSJJKlDmQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mBcdjp_jsnwSrKjhHuHQVh7jIFIq6A8yQ",
+   "name": "AKON · FREEDOM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/R-V2ecUeaEUT5LDnVv1qdk1qVqxBHpP8OoIvWjSsH8qOf3mjQV9oZ3cXaGzX3rSUSArAStdNSHkUhJPd=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mReQEBguVzgUuGMKjqKLiQUDI9QPqssZI",
+   "name": "AKON · EL NEGREETO",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/-nsc-UI1e_W4mmoT_EH7RBpp6fOomuJibMpBGJp2s-mfArgaRFpiPs5XwnyviaRIhvThWs-s_m57Si1O=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kOHcGTSdqgn22hE_HUhgJkYJ7im7Sr44A",
+   "name": "AKON · AIN’T NO PEACE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/uF2sw9hzIO2xaBNj-2W-ZujU0FCGkndPt_4uPmrl3RppmF0jgwpnDCelrYxIP7bxpQpVjwpe0PU8mlgMOQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kVsK5T2eLkNTVNsgAPgcPxDd3jCAqAfN0",
+   "name": "AKON · TT FREAK",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/nFaUD5cxKD0iJDw97pcivyIasRXQ1c7U4Pey0jpF-y35exo8ylLUUVgnesD2MkAh62P81Nf7mGA_-zLuVA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lSztVPoCv4TS5X6ASZGCoBSGuZL2H5I34",
+   "name": "AKON · BEAUTIFUL DAY",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/0SLA5NV4eSoRLIYAVm4axngpXCUr65kIZ4j6IFLU6f5qSgyfPK6HriEiU9lcEHzzyKr5qKyQyv_6RmA=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCzIyoPv6j1MAZpDHKLGP_eA/videos",
+   "name": "MORGAN WALLEN",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Z3VsV2Xn09OykpfcXtgNKaUfcA9mlGtDlokxSUkIBfemZciBvg4Q116ZdjDM6NFDHaUcEwUW6Q=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_lZXI5-9GFbLU8FOsrPgqFdnmbk86rQq8o",
+   "name": "MORGAN WALLEN · IF I KNOW ME",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/_KXArKNjkRhWZ7jEFhQFknuVIqoSW0JLMik_X3MlyHJdfJixYGy-kMhotT-cco3fc85z1zX0XYtHIE8=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_mDpYrhPS7SB3WGsUyNPDnqhdnonDNYBdY",
+   "name": "MORGAN WALLEN · DANGEROUS: THE DOUBLE ALBUM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/CSFGMNPI0Zim4WSZRUsQ7C_bBWhvhjkkU7ZQsb0_Q7rgJM8uD0v5xWS2Mys9EjSzG50e4Jw_gqZO2xn1=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_k-RMObWUw7p86NuIv8BfbJKvnVwQyX_qg",
+   "name": "MORGAN WALLEN · ONE THING AT A TIME",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/Nnk7caTufpVARS9zmqKZ_YUTPflx_hVNhgr62yMj0W0OiW2VxY60utZh2fJUo7yurw93vrHxqYCr_TSu=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m-cQX1ZX2i-0meDQVZgJYdvdenf-oGThE",
+   "name": "MORGAN WALLEN · I’M THE PROBLEM",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/BVROJWUTP4kX9vzIKwN7NJgLRhxx30yjdg8XNI2UGMjcrMZbcV_UmGRsfJ5Zk0FOqUHPN2MMQpMCMS_0=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://www.youtube.com/channel/UCuuWVW-KSu5eetL0Dlir-Rw/videos",
+   "name": "YOUNG DOLPH",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/ytc/AIdro_m3v80xbCe2jXdQao30g7Re1YHVElPEltNDFsu1lSzgrNM=s160-c-k-c0x00ffffff-no-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_k6UvskxbdleFz-RCDXWrjjd3cp77_HfiA",
+   "name": "YOUNG DOLPH · ROLE MODEL",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/hrkrWDVBRVK3QfpwdjJtJzrhlmt4OE9515ytMi2zTVSN9WZoeZ_eYklA-12d6HY7fhzntij62-HYgXw=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kXqtLx3CKOawi4leSaUw_uhTXLvUb7ekE",
+   "name": "YOUNG DOLPH · THINKING OUT LOUD",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/GuKI1nqdJU15UCT_onxAAQD3H-uXD47iwmjEF5c8tMfb_bwj-2ldQBp8tDq8ACBZJK1TQa2Qp2CarbcQgQ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m5qAB6OBtHKVzlumhbNUUJyeFL_3Lz9wc",
+   "name": "YOUNG DOLPH · DUM AND DUMMER",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/-_AuF1dcGpWue_DTusIUA4LdsfBMkyOILkqCQabqAQ99lTnK22WS6G8p9CMUgUbwdtnqs9_5Dkq-QwdZ=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_kyR3o-SFN95Rq0TLTTQodqOR3PqL79P10",
+   "name": "YOUNG DOLPH · RICH SLAVE",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/ReiRFeryBxGI6E8gpdLVHw0UPBqqLKswbIe71BNaT-H4b2lHf8KzG6RTGG4U-m7ZemLz5X7ngw5CT9BI=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_n26j8AwR9hXV2_dT3NPVWccW2wlDX7kFY",
+   "name": "YOUNG DOLPH · PAPER ROUTE ILLUMINATI",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/DbCNXgg5IHCJ9fo7KsjTGXZ0gCPrbaJHAxIt50XOmwPjQ8eiO4UA91kFDg-lwj_lwiSkHpVEhrQfPYUq=w544-h544-l90-rj"
+  },
+  {
+   "input": "https://music.youtube.com/playlist?list=OLAK5uy_m8gtyEi7cfPZHfm_to-Bnl5nk2iuFyt3c",
+   "name": "YOUNG DOLPH · PAPER ROUTE FRANK",
+   "group": "MUSIC",
+   "poster": "https://yt3.googleusercontent.com/otAmn74g3gOGWhXBAYrTiUVLrFOIQ7_n4piAABVdqHf5kSEUXB87a7UouaNDNcMXm4cDmjK1F1bb5urbjA=w544-h544-l90-rj"
+  }
+ ]
+}

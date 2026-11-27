@@ -95,3 +95,4 @@ other artist/album favourites added to the MUSIC folder:
 - Nov 27: Live at multigrid.club in 39e3db1. Laptop and phone menus, artist/album/song, dock, Sound card and paused restore verified.
 - Nov 27: Follow-up from owner testing. Album lists now read the YouTube Music page (smaller and complete), fall back to the playlist RSS feed (up to 15 songs), then to Play album; the player's volume is a popover on the speaker icon. 480 tests.
 - Nov 27: Live in 5b1e3b6. Real Views (20 songs) and Nothing Was the Same (13 songs) verified at laptop 1440 and phone 390; RSS fallback and the speaker popover verified.
+- Nov 27: Music pack at `/#music`: 14 artists, 113 albums with covers, one confirmation; all album playlists checked. 481 tests.

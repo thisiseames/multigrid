@@ -13170,6 +13170,49 @@ async function offerFavorites(code) {
   openDialog(box);
 }
 
+/** The one-tap Music pack: artist channels and their albums, with covers. */
+async function receiveMusicPack() {
+  if (location.hash !== '#music') return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let pack = null;
+  try {
+    pack = await fetch('music-pack.json', { cache: 'no-cache' }).then((answer) => (answer.ok ? answer.json() : null));
+  } catch { /* the message below */ }
+  if (!Array.isArray(pack?.items) || !pack.items.length) {
+    toast("The music pack didn't load. Try again.");
+    return;
+  }
+  const fresh = newFavorites(pack.items);
+  if (!fresh.length) {
+    toast('The music pack is already here.');
+    return;
+  }
+  const artists = [...new Set(fresh.map((item) => item.name.split(' · ')[0]).filter(Boolean))];
+  const albums = fresh.filter((item) => item.name.includes(' · ')).length;
+  const box = $('receive-dialog');
+  box.replaceChildren(
+    el('h2', { textContent: 'Add the Music pack?' }),
+    el('p', { class: 'receive-note', textContent: `${artists.length} artists and ${albums} albums, with their covers. Favorites already on this device stay as they are.` }),
+    el('p', { class: 'receive-music-names', textContent: artists.join(' · ') }),
+    el('div', { class: 'dialog-actions' },
+      el('button', { type: 'button', class: 'plain-button', textContent: 'Cancel', on: { click: () => box.close() } }),
+      el('button', {
+        type: 'button', class: 'add-button', textContent: 'Add to MUSIC',
+        on: {
+          click() {
+            box.close();
+            const added = importFavorites(fresh);
+            if (added < 0) toast(STORAGE_FULL);
+            else {
+              refreshFavorites();
+              toast(`Added ${plural(added, 'favorite')} to MUSIC.`);
+            }
+          },
+        },
+      })));
+  openDialog(box);
+}
+
 /** Adds chosen files: one file per tile, or several files as one playlist. */
 function addFiles(chosen, target = { mode: 'add' }) {
   if (!chosen.length) return;
@@ -14753,6 +14796,7 @@ async function receiveMove(text) {
 }
 if (location.hash.startsWith('#move=')) receiveMove(location.href);
 receiveSend();
+receiveMusicPack();
 startSync(syncStore, syncCameIn).catch(() => {});
 loadGuide().then(() => {
   syncGuideButton();
@@ -14763,6 +14807,7 @@ loadGuide().then(() => {
 // A link opened in a tab where MULTIGRID is already open only changes the address after the #.
 window.addEventListener('hashchange', receiveFavorites);
 window.addEventListener('hashchange', receiveSend);
+window.addEventListener('hashchange', receiveMusicPack);
 window.addEventListener('message', (event) => {
   if (event.source !== window) return;
   const payload = sendPayload(event.data?.multigridSend);
