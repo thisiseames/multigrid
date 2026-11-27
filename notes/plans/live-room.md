@@ -1,6 +1,6 @@
 # TikTok Live Room
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (071a444).**
 
 ## Goal
 
@@ -56,7 +56,13 @@ live player, live status and layout code.
 - [x] Saved layouts/save controls still act on the main wall only.
 - [x] Full tests (507).
 - [x] Local browser checks at 1440 and 390.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live checks: at 1440 the wall stayed at **2 × 2** with its three tiles while the rail opened at
+504 px and the wall narrowed to 936 px; opening and adding **Beta** then **Gamma** never changed
+the wall's tiles or saved workspace. Closing the rail returned the wall to 1440 px. At 390 the
+rail is hidden and the phone layout is unchanged. The rail's formats, Add live, mute/fullscreen/
+close and close-last-live behaviour were checked locally.
 
 ## Gotchas
 
