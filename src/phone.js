@@ -22,6 +22,7 @@ const TITLES = {
   'stream-menu': 'Stream',
   'sound-menu': 'Sound',
   'reels-menu': 'Reels',
+  'live-menu': 'Live',
   'tiktok-menu': 'TikTok',
   'music-menu': 'Music',
 };

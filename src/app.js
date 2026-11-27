@@ -14140,6 +14140,14 @@ function phoneDropRow(iconName, title, note, onClick) {
   el('span', { class: 'sdrop-mark' }, icon('next', 16)));
 }
 
+/** The phone's Live note: TikTok doesn't play there, so it doesn't count. */
+function phoneLiveNote() {
+  const count = savedLiveAccounts()
+    .filter((account) => account.platform !== 'tiktok' && liveStatus.get(account.key)?.live)
+    .length;
+  return count ? `${count} on now · Twitch, Kick, YouTube` : 'Twitch, Kick and YouTube';
+}
+
 function buildSavedDrop() {
   const saved = listSaved();
   $('saved-drop').replaceChildren(...[
@@ -14163,6 +14171,7 @@ function buildSavedDrop() {
     // The phone's top bar keeps the main four; Reels and Sound live in here.
     onPhoneScreen() ? el('div', { class: 'sdrop-sep' }) : null,
     onPhoneScreen() ? phoneDropRow('phone', 'Reels', 'Vertical feeds', () => $('reels-button').click()) : null,
+    onPhoneScreen() ? phoneDropRow('live', 'Live', phoneLiveNote(), () => $('live-button').click()) : null,
     onPhoneScreen() ? phoneDropRow('sound', 'Sound', 'Mixer and mute', () => $('mixer-button').click()) : null,
     onPhoneScreen() && musicLibrary().length ? phoneDropRow('headphones', 'Music', 'Artists and albums', () => $('music-button').click()) : null,
     // Game mode's switch lives here too: live scores beside the streams (in the ticker on a phone).
@@ -14699,7 +14708,10 @@ function openLiveAccount(account, another = false) {
 
 function buildLiveMenu() {
   const menu = $('live-menu');
-  const tab = LIVE_TABS.find((item) => item.id === liveTab) || LIVE_TABS[0];
+  // TikTok live needs laptop Chrome and the Sound extension, so the phone gets the three
+  // platforms that can actually play there.
+  const tabsFor = onPhoneScreen() ? LIVE_TABS.filter((item) => item.id !== 'tiktok') : LIVE_TABS;
+  const tab = tabsFor.find((item) => item.id === liveTab) || tabsFor[0];
   const accounts = savedLiveAccounts(tab.id);
   const liveCount = accounts.filter((account) => liveStatus.get(account.key)?.live).length;
   const ordered = [...accounts].sort((a, b) => Number(Boolean(liveStatus.get(b.key)?.live)) - Number(Boolean(liveStatus.get(a.key)?.live))
@@ -14804,6 +14816,10 @@ function buildLiveMenu() {
             showError();
             return;
           }
+          if (onPhoneScreen() && account.platform === 'tiktok') {
+            showError('TikTok LIVE needs laptop Chrome and the MULTIGRID Sound extension.');
+            return;
+          }
           if (account.platform === 'youtube') {
             if (addButton) addButton.textContent = 'Finding…';
             const resolved = await resolveYouTubeChannel(account);
@@ -14864,7 +14880,7 @@ function buildLiveMenu() {
     },
   }, input, el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }));
   const tabs = el('div', { class: 'matches-tabs live-tabs', role: 'tablist', aria: { label: 'Live platform' } },
-    ...LIVE_TABS.map((item) => el('button', {
+    ...tabsFor.map((item) => el('button', {
       type: 'button',
       role: 'tab',
       class: `matches-tab${item.id === tab.id ? ' is-on' : ''}`,
@@ -14884,7 +14900,7 @@ function buildLiveMenu() {
     kick: 'No saved Kick channels yet. Add one below; it goes in your Kick folder.',
     youtube: 'No YouTube channels yet. Add a channel, @handle or live link below; it goes in your YouTube folder.',
   }[tab.id];
-  menu.replaceChildren(
+  menu.replaceChildren(...[
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'Live' }),
       el('small', { textContent: accounts.length ? `${liveCount} on now · ${accounts.length} saved` : `${tab.label} channels` })),
@@ -14893,7 +14909,8 @@ function buildLiveMenu() {
     ordered.length
       ? el('ul', { class: 'reels-list' }, ...ordered.map(row))
       : el('p', { class: 'reels-empty', textContent: empty }),
-    el('div', { class: 'reels-foot' }, form, error));
+    el('div', { class: 'reels-foot' }, form, error),
+  ].filter(Boolean));
   if (accounts.some((account) => !liveStatus.has(account.key))) {
     if (tab.id === 'youtube') refreshYouTubeStatuses(accounts);
     else refreshLiveStatuses();
