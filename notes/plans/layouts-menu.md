@@ -1,6 +1,6 @@
 # Layouts menu split
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (4b2c79d).**
 
 ## Goal
 
@@ -30,7 +30,9 @@ stays in the main MULTIGRID menu.
 - [x] Existing Saved layouts entry in More still works.
 - [x] Full tests (507).
 - [x] Local 1440 and 390 checks.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live: the MULTIGRID menu shows one Layouts row and Clear all streams; the panel opens with Saved layouts / Save this layout; save returns to the list with the new row; the phone sheet has 44 px form controls and focuses the name box; More → Saved layouts still opens the combined panel.
 
 ## Gotchas
 
