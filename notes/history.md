@@ -527,3 +527,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 27: Music player live in 39e3db1.
 - Nov 27: Music fixes: album songs now come from the smaller YouTube Music playlist page, with the playlist RSS feed as a fallback and Play album as the last resort; the player's volume is a small popover on the speaker icon instead of a full-width bar. 480 tests.
 - Nov 27: Music song-list and volume fixes live in 5b1e3b6.
+- Nov 27: Fixed X-Ray on series while the channel overlay is on: the hover card stays available on the SERIES/channel surface, and only hides while the overlay panel is actually open. Verified with a series tile at 1440. 480 tests.

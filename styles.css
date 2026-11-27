@@ -4261,7 +4261,9 @@ body.is-phone .tile-info { display: none; }
    underneath; this is a sibling layer, never inside the player. */
 .channel-overlay { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
 .channel-overlay[hidden] { display: none; }
-.tile:has(> .channel-overlay:not([hidden])) > .tile-info { display: none; }
+/* The hover card is also X-Ray's way in. Keep it on a channel surface; only the open
+   GUIDE/SERIES/CHANNELS panel takes the tile over. */
+.tile.is-channel-open > .tile-info { display: none; }
 .tile.is-channel-open > .strip { opacity: 0; pointer-events: none; }
 .channel-tab {
   position: absolute; right: 0; top: 50%; z-index: 4;
