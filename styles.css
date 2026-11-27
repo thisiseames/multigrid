@@ -4226,6 +4226,8 @@ body.is-phone .tile-info { display: none; }
 .channel-card-mark.is-light img, .channel-row-mark.is-light img { filter: invert(1) hue-rotate(180deg); }
 .channel-card-mark.is-text { color: #f5f5f7; font-size: 13px; font-weight: 800; letter-spacing: .04em; }
 .channel-card-mark.is-poster { width: 56px; height: 84px; padding: 0; overflow: hidden; background: #0b0b0d; }
+.channel-card-mark.is-poster-wait { width: 56px; height: 84px; padding: 0; }
+.channel-row-mark.is-poster-wait { width: 36px; height: 54px; padding: 0; }
 .channel-card-mark.is-mark, .channel-row-mark.is-mark { color: var(--text-2); }
 .channel-card-mark.is-mark svg { width: 22px; height: 22px; }
 .channel-row-mark.is-mark svg { width: 15px; height: 15px; }

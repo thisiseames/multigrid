@@ -757,7 +757,7 @@ class TileView {
         return box;
       }
       if (item.posterLookup) {
-        box.classList.add('is-text', 'is-mark');
+        box.classList.add('is-text', 'is-mark', 'is-poster-wait');
         box.append(icon('film', size));
         box.dataset.posterName = item.posterLookup;
         return box;
@@ -827,11 +827,11 @@ class TileView {
         const markSize = box.classList.contains('channel-card-mark') ? 22 : 15;
         const img = el('img', { src: url, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' });
         img.addEventListener('error', () => {
-          box.classList.remove('is-poster');
+          box.classList.remove('is-poster', 'is-poster-wait');
           box.classList.add('is-text', 'is-mark');
           box.replaceChildren(icon('film', markSize));
         }, { once: true });
-        box.classList.remove('is-text', 'is-mark');
+        box.classList.remove('is-text', 'is-mark', 'is-poster-wait');
         box.classList.add('is-poster');
         box.replaceChildren(img);
       }).catch(() => {});

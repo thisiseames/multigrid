@@ -1,6 +1,6 @@
 # Source switcher panel: Series and YouTube channels
 
-Status: **DONE, live Nov 26, 2026** (`9abb5aa`)
+Status: **DONE, live Nov 26, 2026** (`9abb5aa`; follow-up fixes `3b48741`)
 
 ## Cost
 
@@ -117,3 +117,6 @@ the list is the other items; tapping one changes the tile in place.
 - YouTube channel avatars come from unavatar; a failed image falls back to the play mark.
 - **CHANNELS** now appears on individual YouTube videos and playlists, not just channel
   feeds/rooms.
+- The older-Series poster placeholders are pre-sized to the 2:3 poster, so rows do not jump
+  when the TVmaze image arrives.
+- Nov 26: Follow-up fixes live in 3b48741: older Series posters (lazy TVmaze), bare UC… and uploads-playlist channel favourites, YouTube avatars, and CHANNELS on individual videos/playlists. Poster placeholders pre-sized after that; 473 tests.
