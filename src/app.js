@@ -3700,30 +3700,25 @@ function paintLivePanel() {
   }
   panel.hidden = false;
   document.body.classList.add('has-live-room');
-  const tiles = liveWs.tiles.filter((tile) => tile.input);
-  const hidden = hiddenTiles(liveWs).length;
-  const layout = liveRoomLayout(liveWs.liveRoom?.presetId);
-  const meta = $('live-room-meta');
-  if (meta) meta.textContent = `${tiles.length} ${tiles.length === 1 ? 'live' : 'lives'} · ${layout.label}${hidden ? ` · ${hidden} hidden` : ''}`;
-  const formats = $('live-room-formats');
-  if (formats) {
-    formats.replaceChildren(...LIVE_ROOM_LAYOUTS.map((item) => {
-      const preset = presetById(item.id);
-      return el('button', {
-        type: 'button',
-        class: `live-room-layout${layout.id === item.id ? ' is-on' : ''}`,
-        title: `${item.label} layout`,
-        aria: { pressed: String(layout.id === item.id) },
-        on: { click: () => chooseLiveRoomLayout(item.id) },
-      }, layoutDiagram(presetDiagram(preset), 24, 16), el('span', { textContent: item.label }));
-    }));
-  }
-  const add = $('live-room-add');
-  if (add) {
-    const full = tiles.length >= LIVE_ROOM_MAX;
-    add.disabled = full;
-    add.title = full ? 'The Live Room holds four lives' : 'Add a live from the Live menu';
-  }
+}
+
+/** The rail is only as wide as the lives need at the full stage height; no chrome reserves space. */
+function sizeLivePanel() {
+  if (!liveWs) return;
+  const stage = $('live-room-stage');
+  if (!stage) return;
+  const strip = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--strip')) || 26;
+  const rows = liveWs.rows.length || 1;
+  const cols = liveWs.cols.length || 1;
+  const bodyHeight = Math.max(1, (stage.clientHeight - rows * strip) / rows);
+  const natural = Math.ceil(bodyHeight * (9 / 16) * cols + 2);
+  const cap = Math.round(window.innerWidth * 0.62);
+  const width = Math.max(160, Math.min(natural, cap));
+  $('live-room').style.width = `${width}px`;
+  requestAnimationFrame(() => {
+    liveGrid.fit();
+    grid.fit();
+  });
 }
 
 function renderLivePanel() {
@@ -3742,8 +3737,37 @@ function renderLivePanel() {
   paintLivePanel();
   requestAnimationFrame(() => {
     liveGrid.fit();
-    grid.fit();
+    sizeLivePanel();
   });
+}
+
+function liveRoomLayoutRow() {
+  if (!liveWs) return null;
+  const current = liveRoomLayout(liveWs.liveRoom?.presetId).id;
+  const row = el('div', { class: 'live-room-formats', role: 'group', aria: { label: 'Live Room layout' } });
+  for (const item of LIVE_ROOM_LAYOUTS) {
+    const preset = presetById(item.id);
+    row.append(el('button', {
+      type: 'button',
+      class: `live-room-format${current === item.id ? ' is-on' : ''}`,
+      title: `${item.label} layout`,
+      aria: { label: `${item.label} layout`, pressed: String(current === item.id) },
+      on: {
+        click() {
+          chooseLiveRoomLayout(item.id);
+          buildLiveMenu();
+        },
+      },
+    }, layoutDiagram(presetDiagram(preset), 26, 17)));
+  }
+  row.append(el('button', {
+    type: 'button',
+    class: 'live-room-format is-close',
+    title: 'Close Live Room',
+    aria: { label: 'Close Live Room' },
+    on: { click: () => closeLivePanel() },
+  }, icon('close', 15)));
+  return row;
 }
 
 function openLiveRoom(input, name = '') {
@@ -3763,7 +3787,7 @@ function openLiveRoom(input, name = '') {
   liveTab = 'tiktok';
   render();
   renderLivePanel();
-  toast('Live Room open beside your wall.', { label: 'Close', run: closeLivePanel });
+  toast('Live Room open.', { label: 'Close', run: closeLivePanel });
   return true;
 }
 
@@ -3772,6 +3796,7 @@ function closeLivePanel() {
   liveWs = null;
   liveRoomAddMode = false;
   $('live-room').hidden = true;
+  $('live-room').style.width = '';
   document.body.classList.remove('has-live-room');
   liveGrid.clear();
   closePopovers();
@@ -14864,6 +14889,7 @@ function buildLiveMenu() {
       el('span', { textContent: 'Live' }),
       el('small', { textContent: accounts.length ? `${liveCount} on now · ${accounts.length} saved` : `${tab.label} channels` })),
     tabs,
+    tab.id === 'tiktok' ? liveRoomLayoutRow() : null,
     ordered.length
       ? el('ul', { class: 'reels-list' }, ...ordered.map(row))
       : el('p', { class: 'reels-empty', textContent: empty }),
@@ -14878,8 +14904,8 @@ $('live-button').addEventListener('click', () => {
   liveRoomAddMode = false;
   togglePopover($('live-button'), $('live-menu'), buildLiveMenu);
 });
-$('live-room-close').addEventListener('click', () => closeLivePanel());
-$('live-room-add').addEventListener('click', () => openLiveRoomPicker());
+new ResizeObserver(() => { if (liveWs) sizeLivePanel(); }).observe($('live-room-stage'));
+window.addEventListener('resize', () => { if (liveWs) sizeLivePanel(); });
 $('tiktok-button').addEventListener('click', () => togglePopover($('tiktok-button'), $('tiktok-menu'), buildTikTokMenu));
 $('music-button').addEventListener('click', () => togglePopover($('music-button'), $('music-menu'), buildMusicMenu));
 setTimeout(() => refreshLiveStatuses(), 2000);

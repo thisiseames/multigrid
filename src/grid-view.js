@@ -129,8 +129,9 @@ class TileView {
       const addButton = el('button', {
         type: 'button',
         class: 'slot-button',
+        aria: { label: liveRoom ? 'Add live' : 'Add stream' },
         on: { click: () => (liveRoom ? handlers.onAddLive?.() : handlers.onFill(this.id)) },
-      }, icon('plus'), el('span', { textContent: liveRoom ? 'Add live' : 'Add stream' }));
+      }, icon('plus'), el('span', { textContent: liveRoom ? '' : 'Add stream' }));
       this.root.replaceChildren(addButton);
       this.grid.attachCorners(this);
       return;

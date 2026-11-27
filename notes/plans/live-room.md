@@ -1,6 +1,6 @@
 # TikTok Live Room
 
-**Status: DONE, live Nov 27 (071a444).**
+**Status: built locally, live check pending.**
 
 ## Goal
 
@@ -17,20 +17,25 @@ live player, live status and layout code.
 - Clicking a TikTok live in the Live menu opens the **Live Room rail** on the right. The main
   wall stays on screen and keeps playing. The rail starts with the clicked live only; it does
   not copy lives from the wall, so nothing is duplicated.
-- The rail has its own second grid: **1 · 1 beside 1 · 1 over 1 · 2 × 2**, with the format
-  buttons in the rail's footer. The main Layout button continues to control the main wall.
+- The rail is **only the lives**: no title, no permanent format row, no permanent Add live.
+  Its width is fitted to the lives at the full stage height, so it does not reserve a fixed
+  block or leave black side margins.
+- The four formats **1 · 1 beside 1 · 1 over 1 · 2 × 2** and the **Close Live Room** × live in
+  the Live menu, only while the menu is open. The main Layout button continues to control the
+  main wall.
 - Clicking another TikTok live row switches the rail's main live in place. **+**, **Add live**
-  and an empty **Add live** slot add another live, up to four. Adding grows the format when
-  needed: 1 → beside, 2 → 2 × 2.
+  in the Live menu and an empty rail slot add another live, up to four. Adding grows the format
+  when needed: 1 → beside, 2 → 2 × 2.
 - Choosing a smaller format hides extra rail lives instead of deleting them. Choosing 2 × 2
-  brings them back; the rail header shows the hidden count.
+  brings them back; a toast says how many were hidden.
 - Rail lives start muted. Each rail tile has mute, fullscreen and close in its strip. Unmuting
   one quiets the other rail lives; with One sound on, it also quiets the wall. Closing the last
   live closes the rail.
 - Twitch, Kick, YouTube and Add stream continue to use the main wall. They can be added while
   the rail is open; the rail stays put.
-- Closing the rail (X) returns the wall to full width. Reloading while the rail is open loads
-  the wall without the rail. The rail is not saved and is not in Saved layouts.
+- Closing the rail from the Live menu (×) or the opening toast returns the wall to full width.
+  Reloading while the rail is open loads the wall without the rail. The rail is not saved and
+  is not in Saved layouts.
 - The rail is laptop-only, like the Live menu. Phone layout and Sound sheet are unchanged.
 
 ## Research
@@ -50,7 +55,8 @@ live player, live status and layout code.
 - [x] Side rail panel and second GridView; main wall untouched, only narrower.
 - [x] Live-only two-up presets and Live Room workspace logic, with tests for 1 / 2 / 2 / 4 and
   the four-live cap.
-- [x] Rail formats, Add live, empty-slot Add live, main-live switch, close last live.
+- [x] Pure-lives rail with no title/footer; width fitted to the lives.
+- [x] Formats and Close in the Live menu; Add via + / Live menu / empty slot.
 - [x] Rail tile mute, fullscreen and close; wall stays independent.
 - [x] Twitch/Kick/YouTube/Add stream stay on the wall while the rail is open.
 - [x] Saved layouts/save controls still act on the main wall only.
@@ -58,11 +64,9 @@ live player, live status and layout code.
 - [x] Local browser checks at 1440 and 390.
 - [x] Live site check, then mark DONE.
 
-Live checks: at 1440 the wall stayed at **2 × 2** with its three tiles while the rail opened at
-504 px and the wall narrowed to 936 px; opening and adding **Beta** then **Gamma** never changed
-the wall's tiles or saved workspace. Closing the rail returned the wall to 1440 px. At 390 the
-rail is hidden and the phone layout is unchanged. The rail's formats, Add live, mute/fullscreen/
-close and close-last-live behaviour were checked locally.
+Built locally: the rail is only lives, fitted to 432–447 px for the tested formats at 1440,
+with the wall at 993–1008 px. The formats/× live in the Live menu and the panel has no title
+or footer. The wall stayed 2 × 2 with its tiles throughout.
 
 ## Gotchas
 
