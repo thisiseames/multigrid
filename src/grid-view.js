@@ -751,14 +751,20 @@ class TileView {
       };
       if (item.poster) {
         box.classList.add('is-poster');
-        const img = el('img', { src: item.poster, alt: '', referrerPolicy: 'no-referrer' });
+        const img = el('img', { src: item.poster, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' });
         img.addEventListener('error', fallback, { once: true });
         box.append(img);
         return box;
       }
+      if (item.posterLookup) {
+        box.classList.add('is-text', 'is-mark');
+        box.append(icon('film', size));
+        box.dataset.posterName = item.posterLookup;
+        return box;
+      }
       if (item.logo?.url) {
         box.classList.add(`is-${item.logo.tone}`);
-        const img = el('img', { src: item.logo.url, alt: '', referrerPolicy: 'no-referrer' });
+        const img = el('img', { src: item.logo.url, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' });
         img.addEventListener('error', fallback, { once: true });
         box.append(img);
         return box;
@@ -802,6 +808,46 @@ class TileView {
         : el('p', { class: 'channel-empty', textContent: data.empty || 'No other channels right now.' }));
     this.channelBody.replaceChildren(card, others);
     this.channelBody.scrollTop = 0;
+    this.observePosters();
+  }
+
+  /** Loads a missing Series poster only when its card is near the visible part of the panel. */
+  observePosters() {
+    this.posterObserver?.disconnect();
+    this.posterObserver = null;
+    const boxes = [...this.channelBody.querySelectorAll('[data-poster-name]')];
+    if (!boxes.length) return;
+    const load = (box) => {
+      const name = box.dataset.posterName;
+      if (!name || box.dataset.posterAsked) return;
+      box.dataset.posterAsked = '1';
+      this.grid.handlers.seriesPoster?.(name).then((found) => {
+        const url = found?.poster || found?.wide || '';
+        if (!url || !box.isConnected) return;
+        const markSize = box.classList.contains('channel-card-mark') ? 22 : 15;
+        const img = el('img', { src: url, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' });
+        img.addEventListener('error', () => {
+          box.classList.remove('is-poster');
+          box.classList.add('is-text', 'is-mark');
+          box.replaceChildren(icon('film', markSize));
+        }, { once: true });
+        box.classList.remove('is-text', 'is-mark');
+        box.classList.add('is-poster');
+        box.replaceChildren(img);
+      }).catch(() => {});
+    };
+    if ('IntersectionObserver' in window) {
+      this.posterObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          this.posterObserver?.unobserve(entry.target);
+          load(entry.target);
+        }
+      }, { root: this.channelBody, rootMargin: '180px' });
+      for (const box of boxes) this.posterObserver.observe(box);
+    } else {
+      for (const box of boxes) load(box);
+    }
   }
 
   toggleFullscreen() {

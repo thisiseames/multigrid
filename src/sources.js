@@ -95,8 +95,11 @@ export function isYouTubeChannelPage(input) {
 
 /** A channel is saved as its uploads feed when the UC… ID is known, so clicking it plays. */
 export function channelFavoriteInput(input) {
-  const id = String(input || '').match(/^https?:\/\/(?:www\.|m\.)?youtube\.com\/channel\/(UC[\w-]{22})(?:\/|$)/i)?.[1];
-  return id ? `https://www.youtube.com/channel/${id}/videos` : input;
+  const text = String(input || '').trim();
+  const bare = text.match(/^(UC[\w-]{22})$/i)?.[1];
+  if (bare) return `https://www.youtube.com/channel/${bare}/videos`;
+  const id = text.match(/^https?:\/\/(?:www\.|m\.)?youtube\.com\/channel\/(UC[\w-]{22})(?:\/|$)/i)?.[1];
+  return id ? `https://www.youtube.com/channel/${id}/videos` : text;
 }
 
 function parseYouTube(url, host, input) {

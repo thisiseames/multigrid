@@ -4,8 +4,9 @@ Status: **DONE, live Nov 26, 2026** (`9abb5aa`)
 
 ## Cost
 
-**$0 a month.** No new service, API key or hosting. Series posters are the ones already saved
-with the favourite; YouTube rows use the channel name and a play mark, not a new avatar fetch.
+**$0 a month.** No new paid service, API key or hosting. Series posters use the stored poster or
+the existing TVmaze lookup; YouTube avatars use unavatar (free image proxy) with a play-mark
+fallback.
 
 ## What it is
 
@@ -28,11 +29,11 @@ the list is the other items; tapping one changes the tile in place.
 - **Series card:** stored poster (TMDB), name, and `S2 E8 · 34 min in` when there is saved
   progress. No progress reads **Series**. The list rows show the poster, name and each
   series' own progress. No poster falls back to a film mark/name.
-- **YouTube = channel favourites only.** A channel is an uploads-feed favourite (`UU…`) or a
-  saved channel page. A single YouTube video or playlist gets **no** tab. The current card is
-  the channel name; if a video is open inside the channel room, its title is the second line.
-  Otherwise the second line is **YouTube channel**. Rows are channel name + **YouTube
-  channel** + a play mark.
+- **YouTube = any YouTube source.** A channel is an uploads-feed favourite (`UU…`), a bare
+  `UC…` id, a saved channel page, or the native channel room. A single YouTube video or
+  playlist also gets **CHANNELS**: the current card is the video and its channel when known,
+  and the list switches to another channel. Rows are channel name + **YouTube channel** +
+  the channel avatar (fallback: play mark).
 - **Switching:** tapping another series opens it at its saved episode; tapping another YouTube
   channel opens that channel's uploads feed. The tile keeps its place and the panel stays
   open and updates. The wall behind changes, exactly like the TV channel switch.
@@ -81,11 +82,13 @@ the list is the other items; tapping one changes the tile in place.
 - A YouTube channel room loses its favourite link on replace; pass the channel label as the
   new title so the panel does not call it "YouTube channel".
 - Dedupe channel rows by YouTube channel key, not just by name.
-- Do not add the tab to a single YouTube video or playlist; only channel feeds/rooms.
+- A single YouTube video/playlist gets CHANNELS too; its current card is the video/channel
+  and the list is channel favourites. The tab only appears on a YouTube source.
 - Keep the TV panel and its live dot exactly as they are.
 - `tmdbPosterUrl()` is needed for stored TMDB poster paths.
 - The panel must stay open across a series/channel switch, as the TV switch does.
-- No new images or API calls.
+- No new paid service/key: the existing TVmaze poster lookup and unavatar avatars (free,
+  lazy, fallback to a play mark).
 
 ## Verify
 
@@ -94,7 +97,7 @@ the list is the other items; tapping one changes the tile in place.
 - A Series folder with no others: empty message.
 - YouTube channel feed and channel room, full-screen and one-tile: tab, current channel,
   more channels, switch, panel stays open.
-- A single YouTube video/playlist: no tab.
+- A single YouTube video/playlist: CHANNELS tab; current video/channel; switch to a channel.
 - TV channel: unchanged GUIDE panel.
 - Toggle off: no tab for any source.
 - Non-series/non-YouTube: no tab.
@@ -105,3 +108,12 @@ the list is the other items; tapping one changes the tile in place.
 - Nov 26: Plan written and approved.
 - Nov 26: Built and checked: Series (poster/progress/switch/empty), YouTube channel feed, channel room, single-video exclusion, phone full-screen, TV regression. 473 tests. Committed after the live check.
 - Nov 26: Live at multigrid.club in 9abb5aa. Series, YouTube channel feed, channel room, empty lists, single-video exclusion, phone full-screen and TV regression verified.
+
+## Follow-up fixes (Nov 26)
+
+- Bare `UC…` channel favourites are converted to uploads feeds, so the full channel list shows;
+  uploads-playlist favourites count too.
+- Older Series posters load lazily from TVmaze; a stored poster still wins.
+- YouTube channel avatars come from unavatar; a failed image falls back to the play mark.
+- **CHANNELS** now appears on individual YouTube videos and playlists, not just channel
+  feeds/rooms.

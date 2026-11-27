@@ -198,6 +198,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
   labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
   tileInfo: (id, player) => tileInfoCard(id, player),
   channelOverlay: (id, player) => channelOverlayFor(id, player),
+  seriesPoster: (name) => posterFor(name),
   onChannelSwitch: (id, input, name) => { addStream(input, { mode: 'replace', id }, name || favoriteName(input) || ''); },
   onXRay: (id) => openXRay(id),
   onTileArt(id) {
@@ -8346,6 +8347,7 @@ function seriesChannelOverlay(tile, source, name) {
   const favorite = listFavorites().find((item) => item.input === input);
   if (!isSeriesFolder(favorite?.group || '') && !episodeOf(source.url || '')) return null;
   const seen = new Set();
+  const currentLookup = favorite?.poster ? '' : (showPictureFor(favorite?.name || name) || favorite?.name || name);
   const others = listFavorites()
     .filter((item) => isSeriesFolder(item.group))
     .filter((item) => item.input !== input && item.input !== tile.input)
@@ -8358,6 +8360,7 @@ function seriesChannelOverlay(tile, source, name) {
       name: item.name,
       input: item.input,
       poster: item.poster ? tmdbPosterUrl(item.poster) : '',
+      posterLookup: item.poster ? '' : (showPictureFor(item.name) || item.name),
       meta: seriesProgress(item.input) || 'Series',
       mark: 'film',
     }));
@@ -8369,6 +8372,7 @@ function seriesChannelOverlay(tile, source, name) {
     empty: 'No other series in your Series folder.',
     name,
     poster: favorite?.poster ? tmdbPosterUrl(favorite.poster) : '',
+    posterLookup: currentLookup,
     mark: 'film',
     type: 'SERIES',
     live: false,
@@ -8377,11 +8381,11 @@ function seriesChannelOverlay(tile, source, name) {
   };
 }
 
-/** A YouTube channel is an uploads feed or the native channel room; a single video is not. */
+/** A YouTube channel is an uploads feed, a bare UC… id, a channel page, or the native room. */
 function isYouTubeChannelFavorite(input) {
+  if (/^UC[\w-]{22}$/i.test(String(input || ''))) return true;
   if (isYouTubeChannelPage(input)) return true;
-  if (!/\/channel\/UC[\w-]{22}\/videos(?:[?#]|$)/i.test(String(input))) return false;
-  const source = parseSource(input);
+  const source = parseSource(channelFavoriteInput(input));
   return source.kind === 'youtube' && !source.youtube?.id && Boolean(source.youtube?.list?.startsWith('UU'));
 }
 
@@ -8391,29 +8395,61 @@ function youtubeChannelKey(source) {
   return '';
 }
 
-/** A YouTube channel panel: the current channel, then the other channel favourites. */
+/** The UC… id behind a bare id, feed, room, handle or uploads playlist. */
+function youtubeChannelId(input) {
+  const raw = String(input || '').trim();
+  const room = raw.match(/^youtubechannel:(UC[\w-]{22})$/i)?.[1];
+  if (room) return room;
+  const bare = raw.match(/^(UC[\w-]{22})$/i)?.[1];
+  if (bare) return bare;
+  const channel = raw.match(/\/channel\/(UC[\w-]{22})/i)?.[1];
+  if (channel) return channel;
+  const list = parseSource(channelFavoriteInput(raw)).youtube?.list;
+  return list?.startsWith('UU') ? `UC${list.slice(2)}` : '';
+}
+
+/** A free channel avatar (unavatar), falling back to the play mark if it doesn't load. */
+function youtubeLogoFor(input) {
+  const raw = String(input || '');
+  const id = youtubeChannelId(raw);
+  const handle = raw.match(/youtube\.com\/@([^/?#]+)/i)?.[1]
+    || raw.match(/youtube\.com\/(?:c|user)\/([^/?#]+)/i)?.[1];
+  const key = id || (handle ? `@${handle}` : '');
+  return key ? { url: `https://unavatar.io/youtube/${encodeURIComponent(key)}`, tone: 'dark' } : null;
+}
+
+/** A YouTube channel panel, on a channel feed/room or on an individual video. */
 function youtubeChannelOverlay(tile, source, name, player) {
-  if (source.kind !== 'youtubechannel' && !isYouTubeChannelFavorite(tile.input)) return null;
+  if (source.kind !== 'youtubechannel' && source.kind !== 'youtube') return null;
+  const channelSource = source.kind === 'youtubechannel'
+    || (source.kind === 'youtube' && !source.youtube?.id && Boolean(source.youtube?.list?.startsWith('UU')));
   const currentInput = favoriteInputOf(tile);
   const currentKey = youtubeChannelKey(source);
+  const currentName = player?.author || name;
+  const currentMeta = player?.title || (channelSource ? 'YouTube channel' : 'YouTube video');
+  const currentLogo = channelSource || isYouTubeChannelFavorite(tile.input) ? youtubeLogoFor(tile.input) : null;
   const seen = new Set();
   const others = listFavorites()
     .filter((item) => isYouTubeChannelFavorite(item.input))
-    .map((item) => ({ item, source: parseSource(item.input) }))
-    .filter(({ item, source: channel }) => {
-      if (item.input === currentInput || item.input === tile.input) return false;
+    .map((item) => {
+      const input = channelFavoriteInput(item.input);
+      return { item, input, source: parseSource(input), logo: youtubeLogoFor(item.input) };
+    })
+    .filter(({ item, input, source: channel }) => {
+      if (item.input === currentInput || input === currentInput || item.input === tile.input || input === tile.input) return false;
       const key = youtubeChannelKey(channel);
       if (currentKey && key && key === currentKey) return false;
-      if (item.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()) return false;
-      if (seen.has(item.input)) return false;
-      seen.add(item.input);
+      if (item.name.trim().toLocaleLowerCase() === currentName.trim().toLocaleLowerCase()) return false;
+      if (seen.has(input)) return false;
+      seen.add(input);
       return true;
     })
-    .map(({ item }) => ({
+    .map(({ item, input, logo }) => ({
       name: item.name,
-      input: channelFavoriteInput(item.input),
+      input,
       meta: 'YouTube channel',
       mark: 'play',
+      logo,
     }));
   return {
     kind: 'youtube',
@@ -8421,11 +8457,12 @@ function youtubeChannelOverlay(tile, source, name, player) {
     kicker: 'Now playing',
     othersHeading: 'More channels',
     empty: 'No other YouTube channels in Favorites.',
-    name,
+    name: currentName,
+    logo: currentLogo,
     mark: 'play',
     type: 'YOUTUBE',
     live: false,
-    meta: player?.title || 'YouTube channel',
+    meta: currentMeta,
     others,
   };
 }

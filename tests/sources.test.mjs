@@ -68,7 +68,12 @@ test('playlists keep file IDs in episode order', () => {
 
 test('youtube: a saved channel plays its uploads feed', () => {
   const page = 'https://www.youtube.com/channel/UCkgsrOXWQNZRS_Cj8-_7sPw';
+  const id = `UC${'a'.repeat(22)}`;
   assert.equal(channelFavoriteInput(`${page}/live`), `${page}/videos`);
+  assert.equal(channelFavoriteInput(page), `${page}/videos`);
+  assert.equal(channelFavoriteInput(id), `https://www.youtube.com/channel/${id}/videos`);
+  assert.equal(channelFavoriteInput(` ${id} `), `https://www.youtube.com/channel/${id}/videos`);
+  assert.equal(channelFavoriteInput('UCabc123'), 'UCabc123');
   assert.equal(channelFavoriteInput('https://www.youtube.com/@TheRestIsFootball'), 'https://www.youtube.com/@TheRestIsFootball');
   const { source, url } = embed(channelFavoriteInput(page));
   assert.equal(source.kind, 'youtube');
