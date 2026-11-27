@@ -1,7 +1,7 @@
 {
- "updated": 1795788969846,
+ "updated": 1795793632991,
  "team": "Man Utd",
- "fx": 0.83755,
+ "fx": 0.83504,
  "players": [
   {
    "name": "Lammens",
@@ -319,7 +319,7 @@
    "value": "€65.00M",
    "photo": "https://resources.premierleague.com/premierleague/photos/players/110x140/p535301.png",
    "status": "i",
-   "news": "Hamstring injury - Unknown return date",
+   "news": "Hamstring injury - Expected back 1 Feb",
    "chance": 0,
    "minutes": 232,
    "goals": 0,
