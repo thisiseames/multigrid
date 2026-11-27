@@ -14544,7 +14544,7 @@ function buildTikTokMenu() {
   };
   const listBox = list.length ? el('ul', { class: 'reels-list' }, ...list.map(row)) : null;
   const noMatches = el('p', { class: 'reels-empty', hidden: true });
-  const noAccounts = list.length ? null : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username below.' });
+  const noAccounts = list.length ? null : el('p', { class: 'reels-empty', textContent: 'No TikTok accounts yet. Add a username above.' });
   const count = el('small', { textContent: list.length ? `${list.length} ${list.length === 1 ? 'account' : 'accounts'}` : 'TikTok feeds' });
   const input = el('input', {
     id: 'tiktok-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
@@ -14609,10 +14609,11 @@ function buildTikTokMenu() {
     title: 'Open this account as a profile tile',
     on: { click: openTypedProfile },
   }));
-  menu.replaceChildren(
+  menu.replaceChildren(...[
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'TikTok' }),
       count),
+    el('div', { class: 'tiktok-search' }, form, error),
     el('button', {
       type: 'button',
       class: 'reels-add tiktok-following',
@@ -14625,7 +14626,7 @@ function buildTikTokMenu() {
     listBox,
     noAccounts,
     noMatches,
-    el('div', { class: 'reels-foot' }, form, error));
+  ].filter(Boolean));
   tiktokAvatarObserver?.disconnect();
   tiktokAvatarObserver = null;
   const shownList = menu.querySelector('.reels-list');

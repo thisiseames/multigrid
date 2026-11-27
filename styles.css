@@ -181,19 +181,19 @@ body.is-phone .sports-switch { display: none; }
 .reels-text small { font-size: 11.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reels-empty { margin: 6px 6px 8px; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
 .tiktok-following { flex: none; margin: 0 0 4px; text-align: left; }
+.tiktok-search { flex: none; margin: 0 0 4px; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
 .reels-foot { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
 .reels-add { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 600; }
 .reels-add:hover { background: var(--hover); }
 .reels-add.tiktok-following { min-height: 48px; }
 .live-menu, .tiktok-menu { width: 306px; }
 /* Desktop TikTok: fill from the top bar to the bottom of the window. The list scrolls;
-   the header and the Add bar stay visible. */
+   the header and the search/add bar stay visible. */
 @media (min-width: 641px) and (hover: hover) {
   .tiktok-menu { display: flex; flex-direction: column; overflow: hidden; }
   .tiktok-menu .reels-head { flex: none; }
   .tiktok-menu .reels-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
   .tiktok-menu .reels-empty { flex: none; }
-  .tiktok-menu .reels-foot { flex: none; margin-top: 0; }
 }
 
 .live-menu-item { border-radius: 9px; }
