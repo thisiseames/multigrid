@@ -1,6 +1,6 @@
 # Source switcher panel: Series and YouTube channels
 
-Status: **BUILT — awaiting live verification** (approved Nov 26, 2026)
+Status: **DONE, live Nov 26, 2026** (`9abb5aa`)
 
 ## Cost
 
@@ -73,7 +73,7 @@ the list is the other items; tapping one changes the tile in place.
       phone controls.
 - [x] 6. Browser checks: series, YouTube channel, empty lists, switch, TV regression, solo,
       phone, toggle off, non-source tiles.
-- [ ] 7. Full tests, notes, commit, live verification.
+- [x] 7. Full tests, notes, commit, live verification.
 
 ## Gotchas
 
@@ -104,3 +104,4 @@ the list is the other items; tapping one changes the tile in place.
 
 - Nov 26: Plan written and approved.
 - Nov 26: Built and checked: Series (poster/progress/switch/empty), YouTube channel feed, channel room, single-video exclusion, phone full-screen, TV regression. 473 tests. Committed after the live check.
+- Nov 26: Live at multigrid.club in 9abb5aa. Series, YouTube channel feed, channel room, empty lists, single-video exclusion, phone full-screen and TV regression verified.
