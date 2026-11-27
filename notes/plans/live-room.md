@@ -1,6 +1,6 @@
 # TikTok Live Room
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (d536588).**
 
 ## Goal
 
@@ -59,7 +59,13 @@ live player, live status and layout code.
 - [x] Delete/Undo, last-live exit, save-layout guards, remote formats.
 - [x] Full tests (507).
 - [x] Browser checks at 1440 and 390.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live checks: from the owner's existing wall (a phone layout with a Twitch tile and one TikTok
+live), the TikTok row opened the room with the clicked live plus the wall's live; Add live made
+three and moved to 2 × 2; the empty slot read **Add live**; choosing 1 hid two lives; 2 × 2 and
+Exit worked; the wall's stored workspace was byte-for-byte unchanged. Phone 390 kept the room
+bar hidden, the Live button hidden and the normal phone layout.
 
 ## Gotchas
 
