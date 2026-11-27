@@ -2660,6 +2660,10 @@ body.remote-open { overflow: hidden; }
   body.is-phone .reels-menu.is-sheet .reels-empty { flex: none; }
   body.is-phone .reels-menu.is-sheet .reels-foot { flex: none; margin-top: auto; }
   .popover.is-sheet .matches-tabs { padding-left: 14px; padding-right: 14px; }
+  /* The Live sheet is a phone menu now: 44pt add controls and row actions. */
+  body.is-phone .live-menu.is-sheet .live-add-form input,
+  body.is-phone .live-menu.is-sheet .live-add-button { height: 44px; }
+  body.is-phone .live-menu.is-sheet .live-menu-item .row-actions button { width: 44px; height: 44px; }
 
   /* Big rows, like the layout button's Saved layouts and How it works on a phone. */
   .more-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
