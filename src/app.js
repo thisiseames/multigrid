@@ -13980,6 +13980,7 @@ function restore(item) {
 
 function buildSavedRow(item) {
   const row = el('li', { class: 'saved-row' });
+  const here = sameAsScreen(item);
   const showNormal = () => {
     row.replaceChildren(
       el('button', {
@@ -13987,7 +13988,7 @@ function buildSavedRow(item) {
         class: 'saved-open',
         title: `Open ${item.name}`,
         on: { click: () => restore(item) },
-      }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: savedSummary(item) })),
+      }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
       el('span', { class: 'row-actions' },
         iconButton('update', 'Replace with what is on screen now', () => {
           saveNamed(item.name, fitToStreams(ws));
@@ -14036,40 +14037,6 @@ function buildSavedRow(item) {
 function sameAsScreen(item) {
   const inputs = (tiles) => tiles.filter((tile) => tile.input && tile.place).map((tile) => tile.input).sort().join('\n');
   return fitToStreams(item.workspace).presetId === fitToStreams(ws).presetId && inputs(item.workspace.tiles) === inputs(ws.tiles) && Boolean(inputs(ws.tiles));
-}
-
-/** "Save this layout" in the MULTIGRID drop-down: a row that becomes a name box and a Save button. */
-function saveHereRow() {
-  if (!streamCount(ws)) return null;
-  const row = el('div', { class: 'sdrop-save' });
-  const showButton = () => row.replaceChildren(el('button', {
-    type: 'button',
-    class: 'sdrop-row',
-    on: { click: showForm },
-  },
-  el('span', { class: 'sdrop-shape' }, icon('plus', 18)),
-  el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Save this layout' }), el('small', { textContent: `${streamCount(ws)} ${streamCount(ws) === 1 ? 'stream' : 'streams'} on screen` }))));
-  function showForm() {
-    const input = el('input', { type: 'text', placeholder: 'Name it, e.g. NEWS', maxLength: 60, enterKeyHint: 'done', aria: { label: 'Layout name' } });
-    const save = el('button', { type: 'submit', class: 'add-button', textContent: 'Save' });
-    input.addEventListener('input', () => { save.textContent = findSaved(input.value.trim()) ? 'Update' : 'Save'; });
-    row.replaceChildren(el('form', {
-      class: 'sdrop-form',
-      on: {
-        submit(event) {
-          event.preventDefault();
-          const name = input.value.trim();
-          if (!name) { input.focus(); return; }
-          if (!saveNamed(name, fitToStreams(ws))) { toast(STORAGE_FULL); return; }
-          toast(`Saved ${name}.`);
-          buildSavedDrop();
-        },
-      },
-    }, input, save));
-    input.focus();
-  }
-  showButton();
-  return row;
 }
 
 /** Moving address: "Copy move link" at the old address, "Paste move link" at the new one. */
@@ -14148,24 +14115,24 @@ function phoneLiveNote() {
   return count ? `${count} on now · Twitch, Kick, YouTube` : 'Twitch, Kick and YouTube';
 }
 
+/** The MULTIGRID drop-down's one layouts row: opens the saved list and the save form. */
+function layoutsRow() {
+  const count = listSaved().length;
+  return el('button', {
+    type: 'button',
+    class: 'sdrop-row',
+    on: { click: openLayoutsMenu },
+  },
+  el('span', { class: 'sdrop-shape' }, icon('saved', 18)),
+  el('span', { class: 'sdrop-text' },
+    el('b', { textContent: 'Layouts' }),
+    el('small', { textContent: count ? `${count} ${count === 1 ? 'saved layout' : 'saved layouts'}` : 'No saved layouts yet' })),
+  el('span', { class: 'sdrop-mark' }, icon('next', 16)));
+}
+
 function buildSavedDrop() {
-  const saved = listSaved();
   $('saved-drop').replaceChildren(...[
-    el('p', { class: 'sdrop-head', textContent: 'Saved layouts' }),
-    saved.length ? el('ul', { class: 'sdrop-list' }, ...saved.map((item) => {
-      const { cols = [1], rows = [1], tiles = [] } = fitToStreams(item.workspace);
-      const slots = tiles.filter((tile) => tile.place).map((tile) => tile.place);
-      const here = sameAsScreen(item);
-      return el('li', {}, el('button', {
-        type: 'button',
-        class: `sdrop-row${here ? ' is-here' : ''}`,
-        on: { click() { closePopovers(); restore(item); } },
-      },
-      el('span', { class: 'sdrop-shape' }, layoutDiagram({ cols, rows, slots: slots.length ? slots : [{ c: 0, r: 0, cs: cols.length, rs: rows.length }] }, 40, 26)),
-      el('span', { class: 'sdrop-text' }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: here ? `${savedSummary(item)} · On screen` : savedSummary(item) })),
-      here ? el('span', { class: 'sdrop-mark' }, icon('check', 16)) : null));
-    })) : el('p', { class: 'sdrop-empty', textContent: streamCount(ws) ? 'No saved layouts yet.' : 'No saved layouts yet. Add some streams, then save them here.' }),
-    saveHereRow(),
+    layoutsRow(),
     clearAllRow(),
     moveRow(),
     // The phone's top bar keeps the main four; Reels and Sound live in here.
@@ -14219,6 +14186,7 @@ $('wordmark').addEventListener('click', () => togglePopover($('wordmark'), $('sa
 /** Redraws saved layouts wherever they're showing: the menu, or the tab in Add stream. */
 function refreshSaved() {
   if (!$('saved-menu').hidden) buildSavedMenu();
+  if (!$('layouts-menu').hidden) buildLayoutsMenu();
   if (!$('saved-drop').hidden) buildSavedDrop();
   if ($('source-dialog').open && addFolder === LAYOUTS) fillAddFavorites($('source-favorites'));
 }
@@ -14227,9 +14195,9 @@ function buildSavedMenu() {
   $('saved-menu').replaceChildren(...savedParts());
 }
 
-/** Saving, the saved layouts with their actions, and clearing: the menu and the tab share them. */
-function savedParts() {
-  const input = el('input', { type: 'text', placeholder: 'Name this layout', maxLength: 60, aria: { label: 'Layout name' } });
+/** The name-and-save form shared by the Saved layouts panel and the Layouts panel. */
+function layoutSaveForm(onSaved) {
+  const input = el('input', { type: 'text', placeholder: 'Name this layout', maxLength: 60, enterKeyHint: 'done', aria: { label: 'Layout name' } });
   const button = el('button', { type: 'submit', class: 'add-button', textContent: 'Save' });
   const message = el('p', { class: 'saved-form-message', hidden: true });
   input.addEventListener('input', () => {
@@ -14253,17 +14221,27 @@ function savedParts() {
           message.hidden = false;
           return;
         }
-        refreshSaved();
-        toast(`Saved ${name}.`);
+        onSaved(name);
       },
     },
   }, input, button);
+  return { form, message, input };
+}
 
+/** The saved list shared by the Saved layouts panel and the Layouts panel. */
+function savedRows(empty = 'Nothing saved yet. Saved layouts stay in this browser.') {
   const saved = listSaved();
-  const list = saved.length
+  return saved.length
     ? el('ul', { class: 'saved-list' }, ...saved.map(buildSavedRow))
-    : el('p', { class: 'saved-empty', textContent: 'Nothing saved yet. Saved layouts stay in this browser.' });
+    : el('p', { class: 'saved-empty', textContent: empty });
+}
 
+/** Saving, the saved layouts with their actions, and clearing: the menu and the tab share them. */
+function savedParts() {
+  const { form, message } = layoutSaveForm((name) => {
+    refreshSaved();
+    toast(`Saved ${name}.`);
+  });
   const clear = (ws.started || streamCount(ws)) ? [
     el('div', { class: 'menu-divider' }),
     el('button', {
@@ -14287,7 +14265,53 @@ function savedParts() {
       },
     }),
   ] : [];
-  return [form, message, list, ...clear];
+  return [form, message, savedRows(), ...clear];
+}
+
+let layoutsPanelTab = 'saved';
+
+/** The Layouts panel: the saved list, or the form for saving what is on screen. */
+function buildLayoutsMenu() {
+  const menu = $('layouts-menu');
+  const tabs = el('div', { class: 'matches-tabs layouts-tabs', role: 'tablist', aria: { label: 'Layouts' } },
+    ...[['saved', 'Saved layouts'], ['save', 'Save this layout']].map(([id, label]) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `matches-tab${layoutsPanelTab === id ? ' is-on' : ''}`,
+      aria: { selected: String(layoutsPanelTab === id) },
+      textContent: label,
+      on: {
+        click() {
+          if (layoutsPanelTab === id) return;
+          layoutsPanelTab = id;
+          buildLayoutsMenu();
+        },
+      },
+    })));
+  let body;
+  if (layoutsPanelTab === 'save') {
+    const count = streamCount(ws);
+    const { form, message } = layoutSaveForm((name) => {
+      layoutsPanelTab = 'saved';
+      refreshSaved();
+      toast(`Saved ${name}.`);
+    });
+    body = [
+      el('p', { class: 'layouts-save-note', textContent: count ? `${count} ${count === 1 ? 'stream' : 'streams'} on screen.` : 'No streams on screen to save.' }),
+      form,
+      message,
+    ];
+  } else {
+    body = [savedRows('No saved layouts yet. Use Save this layout to make one.')];
+  }
+  menu.replaceChildren(tabs, ...body);
+  if (layoutsPanelTab === 'save' && !menu.hidden) requestAnimationFrame(() => menu.querySelector('.saved-form input')?.focus());
+}
+
+/** Opens the Layouts panel from the one layouts row in the MULTIGRID drop-down. */
+function openLayoutsMenu() {
+  layoutsPanelTab = 'saved';
+  togglePopover($('wordmark'), $('layouts-menu'), buildLayoutsMenu);
 }
 
 /** In TV mode the cells are not 16:9, so scale the iframe until the 16:9 picture

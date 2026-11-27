@@ -897,6 +897,9 @@ body.is-resizing-x iframe, body.is-resizing-y iframe, body.is-resizing-x video, 
 .menu-note { margin: 4px; color: var(--text-2); font-size: 12px; }
 
 .saved-menu { width: 300px; max-width: calc(100vw - 16px); padding: 8px; }
+.layouts-tabs { padding: 0 0 8px; margin: 0; gap: 4px; }
+.layouts-tabs .matches-tab { flex: 1; min-width: 0; padding: 0 4px; text-align: center; font-size: 12px; }
+.layouts-save-note { margin: 2px 4px 8px; font-size: 12px; line-height: 1.4; color: var(--text-2); }
 .saved-form { display: flex; gap: 6px; }
 .saved-form input { flex: 1; height: 30px; font-size: 13px; }
 .saved-form .add-button { height: 30px; flex: none; }
@@ -2664,6 +2667,13 @@ body.remote-open { overflow: hidden; }
   body.is-phone .live-menu.is-sheet .live-add-form input,
   body.is-phone .live-menu.is-sheet .live-add-button { height: 44px; }
   body.is-phone .live-menu.is-sheet .live-menu-item .row-actions button { width: 44px; height: 44px; }
+  /* Layouts: the tabs stay put and the saved list scrolls under them. */
+  body.is-phone .layouts-menu.is-sheet { display: flex; flex-direction: column; overflow: hidden; }
+  body.is-phone .layouts-menu.is-sheet .layouts-tabs { flex: none; }
+  body.is-phone .layouts-menu.is-sheet .saved-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  body.is-phone .layouts-menu.is-sheet .saved-form input,
+  body.is-phone .layouts-menu.is-sheet .saved-form .add-button { height: 44px; }
+  body.is-phone .layouts-menu.is-sheet .saved-form input { font-size: 16px; }
 
   /* Big rows, like the layout button's Saved layouts and How it works on a phone. */
   .more-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -3146,11 +3156,8 @@ body.is-phone .desk { display: none !important; }
 .sdrop-switch .more-switch.is-on::after { transform: translateX(16px); }
 /* The arrow (or play mark) on the right is always the same width, so scores never shift. */
 .gamebar .mrow-chevron { flex: none; width: 16px; display: inline-flex; justify-content: center; }
-/* Save this layout, in the MULTIGRID drop-down. */
+/* The move-link box, in the MULTIGRID drop-down. */
 .sdrop-save { margin-top: 2px; }
-.sdrop-form { display: flex; gap: 8px; padding: 8px 10px; }
-.sdrop-form input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
-.sdrop-form .add-button { flex: none; width: auto; height: 44px; padding: 0 16px; margin: 0; }
 /* Every picture box in the drop-down is the same size, so all the names start in one line. */
 .saved-drop .sdrop-shape { box-sizing: border-box; width: 52px; height: 38px; justify-content: center; align-items: center; }
 .saved-drop .sdrop-row.is-danger .sdrop-shape { color: var(--danger); }

@@ -17,6 +17,7 @@ const TITLES = {
   'team-menu': 'Team',
   'reader-menu': 'Reader',
   'saved-menu': 'Saved layouts',
+  'layouts-menu': 'Layouts',
   'layout-menu': 'Layout',
   'hidden-menu': 'Hidden streams',
   'stream-menu': 'Stream',
