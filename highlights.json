@@ -1,5 +1,5 @@
 {
- "updated": 1795754801788,
+ "updated": 1795756375374,
  "games": {
   "401873078": {
    "league": "NFL",
@@ -73,7 +73,18 @@
    "title": "Bills 13–10 Chiefs",
    "start": 1795742400000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "WDYynoHb2Bs",
+     "title": "Kansas City Chiefs vs Buffalo Bills Thanksgiving Day Game Highlights | 2026 NFL Season Week 12",
+     "rank": 3.5
+    },
+    {
+     "id": "WDkG4HdHI5k",
+     "title": "Josh Allen-Patrick Mahomes duel in RAIN STORM | Bills vs. Chiefs Highlights Thanksgiving 2026",
+     "rank": 2
+    }
+   ]
   },
   "401879237": {
    "league": "Premier League",
