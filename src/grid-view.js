@@ -621,10 +621,10 @@ class TileView {
     return this.channelActive || this.soloChannel;
   }
 
-  /** Shows the GUIDE tab on a full-screen TV channel, or the one stream on the wall. */
+  /** Shows the GUIDE/SERIES/CHANNELS tab on a full-screen source or the one stream on the wall. */
   syncChannelOverlay() {
     const data = this.channelSurface && !isPoppedOut(this) && this.source?.ok
-      ? this.grid.handlers.channelOverlay?.(this.id) ?? null
+      ? this.grid.handlers.channelOverlay?.(this.id, this.player?.info?.() ?? null) ?? null
       : null;
     if (!data) {
       this.channelOpen = false;
@@ -638,7 +638,13 @@ class TileView {
     this.buildChannelOverlay();
     this.channel.hidden = false;
     this.channel.classList.toggle('is-solo', !this.channelActive && this.soloChannel);
-    this.channelTab.querySelector('.channel-tab-live').hidden = !data.live;
+    this.channelTabText.textContent = data.tab || 'GUIDE';
+    this.channelTabLive.hidden = !data.live;
+    this.channelKicker.textContent = data.kicker || 'On now';
+    const tabLabel = data.kind === 'series' ? 'Open other series'
+      : data.kind === 'youtube' ? 'Open other YouTube channels' : 'Open the TV guide';
+    this.channelTab.title = tabLabel;
+    this.channelTab.setAttribute('aria-label', tabLabel);
     this.channelTab.tabIndex = this.channelOpen ? -1 : 0;
     this.channelBack.tabIndex = this.channelOpen && this.channelActive ? 0 : -1;
     if (this.channelOpen) {
@@ -657,20 +663,21 @@ class TileView {
 
   buildChannelOverlay() {
     if (this.channel) return;
-    const live = el('span', { class: 'channel-tab-live' },
+    this.channelTabLive = el('span', { class: 'channel-tab-live' },
       el('span', { class: 'live-dot' }), el('span', { textContent: 'LIVE' }));
+    this.channelTabText = el('span', { class: 'channel-tab-text', textContent: 'GUIDE' });
     this.channelTab = el('button', {
       type: 'button', class: 'channel-tab', tabIndex: 0,
-      title: 'Open the channel guide',
-      aria: { label: 'Open the channel guide', expanded: 'false' },
+      title: 'Open the TV guide',
+      aria: { label: 'Open the TV guide', expanded: 'false' },
       on: { click: () => this.openChannelOverlay() },
-    }, live, el('span', { class: 'channel-tab-text', textContent: 'GUIDE' }), icon('back', 14));
+    }, this.channelTabLive, this.channelTabText, icon('back', 14));
     this.channelScrim = el('div', {
       class: 'channel-scrim', aria: { hidden: 'true' },
       on: { click: () => this.closeChannelOverlay() },
     });
     this.channelReload = el('button', {
-      type: 'button', class: 'channel-icon', title: 'Reload this channel', aria: { label: 'Reload this channel' },
+      type: 'button', class: 'channel-icon', title: 'Reload this source', aria: { label: 'Reload this source' },
       on: {
         click: () => {
           this.channelReload.classList.add('is-spinning');
@@ -680,16 +687,17 @@ class TileView {
       },
     }, icon('reload', 18));
     const close = el('button', {
-      type: 'button', class: 'channel-icon', title: 'Close guide', aria: { label: 'Close guide' },
+      type: 'button', class: 'channel-icon', title: 'Close panel', aria: { label: 'Close panel' },
       on: { click: () => this.closeChannelOverlay() },
     }, icon('close', 18));
+    this.channelKicker = el('span', { class: 'channel-kicker', textContent: 'On now' });
     this.channelBody = el('div', { class: 'channel-body' });
     this.channelPanel = el('aside', {
       class: 'channel-panel', tabIndex: -1,
-      aria: { label: 'Channel guide', hidden: 'true' },
+      aria: { label: 'Source panel', hidden: 'true' },
     },
     el('div', { class: 'channel-head channel-panel-head' },
-      el('span', { class: 'channel-kicker', textContent: 'On now' }),
+      this.channelKicker,
       this.channelReload,
       close),
     this.channelBody);
@@ -729,52 +737,69 @@ class TileView {
   }
 
   renderChannelPanel(data) {
-    const mark = (item, className) => {
+    const art = (item, className, size) => {
       const box = el('span', { class: className });
-      if (item.logo?.url) {
-        const img = el('img', { src: item.logo.url, alt: '', referrerPolicy: 'no-referrer' });
-        img.addEventListener('error', () => {
-          img.remove();
-          box.classList.add('is-text');
+      const fallback = () => {
+        box.className = `${className} is-text`;
+        box.replaceChildren();
+        if (item.mark) {
+          box.classList.add('is-mark');
+          box.append(icon(item.mark, size));
+        } else {
           box.textContent = channelInitials(item.name);
-        }, { once: true });
+        }
+      };
+      if (item.poster) {
+        box.classList.add('is-poster');
+        const img = el('img', { src: item.poster, alt: '', referrerPolicy: 'no-referrer' });
+        img.addEventListener('error', fallback, { once: true });
         box.append(img);
-      } else {
-        box.classList.add('is-text');
-        box.textContent = channelInitials(item.name);
+        return box;
       }
+      if (item.logo?.url) {
+        box.classList.add(`is-${item.logo.tone}`);
+        const img = el('img', { src: item.logo.url, alt: '', referrerPolicy: 'no-referrer' });
+        img.addEventListener('error', fallback, { once: true });
+        box.append(img);
+        return box;
+      }
+      fallback();
       return box;
     };
+    const tv = data.kind === 'tv';
     const card = el('section', { class: 'channel-card' },
-      mark(data, 'channel-card-mark'),
+      art(data, 'channel-card-mark', 22),
       el('div', { class: 'channel-card-text' },
         el('div', { class: 'channel-card-top' },
           el('b', { textContent: data.name }),
-          data.live ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE') : null),
-        data.current ? el('span', { class: 'channel-card-show', textContent: data.current.title }) : null,
-        data.current ? el('div', { class: 'channel-card-progress' },
+          data.live
+            ? el('span', { class: 'live-badge is-small' }, el('span', { class: 'live-dot' }), 'LIVE')
+            : data.type ? el('span', { class: 'channel-kind', textContent: data.type }) : null),
+        tv && data.current ? el('span', { class: 'channel-card-show', textContent: data.current.title }) : null,
+        tv && data.current ? el('div', { class: 'channel-card-progress' },
           el('span', { class: 'gbar' }, el('span', { style: `width:${data.current.progress}%` })),
           el('small', { textContent: data.current.when })) : null,
-        !data.current && data.next ? el('small', { class: 'channel-card-when', textContent: `Starts ${data.next.at}` }) : null,
-        data.current && data.next
+        !tv && data.meta ? el('span', { class: 'channel-card-show', textContent: data.meta }) : null,
+        tv && !data.current && data.next ? el('small', { class: 'channel-card-when', textContent: `Starts ${data.next.at}` }) : null,
+        tv && data.current && data.next
           ? el('small', { class: 'channel-card-next' }, el('b', { textContent: data.next.at }), data.next.title)
           : null));
     const others = el('section', { class: 'channel-others' },
       el('div', { class: 'channel-head channel-others-head' },
-        el('span', { class: 'channel-kicker', textContent: 'More live channels' }),
+        el('span', { class: 'channel-kicker', textContent: data.othersHeading || 'More live channels' }),
         el('small', { textContent: data.others.length ? String(data.others.length) : '' })),
       data.others.length
         ? el('ul', { class: 'channel-list' }, ...data.others.map((item) => el('li', {},
           el('button', {
-            type: 'button', class: 'channel-row', title: `Watch ${item.name}`,
-            on: { click: () => this.grid.handlers.onChannelSwitch?.(this.id, item.input) },
+            type: 'button', class: 'channel-row', title: `Switch to ${item.name}`,
+            on: { click: () => this.grid.handlers.onChannelSwitch?.(this.id, item.input, item.name) },
           },
-          mark(item, 'channel-row-mark'),
+          art(item, 'channel-row-mark', 15),
           el('span', { class: 'channel-row-text' },
             el('b', { textContent: item.name }),
-            el('small', { textContent: item.title })),
+            el('small', { textContent: item.meta || item.title || '' })),
           icon('next', 14)))))
-        : el('p', { class: 'channel-empty', textContent: 'No other TV channels are live right now.' }));
+        : el('p', { class: 'channel-empty', textContent: data.empty || 'No other channels right now.' }));
     this.channelBody.replaceChildren(card, others);
     this.channelBody.scrollTop = 0;
   }

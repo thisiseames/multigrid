@@ -4194,6 +4194,7 @@ body.is-phone .tile-info { display: none; }
 }
 .channel-tab:hover { background: rgba(0, 0, 0, .86); }
 .channel-tab-live { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #ff6b6f; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
+.channel-tab-live[hidden] { display: none; }
 .channel-tab-text { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; font-weight: 800; letter-spacing: .16em; }
 .channel-tab svg { width: 14px; height: 14px; opacity: .75; }
 .channel-overlay.is-open .channel-tab { opacity: 0; transform: translate(100%, -50%); pointer-events: none; }
@@ -4224,6 +4225,12 @@ body.is-phone .tile-info { display: none; }
 .channel-card-mark img, .channel-row-mark img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 .channel-card-mark.is-light img, .channel-row-mark.is-light img { filter: invert(1) hue-rotate(180deg); }
 .channel-card-mark.is-text { color: #f5f5f7; font-size: 13px; font-weight: 800; letter-spacing: .04em; }
+.channel-card-mark.is-poster { width: 56px; height: 84px; padding: 0; overflow: hidden; background: #0b0b0d; }
+.channel-card-mark.is-mark, .channel-row-mark.is-mark { color: var(--text-2); }
+.channel-card-mark.is-mark svg { width: 22px; height: 22px; }
+.channel-row-mark.is-mark svg { width: 15px; height: 15px; }
+.channel-card-mark.is-poster img, .channel-row-mark.is-poster img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; }
+.channel-kind { flex: none; padding: 3px 6px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 999px; color: var(--text-2); font-size: 9px; font-weight: 800; letter-spacing: .08em; }
 .channel-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
 .channel-card-top { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .channel-card-top b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f5f5f7; font-size: 15px; font-weight: 700; }
@@ -4240,6 +4247,7 @@ body.is-phone .tile-info { display: none; }
 .channel-row:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .08); }
 .channel-row-mark { flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 5px; border-radius: 8px; background: #232327; }
 .channel-row-mark.is-text { color: #f5f5f7; font-size: 9px; font-weight: 800; letter-spacing: .03em; }
+.channel-row-mark.is-poster { width: 36px; height: 54px; padding: 0; overflow: hidden; background: #0b0b0d; }
 .channel-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .channel-row-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12.5px; font-weight: 600; }
 .channel-row-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 10.5px; }

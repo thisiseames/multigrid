@@ -197,8 +197,8 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onFixStream: (id) => openPalette({ repair: { id } }),
   labelOf: (id) => { const tile = tileById(id); return tile ? labelOf(tile) : ''; },
   tileInfo: (id, player) => tileInfoCard(id, player),
-  channelOverlay: (id) => channelOverlayFor(id),
-  onChannelSwitch: (id, input) => { addStream(input, { mode: 'replace', id }, favoriteName(input) || ''); },
+  channelOverlay: (id, player) => channelOverlayFor(id, player),
+  onChannelSwitch: (id, input, name) => { addStream(input, { mode: 'replace', id }, name || favoriteName(input) || ''); },
   onXRay: (id) => openXRay(id),
   onTileArt(id) {
     const tile = tileById(id);
@@ -253,7 +253,8 @@ const grid = new GridView($('grid'), $('stage'), env, {
   // The channel name switches the channel feed to its native room, and Back restores the feed.
   onChannelRoom: (id, channelId) => {
     closePopovers();
-    addStream(`youtubechannel:${channelId}`, { mode: 'replace', id });
+    const tile = tileById(id);
+    addStream(`youtubechannel:${channelId}`, { mode: 'replace', id }, tile ? labelOf(tile) : '');
   },
   onBackToFeed: (id, channelId) => {
     closePopovers();
@@ -8310,22 +8311,22 @@ function guideChannels() {
   return { rows, folders };
 }
 
-/** The full-screen channel overlay: current/next and the other TV channels live now. */
-function channelOverlayFor(id) {
-  if (!isChannelOverlayOn()) return null;
-  const tile = tileById(id);
-  if (!tile || !isStream(tile)) return null;
-  const name = labelOf(tile);
-  const source = parseSource(tile.input);
+/** The TV channel panel: now/next plus the other live TV channels. */
+function tvChannelOverlay(tile, name, source) {
   const listing = nowAndNext(name, source);
   if (!listing) return null;
   const now = Date.now();
   const rows = guideSections().sections.flatMap((section) => section.rows);
   const others = otherLiveChannels(rows, name, now, tile.input)
-    .map((item) => ({ ...item, logo: logoFor(item.name) }));
+    .map((item) => ({ ...item, logo: logoFor(item.name), meta: item.title }));
   const current = listing.current;
   const next = listing.next;
   return {
+    kind: 'tv',
+    tab: 'GUIDE',
+    kicker: 'On now',
+    othersHeading: 'More live channels',
+    empty: 'No other TV channels are live right now.',
     name,
     logo: logoFor(name),
     live: Boolean(current),
@@ -8337,6 +8338,108 @@ function channelOverlayFor(id) {
     next: next ? { title: next.title, at: clock(next.start) } : null,
     others,
   };
+}
+
+/** A series panel: where this one is up to, then the other Series favourites. */
+function seriesChannelOverlay(tile, source, name) {
+  const input = favoriteInputOf(tile);
+  const favorite = listFavorites().find((item) => item.input === input);
+  if (!isSeriesFolder(favorite?.group || '') && !episodeOf(source.url || '')) return null;
+  const seen = new Set();
+  const others = listFavorites()
+    .filter((item) => isSeriesFolder(item.group))
+    .filter((item) => item.input !== input && item.input !== tile.input)
+    .filter((item) => {
+      if (seen.has(item.input)) return false;
+      seen.add(item.input);
+      return true;
+    })
+    .map((item) => ({
+      name: item.name,
+      input: item.input,
+      poster: item.poster ? tmdbPosterUrl(item.poster) : '',
+      meta: seriesProgress(item.input) || 'Series',
+      mark: 'film',
+    }));
+  return {
+    kind: 'series',
+    tab: 'SERIES',
+    kicker: 'Now playing',
+    othersHeading: 'More series',
+    empty: 'No other series in your Series folder.',
+    name,
+    poster: favorite?.poster ? tmdbPosterUrl(favorite.poster) : '',
+    mark: 'film',
+    type: 'SERIES',
+    live: false,
+    meta: seriesProgress(input) || episodeLine(input) || 'Series',
+    others,
+  };
+}
+
+/** A YouTube channel is an uploads feed or the native channel room; a single video is not. */
+function isYouTubeChannelFavorite(input) {
+  if (isYouTubeChannelPage(input)) return true;
+  if (!/\/channel\/UC[\w-]{22}\/videos(?:[?#]|$)/i.test(String(input))) return false;
+  const source = parseSource(input);
+  return source.kind === 'youtube' && !source.youtube?.id && Boolean(source.youtube?.list?.startsWith('UU'));
+}
+
+function youtubeChannelKey(source) {
+  if (source?.kind === 'youtubechannel') return String(source.youtubechannel?.id || '').slice(2);
+  if (source?.kind === 'youtube' && !source.youtube?.id && source.youtube?.list?.startsWith('UU')) return source.youtube.list.slice(2);
+  return '';
+}
+
+/** A YouTube channel panel: the current channel, then the other channel favourites. */
+function youtubeChannelOverlay(tile, source, name, player) {
+  if (source.kind !== 'youtubechannel' && !isYouTubeChannelFavorite(tile.input)) return null;
+  const currentInput = favoriteInputOf(tile);
+  const currentKey = youtubeChannelKey(source);
+  const seen = new Set();
+  const others = listFavorites()
+    .filter((item) => isYouTubeChannelFavorite(item.input))
+    .map((item) => ({ item, source: parseSource(item.input) }))
+    .filter(({ item, source: channel }) => {
+      if (item.input === currentInput || item.input === tile.input) return false;
+      const key = youtubeChannelKey(channel);
+      if (currentKey && key && key === currentKey) return false;
+      if (item.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()) return false;
+      if (seen.has(item.input)) return false;
+      seen.add(item.input);
+      return true;
+    })
+    .map(({ item }) => ({
+      name: item.name,
+      input: channelFavoriteInput(item.input),
+      meta: 'YouTube channel',
+      mark: 'play',
+    }));
+  return {
+    kind: 'youtube',
+    tab: 'CHANNELS',
+    kicker: 'Now playing',
+    othersHeading: 'More channels',
+    empty: 'No other YouTube channels in Favorites.',
+    name,
+    mark: 'play',
+    type: 'YOUTUBE',
+    live: false,
+    meta: player?.title || 'YouTube channel',
+    others,
+  };
+}
+
+/** The full-screen / solo side panel: TV guide, other series, or other YouTube channels. */
+function channelOverlayFor(id, player = null) {
+  if (!isChannelOverlayOn()) return null;
+  const tile = tileById(id);
+  if (!tile || !isStream(tile)) return null;
+  const source = parseSource(tile.input);
+  const name = labelOf(tile);
+  return tvChannelOverlay(tile, name, source)
+    ?? seriesChannelOverlay(tile, source, name)
+    ?? youtubeChannelOverlay(tile, source, name, player);
 }
 function manUtdResults() {
   const now = Date.now();
@@ -13044,7 +13147,7 @@ function buildSavedDrop() {
       on: { click() { setChannelOverlayOn(!isChannelOverlayOn()); buildSavedDrop(); } },
     },
     el('span', { class: 'sdrop-shape' }, icon('guide', 18)),
-    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Channel overlay' }), el('small', { textContent: 'Full-screen TV guide' })),
+    el('span', { class: 'sdrop-text' }, el('b', { textContent: 'Channel overlay' }), el('small', { textContent: 'TV, series and YouTube' })),
     el('span', { class: `more-switch${isChannelOverlayOn() ? ' is-on' : ''}`, aria: { hidden: 'true' } })) : null,
     onPhoneScreen() ? el('button', {
       type: 'button',

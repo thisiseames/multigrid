@@ -1,6 +1,6 @@
 # Source switcher panel: Series and YouTube channels
 
-Status: **BUILDING** (approved Nov 26, 2026)
+Status: **BUILT — awaiting live verification** (approved Nov 26, 2026)
 
 ## Cost
 
@@ -62,16 +62,16 @@ the list is the other items; tapping one changes the tile in place.
 
 ## Build checklist
 
-- [ ] 1. Generalise the overlay data: `kind`, `tab`, `kicker`, `othersHeading`, `empty`,
+- [x] 1. Generalise the overlay data: `kind`, `tab`, `kicker`, `othersHeading`, `empty`,
       `poster`, `mark`, `meta`; keep the TV fields.
-- [ ] 2. Add the Series data: current poster/progress; other Series favourites; switch input.
-- [ ] 3. Add the YouTube data: current channel/room; other channel favourites; switch input;
+- [x] 2. Add the Series data: current poster/progress; other Series favourites; switch input.
+- [x] 3. Add the YouTube data: current channel/room; other channel favourites; switch input;
       preserve the channel name when opening a channel room.
-- [ ] 4. Make the tab, kicker, current card and list render the new fields; hide the live dot
+- [x] 4. Make the tab, kicker, current card and list render the new fields; hide the live dot
       for series/YouTube; add poster and play/film marks.
-- [ ] 5. Style posters and the kind badge at laptop and 390 px; keep the existing 44 px
+- [x] 5. Style posters and the kind badge at laptop and 390 px; keep the existing 44 px
       phone controls.
-- [ ] 6. Browser checks: series, YouTube channel, empty lists, switch, TV regression, solo,
+- [x] 6. Browser checks: series, YouTube channel, empty lists, switch, TV regression, solo,
       phone, toggle off, non-source tiles.
 - [ ] 7. Full tests, notes, commit, live verification.
 
@@ -103,3 +103,4 @@ the list is the other items; tapping one changes the tile in place.
 ## Log
 
 - Nov 26: Plan written and approved.
+- Nov 26: Built and checked: Series (poster/progress/switch/empty), YouTube channel feed, channel room, single-video exclusion, phone full-screen, TV regression. 473 tests. Committed after the live check.
