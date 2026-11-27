@@ -72,7 +72,7 @@ import { atlanticTarget, topCharts, topLine } from './top10.js';
 import { basisText, catalogFresh, rankForYou, tasteOf, titleKey } from './for-you.js';
 import { roomForGame, roomForShow, roomForTile, roomName, workspaceForRoom } from './rooms.js';
 import {
-  LIVE_ROOM_MAX, LIVE_ROOM_LAYOUTS, addLiveRoomFeed, applyLiveRoomLayout, defaultLiveRoomLayout,
+  LIVE_ROOM_MAX, LIVE_ROOM_LAYOUTS, addLiveRoomFeed, applyLiveRoomLayout,
   liveRoomLayout, mainLiveRoomTile, replaceLiveRoomMain, workspaceForLiveRoom,
 } from './live-room.js';
 import { similarFor } from './similar.js';
@@ -158,7 +158,7 @@ for (const item of listFavorites()) {
 const favoriteInputOf = (tile) => (typeof tile?.favorite === 'string' && tile.favorite ? tile.favorite : tile?.input || '');
 const favoriteNameOfTile = (tile) => (favoriteInputOf(tile) ? favoriteName(favoriteInputOf(tile)) : null);
 let roomReturn = null;
-let liveRoomReturn = null;
+let liveWs = null;
 let liveRoomAddMode = false;
 let roomToken = 0;
 let homeOpen = document.body.classList.contains('is-phone');
@@ -238,7 +238,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     const tile = tileById(id);
     if (!tile) return;
     tile.input = `note:${encodeURIComponent(text)}`;
-    if (!ws.liveRoom) saveCurrent(ws);
+    saveCurrent(ws);
   },
   // A highlights video YouTube won't play here (not in this country, or not on other sites): the
   // tile moves on to the game's next official video. True when it did.
@@ -248,7 +248,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     const tile = tileById(id);
     if (!tile) return;
     tile.title = name;
-    if (!ws.liveRoom) saveCurrent(ws);
+    saveCurrent(ws);
     grid.viewFor(id)?.syncControls();
     renderPhoneBar();
   },
@@ -261,7 +261,7 @@ const grid = new GridView($('grid'), $('stage'), env, {
     if ((tile.page?.href ?? null) === page && tile.page?.for === tile.input) return;
     if (page) tile.page = { for: tile.input, href: page };
     else delete tile.page;
-    if (!ws.liveRoom) saveCurrent(ws);
+    saveCurrent(ws);
   },
   // The channel name switches the channel feed to its native room, and Back restores the feed.
   onChannelRoom: (id, channelId) => {
@@ -310,6 +310,49 @@ const mixerSwap = el('button', { type: 'button', class: 'mixer-all mixer-swap', 
   if (small) swapPip(small.id);
 } } }, icon('pip', 15), el('span', { textContent: 'Swap screens' }));
 $('mixer').append(mixerSwap);
+
+/**
+ * The Live Room's own grid, beside the wall. It is a second GridView so the main wall keeps
+ * its layout and players; the panel never saves and never replaces the wall.
+ */
+const liveGrid = new GridView($('live-room-grid'), $('live-room-stage'), env, {
+  onFill: () => openLiveRoomPicker(),
+  onAddLive: () => openLiveRoomPicker(),
+  labelOf: (id) => labelOfLiveTile(id),
+  tileInfo: () => null,
+  onTileArt(id) {
+    const tile = liveWs?.tiles.find((candidate) => candidate.id === id);
+    return tile ? liveArt(liveStatusFor(tile.input), 'fart', 'tiktok') : null;
+  },
+  onRemove: (id) => removeLivePanelTile(id),
+  onToggleMute: (id) => toggleLivePanelMute(id),
+  onTogglePrimary: (id) => {
+    if (!liveWs) return;
+    mainLiveRoomTile(liveWs, id);
+    renderLivePanel();
+  },
+  onEditFavorite: () => {},
+  onFixStream: () => openLiveRoomPicker(),
+  onReplace: () => openLiveRoomPicker(),
+  onChannelSwitch: () => {},
+  onChannelRoom: () => {},
+  onBackToFeed: () => {},
+  onXRay: () => {},
+  onAccountMenu: () => {},
+  onStreamMenu: () => {},
+  onCast: () => {},
+  onPlayerChanged: () => {},
+  onFeedSwitched: () => {},
+  onPopOutFailed: () => {},
+  onSwap: () => {},
+  onLayoutAdjusted: () => {},
+  onTune: () => {},
+  onNoteText: () => {},
+  onUnplayable: () => {},
+  onEpisode: () => {},
+  onPage: () => {},
+  favoriteName: (input) => favoriteName(input),
+}, { secondary: true });
 
 function labelOf(tile) {
   const source = parseSource(tile.input);
@@ -2884,7 +2927,7 @@ function commit() {
   // removing one never leaves a blank cell behind.
   reflowPhone(ws);
   // The Live Room is a temporary surface; the wall stays in storage so a reload returns to it.
-  if (!ws.liveRoom && !saveCurrent(ws)) toast("Couldn't save. This browser's storage may be full or turned off.");
+  if (!saveCurrent(ws)) toast("Couldn't save. This browser's storage may be full or turned off.");
   render();
   trackRecentGrid();
   placeDockEdge();
@@ -2898,7 +2941,6 @@ var recentGridTimer = null; // eslint-disable-line no-var
 var recentGridNoted = false; // eslint-disable-line no-var
 const gridKeyOf = (workspace) => workspace.tiles.filter((tile) => tile.input && tile.place).map((tile) => tile.input).sort().join('\n');
 function trackRecentGrid() {
-  if (ws.liveRoom) return;
   const key = gridKeyOf(ws);
   if (key !== recentGridKey) {
     recentGridKey = key;
@@ -2942,8 +2984,6 @@ function recentGridDiagram(entry, width, height) {
 function openRecent(entry) {
   const next = openRecentGrid(entry);
   if (!next) { toast("This grid couldn't be read."); return; }
-  if (ws.liveRoom) leaveLiveRoom();
-  liveRoomReturn = null;
   const previous = ws;
   ws = fitToStreams(next);
   closePopovers();
@@ -3037,10 +3077,10 @@ function render() {
 
   const custom = ws.presetId === 'custom';
   const preset = presetById(ws.presetId) ?? presetById('equal');
-  $('layout-name').textContent = ws.liveRoom ? 'Live Room' : ws.room ? 'Event Room' : custom ? 'Custom' : preset.name;
+  $('layout-name').textContent = ws.room ? 'Event Room' : custom ? 'Custom' : preset.name;
   const current = ws.started ? currentDiagram() : presetDiagram(preset);
   $('layout-icon').replaceChildren(layoutDiagram(grid.isStacked ? PHONE_STACK : current, 18, 13));
-  $('layout-button').title = ws.liveRoom ? 'Live Room layout' : ws.room ? 'Event Room' : 'Choose a layout';
+  $('layout-button').title = ws.room ? 'Event Room' : 'Choose a layout';
 
   const homeButton = $('home-button');
   const hasStreams = streamCount(ws) > 0;
@@ -3057,7 +3097,7 @@ function render() {
   $('add-button').title = full ? `${MAX_STREAMS} streams is the most a workspace can hold` : 'Add stream';
   $('add-button').setAttribute('aria-label', 'Add stream');
 
-  const hidden = ws.liveRoom ? 0 : hiddenTiles(ws).length;
+  const hidden = hiddenTiles(ws).length;
   $('hidden-button').hidden = hidden === 0;
   $('hidden-button').textContent = `${hidden} hidden`;
   if (hidden === 0 && $('hidden-menu') && !$('hidden-menu').hidden) closePopovers();
@@ -3414,7 +3454,7 @@ function popOutWholeGrid() {
     rows: tracks(ws.rows),
     onSound(id) {
       for (const tile of ws.tiles) if (isStream(tile)) tile.muted = tile.id !== id;
-      if (!ws.liveRoom) saveCurrent(ws);
+      saveCurrent(ws);
     },
     onClosed() { commit(); },
   }).then(() => { if (tiles.length > 4) toast('Floating grid: drag its corner to make it bigger. It works best with up to 4 streams.'); })
@@ -3518,7 +3558,6 @@ function paintRoom() {
   const bar = $('roombar');
   const room = ws.room;
   if (!bar) return;
-  if (ws.liveRoom) { paintLiveRoom(); return; }
   bar.setAttribute('aria-label', 'Event Room');
   if (!room || homeOpen || onPhoneScreen() || xr.id || deskOn) { bar.hidden = true; return; }
   const feeds = roomFeeds();
@@ -3561,83 +3600,6 @@ function paintRoom() {
   $('xray').hidden = true;
 }
 
-/** The side panel of the Live Room: four formats, the live list, Add live and Exit. */
-function paintLiveRoom() {
-  const bar = $('roombar');
-  if (!bar) return;
-  if (!ws.liveRoom || homeOpen || onPhoneScreen() || xr.id || deskOn) { bar.hidden = true; return; }
-  const tiles = ws.tiles.filter((tile) => tile.input && parseSource(tile.input).kind === 'tiktoklive');
-  const shown = tiles.filter((tile) => isVisible(tile));
-  const main = shown.find((tile) => tile.primary) || shown[0] || tiles[0] || null;
-  const layout = liveRoomLayout(ws.liveRoom.presetId);
-  const hidden = tiles.length - shown.length;
-  const head = el('div', { class: 'gamebar-head roombar-head' },
-    el('span', { class: 'gamebar-title', textContent: 'Live Room' }),
-    iconButton('close', 'Exit Live Room', () => exitLiveRoom()));
-  const layoutButtons = el('div', { class: 'live-room-layouts' },
-    ...LIVE_ROOM_LAYOUTS.map((item) => {
-      const preset = presetById(item.id);
-      return el('button', {
-        type: 'button',
-        class: `live-room-layout${layout.id === item.id ? ' is-on' : ''}`,
-        title: `${item.label} layout`,
-        aria: { pressed: String(layout.id === item.id) },
-        on: { click: () => chooseLiveRoomLayout(item.id) },
-      }, layoutDiagram(presetDiagram(preset), 24, 16), el('span', { textContent: item.label }));
-    }));
-  const rows = tiles.map((tile) => {
-    const active = main?.id === tile.id;
-    const visible = isVisible(tile);
-    const live = liveStatusFor(tile.input)?.live !== false;
-    return el('li', {}, el('button', {
-      type: 'button',
-      class: `room-feed${active ? ' is-main' : ''}`,
-      title: visible ? `Make ${labelOf(tile)} main` : `Show ${labelOf(tile)} in the 2 × 2 layout`,
-      on: {
-        click() {
-          if (!visible) applyLiveRoomLayout(ws, 'grid2');
-          mainLiveRoomTile(ws, tile.id);
-          commit();
-        },
-      },
-    },
-    el('span', { class: `room-dot${live ? ' is-live' : ''}`, aria: { hidden: 'true' } }),
-    el('span', { class: 'room-feed-text' },
-      el('b', { textContent: labelOf(tile) }),
-      el('small', { textContent: active ? (tile.muted ? 'Main · Muted' : 'Main · Sound') : visible ? (tile.muted ? 'Muted' : 'Sound') : 'Hidden by this layout' })),
-    active ? icon('crown', 14) : !tile.muted ? icon('sound', 14) : null));
-  });
-  const body = el('div', { class: 'roombar-body' },
-    el('div', { class: 'room-event' },
-      el('p', { class: 'room-kicker', textContent: 'TikTok LIVE' }),
-      el('h2', { class: 'room-title', textContent: 'Live Room' }),
-      el('p', { class: 'room-meta', textContent: `${shown.length} ${shown.length === 1 ? 'live' : 'lives'} · ${layout.label}` }),
-      el('p', { class: 'room-count', textContent: 'Your wall is untouched.' })),
-    layoutButtons,
-    el('ul', { class: 'room-feeds' }, ...rows),
-    el('div', { class: 'room-actions' },
-      el('button', {
-        type: 'button',
-        class: 'room-action',
-        disabled: tiles.length >= LIVE_ROOM_MAX,
-        title: tiles.length >= LIVE_ROOM_MAX ? 'The Live Room holds four lives' : 'Add a live from the Live menu',
-        on: { click: openLiveRoomPicker },
-      }, icon('plus', 14), el('span', { textContent: 'Add live' })),
-      el('button', { type: 'button', class: 'room-action is-quiet', on: { click: exitLiveRoom } },
-        icon('back', 14), el('span', { textContent: 'Exit Live Room' }))),
-    el('p', {
-      class: 'room-note',
-      textContent: hidden
-        ? `${hidden} ${hidden === 1 ? 'live is' : 'lives are'} hidden by this layout. Choose 2 × 2, or click a hidden live, to show ${hidden === 1 ? 'it' : 'them'}.`
-        : 'Each live stays vertical. Your wall is untouched; Exit returns to it.',
-    }));
-  bar.replaceChildren(head, body);
-  bar.hidden = false;
-  bar.setAttribute('aria-label', 'Live Room');
-  $('gamebar').hidden = true;
-  $('xray').hidden = true;
-}
-
 function roomMain(id) {
   const tile = tileById(id);
   if (!tile || !isStream(tile)) return;
@@ -3673,7 +3635,6 @@ function saveRoomNow({ create = false } = {}) {
 }
 
 async function openEventRoom(id) {
-  if (ws.liveRoom) return;
   const tile = tileById(id);
   if (!tile) return;
   if (deskOn) setDesk(false);
@@ -3712,23 +3673,7 @@ function exitRoom() {
   toast(back ? 'Back to your wall.' : 'Room closed.');
 }
 
-/* ---------- Live Room ---------- */
-
-function leaveLiveRoom() {
-  if (!ws.liveRoom) return false;
-  liveRoomAddMode = false;
-  const back = liveRoomReturn;
-  liveRoomReturn = null;
-  ws = back ? JSON.parse(JSON.stringify(back)) : loadCurrent();
-  return true;
-}
-
-function exitLiveRoom() {
-  if (!leaveLiveRoom()) return;
-  closePopovers();
-  commit();
-  toast('Back to your wall.');
-}
+/* ---------- Live Room: a vertical rail beside the wall ---------- */
 
 function liveRoomFeed(input, name = '') {
   const source = parseSource(input);
@@ -3739,84 +3684,180 @@ function liveRoomFeed(input, name = '') {
   };
 }
 
-/** The clicked live first, then any TikTok lives already on the wall, up to four. */
-function liveRoomFeeds(clickedInput, clickedName) {
-  const feeds = [];
-  const seen = new Set();
-  const add = (input, name) => {
-    const feed = liveRoomFeed(input, name);
-    if (!feed) return;
-    const key = liveAccountFor(input)?.key || input;
-    if (seen.has(key)) return;
-    seen.add(key);
-    feeds.push(feed);
-  };
-  add(clickedInput, clickedName);
-  for (const tile of visualOrder(ws).filter((candidate) => isVisible(candidate) && isStream(candidate))) {
-    add(tile.input, labelOf(tile));
+function labelOfLiveTile(id) {
+  const tile = liveWs?.tiles.find((candidate) => candidate.id === id);
+  if (!tile?.input) return '';
+  return favoriteName(tile.input) || tile.title || parseSource(tile.input).label || 'TikTok LIVE';
+}
+
+function paintLivePanel() {
+  const panel = $('live-room');
+  if (!panel) return;
+  if (!liveWs) {
+    panel.hidden = true;
+    document.body.classList.remove('has-live-room');
+    return;
   }
-  return feeds.slice(0, LIVE_ROOM_MAX);
+  panel.hidden = false;
+  document.body.classList.add('has-live-room');
+  const tiles = liveWs.tiles.filter((tile) => tile.input);
+  const hidden = hiddenTiles(liveWs).length;
+  const layout = liveRoomLayout(liveWs.liveRoom?.presetId);
+  const meta = $('live-room-meta');
+  if (meta) meta.textContent = `${tiles.length} ${tiles.length === 1 ? 'live' : 'lives'} · ${layout.label}${hidden ? ` · ${hidden} hidden` : ''}`;
+  const formats = $('live-room-formats');
+  if (formats) {
+    formats.replaceChildren(...LIVE_ROOM_LAYOUTS.map((item) => {
+      const preset = presetById(item.id);
+      return el('button', {
+        type: 'button',
+        class: `live-room-layout${layout.id === item.id ? ' is-on' : ''}`,
+        title: `${item.label} layout`,
+        aria: { pressed: String(layout.id === item.id) },
+        on: { click: () => chooseLiveRoomLayout(item.id) },
+      }, layoutDiagram(presetDiagram(preset), 24, 16), el('span', { textContent: item.label }));
+    }));
+  }
+  const add = $('live-room-add');
+  if (add) {
+    const full = tiles.length >= LIVE_ROOM_MAX;
+    add.disabled = full;
+    add.title = full ? 'The Live Room holds four lives' : 'Add a live from the Live menu';
+  }
+}
+
+function renderLivePanel() {
+  const panel = $('live-room');
+  if (!panel) return;
+  if (!liveWs) {
+    panel.hidden = true;
+    document.body.classList.remove('has-live-room');
+    liveGrid.clear();
+    grid.fit();
+    return;
+  }
+  panel.hidden = false;
+  document.body.classList.add('has-live-room');
+  liveGrid.render(liveWs);
+  paintLivePanel();
+  requestAnimationFrame(() => {
+    liveGrid.fit();
+    grid.fit();
+  });
 }
 
 function openLiveRoom(input, name = '') {
   const feed = liveRoomFeed(input, name);
   if (!feed) return false;
   liveRoomAddMode = false;
-  if (ws.liveRoom) return Boolean(addLiveToRoom(input, name));
+  if (liveWs) return Boolean(addLiveToRoom(input, name));
   if (onPhoneScreen()) {
     toast('The Live Room is for the laptop. Add a live to the wall on the phone.');
     return false;
   }
-  if (ws.room) leaveRoomSilently();
   if (deskOn) setDesk(false);
   if (xr.id) closeXRay();
-  if (!ws.liveRoom) saveCurrent(ws);
-  const feeds = liveRoomFeeds(input, name);
-  liveRoomReturn = JSON.parse(JSON.stringify(ws));
-  ws = workspaceForLiveRoom(feeds, defaultLiveRoomLayout(feeds.length));
-  liveTab = 'tiktok';
-  homeOpen = false;
   closePopovers();
-  commit();
-  toast('Live Room opened. Your wall is untouched.', { label: 'Exit', run: exitLiveRoom });
+  homeOpen = false;
+  liveWs = workspaceForLiveRoom([feed], 'single');
+  liveTab = 'tiktok';
+  render();
+  renderLivePanel();
+  toast('Live Room open beside your wall.', { label: 'Close', run: closeLivePanel });
   return true;
 }
 
+function closeLivePanel() {
+  if (!liveWs) return;
+  liveWs = null;
+  liveRoomAddMode = false;
+  $('live-room').hidden = true;
+  document.body.classList.remove('has-live-room');
+  liveGrid.clear();
+  closePopovers();
+  grid.fit();
+  toast('Live Room closed.');
+}
+
+/** Kept for anything that still calls the old room name. */
 function addLiveToRoom(input, name = '') {
-  if (!ws.liveRoom) return '';
+  if (!liveWs) {
+    openLiveRoom(input, name);
+    return liveWs?.tiles.find((tile) => tile.input === input)?.id || '';
+  }
   const feed = liveRoomFeed(input, name);
   if (!feed) return '';
-  const existing = ws.tiles.find((tile) => tile.input === feed.input);
+  const existing = liveWs.tiles.find((tile) => tile.input === feed.input);
   if (existing) {
-    replaceLiveRoomMain(ws, feed);
+    replaceLiveRoomMain(liveWs, feed);
     closePopovers();
-    commit();
+    renderLivePanel();
     return existing.id;
   }
-  const id = addLiveRoomFeed(ws, feed);
+  const id = addLiveRoomFeed(liveWs, feed);
   if (!id) {
     toast('The Live Room holds four lives. Remove one first.');
     return '';
   }
   closePopovers();
-  commit();
+  renderLivePanel();
   return id;
 }
 
 function replaceLiveInRoom(input, name = '') {
-  if (!ws.liveRoom) return '';
+  if (!liveWs) {
+    openLiveRoom(input, name);
+    return liveWs?.tiles.find((tile) => tile.input === input)?.id || '';
+  }
   const feed = liveRoomFeed(input, name);
   if (!feed) return '';
-  const id = replaceLiveRoomMain(ws, feed);
+  const id = replaceLiveRoomMain(liveWs, feed);
   if (!id) return '';
   closePopovers();
-  commit();
+  renderLivePanel();
   return id;
 }
 
+function removeLivePanelTile(id) {
+  if (!liveWs) return;
+  removeTile(liveWs, id);
+  if (!liveWs.tiles.some((tile) => tile.input)) {
+    closeLivePanel();
+    return;
+  }
+  if (!liveWs.tiles.some((tile) => tile.input && tile.primary)) {
+    const next = liveWs.tiles.find((tile) => tile.input && isVisible(tile));
+    if (next) mainLiveRoomTile(liveWs, next.id);
+  }
+  renderLivePanel();
+}
+
+function toggleLivePanelMute(id) {
+  const tile = liveWs?.tiles.find((candidate) => candidate.id === id);
+  if (!tile) return;
+  tile.muted = !tile.muted;
+  if (!tile.muted) {
+    if (!tile.volume) tile.volume = 50;
+    for (const other of liveWs.tiles) {
+      if (other === tile || !other.input) continue;
+      other.muted = true;
+      const view = liveGrid.viewFor(other.id);
+      view?.setMuted(true);
+      view?.syncControls();
+    }
+    // One sound (default on) also quietens the wall while this live has the sound.
+    muteOthers(tile.id);
+    commit();
+  }
+  const view = liveGrid.viewFor(tile.id);
+  view?.setMuted(tile.muted);
+  view?.setVolume?.(tile.volume);
+  view?.syncControls();
+}
+
 function openLiveRoomPicker() {
-  if (!ws.liveRoom) return;
-  if (ws.tiles.filter((tile) => tile.input).length >= LIVE_ROOM_MAX) {
+  if (!liveWs) return;
+  if (liveWs.tiles.filter((tile) => tile.input).length >= LIVE_ROOM_MAX) {
     toast('The Live Room holds four lives. Remove one first.');
     return;
   }
@@ -3827,21 +3868,11 @@ function openLiveRoomPicker() {
 }
 
 function chooseLiveRoomLayout(id) {
-  if (!ws.liveRoom) return;
-  applyLiveRoomLayout(ws, id);
-  commit();
-  const hidden = hiddenTiles(ws).length;
+  if (!liveWs) return;
+  applyLiveRoomLayout(liveWs, id);
+  renderLivePanel();
+  const hidden = hiddenTiles(liveWs).length;
   if (hidden) toast(`${hidden} ${hidden === 1 ? 'live is' : 'lives are'} hidden by this layout. Choose 2 × 2 to show them.`);
-}
-
-function leaveRoomSilently() {
-  if (!ws.room) return null;
-  roomToken += 1;
-  const back = roomReturn;
-  roomReturn = null;
-  if (back) ws = back;
-  else delete ws.room;
-  return { back: Boolean(back) };
 }
 
 async function retuneRoom({ silent = false } = {}) {
@@ -4836,27 +4867,8 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
     ? options.favorite.trim()
     : '';
   const source = parseSource(input);
-  // Inside the Live Room, another TikTok live joins the room. Any other stream restores the
-  // untouched wall first, so a horizontal tile can never appear in the room.
-  if (ws.liveRoom) {
-    if (source.kind === 'tiktoklive') {
-      if (target.mode === 'replace' && target.id) {
-        const tile = tileById(target.id);
-        if (tile) {
-          tile.input = input;
-          tile.title = title || favoriteName(input) || source.label;
-          delete tile.favorite;
-          closePopovers();
-          commit();
-          return tile.id;
-        }
-      }
-      return addLiveToRoom(input, title) || null;
-    }
-    leaveLiveRoom();
-    commit();
-    target = { mode: 'add' };
-  }
+  // TikTok lives added while the Live Room is open go into the rail, never into the wall.
+  if (liveWs && source.kind === 'tiktoklive') return addLiveToRoom(input, title) || null;
   const savedFavorite = listFavorites().find((item) => item.input === input);
   const reels = Boolean(target.reels) || (isWebsite(input) && isReelsFolder(savedFavorite?.group));
   // A podcast is audio, so it plays in the dock instead of taking a tile.
@@ -4964,18 +4976,6 @@ function addStream(input, target = { mode: 'add' }, title = '', page = '', event
 
 function removeStream(id) {
   removeTile(ws, id);
-  if (ws.liveRoom) {
-    // No lives left: close the room instead of leaving an empty room over Home.
-    if (!ws.tiles.some((tile) => tile.input)) {
-      exitLiveRoom();
-      return;
-    }
-    // A Live Room always keeps one main live with sound after a tile is removed.
-    if (!ws.tiles.some((tile) => tile.input && tile.primary)) {
-      const next = ws.tiles.find((tile) => tile.input && isVisible(tile));
-      if (next) mainLiveRoomTile(ws, next.id);
-    }
-  }
   commit();
   if (ws.room) saveRoomNow();
 }
@@ -13848,27 +13848,6 @@ function phoneLayoutExtras() {
 
 function buildLayoutMenu() {
   const menu = $('layout-menu');
-  // The Live Room has its own four vertical formats; no Custom and no other presets.
-  if (ws.liveRoom) {
-    const options = LIVE_ROOM_LAYOUTS.map((item) => {
-      const preset = presetById(item.id);
-      return el('button', {
-        type: 'button',
-        class: `layout-option${ws.liveRoom.presetId === item.id ? ' is-current' : ''}`,
-        title: `${item.label} layout`,
-        on: {
-          click() {
-            closePopovers();
-            chooseLiveRoomLayout(item.id);
-          },
-        },
-      }, layoutDiagram(presetDiagram(preset)), el('span', { textContent: item.label }));
-    });
-    menu.replaceChildren(
-      el('p', { class: 'menu-note', textContent: 'Every TikTok live stays vertical. Your wall is untouched.' }),
-      el('div', { class: 'layout-options live-room-options' }, ...options));
-    return;
-  }
   // Held upright, streams stack, so there are no layouts to pick: just the other things.
   if (grid.isStacked) {
     menu.replaceChildren(...[phoneLayoutExtras()].filter(Boolean));
@@ -13961,8 +13940,6 @@ function restore(item) {
     toast("This saved layout couldn't be read.");
     return;
   }
-  if (ws.liveRoom) leaveLiveRoom();
-  liveRoomReturn = null;
   const previous = ws;
   roomToken += 1;
   // A layout saved with empty boxes (before saving fitted it) opens with just its streams.
@@ -13988,7 +13965,6 @@ function buildSavedRow(item) {
       }, el('b', {}, item.workspace.room ? el('span', { class: 'saved-room', textContent: 'ROOM' }) : null, item.name), el('small', { textContent: savedSummary(item) })),
       el('span', { class: 'row-actions' },
         iconButton('update', 'Replace with what is on screen now', () => {
-          if (ws.liveRoom) { toast('Exit the Live Room to update a saved layout.'); return; }
           saveNamed(item.name, fitToStreams(ws));
           refreshSaved();
           toast(`Updated ${item.name}.`);
@@ -14039,7 +14015,7 @@ function sameAsScreen(item) {
 
 /** "Save this layout" in the MULTIGRID drop-down: a row that becomes a name box and a Save button. */
 function saveHereRow() {
-  if (ws.liveRoom || !streamCount(ws)) return null;
+  if (!streamCount(ws)) return null;
   const row = el('div', { class: 'sdrop-save' });
   const showButton = () => row.replaceChildren(el('button', {
     type: 'button',
@@ -14238,11 +14214,6 @@ function savedParts() {
           input.focus();
           return;
         }
-        if (ws.liveRoom) {
-          message.textContent = 'Exit the Live Room to save your wall.';
-          message.hidden = false;
-          return;
-        }
         if (!saveNamed(name, fitToStreams(ws))) {
           message.textContent = "Couldn't save. This browser's storage may be full or turned off.";
           message.hidden = false;
@@ -14259,7 +14230,7 @@ function savedParts() {
     ? el('ul', { class: 'saved-list' }, ...saved.map(buildSavedRow))
     : el('p', { class: 'saved-empty', textContent: 'Nothing saved yet. Saved layouts stay in this browser.' });
 
-  const clear = !ws.liveRoom && (ws.started || streamCount(ws)) ? [
+  const clear = (ws.started || streamCount(ws)) ? [
     el('div', { class: 'menu-divider' }),
     el('button', {
       type: 'button',
@@ -14665,20 +14636,17 @@ function openLiveAccount(account, another = false) {
   const input = account.liveInput || account.item.input;
   // TikTok lives are watched in the Live Room, never dropped into the main wall.
   if (account.platform === 'tiktok') {
-    if (ws.liveRoom) {
-      const add = another || liveRoomAddMode;
-      liveRoomAddMode = false;
+    const add = another || liveRoomAddMode;
+    liveRoomAddMode = false;
+    if (liveWs) {
       if (add) addLiveToRoom(input, account.item.name);
       else replaceLiveInRoom(input, account.item.name);
     } else {
-      liveRoomAddMode = false;
       openLiveRoom(input, account.item.name);
     }
     return;
   }
   liveRoomAddMode = false;
-  // Another platform restores the wall first, so the live room never gets a horizontal stream.
-  if (ws.liveRoom) { leaveLiveRoom(); commit(); }
   closePopovers();
   const same = ws.tiles.find((tile) => isVisible(tile) && isStream(tile) && tile.input === input);
   if (!another && same) {
@@ -14718,9 +14686,9 @@ function buildLiveMenu() {
       return;
     }
     const roomInput = account.liveInput || account.item.input;
-    const inRoom = Boolean(ws.liveRoom && ws.tiles.some((tile) => tile.input === roomInput));
+    const inRoom = Boolean(liveWs && liveWs.tiles.some((tile) => tile.input === roomInput));
     if (inRoom) {
-      for (const tile of [...ws.tiles.filter((candidate) => candidate.input === roomInput)]) removeStream(tile.id);
+      for (const tile of [...liveWs.tiles.filter((candidate) => candidate.input === roomInput)]) removeLivePanelTile(tile.id);
     }
     liveStatus.delete(account.key);
     refreshFavorites();
@@ -14732,7 +14700,7 @@ function buildLiveMenu() {
       run() {
         if (!replaceFavorites(before)) toast(STORAGE_FULL);
         refreshFavorites();
-        if (inRoom && ws.liveRoom) addLiveToRoom(roomInput, account.item.name);
+        if (inRoom && liveWs) addLiveToRoom(roomInput, account.item.name);
         refreshLiveStatuses();
         buildLiveMenu();
       },
@@ -14751,12 +14719,12 @@ function buildLiveMenu() {
     const mainTitle = status?.live && status.title
       ? status.title
       : platform === 'tiktok'
-        ? (ws.liveRoom
+        ? (liveWs
           ? (liveRoomAddMode ? `Add ${display} to the Live Room` : `Make ${display} the main live`)
           : `Open ${display} in the Live Room`)
         : `Open ${display}`;
     const plusTitle = platform === 'tiktok'
-      ? (ws.liveRoom ? `Add ${display} to the Live Room` : `Open ${display} in the Live Room`)
+      ? (liveWs ? `Add ${display} to the Live Room` : `Open ${display} in the Live Room`)
       : `Open ${display} in a new tile`;
     const main = el('button', {
       type: 'button', class: 'reels-row live-row', title: mainTitle,
@@ -14851,10 +14819,9 @@ function buildLiveMenu() {
           const title = existing?.name || account.name || account.handle;
           if (account.platform === 'tiktok') {
             liveRoomAddMode = false;
-            if (ws.liveRoom) addLiveToRoom(openInput, title);
+            if (liveWs) addLiveToRoom(openInput, title);
             else openLiveRoom(openInput, title);
           } else {
-            if (ws.liveRoom) { leaveLiveRoom(); commit(); }
             liveRoomAddMode = false;
             closePopovers();
             const favorite = existing && existing.input !== openInput ? existing.input : '';
@@ -14911,6 +14878,8 @@ $('live-button').addEventListener('click', () => {
   liveRoomAddMode = false;
   togglePopover($('live-button'), $('live-menu'), buildLiveMenu);
 });
+$('live-room-close').addEventListener('click', () => closeLivePanel());
+$('live-room-add').addEventListener('click', () => openLiveRoomPicker());
 $('tiktok-button').addEventListener('click', () => togglePopover($('tiktok-button'), $('tiktok-menu'), buildTikTokMenu));
 $('music-button').addEventListener('click', () => togglePopover($('music-button'), $('music-menu'), buildMusicMenu));
 setTimeout(() => refreshLiveStatuses(), 2000);
@@ -15356,7 +15325,6 @@ function remoteState() {
     oneSound: isOneSound(),
     ticker: isTickerOn(),
     layout: ws.presetId,
-    liveRoom: Boolean(ws.liveRoom),
     full: streamCount(ws) >= MAX_STREAMS,
     favorites: favoriteList.map(({ input, name, group }) => ({ input, name, group })),
     // The phone can reopen a part-watched stream or series here, including a local file: the host
@@ -15483,12 +15451,6 @@ function remoteCommand(cmd) {
     }
     case 'layout': {
       if (typeof cmd.id !== 'string' || !presetById(cmd.id)) break;
-      if (ws.liveRoom) {
-        if (!LIVE_ROOM_LAYOUTS.some((layout) => layout.id === cmd.id)) break;
-        chooseLiveRoomLayout(cmd.id);
-        remoteHost?.sendState({ ...remoteState(), notice: { id: String(cmd.batch ?? ''), text: '' } });
-        break;
-      }
       const note = chooseLayout(cmd.id);
       if (note) toast(note);
       remoteHost?.sendState({ ...remoteState(), notice: { id: String(cmd.batch ?? ''), text: note } });

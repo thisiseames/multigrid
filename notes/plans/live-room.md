@@ -1,79 +1,71 @@
 # TikTok Live Room
 
-**Status: DONE, live Nov 27 (d536588).**
+**Status: built locally, live check pending.**
 
 ## Goal
 
-TikTok lives get their own room, so opening or adding one never rearranges the main wall or
-puts a live in a horizontal cell. The room offers exactly four vertical formats: **1**,
-**1 beside 1**, **1 over 1** and **2 × 2**.
+TikTok lives get their own vertical rail **beside** the main wall. The wall keeps its layout,
+its tiles and its players; it only narrows to make room. The rail offers exactly four formats:
+**1**, **1 beside 1**, **1 over 1** and **2 × 2**. It never replaces the wall or changes its
+layout.
 
-**Running cost: $0/month.** No new account, key or service. The room uses the existing TikTok
+**Running cost: $0/month.** No new account, key or service. The rail reuses the existing TikTok
 live player, live status and layout code.
 
 ## Defaults chosen
 
-- Clicking a TikTok live in the Live menu opens the **Live Room**. The main wall is saved
-  aside, untouched. The room is not saved as a layout and does not overwrite the wall in
-  storage, so a reload while in the room returns to the wall.
-- The room starts with the clicked live first, then any TikTok lives already on the wall, up
-  to four.
-- 1 live starts **1**; 2 start **1 beside 1**; 3 or 4 start **2 × 2** (3 leaves one empty slot).
-- Clicking another live row in the room switches the **main live** in place. **+**, **Add live**
-  and an empty room slot add another live and grow the format when needed: 1 → beside, 2 →
-  2 × 2. The room holds four.
-- Choosing a smaller format hides extra lives instead of deleting them. The room panel lists
-  them as hidden; choosing 2 × 2, or clicking a hidden live, brings them back.
-- The room panel has the four formats, the live list (click a live to give it the main picture
-  and sound), **Add live** and **Exit Live Room**. The top Layout button shows the same four
-  formats while in the room, with no Custom or normal presets.
-- Twitch, Kick and YouTube still open on the wall as before. If clicked while in the Live Room,
-  the room exits first and the wall returns with that channel added.
-- Add stream keeps the wall path for the Screen + lives layouts. Inside the Live Room it adds a
-  TikTok live to the room; any other stream exits the room first and adds to the wall.
-- Closing or deleting the last live exits the room instead of leaving an empty room.
-- The room is laptop-only, like the Live menu. The phone layout and Sound sheet are unchanged.
-- The phone Remote shows the four live formats when the screen is in the Live Room.
+- Clicking a TikTok live in the Live menu opens the **Live Room rail** on the right. The main
+  wall stays on screen and keeps playing. The rail starts with the clicked live only; it does
+  not copy lives from the wall, so nothing is duplicated.
+- The rail has its own second grid: **1 · 1 beside 1 · 1 over 1 · 2 × 2**, with the format
+  buttons in the rail's footer. The main Layout button continues to control the main wall.
+- Clicking another TikTok live row switches the rail's main live in place. **+**, **Add live**
+  and an empty **Add live** slot add another live, up to four. Adding grows the format when
+  needed: 1 → beside, 2 → 2 × 2.
+- Choosing a smaller format hides extra rail lives instead of deleting them. Choosing 2 × 2
+  brings them back; the rail header shows the hidden count.
+- Rail lives start muted. Each rail tile has mute, fullscreen and close in its strip. Unmuting
+  one quiets the other rail lives; with One sound on, it also quiets the wall. Closing the last
+  live closes the rail.
+- Twitch, Kick, YouTube and Add stream continue to use the main wall. They can be added while
+  the rail is open; the rail stays put.
+- Closing the rail (X) returns the wall to full width. Reloading while the rail is open loads
+  the wall without the rail. The rail is not saved and is not in Saved layouts.
+- The rail is laptop-only, like the Live menu. Phone layout and Sound sheet are unchanged.
 
 ## Research
 
-- The old wall path can leave a live horizontal when the wall already has a phone-style tile:
-  `addStream` only re-columns a vertical source when there is no phone tile, and the Live menu's
-  **+** deliberately bypassed the shared vertical tile. The room bypasses that path completely.
-- The existing Event Room pattern supplies the wall snapshot/exit model. The Live Room does not
-  reuse its saved-room meta: it is transient and never appears in Saved layouts.
-- `fitLiveStage` already sizes a wall of TikTok lives to 9:16. Two live-only fixed presets were
-  added so a two-up room keeps exactly two cells: `liveRow` (1 beside 1) and `liveStack`
-  (1 over 1). They are filtered out of the normal layout picker and normal remote options.
+- The first build replaced the workspace with the Live Room. That was wrong: it took the main
+  grid off screen. The corrected build never touches `ws`; the rail renders a second `GridView`
+  with its own `liveWs` workspace beside the stage.
+- `fitLiveStage` already sizes TikTok lives to 9:16. Two live-only fixed presets keep a two-up
+  rail at exactly two cells: `liveRow` (1 beside 1) and `liveStack` (1 over 1). They stay out of
+  the normal layout picker and the normal remote options.
+- The second GridView runs in a secondary mode so it does not replace the main grid's
+  coverage/pause hooks or its Escape handling.
 - No new data source, key or paid service.
 
 ## Checklist
 
+- [x] Side rail panel and second GridView; main wall untouched, only narrower.
 - [x] Live-only two-up presets and Live Room workspace logic, with tests for 1 / 2 / 2 / 4 and
   the four-live cap.
-- [x] Open from the Live menu, seed from wall lives, wall untouched, reload returns the wall.
-- [x] Room panel: formats, live list, Add live, Exit, hidden counts.
-- [x] Main click switches the main live; + / Add live / empty slot add.
-- [x] Smaller formats hide extras; 2 × 2 and hidden-row click restore them.
-- [x] Non-TikTok rows and Add stream exit the room and use the wall.
-- [x] Delete/Undo, last-live exit, save-layout guards, remote formats.
+- [x] Rail formats, Add live, empty-slot Add live, main-live switch, close last live.
+- [x] Rail tile mute, fullscreen and close; wall stays independent.
+- [x] Twitch/Kick/YouTube/Add stream stay on the wall while the rail is open.
+- [x] Saved layouts/save controls still act on the main wall only.
 - [x] Full tests (507).
-- [x] Browser checks at 1440 and 390.
-- [x] Live site check, then mark DONE.
-
-Live checks: from the owner's existing wall (a phone layout with a Twitch tile and one TikTok
-live), the TikTok row opened the room with the clicked live plus the wall's live; Add live made
-three and moved to 2 × 2; the empty slot read **Add live**; choosing 1 hid two lives; 2 × 2 and
-Exit worked; the wall's stored workspace was byte-for-byte unchanged. Phone 390 kept the room
-bar hidden, the Live button hidden and the normal phone layout.
+- [x] Local browser checks at 1440 and 390.
+- [ ] Live site check, then mark DONE.
 
 ## Gotchas
 
-- Do not save the Live Room as the current workspace. The wall stays in storage; `liveRoomReturn`
-  is memory only, so a reload deliberately returns to the wall.
-- The room's presets are fixed at 2 and 4 slots on purpose. Do not let `applyPreset` grow
-  `liveRow`/`liveStack` past their format; extra lives must remain hidden.
-- A Live Room must never contain a non-TikTok tile. Non-TikTok additions leave the room first.
-- The room panel is hidden on phones and in Desk/X-Ray; the Live menu is laptop-only.
-- The two live-only presets stay out of the normal layout picker and the normal remote layout
-  row. The remote shows them only when `liveRoom` is true.
+- Never swap `ws` for the live rail. The rail is `liveWs` in a second `GridView`; the main wall
+  must keep rendering and saving independently.
+- The rail's formats are its own. Do not filter or replace the main Layout picker while the rail
+  is open.
+- A rail live starts muted; the tile strip is the sound control. Do not autoplay the rail with
+  sound over the wall.
+- The rail is hidden on phones and the Live menu is laptop-only.
+- The two live-only presets stay out of the normal layout picker and normal remote row; the
+  remote controls the main wall only.

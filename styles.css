@@ -4626,6 +4626,19 @@ body.is-phone .dock-edge, body.is-phone .dock { display: none !important; }
 .room-feed-text small { font-size: 11px; color: var(--text-2); }
 .room-feed > svg { flex: none; color: var(--text-2); }
 .room-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+/* Live Room: a vertical rail beside the wall. The wall keeps its layout and keeps playing. */
+.live-room { flex: none; width: clamp(340px, 35vw, 520px); display: flex; flex-direction: column; min-height: 0; background: var(--chrome); border-left: 1px solid var(--border-strong); }
+.live-room[hidden] { display: none; }
+.live-room-head { flex: none; min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-bottom: 1px solid var(--border); }
+.live-room-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 11.5px; }
+.live-room-stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px 0; }
+.live-room-grid { position: relative; }
+.live-room-foot { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px 10px 10px; border-top: 1px solid var(--border); }
+.live-room-foot .live-room-layouts { margin: 0; }
+.live-room-foot .room-action { height: 36px; justify-content: center; }
+.live-room-grid .strip-actions > *:not(.strip-mute):not(.strip-full):not(.strip-close) { display: none !important; }
+.live-room-grid .strip-grip { display: none; }
+body.is-phone .live-room { display: none !important; }
 .live-room-layouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 12px 0 4px; }
 .live-room-layout { min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-2); font: 600 11.5px/1.15 var(--font); text-align: left; cursor: pointer; }
 .live-room-layout:hover { background: var(--hover); color: var(--text); }

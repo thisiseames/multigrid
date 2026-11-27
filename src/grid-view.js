@@ -475,7 +475,9 @@ class TileView {
     const isNote = this.source.kind === 'note' || this.source.kind === 'boxscore';
     const isRoom = this.source.kind === 'youtubechannel';
     this.muteButton = iconButton('muted', 'Unmute', () => handlers.onToggleMute(this.id));
+    this.muteButton.classList.add('strip-mute');
     this.fullButton = iconButton('expand', 'Fullscreen', () => this.toggleFullscreen());
+    this.fullButton.classList.add('strip-full');
     this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
     this.cropButton = this.source.ok && !isNote && !isRoom ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
@@ -499,6 +501,8 @@ class TileView {
     this.primaryButton = iconButton('crown', 'Make primary', () => handlers.onTogglePrimary(this.id));
     this.primaryButton.classList.add('strip-primary');
     this.primaryButton.hidden = isNote || isRoom;
+    const closeButton = iconButton('close', 'Remove stream', () => handlers.onRemove(this.id));
+    closeButton.classList.add('strip-close');
     const actions = el('div', { class: 'strip-actions' },
       this.primaryButton,
       this.starButton,
@@ -519,7 +523,7 @@ class TileView {
         title: 'Open on its own site',
         aria: { label: 'Open on its own site' },
       }, icon('open')) : null,
-      iconButton('close', 'Remove stream', () => handlers.onRemove(this.id)),
+      closeButton,
       this.moreButton);
     // An account feed can be switched from its own name, without going through Add stream.
     this.switchable = (this.source.kind === 'tiktok' && Boolean(this.source.tiktok?.profile))
@@ -936,12 +940,13 @@ class TileView {
 }
 
 export class GridView {
-  constructor(gridEl, stageEl, env, handlers) {
+  constructor(gridEl, stageEl, env, handlers, { secondary = false } = {}) {
     this.gridEl = gridEl;
     this.stageEl = stageEl;
     this.env = env;
     this.handlers = handlers;
     this.views = new Map();
+    this.secondary = secondary;
     // A hovered tile's card again, when fresh scores arrive.
     this.refreshInfo = () => { for (const view of this.views.values()) if (view.root.matches(':hover')) view.drawInfo(); };
     this.ws = null;
@@ -949,17 +954,19 @@ export class GridView {
     this.editLayer = el('div', { class: 'edit-layer' });
     gridEl.append(this.editLayer);
     new ResizeObserver(() => this.fit()).observe(stageEl);
-    coverage.onStart = () => {
-      for (const view of this.views.values()) view.player?.rememberPlayback?.();
-    };
-    coverage.onEnd = () => {
-      for (const view of this.views.values()) view.player?.resumePlayback?.();
-    };
+    if (!secondary) {
+      coverage.onStart = () => {
+        for (const view of this.views.values()) view.player?.rememberPlayback?.();
+      };
+      coverage.onEnd = () => {
+        for (const view of this.views.values()) view.player?.resumePlayback?.();
+      };
+    }
     this.phone.addEventListener('change', () => this.render(this.ws));
     fullscreen.onChange(() => {
       for (const view of this.views.values()) view.syncFullscreen();
     });
-    document.addEventListener('keydown', (event) => {
+    if (!secondary) document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       // The channel Guide closes first; the next Escape leaves full-screen.
       for (const view of this.views.values()) {
@@ -1067,6 +1074,16 @@ export class GridView {
     this.markPictureInPicture(ws, placed);
     this.renderDividers();
     this.fit();
+  }
+
+  /** Empties a secondary grid (the Live Room) and destroys its players. */
+  clear() {
+    for (const view of this.views.values()) view.destroy();
+    this.views.clear();
+    this.ws = null;
+    this.gridEl.replaceChildren(this.editLayer);
+    this.gridEl.style.width = '';
+    this.gridEl.style.height = '';
   }
 
   fit() {
