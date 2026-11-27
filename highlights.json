@@ -1,29 +1,6 @@
 {
- "updated": 1795742282733,
+ "updated": 1795743849830,
  "games": {
-  "401873077": {
-   "league": "NFL",
-   "title": "49ers 35–10 Vikings",
-   "start": 1795396800000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "ceMTl2eqYDA",
-     "title": "Minnesota Vikings vs San Francisco 49ers Game Highlights | 2026 NFL Season Week 11 Mexico City Game",
-     "rank": 3.5
-    },
-    {
-     "id": "2aOOhQKvR3c",
-     "title": "Vikings vs. 49ers Week 11 SNF Recap | NFL Daily",
-     "rank": 3
-    },
-    {
-     "id": "jsOA0SpFHM4",
-     "title": "San Francisco 49ers vs. Minnesota Vikings Highlights | Week 11",
-     "rank": 1
-    }
-   ]
-  },
   "401873078": {
    "league": "NFL",
    "title": "Commanders 22–20 Bengals",
@@ -54,6 +31,13 @@
      "rank": 2
     }
    ]
+  },
+  "401873080": {
+   "league": "NFL",
+   "title": "Cowboys 38–39 Eagles",
+   "start": 1795728600000,
+   "sources": "feeds",
+   "videos": []
   },
   "401873081": {
    "league": "NFL",
@@ -332,29 +316,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910035": {
-   "league": "NBA",
-   "title": "Warriors 88–87 Celtics",
-   "start": 1795397400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "CheW6PwsdoU",
-     "title": "CELTICS at WARRIORS | FULL GAME HIGHLIGHTS | November 22, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "qnfJIkTNxOA",
-     "title": "Celtics fall just short in final minute to Warriors 87-88 | Extended Highlights",
-     "rank": 2
-    },
-    {
-     "id": "bghlEqTApEQ",
-     "title": "Steve Kerr Recaps Warriors Win Over Celtics | Nov. 22, 2026",
-     "rank": 2
     }
    ]
   },
