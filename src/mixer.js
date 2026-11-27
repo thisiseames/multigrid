@@ -3,17 +3,27 @@
 
 import { el, icon } from './ui.js';
 
-export function createMixer(root, { labelOf, player, isPaused, onTogglePause, onSeek, onToggleMute, onVolume, onVolumeDone }) {
+export function createMixer(root, { labelOf, player, isPaused, onTogglePause, onSeek, onToggleMute, onVolume, onVolumeDone, onClose }) {
   const channels = el('div', { class: 'mixer-channels' });
   root.append(channels);
   let drawn = '';
   const rows = new Map();
 
-  function closedChannel(name) {
+  function closeChannel(id, name) {
+    return el('button', {
+      type: 'button',
+      class: 'channel-close',
+      title: `Close ${name}`,
+      aria: { label: `Close ${name}` },
+      on: { click: () => onClose?.(id) },
+    }, icon('close'));
+  }
+
+  function closedChannel(tile, name) {
     return el('div', {
       class: 'channel no-control',
       title: `${name} keeps its sound to itself. Install the MULTIGRID Sound extension in Chrome on a computer to control it here.`,
-    }, el('span', { class: 'channel-name', textContent: name }), el('span', { class: 'channel-note', textContent: 'No sound control' }));
+    }, el('span', { class: 'channel-name', textContent: name }), el('span', { class: 'channel-note', textContent: 'No sound control' }), closeChannel(tile.id, name));
   }
 
   function openChannel(tile, name, canVolume, canPause, canSeek) {
@@ -37,7 +47,7 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
         change: () => onVolumeDone(),
       },
     }) : null;
-    const channel = el('div', { class: 'channel' }, back, play, forward, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level);
+    const channel = el('div', { class: 'channel' }, back, play, forward, mute, el('span', { class: 'channel-name', textContent: name, title: name }), level, closeChannel(tile.id, name));
     rows.set(tile.id, { channel, mute, level, name, play });
     return channel;
   }
@@ -77,7 +87,7 @@ export function createMixer(root, { labelOf, player, isPaused, onTogglePause, on
         drawn = shape;
         rows.clear();
         channels.replaceChildren(...items.map(({ tile, name, canMute, canVolume, canPause, canSeek }) => {
-          const channel = canMute ? openChannel(tile, name, canVolume, canPause, canSeek) : closedChannel(name);
+          const channel = canMute ? openChannel(tile, name, canVolume, canPause, canSeek) : closedChannel(tile, name);
           // Which stream a row is for, so the page can add to it (Swap screens, in picture in picture).
           channel.dataset.tile = tile.id;
           return channel;

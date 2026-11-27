@@ -46,6 +46,9 @@ import { bringBack as bringBackPopOut, canPopOutGrid, isGridPoppedOut, isPoppedO
 import { pickPredictions } from './predictions.js';
 import { TREND_REGIONS, categoryOf, categoryTrends, isVague, parseTrends, trendKey, trendLeaders } from './trends.js';
 import { twitchStatus, viewerCount } from './twitch.js';
+import { kickStatus } from './kick.js';
+import { liveAccountOf as liveAccountFor, parseLiveInput } from './live-accounts.js';
+import { resolveYouTubeChannel, youtubeLiveStatus } from './youtube-live.js';
 import { daysBetween, hourText, loadWeather, weatherIcon, weatherWords } from './weather.js';
 import { loadMarkets, showMarkets } from './markets.js';
 import { isDarts, loadPPV, todayPPV } from './ppv.js';
@@ -291,6 +294,7 @@ const mixer = createMixer($('mixer'), {
   onToggleMute: toggleMute,
   onVolume: changeVolume,
   onVolumeDone: commit,
+  onClose: removeStream,
 });
 
 // Picture in picture on a computer: Swap screens sits in the sound row.
@@ -2829,9 +2833,15 @@ function buildSoundMenu() {
   const cards = tiles.map((tile) => {
     const view = grid.viewFor(tile.id);
     const reachable = view.player.canMute;
+    const name = labelOf(tile);
     return el('li', { class: `sa-card${tile.muted ? ' is-muted' : ''}` },
-      el('div', { class: 'sa-card-name' }, el('b', { textContent: labelOf(tile) }),
-        el('small', { textContent: !reachable ? 'No sound control here' : tile.muted ? 'Muted' : `Sound on · ${tile.volume}%` })),
+      el('div', { class: 'sa-card-head' },
+        el('div', { class: 'sa-card-name' }, el('b', { textContent: name }),
+          el('small', { textContent: !reachable ? 'No sound control here' : tile.muted ? 'Muted' : `Sound on · ${tile.volume}%` })),
+        el('button', {
+          type: 'button', class: 'sa-card-close', title: `Close ${name}`, aria: { label: `Close ${name}` },
+          on: { click: () => removeStream(tile.id) },
+        }, icon('close', 18))),
       reachable ? transportRow(tile, view, buildSoundMenu) : null,
       volumeSlider(tile, view));
   });
@@ -4883,7 +4893,6 @@ function refreshFavorites() {
   syncGuideButton();
   syncLiveButton();
   syncMusicButton();
-  liveTodayDraw?.();
   if ($('source-dialog').open) renderAddFavorites($('source-favorites'), () => sourceTarget);
 }
 
@@ -4894,11 +4903,27 @@ const isWebsite = (input) => parseSource(input).kind === 'iframe';
 const reelFavorites = () => listFavorites()
   .filter((item) => isReelsFolder(item.group) && isWebsite(item.input));
 
-/* ---------- Saved TikTok LIVE accounts ---------- */
+/* ---------- Saved live channels ---------- */
 
 const LIVE_FOLDER = 'Live';
 const isLiveFolder = (folder) => String(folder || '').trim().toLocaleLowerCase() === 'live';
 const liveFolderName = () => listFolders().find(isLiveFolder) ?? LIVE_FOLDER;
+
+const LIVE_TABS = [
+  { id: 'tiktok', label: 'TikTok', folder: LIVE_FOLDER },
+  { id: 'twitch', label: 'Twitch', folder: 'Twitch' },
+  { id: 'kick', label: 'Kick', folder: 'Kick' },
+  { id: 'youtube', label: 'YouTube', folder: 'YouTube' },
+];
+let liveTab = 'tiktok';
+const liveTileIds = { twitch: '', kick: '', youtube: '' };
+
+const folderNamed = (name) => listFolders().find((folder) => folder.trim().toLocaleLowerCase() === name.toLocaleLowerCase()) ?? '';
+const liveFolderFor = (platform) => {
+  if (platform === 'tiktok') return liveFolderName();
+  const tab = LIVE_TABS.find((item) => item.id === platform);
+  return folderNamed(tab?.folder || platform) || tab?.folder || platform;
+};
 
 /** Keeps every saved live in the one Live folder, including favorites from before it existed. */
 function ensureLiveFolder() {
@@ -4931,32 +4956,51 @@ const sharedVerticalTile = (workspace) => {
 };
 
 const liveStatus = new Map();
-let liveTodayDraw = null;
 let liveSignature = '';
+let liveMenuSignature = '';
 let livePollBusy = false;
+let youtubePollBusy = false;
+let youtubeRetryTimer = null;
 
-const liveAccountOf = (input) => {
-  const source = parseSource(input);
-  return source.kind === 'tiktoklive' ? source.tiktoklive.username.toLocaleLowerCase() : '';
-};
-
-const savedLiveAccounts = () => {
+/**
+ * Every saved channel the Live menu can show. TikTok comes from the Live folder, Twitch and
+ * Kick from their own folders, YouTube from the YOUTUBE folder's channel links.
+ */
+const savedLiveAccounts = (platform = '') => {
+  const folders = {
+    twitch: folderNamed('twitch'),
+    kick: folderNamed('kick'),
+    youtube: folderNamed('youtube'),
+  };
+  const wanted = platform ? String(platform).toLocaleLowerCase() : '';
   const seen = new Set();
   const accounts = [];
   for (const item of listFavorites()) {
-    const source = parseSource(item.input);
-    if (source.kind !== 'tiktoklive') continue;
-    const username = source.tiktoklive.username;
-    const key = username.toLocaleLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    accounts.push({ item, source, username, key });
+    const account = liveAccountFor(item.input);
+    if (!account) continue;
+    if (wanted && account.platform !== wanted) continue;
+    if (account.platform !== 'tiktok') {
+      const folder = folders[account.platform];
+      if (!folder || String(item.group || '').toLocaleLowerCase() !== folder.toLocaleLowerCase()) continue;
+    }
+    if (seen.has(account.key)) continue;
+    seen.add(account.key);
+    accounts.push({
+      ...account,
+      item,
+      username: account.handle,
+      // A YouTube channel favourite is often its uploads feed. The Live menu always opens
+      // the channel's /live link, which plays whichever broadcast is on now.
+      liveInput: account.platform === 'youtube'
+        ? `https://www.youtube.com/channel/${account.handle}/live`
+        : item.input,
+    });
   }
   return accounts;
 };
 
 const liveStatusFor = (input) => {
-  const key = liveAccountOf(input);
+  const key = liveAccountFor(input)?.key || '';
   return key ? liveStatus.get(key) || null : null;
 };
 
@@ -4965,12 +5009,14 @@ const liveStatusBadge = (status) => {
   return status.live ? liveTag() : el('span', { class: 'live-badge is-small is-offline', textContent: 'Offline' });
 };
 
-const liveArt = (status, className = 'fart') => {
-  if (status?.avatar) {
+const liveArt = (status, className = 'fart', platform = 'tiktok') => {
+  const picture = status?.avatar || status?.logo;
+  if (picture) {
     return el('span', { class: `${className} is-avatar` },
-      el('img', { class: 'fart-face', src: status.avatar, alt: '', referrerPolicy: 'no-referrer' }));
+      el('img', { class: 'fart-face', src: picture, alt: '', referrerPolicy: 'no-referrer' }));
   }
-  return el('span', { class: `${className} is-icon` }, icon('phone', 20));
+  const fallback = platform === 'twitch' ? 'live' : platform === 'kick' ? 'play' : platform === 'youtube' ? 'play' : 'phone';
+  return el('span', { class: `${className} is-icon` }, icon(fallback, 20));
 };
 
 function syncLiveButton() {
@@ -4987,6 +5033,31 @@ function syncLiveButton() {
   button.setAttribute('aria-label', count ? `Live, ${count} on now` : 'Live');
 }
 
+/** Redraws the badge, cards and open menu only when a status, title or viewer count changed. */
+function afterLiveStatuses() {
+  syncLiveButton();
+  const accounts = savedLiveAccounts();
+  const cardSignature = JSON.stringify(accounts.map((account) => {
+    const status = liveStatus.get(account.key);
+    return [account.key, Boolean(status?.live), status?.title || '', status?.username || ''];
+  }));
+  const menuSignature = JSON.stringify(accounts.map((account) => {
+    const status = liveStatus.get(account.key);
+    return [account.key, Boolean(status?.live), status?.title || '', status?.username || '', status?.name || '', status?.viewers || 0];
+  }));
+  const cardChanged = cardSignature !== liveSignature;
+  if (cardChanged) {
+    liveSignature = cardSignature;
+    refreshFavorites();
+  }
+  if (!$('live-menu').hidden && !$('live-username')?.value
+    && (cardChanged || menuSignature !== liveMenuSignature)) {
+    liveMenuSignature = menuSignature;
+    buildLiveMenu();
+  }
+}
+
+/** Twitch, Kick and TikTok: the quick checks. YouTube is slower, so it runs on its own. */
 async function refreshLiveStatuses() {
   if (livePollBusy || document.hidden) return;
   const accounts = savedLiveAccounts();
@@ -4994,48 +5065,59 @@ async function refreshLiveStatuses() {
     if (liveStatus.size) {
       liveStatus.clear();
       liveSignature = '';
+      liveMenuSignature = '';
       refreshFavorites();
-      liveTodayDraw?.();
     }
-    syncLiveButton();
-    return;
-  }
-  if (document.documentElement.dataset.multigridSound !== '1') {
     syncLiveButton();
     return;
   }
   livePollBusy = true;
   try {
-    const wanted = new Set(accounts.slice(0, 20).map((account) => account.key));
+    const wanted = new Set(accounts.map((account) => account.key));
     for (const key of [...liveStatus.keys()]) if (!wanted.has(key)) liveStatus.delete(key);
-    for (const account of accounts.slice(0, 20)) {
-      const reply = await lookupTikTokLive(account.username);
+    const sound = document.documentElement.dataset.multigridSound === '1';
+    const quick = accounts.filter((account) => account.platform !== 'youtube').slice(0, 20);
+    await Promise.all(quick.map(async (account) => {
+      let reply = null;
+      if (account.platform === 'tiktok') {
+        if (!sound) return;
+        reply = await lookupTikTokLive(account.username);
+      } else if (account.platform === 'twitch') {
+        reply = await twitchStatus(account.username);
+        if (reply) reply = { ...reply, avatar: reply.avatar || reply.logo || '' };
+      } else if (account.platform === 'kick') {
+        reply = await kickStatus(account.username);
+      }
       if (reply && !reply.error) liveStatus.set(account.key, reply);
-    }
+    }));
   } finally {
     livePollBusy = false;
   }
-  syncLiveButton();
-  const signature = JSON.stringify(savedLiveAccounts().map((account) => {
-    const status = liveStatus.get(account.key);
-    return [account.key, Boolean(status?.live), status?.title || '', status?.username || ''];
-  }));
-  if (signature !== liveSignature) {
-    liveSignature = signature;
-    refreshFavorites();
-    if (!$('live-menu').hidden && !$('live-username')?.value) buildLiveMenu();
-  }
-  liveTodayDraw?.();
+  afterLiveStatuses();
+  refreshYouTubeStatuses(accounts.filter((account) => account.platform === 'youtube'));
 }
 
-function liveUsernameFrom(value) {
-  const text = String(value || '').trim();
-  if (!text) return '';
-  const asUrl = /^(https?:\/\/|(?:www\.)?tiktok\.com\/)/i.test(text);
-  const source = parseSource(asUrl || /^tiktoklive:/i.test(text) ? text : `tiktoklive:${text.replace(/^@/, '')}`);
-  if (source.kind === 'tiktoklive') return source.tiktoklive.username;
-  if (source.kind === 'tiktok' && source.tiktok?.profile) return source.tiktok.profile;
-  return '';
+/** YouTube statuses are read two at a time by youtube-live.js and kept for five minutes. */
+async function refreshYouTubeStatuses(accounts = savedLiveAccounts('youtube'), { force = false } = {}) {
+  if (youtubePollBusy || document.hidden || !accounts.length) return;
+  youtubePollBusy = true;
+  try {
+    await Promise.all(accounts.slice(0, 40).map(async (account) => {
+      const reply = await youtubeLiveStatus(account.username, account.item.name, { force });
+      if (reply) liveStatus.set(account.key, reply);
+    }));
+  } finally {
+    youtubePollBusy = false;
+  }
+  afterLiveStatuses();
+  const missing = accounts.filter((account) => !liveStatus.has(account.key));
+  if (missing.length && !youtubeRetryTimer) {
+    // A reader miss is not an offline channel. Try those again once, sooner than the minute poll.
+    youtubeRetryTimer = setTimeout(() => {
+      youtubeRetryTimer = null;
+      refreshYouTubeStatuses(missing);
+    }, 20000);
+  }
 }
 
 function tiktokUsernameFrom(value) {
@@ -12579,34 +12661,6 @@ async function fillToday() {
   const trendHolder = el('section', { class: 'today-section', hidden: true });
   const bskyHolder = el('section', { class: 'today-section', hidden: true });
   const ppvHolder = el('section', { class: 'today-section', hidden: true });
-  const liveHolder = el('section', { class: 'today-section', hidden: true });
-  const drawLiveToday = () => {
-    if (!liveHolder.isConnected) return;
-    const lives = savedLiveAccounts()
-      .map((account) => ({ account, status: liveStatus.get(account.key) }))
-      .filter(({ status }) => status?.live);
-    if (todayView === 'week' || !lives.length) {
-      liveHolder.hidden = true;
-      liveHolder.replaceChildren();
-      return;
-    }
-    liveHolder.hidden = false;
-    liveHolder.replaceChildren(
-      el('h4', { class: 'match-day', textContent: 'Live now' }),
-      el('ul', { class: 'rlist' }, ...lives.map(({ account, status }) => todayRow({
-        art: liveArt(status),
-        top: el('span', { textContent: `${account.item.name} · ${status.viewers ? `${viewerCount(status.viewers)} watching` : 'Live now'}` }),
-        title: status.title || account.item.name,
-        sub: 'TikTok LIVE',
-        live: true,
-        onClick() {
-          closePopovers();
-          addStream(account.item.input, { mode: 'add' });
-        },
-      }))));
-  };
-  liveTodayDraw = drawLiveToday;
-  drawLiveToday();
   const headlinesSection = todaySection('Top headlines', newsList);
   const polySection = todaySection('Prediction markets', poly.length ? polymarketRows(poly) : null);
   const continueSection = todaySection('Pick up where you left off', continueList.length ? el('ul', { class: 'rlist' }, ...continueList.map(continueTodayRow)) : null);
@@ -12618,7 +12672,6 @@ async function fillToday() {
   const todayOnlySections = [headlinesSection, continueSection, podcastSection, youtubeSection, teamSection, ppvHolder, eventSection, polySection, flightSection].filter(Boolean);
   const weekOnlySections = [weekTeamsSection, weekEventsSection].filter(Boolean);
   const parts = [
-    liveHolder,
     headlinesSection,
     trendHolder,
     bskyHolder,
@@ -12654,13 +12707,11 @@ async function fillToday() {
     trendHolder.hidden = week || !trendHolder.childElementCount;
     bskyHolder.hidden = week || !bskyHolder.childElementCount;
     redrawTodayDates();
-    liveTodayDraw?.();
   };
   redrawTodayView();
   const scroll = body.scrollTop;
   body.replaceChildren(...(parts.length ? parts : [el('p', { class: 'match-quiet is-empty', textContent: 'Nothing to show yet. Try again in a minute.' })]));
   body.scrollTop = scroll;
-  liveTodayDraw?.();
   menu.querySelector('.matches-updated').textContent = `Updated ${clock(Date.now())}`;
   fillTodayTrends(trendHolder, asked);
   fillTodayBluesky(bskyHolder, asked);
@@ -14321,9 +14372,38 @@ function buildTikTokMenu() {
   }
 }
 
+let liveAddBusy = false;
+
+/** Opens a saved live. Main click keeps one tile per platform; + asks for another tile. */
+function openLiveAccount(account, another = false) {
+  closePopovers();
+  const input = account.liveInput || account.item.input;
+  const same = ws.tiles.find((tile) => isVisible(tile) && isStream(tile) && tile.input === input);
+  if (!another && same) {
+    toast(`${account.item.name} is already open.`);
+    return;
+  }
+  if (!another && account.platform !== 'tiktok') {
+    const last = tileById(liveTileIds[account.platform]);
+    const source = last ? parseSource(last.input) : null;
+    const rightKind = account.platform === 'twitch'
+      ? source?.kind === 'twitch' && source.twitch?.type === 'channel'
+      : account.platform === 'kick'
+        ? source?.kind === 'kick'
+        : source?.kind === 'youtube' && Boolean(source.youtube?.channel);
+    if (last && isVisible(last) && isStream(last) && rightKind) {
+      addStream(input, { mode: 'replace', id: last.id });
+      return;
+    }
+  }
+  const id = addStream(input, { mode: 'add', newLive: another });
+  if (id && account.platform !== 'tiktok') liveTileIds[account.platform] = id;
+}
+
 function buildLiveMenu() {
   const menu = $('live-menu');
-  const accounts = savedLiveAccounts();
+  const tab = LIVE_TABS.find((item) => item.id === liveTab) || LIVE_TABS[0];
+  const accounts = savedLiveAccounts(tab.id);
   const liveCount = accounts.filter((account) => liveStatus.get(account.key)?.live).length;
   const ordered = [...accounts].sort((a, b) => Number(Boolean(liveStatus.get(b.key)?.live)) - Number(Boolean(liveStatus.get(a.key)?.live))
     || a.item.name.localeCompare(b.item.name, undefined, { sensitivity: 'base' }));
@@ -14336,6 +14416,7 @@ function buildLiveMenu() {
     liveStatus.delete(account.key);
     refreshFavorites();
     refreshLiveStatuses();
+    if (account.platform === 'youtube') refreshYouTubeStatuses();
     buildLiveMenu();
     toast(`Deleted ${account.item.name}.`, {
       label: 'Undo',
@@ -14349,67 +14430,151 @@ function buildLiveMenu() {
   };
   const row = (account) => {
     const status = liveStatus.get(account.key);
-    const handle = `@${account.username}`;
+    const platform = account.platform;
+    const handle = platform === 'tiktok' ? `@${account.username}` : platform === 'youtube' ? 'YouTube' : account.username;
     const sub = status?.live
       ? [handle, status.viewers ? `${viewerCount(status.viewers)} watching` : ''].filter(Boolean).join(' · ')
       : `${handle} · ${status ? 'Offline' : 'Checking…'}`;
+    const display = (platform === 'twitch' || platform === 'kick') && status?.name
+      && status.name.toLocaleLowerCase() === String(account.handle).toLocaleLowerCase()
+      ? status.name : account.item.name;
     const main = el('button', {
-      type: 'button', class: 'reels-row live-row', title: `Open ${account.item.name} live`,
+      type: 'button', class: 'reels-row live-row', title: status?.live && status.title ? status.title : `Open ${display}`,
       on: {
         click() {
-          closePopovers();
-          addStream(account.item.input, { mode: 'add' });
+          openLiveAccount(account);
         },
       },
     },
-    liveArt(status, 'reels-icon live-row-art'),
-    el('span', { class: 'reels-text' }, el('b', { textContent: account.item.name }), el('small', { textContent: sub })),
+    liveArt(status, 'reels-icon live-row-art', platform),
+    el('span', { class: 'reels-text' }, el('b', { textContent: display }), el('small', { textContent: sub })),
     liveStatusBadge(status));
     return el('li', { class: 'saved-row live-menu-item' },
       main,
       el('span', { class: 'row-actions live-row-actions' },
-        iconButton('plus', `Open ${account.item.name} in a new tile`, () => {
-          closePopovers();
-          addStream(account.item.input, { mode: 'add', newLive: true });
-        }),
-        iconButton('trash', `Delete ${account.item.name}`, () => removeLive(account))));
+        iconButton('plus', `Open ${display} in a new tile`, () => openLiveAccount(account, true)),
+        iconButton('trash', `Delete ${display}`, () => removeLive(account))));
   };
+  const hints = {
+    tiktok: ['@username or live link', 'TikTok LIVE username or link', 'Enter a TikTok username or live link.'],
+    twitch: ['Twitch channel, @name or link', 'Twitch channel, @name or live link', 'Enter a Twitch channel, @name or live link.'],
+    kick: ['Kick channel, @name or link', 'Kick channel, @name or live link', 'Enter a Kick channel, @name or live link.'],
+    youtube: ['YouTube channel, @handle or live link', 'YouTube channel, @handle or live link', 'Enter a YouTube channel, @handle or live link.'],
+  };
+  const [placeholder, ariaLabel, emptyError] = hints[tab.id];
   const input = el('input', {
     id: 'live-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
-    placeholder: '@username or live link', aria: { label: 'TikTok LIVE username or link' },
+    placeholder, aria: { label: ariaLabel },
   });
   const error = el('p', { class: 'live-add-error', hidden: true });
+  const showError = (message = emptyError) => {
+    error.textContent = message;
+    error.hidden = false;
+    input.focus();
+  };
   const form = el('form', {
     class: 'live-add-form',
     on: {
-      submit(event) {
+      async submit(event) {
         event.preventDefault();
-        const name = liveUsernameFrom(input.value);
-        if (!name) {
-          error.textContent = 'Enter a TikTok username or a live link.';
-          error.hidden = false;
-          input.focus();
-          return;
+        if (liveAddBusy) return;
+        liveAddBusy = true;
+        const addButton = event.currentTarget.querySelector('.live-add-button');
+        const buttonText = addButton?.textContent || 'Add';
+        if (addButton) {
+          addButton.disabled = true;
+          addButton.textContent = 'Adding…';
         }
-        const existing = listFavorites().find((item) => liveAccountOf(item.input) === name.toLocaleLowerCase());
-        const liveInput = existing?.input || `tiktoklive:${name}`;
-        if (!existing && !saveFavorite(liveInput, `@${name}`, liveFolderName())) toast(STORAGE_FULL);
-        refreshFavorites();
-        refreshLiveStatuses();
-        closePopovers();
-        addStream(liveInput, { mode: 'add' });
+        try {
+          let account = parseLiveInput(tab.id, input.value);
+          if (!account) {
+            showError();
+            return;
+          }
+          if (account.platform === 'youtube') {
+            if (addButton) addButton.textContent = 'Finding…';
+            const resolved = await resolveYouTubeChannel(account);
+            if (!resolved?.channelId) {
+              showError("Couldn't find that YouTube channel. Paste its channel link or a live link.");
+              return;
+            }
+            account = {
+              ...account,
+              channelId: resolved.channelId,
+              handle: resolved.handle || resolved.channelId,
+              name: resolved.name || resolved.handle || resolved.channelId,
+              input: `https://www.youtube.com/channel/${resolved.channelId}/live`,
+            };
+          }
+          const key = liveAccountFor(account.input)?.key || '';
+          const existing = listFavorites().find((item) => liveAccountFor(item.input)?.key === key);
+          const folder = liveFolderFor(account.platform);
+          let openInput = account.input;
+          if (existing) {
+            saveFavorite(existing.input, existing.name, folder);
+            openInput = account.platform === 'youtube' ? account.input : existing.input;
+          } else {
+            const name = account.platform === 'tiktok' ? account.name : (account.name || account.handle);
+            if (!saveFavorite(account.input, name, folder)) toast(STORAGE_FULL);
+          }
+          liveTab = account.platform;
+          refreshFavorites();
+          if (account.platform === 'youtube') {
+            const statusKey = liveAccountFor(openInput)?.key || key;
+            youtubeLiveStatus(account.channelId, account.name, { force: true }).then((status) => {
+              if (!status || !statusKey) return;
+              liveStatus.set(statusKey, status);
+              afterLiveStatuses();
+            });
+          }
+          refreshLiveStatuses();
+          closePopovers();
+          const addedId = addStream(openInput, { mode: 'add' });
+          if (addedId && account.platform !== 'tiktok') liveTileIds[account.platform] = addedId;
+        } finally {
+          liveAddBusy = false;
+          if (addButton) {
+            addButton.disabled = false;
+            addButton.textContent = buttonText;
+          }
+        }
       },
     },
   }, input, el('button', { type: 'submit', class: 'live-add-button', textContent: 'Add' }));
+  const tabs = el('div', { class: 'matches-tabs live-tabs', role: 'tablist', aria: { label: 'Live platform' } },
+    ...LIVE_TABS.map((item) => el('button', {
+      type: 'button',
+      role: 'tab',
+      class: `matches-tab${item.id === tab.id ? ' is-on' : ''}`,
+      aria: { selected: String(item.id === tab.id) },
+      textContent: item.label,
+      on: {
+        click() {
+          if (liveTab === item.id) return;
+          liveTab = item.id;
+          buildLiveMenu();
+        },
+      },
+    })));
+  const empty = {
+    tiktok: 'No saved TikTok lives yet. Add a username below.',
+    twitch: 'No saved Twitch channels yet. Add one below; it goes in your Twitch folder.',
+    kick: 'No saved Kick channels yet. Add one below; it goes in your Kick folder.',
+    youtube: 'No YouTube channels yet. Add a channel, @handle or live link below; it goes in your YouTube folder.',
+  }[tab.id];
   menu.replaceChildren(
     el('div', { class: 'reels-head' },
       el('span', { textContent: 'Live' }),
-      el('small', { textContent: accounts.length ? `${liveCount} on now · ${accounts.length} saved` : 'TikTok LIVE' })),
+      el('small', { textContent: accounts.length ? `${liveCount} on now · ${accounts.length} saved` : `${tab.label} channels` })),
+    tabs,
     ordered.length
       ? el('ul', { class: 'reels-list' }, ...ordered.map(row))
-      : el('p', { class: 'reels-empty', textContent: 'No saved lives yet. Add a username below; it will appear here and in Today.' }),
+      : el('p', { class: 'reels-empty', textContent: empty }),
     el('div', { class: 'reels-foot' }, form, error));
-  if (!liveStatus.size && accounts.length) refreshLiveStatuses();
+  if (accounts.some((account) => !liveStatus.has(account.key))) {
+    if (tab.id === 'youtube') refreshYouTubeStatuses(accounts);
+    else refreshLiveStatuses();
+  }
 }
 
 $('live-button').addEventListener('click', () => togglePopover($('live-button'), $('live-menu'), buildLiveMenu));

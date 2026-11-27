@@ -185,6 +185,7 @@ function parseTwitch(url, host, input) {
     return fail(input, "This Twitch page isn't a channel, video or clip.");
   }
   if (second === 'clip' && third) return make('clip', third);
+  if (second === 'videos' && /^\d+$/.test(third || '')) return make('video', third);
   if ((second === 'video' || second === 'v') && /^\d+$/.test(third || '')) return make('video', third);
   if (!/^\w{2,25}$/.test(first)) return fail(input, "That doesn't look like a Twitch channel name.");
   return make('channel', first.toLowerCase());
