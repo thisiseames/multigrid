@@ -97,3 +97,4 @@ other artist/album favourites added to the MUSIC folder:
 - Nov 27: Live in 5b1e3b6. Real Views (20 songs) and Nothing Was the Same (13 songs) verified at laptop 1440 and phone 390; RSS fallback and the speaker popover verified.
 - Nov 27: Music pack at `/#music`: 14 artists, 113 albums with covers, one confirmation; all album playlists checked. 481 tests.
 - Nov 27: Music pack live in fb213e4. Laptop and phone import, 14 artists, 113 albums, covers and an album track list verified on multigrid.club.
+- Nov 27: Fixed clicking a song starting the album's first track; the player now uses the playlist form with the song's index. Real-browser and phone checks pass. 482 tests.

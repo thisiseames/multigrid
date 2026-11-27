@@ -6942,7 +6942,7 @@ function beginMusic(group, album, tracks, index, at = 0) {
   const chosen = Number.isInteger(index) ? Math.min(Math.max(0, index), Math.max(0, queue.length - 1)) : 0;
   const track = queue[chosen] || null;
   const url = track
-    ? `https://www.youtube.com/watch?v=${track.id}&list=${list}`
+    ? `https://www.youtube.com/watch?v=${track.id}&list=${list}&index=${chosen + 1}`
     : `https://www.youtube.com/playlist?list=${list}`;
   const source = parseSource(url);
   if (!source.ok) { toast(source.error || "That music link can't play here."); return; }

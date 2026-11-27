@@ -47,6 +47,15 @@ test('youtube: live channel id and playlists', () => {
   assert.equal(list.searchParams.get('list'), 'PLxyz');
 });
 
+test('youtube: a playlist position starts at the chosen song', () => {
+  const { source, url } = embed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLxyz&index=4');
+  assert.equal(source.youtube.index, 4);
+  assert.equal(url.pathname, '/embed/');
+  assert.equal(url.searchParams.get('list'), 'PLxyz');
+  assert.equal(url.searchParams.get('listType'), 'playlist');
+  assert.equal(url.searchParams.get('index'), '4');
+});
+
 test('playlists keep file IDs in episode order', () => {
   const files = [
     { id: 'a', name: 'Silo S3E10.mp4', size: 30 },

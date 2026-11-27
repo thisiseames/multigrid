@@ -111,7 +111,12 @@ function parseYouTube(url, host, input) {
     ok: true, input, kind: 'youtube', label: `YouTube · ${labelText}`,
     openUrl: url.href, youtube: { ...spec, start, nocookie },
   });
-  const video = (id) => (/^[\w-]{6,}$/.test(id || '') ? make({ id, list: params.get('list') }, id) : null);
+  const index = Number(params.get('index'));
+  const video = (id) => (/^[\w-]{6,}$/.test(id || '') ? make({
+    id,
+    list: params.get('list'),
+    ...(Number.isInteger(index) && index > 0 ? { index } : {}),
+  }, id) : null);
 
   if (host === 'youtu.be') {
     return video(segments[0]) || fail(input, 'This youtu.be link has no video ID.');
@@ -519,7 +524,7 @@ export function isBlockedMixedContent(source, env) {
 /** The address of the player for a source. Muted and autoplay are decided per tile. */
 export function buildEmbedUrl(source, { muted, autoplay }, env) {
   if (source.kind === 'youtube') {
-    const { id, list, channel, start, nocookie } = source.youtube;
+    const { id, list, channel, start, index, nocookie } = source.youtube;
     const base = `https://www.${nocookie ? 'youtube-nocookie' : 'youtube'}.com/embed/`;
     const params = new URLSearchParams({
       enablejsapi: '1',
@@ -535,6 +540,13 @@ export function buildEmbedUrl(source, { muted, autoplay }, env) {
       return `${base}live_stream?${params}`;
     }
     if (list) params.set('list', list);
+    // YouTube ignores the playlist position when a video path is present, even with
+    // index set; its playlist form is the one that starts where the song was picked.
+    if (list && Number.isInteger(index) && index > 0) {
+      params.set('listType', 'playlist');
+      params.set('index', String(index));
+      return `${base}?${params}`;
+    }
     return `${base}${id || 'videoseries'}?${params}`;
   }
   if (source.kind === 'twitch') {
