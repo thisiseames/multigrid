@@ -152,6 +152,10 @@ export const PRESETS = [
     build: () => ({ cols: [1], rows: [1], slots: [0, 1, 2].map(() => ({ c: 0, r: 0, cs: 1, rs: 1 })) }),
     diagram: { cols: [3, 1], rows: [2, 1, 1], slots: [{ c: 0, r: 0, cs: 2, rs: 3 }, { c: 1, r: 2, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }] } },
   { id: 'grid2', name: '2 × 2', fixed: 4, build: () => cells(2, 2) },
+  // Live Room only: exactly two vertical tiles, side by side or stacked. The normal layout
+  // picker filters them out; they exist so a two-up room keeps two slots instead of growing.
+  { id: 'liveRow', name: '1 beside 1', fixed: 2, liveOnly: true, build: () => cells(2, 1) },
+  { id: 'liveStack', name: '1 over 1', fixed: 2, liveOnly: true, build: () => cells(1, 2) },
   { id: 'grid3x2', name: '3 × 2', fixed: 6, build: () => cells(3, 2) },
   { id: 'grid2x3', name: '2 × 3', fixed: 6, build: () => cells(2, 3) },
   { id: 'grid3', name: '3 × 3', fixed: 9, build: () => cells(3, 3) },

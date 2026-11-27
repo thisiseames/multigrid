@@ -2,6 +2,10 @@
 
 **Status:** DONE (Nov 27, 2026). No saved Live room, no room picker.
 
+> Nov 27: the Live menu now opens a transient **Live Room** for TikTok lives (1, 1 beside 1,
+> 1 over 1, 2 × 2). It is not saved and not a room picker. See `notes/plans/live-room.md`; the
+> Screen + two/four lives layouts remain.
+
 ## What
 
 - A wall made only of TikTok LIVE tiles fills the stage height in normal mode, with the top bar,

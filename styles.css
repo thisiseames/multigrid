@@ -4626,6 +4626,14 @@ body.is-phone .dock-edge, body.is-phone .dock { display: none !important; }
 .room-feed-text small { font-size: 11px; color: var(--text-2); }
 .room-feed > svg { flex: none; color: var(--text-2); }
 .room-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.live-room-layouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 12px 0 4px; }
+.live-room-layout { min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-2); font: 600 11.5px/1.15 var(--font); text-align: left; cursor: pointer; }
+.live-room-layout:hover { background: var(--hover); color: var(--text); }
+.live-room-layout:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #f5f5f7; }
+.live-room-layout svg { flex: none; color: var(--text-2); }
+.live-room-layout.is-on { border-color: rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .075); color: var(--text); }
+.live-room-layout.is-on svg { color: #f5f5f7; }
+.live-room-options { grid-template-columns: repeat(2, 1fr); }
 .room-action { width: 100%; height: 36px; display: flex; align-items: center; gap: 9px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: 600 12.5px/1 var(--font); text-align: left; cursor: pointer; }
 .room-action:hover:not(:disabled), .room-action:focus-visible:not(:disabled) { background: var(--hover); }
 .room-action:focus-visible { outline: none; box-shadow: inset 0 0 0 1px #f5f5f7; }

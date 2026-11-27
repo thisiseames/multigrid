@@ -125,11 +125,12 @@ class TileView {
       this.strip = null;
       this.channelOpen = false;
       this.root.classList.remove('is-channel-open');
+      const liveRoom = Boolean(this.grid.ws?.liveRoom);
       const addButton = el('button', {
         type: 'button',
         class: 'slot-button',
-        on: { click: () => handlers.onFill(this.id) },
-      }, icon('plus'), el('span', { textContent: 'Add stream' }));
+        on: { click: () => (liveRoom ? handlers.onAddLive?.() : handlers.onFill(this.id)) },
+      }, icon('plus'), el('span', { textContent: liveRoom ? 'Add live' : 'Add stream' }));
       this.root.replaceChildren(addButton);
       this.grid.attachCorners(this);
       return;
