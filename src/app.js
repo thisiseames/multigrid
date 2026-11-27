@@ -13661,6 +13661,26 @@ function buildLiveMenu() {
   const liveCount = accounts.filter((account) => liveStatus.get(account.key)?.live).length;
   const ordered = [...accounts].sort((a, b) => Number(Boolean(liveStatus.get(b.key)?.live)) - Number(Boolean(liveStatus.get(a.key)?.live))
     || a.item.name.localeCompare(b.item.name, undefined, { sensitivity: 'base' }));
+  const removeLive = (account) => {
+    const before = listFavorites();
+    if (!removeFavorite(account.item.input)) {
+      toast(STORAGE_FULL);
+      return;
+    }
+    liveStatus.delete(account.key);
+    refreshFavorites();
+    refreshLiveStatuses();
+    buildLiveMenu();
+    toast(`Deleted ${account.item.name}.`, {
+      label: 'Undo',
+      run() {
+        if (!replaceFavorites(before)) toast(STORAGE_FULL);
+        refreshFavorites();
+        refreshLiveStatuses();
+        buildLiveMenu();
+      },
+    });
+  };
   const row = (account) => {
     const status = liveStatus.get(account.key);
     const handle = `@${account.username}`;
@@ -13685,7 +13705,8 @@ function buildLiveMenu() {
         iconButton('plus', `Open ${account.item.name} in a new tile`, () => {
           closePopovers();
           addStream(account.item.input, { mode: 'add', newLive: true });
-        })));
+        }),
+        iconButton('trash', `Delete ${account.item.name}`, () => removeLive(account))));
   };
   const input = el('input', {
     id: 'live-username', type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: false,

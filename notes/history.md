@@ -522,3 +522,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 26: Series and YouTube channel switcher live in 9abb5aa.
 - Nov 26: Fixed the Series/YouTube switcher after owner testing. Older Series posters now load lazily from TVmaze (stored posters still win); bare UC… YouTube channel favourites and uploads playlists are converted/shown; YouTube channel avatars load from the free unavatar proxy with a play-mark fallback; CHANNELS now appears on individual YouTube videos and playlists too, not only channel feeds/rooms. 473 tests.
 - Nov 26: Follow-up fixes live in 3b48741; poster placeholders pre-sized so lazy Series posters do not move the list.
+- Nov 26: Added a delete (trash) action to every saved TikTok LIVE row in the Live menu. It removes the live from Favorites and the Live/Today lists, with Undo. 473 tests.
