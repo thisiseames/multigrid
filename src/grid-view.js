@@ -4,7 +4,7 @@
 // changes, only its grid position. Moving an iframe in the page makes the browser reload
 // it, which would restart the stream.
 
-import { canResize, cinemaSpot, findDividers, fitLiveStage, fitStage, isPipPreset, isStream, moveLine, phoneTile, visualOrder } from './layout.js';
+import { canResize, cinemaSpot, findDividers, fitLiveStage, fitStage, isPipPreset, isScreenLives, isStream, moveLine, phoneTile, screenLivesColumns, visualOrder } from './layout.js';
 import { createPlayer } from './players.js';
 import { MAX_FEEDS, loadFeedIndex, nextFeed, plays } from './backups.js';
 import { bringBack, canPopOut, isPoppedOut, popOut } from './popout.js';
@@ -1075,23 +1075,37 @@ export class GridView {
       this.gridEl.style.height = '';
       return;
     }
+    const box = this.stageEl.getBoundingClientRect();
+    const screen = isScreenLives(this.ws.presetId)
+      ? screenLivesColumns(this.ws.presetId, box.width, box.height, document.body.classList.contains('is-tv') ? 0 : stripHeight())
+      : null;
+    const screenColumns = screen
+      ? `minmax(0, 1fr) ${Array.from({ length: screen.columns }, () => `${screen.liveWidth}px`).join(' ')}`
+      : '';
     // TV mode is a full wall, not a 16:9 grid with room for strips. Fill the stage;
     // the players are scaled to cover, so only the grid's 1px seams show.
     if (document.body.classList.contains('is-tv')) {
-      const box = this.stageEl.getBoundingClientRect();
       this.gridEl.style.width = `${box.width}px`;
       this.gridEl.style.height = `${box.height}px`;
       this.gridEl.style.gridTemplateRows = template(this.ws.rows);
+      if (screenColumns) this.gridEl.style.gridTemplateColumns = screenColumns;
       return;
     }
     if (this.gridEl.classList.contains('has-phone')) {
-      const box = this.stageEl.getBoundingClientRect();
       this.gridEl.style.width = `${box.width}px`;
       this.gridEl.style.height = `${box.height}px`;
       this.gridEl.style.gridTemplateRows = template(this.ws.rows);
       return;
     }
-    const box = this.stageEl.getBoundingClientRect();
+    if (screenColumns) {
+      // A normal screen left, live columns right; the live columns are 9:16 based on the
+      // stage height, and the screen takes the rest.
+      this.gridEl.style.width = `${box.width}px`;
+      this.gridEl.style.height = `${box.height}px`;
+      this.gridEl.style.gridTemplateColumns = screenColumns;
+      this.gridEl.style.gridTemplateRows = template(this.ws.rows);
+      return;
+    }
     const live = fitLiveStage(this.ws, box.width, box.height, stripHeight());
     const cinema = this.isCustom ? null : cinemaSpot(this.ws, (tile) => getCinema(tile.input));
     const size = live ?? fitStage(this.ws, box.width, box.height, stripHeight(), cinema);

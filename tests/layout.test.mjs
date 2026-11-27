@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PRESETS, MAX_STREAMS, applyPreset, emptyWorkspace, enterCustom, findDividers, fitLiveStage, fitStage, hiddenTiles,
-  isStream, makeRoom, moveLine, phoneColumn, phoneTile, presetById, removeTile, resizeTile, canResize, showHidden, streamCount, swapTiles, visualOrder,
+  isScreenLives, isStream, makeRoom, moveLine, phoneColumn, phoneTile, presetById, removeTile, resizeTile, canResize, screenLivesColumns, showHidden, streamCount, swapTiles, visualOrder,
 } from '../src/layout.js';
 
 function withStreams(n, presetId = 'equal') {
@@ -333,6 +333,30 @@ test('a wall of TikTok lives fills the stage height with 9:16 bodies', () => {
   const custom = enterCustom(withStreams(2, 'row'));
   custom.tiles.forEach((tile, index) => { tile.input = `tiktoklive:@live${index}`; });
   assert.equal(fitLiveStage(custom, 1440, 856, 26), null);
+});
+
+test('screen + lives presets put a tall screen left and live columns right', () => {
+  const two = withStreams(3, 'screen2');
+  assert.equal(two.presetId, 'screen2');
+  assert.deepEqual([two.cols.length, two.rows.length], [2, 2]);
+  const twoSlots = two.tiles.filter((tile) => tile.place).map((tile) => tile.place);
+  assert.deepEqual(twoSlots[0], { c: 0, r: 0, cs: 1, rs: 2 });
+  assert.deepEqual(twoSlots.slice(1), [{ c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }]);
+
+  const four = withStreams(5, 'screen4');
+  assert.equal(four.presetId, 'screen4');
+  assert.deepEqual([four.cols.length, four.rows.length], [3, 2]);
+  const fourSlots = four.tiles.filter((tile) => tile.place).map((tile) => tile.place);
+  assert.deepEqual(fourSlots[0], { c: 0, r: 0, cs: 1, rs: 2 });
+  assert.deepEqual(fourSlots.slice(1), [
+    { c: 1, r: 0, cs: 1, rs: 1 }, { c: 2, r: 0, cs: 1, rs: 1 },
+    { c: 1, r: 1, cs: 1, rs: 1 }, { c: 2, r: 1, cs: 1, rs: 1 },
+  ]);
+
+  assert.deepEqual(screenLivesColumns('screen2', 1440, 856, 26), { columns: 1, liveWidth: 226 });
+  assert.deepEqual(screenLivesColumns('screen4', 1440, 856, 26), { columns: 2, liveWidth: 226 });
+  assert.deepEqual(screenLivesColumns('row', 1440, 856, 26), null);
+  assert.ok(isScreenLives('screen2') && isScreenLives('screen4') && !isScreenLives('screen5'));
 });
 
 test('phone layouts keep the primary stream in a video slot, not the phone column', () => {

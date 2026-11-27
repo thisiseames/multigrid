@@ -19,11 +19,11 @@
 - `fitLiveStage` applies only when every visible stream is a TikTok LIVE, the workspace is fitted,
   and the layout is not PiP/PiP×2 or Custom.
 - The layout name stays **Horizontal row**; no new picker preset was added.
-- The 1-over-1 and 2×2 stacks (regular video on the left) were previewed with Custom layouts and
-  live accounts; they are not shipped as presets.
+- The 1-over-1 and 2×2 stacks are shipped as **Screen + two lives** and **Screen + four lives**
+  in the layout picker. The live columns size from the stage height and resize with the window.
 
 ## Verify
 
 - All-live row at laptop 1440 and phone 390; 3/4/5; top bar and mixer visible; TV mode unchanged.
 - PiP2 live insets 9:16 with a regular main; regular PiP unchanged; Swap works.
-- `node --test tests/*.test.mjs` — 483 tests.
+- `node --test tests/*.test.mjs` — 484 tests.

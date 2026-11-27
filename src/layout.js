@@ -126,6 +126,22 @@ export const PRESETS = [
     rows: [2, 1],
     slots: [{ c: 0, r: 0, cs: 1, rs: 2 }, { c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
   }) },
+  // A normal screen on the left, TikTok LIVE tiles stacked on the right. The fit below
+  // sizes the live columns from the stage height so each live stays 9:16.
+  { id: 'screen2', name: 'Screen + two lives', hint: 'One screen left, two lives stacked right', fixed: 3, build: () => ({
+    cols: units(2),
+    rows: units(2),
+    slots: [{ c: 0, r: 0, cs: 1, rs: 2 }, { c: 1, r: 0, cs: 1, rs: 1 }, { c: 1, r: 1, cs: 1, rs: 1 }],
+  }) },
+  { id: 'screen4', name: 'Screen + four lives', hint: 'One screen left, four lives in a 2 × 2 block right', fixed: 5, build: () => ({
+    cols: units(3),
+    rows: units(2),
+    slots: [
+      { c: 0, r: 0, cs: 1, rs: 2 },
+      { c: 1, r: 0, cs: 1, rs: 1 }, { c: 2, r: 0, cs: 1, rs: 1 },
+      { c: 1, r: 1, cs: 1, rs: 1 }, { c: 2, r: 1, cs: 1, rs: 1 },
+    ],
+  }) },
   // Like a TV: the main stream fills the screen and the second sits small in the bottom-right corner.
   // Both share one cell; the grid draws the second one small (see grid-view.js).
   { id: 'pip', name: 'Picture in picture', hint: 'A small screen in the corner of the big one', fixed: 2,
@@ -740,6 +756,24 @@ export function fitLiveStage(ws, width, height, stripHeight) {
     fittedHeight = bodyHeight * rowUnits + strips;
   }
   return { width: Math.round(fittedWidth), height: Math.round(fittedHeight) };
+}
+
+export const isScreenLives = (id) => id === 'screen2' || id === 'screen4';
+
+/**
+ * The live columns for Screen + two/four lives. The stack's row height sets a 9:16 live width;
+ * the regular screen takes the rest of the stage. If the live columns would leave no real screen,
+ * shrink them so the left tile keeps some room.
+ */
+export function screenLivesColumns(id, width, height, stripHeight) {
+  if (!isScreenLives(id)) return null;
+  const columns = id === 'screen4' ? 2 : 1;
+  const rows = 2;
+  const bodyHeight = Math.max(1, (height - rows * stripHeight) / rows);
+  const natural = bodyHeight * 9 / 16;
+  const room = Math.max(0, width - 160);
+  const liveWidth = Math.max(1, Math.min(natural, room / columns));
+  return { columns, liveWidth: Math.round(liveWidth) };
 }
 
 /**
