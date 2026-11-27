@@ -1,6 +1,6 @@
 # Picture in picture ×3
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (11de888).**
 
 ## Goal
 
@@ -27,7 +27,9 @@ stacked up the bottom-right corner, the third above the second.
 - [x] One/two/three live insets use the right offsets and fit.
 - [x] Full tests (508).
 - [x] Local 1440 checks with regular and live insets.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live: the picker shows ×3; three 170 px regular insets at 1440 with 14 px gaps and no overlap; all three Swap controls present; a swap changes the big screen; live inset classes and height caps checked locally.
 
 ## Gotchas
 
