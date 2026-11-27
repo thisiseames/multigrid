@@ -14392,11 +14392,13 @@ function openLiveAccount(account, another = false) {
         ? source?.kind === 'kick'
         : source?.kind === 'youtube' && Boolean(source.youtube?.channel);
     if (last && isVisible(last) && isStream(last) && rightKind) {
-      addStream(input, { mode: 'replace', id: last.id });
+      addStream(input, { mode: 'replace', id: last.id }, account.item.name, '', null,
+        account.item.input !== input ? { favorite: account.item.input } : {});
       return;
     }
   }
-  const id = addStream(input, { mode: 'add', newLive: another });
+  const id = addStream(input, { mode: 'add', newLive: another }, account.item.name, '', null,
+    account.item.input !== input ? { favorite: account.item.input } : {});
   if (id && account.platform !== 'tiktok') liveTileIds[account.platform] = id;
 }
 
@@ -14529,7 +14531,9 @@ function buildLiveMenu() {
           }
           refreshLiveStatuses();
           closePopovers();
-          const addedId = addStream(openInput, { mode: 'add' });
+          const title = existing?.name || account.name || account.handle;
+          const favorite = existing && existing.input !== openInput ? existing.input : '';
+          const addedId = addStream(openInput, { mode: 'add' }, title, '', null, favorite ? { favorite } : {});
           if (addedId && account.platform !== 'tiktok') liveTileIds[account.platform] = addedId;
         } finally {
           liveAddBusy = false;
