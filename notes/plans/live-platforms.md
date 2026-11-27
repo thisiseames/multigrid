@@ -1,6 +1,6 @@
 # Live menu: TikTok, Twitch, Kick and YouTube
 
-**Status: DONE, live Nov 27 (2cc790e).**
+**Status: DONE, live Nov 27 (626a17d).**
 
 ## Goal
 
@@ -68,7 +68,8 @@ Kick and YouTube are cached and fail quietly.
 
 Checked on the live site: the four tabs, Twitch/Kick/YouTube rows, Nightcap and Lofi live status,
 the provided `sheUMMvyqSY` video resolving to Nightcap, the `youtube.com/embed/live_stream`
-tile on `multigrid.club`, the Kick avatar/viewers, delete/Undo, and the phone Sound × at 40 px.
+tile on `multigrid.club` (tile bar stays **Nightcap**), the Kick avatar/viewers, delete/Undo,
+and the phone Sound × at 40 px.
 
 ## Gotchas
 
