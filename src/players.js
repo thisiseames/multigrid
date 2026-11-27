@@ -307,6 +307,7 @@ function youtubePlayer(source, options) {
       api.seekTo(Math.max(0, api.getCurrentTime() + seconds), true);
     },
     stripButtons: listButtons,
+    playlist: () => (api?.getPlaylist?.() ?? []),
     async start() {
       if (isUploads) {
         // The channel's videos-only list leaves Shorts out. A channel with nothing but Shorts

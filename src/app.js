@@ -6871,7 +6871,8 @@ function musicSetVolume(value) {
   const volume = Math.min(100, Math.max(0, Math.round(Number(value) || 0)));
   musicState.volume = volume;
   musicPlayer?.setVolume(volume);
-  if (volume > 0 && musicState.muted) musicState.muted = false;
+  if (volume === 0) musicState.muted = true;
+  else if (musicState.muted) musicState.muted = false;
   if (musicPlayer) musicPlayer.setMuted(musicState.muted);
   saveMusic();
   paintMusic();
@@ -6987,6 +6988,10 @@ function beginMusic(group, album, tracks, index, at = 0) {
   musicPlayer.start();
   musicPlayer.setVolume(volume);
   musicPlayer.setMuted(muted);
+  if (!queue.length) {
+    musicTracks.set(list, { loading: true });
+    hydrateMusicTracks(list, musicPlayer);
+  }
   startMusicTimer();
   saveMusic();
   paintMusic();
@@ -7050,13 +7055,20 @@ function musicControls({ compact = false } = {}) {
   play.classList.add('music-now-play');
   const next = iconButton('next', 'Next song', () => musicStep(1));
   next.classList.add('music-now-next');
-  const mute = iconButton('sound', 'Mute music', musicToggleMute);
+  const mute = iconButton('sound', 'Volume', () => {});
   mute.classList.add('music-now-mute');
+  const volumePop = el('div', { class: 'music-volume-pop', hidden: true, role: 'dialog', aria: { label: 'Music volume' } }, musicVolumeInput());
+  const volumeWrap = el('span', { class: 'music-volume-wrap' }, mute, volumePop);
+  mute.addEventListener('click', (event) => {
+    event.stopPropagation();
+    volumePop.hidden = !volumePop.hidden;
+    mute.setAttribute('aria-expanded', String(!volumePop.hidden));
+  });
   const open = compact ? null : iconButton('music', 'Open music', openMusicMenu);
   open?.classList.add('music-now-open');
   const close = compact ? null : iconButton('close', 'Close music player', closeMusic);
   close?.classList.add('music-now-close');
-  return el('span', { class: 'music-now-controls' }, prev, play, next, mute, open, close);
+  return el('span', { class: 'music-now-controls' }, prev, play, next, volumeWrap, open, close);
 }
 
 function musicNowBar() {
@@ -7069,8 +7081,7 @@ function musicNowBar() {
     el('span', { class: 'music-now-art' }),
     el('span', { class: 'music-now-text' }, title, sub),
     musicControls(),
-    el('span', { class: 'music-now-line' }, seek, time),
-    musicVolumeInput());
+    el('span', { class: 'music-now-line' }, seek, time));
 }
 
 function drawMusicDock() {
@@ -7134,8 +7145,8 @@ function paintMusic() {
   for (const node of document.querySelectorAll('.music-now-prev, .music-now-next')) node.disabled = !state;
   for (const node of document.querySelectorAll('.music-now-mute')) {
     node.replaceChildren(icon(state?.muted ? 'muted' : 'sound'));
-    node.title = state?.muted ? 'Unmute music' : 'Mute music';
-    node.setAttribute('aria-label', node.title);
+    node.title = 'Volume';
+    node.setAttribute('aria-label', 'Volume');
     node.disabled = !state;
   }
   for (const node of document.querySelectorAll('.music-now-seek')) {
@@ -7161,18 +7172,76 @@ function paintMusic() {
   $('music-dock')?.classList.toggle('has-video', Boolean(musicPlayer?.el));
 }
 
+const musicTitleAsks = new Map();
+function musicOembedTitle(id) {
+  if (musicTitleAsks.has(id)) return musicTitleAsks.get(id);
+  const ask = fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`, { signal: AbortSignal.timeout?.(6000) })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => data?.title || '')
+    .catch(() => '');
+  musicTitleAsks.set(id, ask);
+  return ask;
+}
+
 function loadMusicTracks(album, group) {
   const list = musicListOf(album);
   if (!list) { musicTracks.set('', { error: true }); buildMusicMenu(); return; }
   if (musicTrackAsks.has(list)) return;
   musicTrackAsks.add(list);
+  musicTracks.set(list, { loading: true });
+  const done = () => {
+    musicTrackAsks.delete(list);
+    if (musicMenuView.mode === 'album' && musicMenuView.album?.input === album.input) buildMusicMenu();
+  };
   loadYouTubePlaylist(list)
-    .then((data) => { musicTracks.set(list, { tracks: data.tracks, title: data.title }); })
-    .catch(() => { musicTracks.set(list, { error: true }); })
-    .finally(() => {
-      musicTrackAsks.delete(list);
-      if (musicMenuView.mode === 'album' && musicMenuView.album?.input === album.input) buildMusicMenu();
+    .then((data) => {
+      musicTracks.set(list, { tracks: data.tracks, title: data.title });
+      done();
+    })
+    .catch(() => {
+      musicTracks.set(list, { error: true });
+      done();
     });
+}
+
+/** A YouTube Music album page may not be readable; once its player plays, its own list can fill the songs. */
+function hydrateMusicTracks(list, player) {
+  if (!list || !player) return;
+  const started = Date.now();
+  const menuOnThisAlbum = () => musicMenuView.mode === 'album' && musicListOf(musicMenuView.album) === list;
+  const giveUp = () => {
+    if (musicPlayer !== player || !musicState || musicState.list !== list || musicState.tracks.length) return;
+    musicTracks.set(list, { error: true });
+    if (menuOnThisAlbum()) buildMusicMenu();
+  };
+  const timer = setInterval(async () => {
+    if (musicPlayer !== player || !musicState || musicState.list !== list) { clearInterval(timer); return; }
+    if (musicState.tracks.length) { clearInterval(timer); return; }
+    const ids = [...new Set((player.playlist?.() || []).filter(Boolean))];
+    // The iframe can take its time asking YouTube for the list; wait for it rather than
+    // showing an error over a player that is already working.
+    if (!ids.length && Date.now() - started < 20000) return;
+    clearInterval(timer);
+    if (!ids.length) { giveUp(); return; }
+    const tracks = await Promise.all(ids.map(async (id, index) => ({
+      id,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      title: (await musicOembedTitle(id)) || `Song ${index + 1}`,
+      length: '',
+      cover: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      index: index + 1,
+    })));
+    if (musicPlayer !== player || !musicState || musicState.list !== list) return;
+    const counter = Number((player.stripButtons?.[1]?.textContent || '').split('/')[0]);
+    musicState.tracks = tracks;
+    if (Number.isInteger(counter) && counter > 0) musicState.index = Math.min(counter - 1, tracks.length - 1);
+    musicState.trackTitle = tracks[musicState.index]?.title || musicState.trackTitle;
+    musicState.cover = tracks[musicState.index]?.cover || musicState.cover;
+    musicTracks.set(list, { tracks });
+    saveMusic();
+    paintMusic();
+    if (menuOnThisAlbum()) buildMusicMenu();
+  }, 600);
 }
 
 function buildMusicMenu() {
@@ -7224,7 +7293,8 @@ function buildMusicMenu() {
           icon('next', 14)))))));
   } else {
     const list = musicListOf(album);
-    const cached = musicTracks.get(list);
+    const cached = musicTracks.get(list)
+      || (musicState?.list === list && musicState.tracks.length ? { tracks: musicState.tracks } : null);
     let songs;
     if (cached?.tracks) {
       songs = el('section', { class: 'music-artist-section' },
@@ -7242,11 +7312,16 @@ function buildMusicMenu() {
         })));
     } else if (cached?.error) {
       songs = el('div', { class: 'music-empty' },
-        el('p', { textContent: "Couldn't load the song list. The album can still play in YouTube's own player." }),
-        el('button', { type: 'button', class: 'music-play-album', textContent: 'Play album', on: { click: () => beginMusic(group, album, [], 0, 0) } }));
+        el('p', { textContent: "Couldn't load the song list. Play album and the songs will fill in, or try again." }),
+        el('div', { class: 'music-empty-actions' },
+          el('button', { type: 'button', class: 'music-play-album', textContent: 'Play album', on: { click: () => beginMusic(group, album, [], 0, 0) } }),
+          el('button', {
+            type: 'button', class: 'music-retry', textContent: 'Try again',
+            on: { click() { musicTracks.delete(list); buildMusicMenu(); } },
+          })));
     } else {
       songs = el('p', { class: 'music-empty', textContent: 'Loading songs…' });
-      if (list && !musicTrackAsks.has(list)) loadMusicTracks(album, group);
+      if (list && !musicTrackAsks.has(list) && !cached?.loading) loadMusicTracks(album, group);
     }
     body = el('div', {},
       el('div', { class: 'music-artist-hero' },
@@ -7286,6 +7361,12 @@ function restoreMusic() {
   syncMusicButton();
   paintMusic();
 }
+
+document.addEventListener('pointerdown', (event) => {
+  for (const pop of document.querySelectorAll('.music-volume-pop:not([hidden])')) {
+    if (!pop.closest('.music-volume-wrap')?.contains(event.target)) pop.hidden = true;
+  }
+});
 
 window.addEventListener('pagehide', saveMusic);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveMusic(); });

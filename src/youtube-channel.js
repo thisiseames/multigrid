@@ -283,6 +283,126 @@ export function readYouTubePlaylist(html) {
   return { title, tracks };
 }
 
+/* YouTube Music puts its page data in escaped JSON strings rather than the plain
+   ytInitialData the main site uses. These decode one JS string literal. */
+function unescapeJsString(raw) {
+  return String(raw || '').replace(/\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|[\s\S])/g, (whole, escape) => {
+    if (escape[0] === 'x' || escape[0] === 'X') return String.fromCharCode(parseInt(escape.slice(1), 16));
+    if (escape[0] === 'u' || escape[0] === 'U') return String.fromCharCode(parseInt(escape.slice(1), 16));
+    return ({ n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v', 0: '\0' })[escape] ?? escape;
+  });
+}
+
+const decodeXml = (value) => String(value ?? '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+  .replace(/&(amp|quot|apos|lt|gt);/gi, (_, name) => ({ amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' })[name.toLowerCase()]);
+
+/** A YouTube Music album page's tracks, from its escaped page data. */
+export function readYouTubeMusicPlaylist(html) {
+  const text = String(html || '');
+  const pushes = /initialData\.push\(\{\s*path:\s*'([^']*)'[\s\S]*?data:\s*'((?:[^'\\]|\\.)*)'\s*\}\)/g;
+  for (const match of text.matchAll(pushes)) {
+    let data;
+    try { data = JSON.parse(unescapeJsString(match[2])); } catch { continue; }
+    const shelves = [];
+    walk(data, (node) => {
+      const shelf = node?.musicShelfRenderer;
+      if (shelf?.contents?.some((item) => item?.musicResponsiveListItemRenderer)) shelves.push(shelf);
+    });
+    const shelf = shelves.sort((a, b) => (b.contents?.length || 0) - (a.contents?.length || 0))[0];
+    if (!shelf) continue;
+    const tracks = [];
+    const seen = new Set();
+    for (const node of shelf.contents || []) {
+      const item = node?.musicResponsiveListItemRenderer;
+      if (!item) continue;
+      const id = clean(item.playlistItemData?.videoId)
+        || clean(item.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId);
+      if (!/^[\w-]{6,}$/.test(id) || seen.has(id)) continue;
+      seen.add(id);
+      const title = textOf(item.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text) || id;
+      tracks.push({
+        id,
+        url: `https://www.youtube.com/watch?v=${id}`,
+        title,
+        length: textOf(item.fixedColumns?.[0]?.musicResponsiveListItemFixedColumnRenderer?.text),
+        cover: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        index: Number(textOf(item.index)) || tracks.length + 1,
+      });
+    }
+    if (!tracks.length) continue;
+    tracks.sort((a, b) => a.index - b.index);
+    tracks.forEach((track, index) => { track.index = index + 1; });
+    const info = data?.microformat?.microformatDataRenderer;
+    return {
+      title: clean(info?.title),
+      poster: largest(info?.thumbnail?.thumbnails),
+      tracks,
+    };
+  }
+  return null;
+}
+
+/** A playlist's public RSS feed: its newest 15 videos, in playlist order. */
+export function readYouTubeFeed(xml) {
+  const text = String(xml || '');
+  if (!/<feed\b/i.test(text)) return null;
+  const feedTitle = clean(decodeXml(text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''));
+  const tracks = [];
+  const seen = new Set();
+  for (const found of text.matchAll(/<entry\b[\s\S]*?<\/entry>/gi)) {
+    const entry = found[0];
+    const id = clean(entry.match(/<yt:videoId>\s*([\w-]{6,})\s*<\/yt:videoId>/i)?.[1]);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const title = clean(decodeXml(entry.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')) || id;
+    const cover = decodeXml(entry.match(/<media:thumbnail\b[^>]*\burl="([^"]*)"/i)?.[1] || '');
+    tracks.push({
+      id,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      title,
+      length: '',
+      cover,
+      index: tracks.length + 1,
+    });
+  }
+  return tracks.length ? { title: feedTitle, tracks } : null;
+}
+
+const playlistSignal = (signal, milliseconds) => {
+  const timeout = AbortSignal.timeout?.(milliseconds);
+  return signal && timeout && AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal || timeout;
+};
+
+async function readPlaylistPage(list, signal) {
+  const page = /^OLAK/i.test(list)
+    ? `https://music.youtube.com/playlist?list=${list}`
+    : `https://www.youtube.com/playlist?list=${list}`;
+  const response = await fetch(`${READER}${page}`, {
+    headers: { 'X-Return-Format': 'html', Accept: 'text/html' },
+    signal: playlistSignal(signal, 25000),
+    cache: 'no-cache',
+  });
+  if (!response.ok) throw new Error(`YouTube reader answered ${response.status}.`);
+  const html = await response.text();
+  const data = readYouTubeMusicPlaylist(html) || readYouTubePlaylist(html);
+  if (!data) throw new Error("YouTube didn't return that playlist.");
+  return data;
+}
+
+async function readPlaylistFeed(list, signal) {
+  const response = await fetch(`${READER}https://www.youtube.com/feeds/videos.xml?playlist_id=${list}`, {
+    headers: { 'X-Return-Format': 'html', Accept: 'text/xml, application/xml, text/plain' },
+    signal: playlistSignal(signal, 15000),
+    cache: 'no-cache',
+  });
+  if (!response.ok) throw new Error(`YouTube reader answered ${response.status}.`);
+  const data = readYouTubeFeed(await response.text());
+  if (!data) throw new Error("YouTube didn't return that playlist.");
+  return data;
+}
+
 /** A playlist's track list, cached ten minutes. The caller supplies a list ID or URL. */
 export function loadYouTubePlaylist(raw, { force = false, signal } = {}) {
   const text = String(raw || '').trim();
@@ -292,27 +412,19 @@ export function loadYouTubePlaylist(raw, { force = false, signal } = {}) {
   const known = cache.get(key);
   if (!force && known && Date.now() - known.at < TTL) return Promise.resolve(known.data);
   if (inflight.has(key)) return inflight.get(key);
-  const timeout = AbortSignal.timeout?.(45000);
-  const both = signal && timeout && AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal || timeout;
-  const ask = fetch(`${READER}https://www.youtube.com/playlist?list=${list}`, {
-    headers: { 'X-Return-Format': 'html', Accept: 'text/html' },
-    signal: both,
-    cache: 'no-cache',
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error(`YouTube reader answered ${response.status}.`);
-      return response.text();
-    })
-    .then((html) => {
-      const data = readYouTubePlaylist(html);
-      if (!data) throw new Error("YouTube didn't return that playlist.");
-      return { id: list, ...data };
-    })
-    .then((data) => {
-      cache.set(key, { at: Date.now(), data });
-      return data;
-    })
-    .finally(() => inflight.delete(key));
+  const ask = (async () => {
+    let data;
+    try {
+      data = await readPlaylistPage(list, signal);
+    } catch (error) {
+      // Big playlist pages are sometimes the thing YouTube's reader trips on. The small
+      // RSS feed still gives the songs (the newest 15), so the album is never a dead end.
+      try { data = await readPlaylistFeed(list, signal); } catch { throw error; }
+    }
+    const answer = { id: list, ...data };
+    cache.set(key, { at: Date.now(), data: answer });
+    return answer;
+  })().finally(() => inflight.delete(key));
   inflight.set(key, ask);
   return ask;
 }

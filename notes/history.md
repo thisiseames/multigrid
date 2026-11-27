@@ -525,3 +525,4 @@ Outside dependencies that can break without notice: r.jina.ai (free, unkeyed ~20
 - Nov 26: Added a delete (trash) action to every saved TikTok LIVE row in the Live menu. It removes the live from Favorites and the Live/Today lists, with Undo. 473 tests.
 - Nov 27: Added the Music player: top-bar Music (MULTIGRID drop on phone) with Artists → Albums → Songs from the MUSIC folder, album track lists read from YouTube through r.jina.ai, a persistent dock with play/pause, previous/next, seek, mute/volume, open/close, podcast hand-off and a paused restore on reload. The phone Sound sheet gets a Music card. 477 tests.
 - Nov 27: Music player live in 39e3db1.
+- Nov 27: Music fixes: album songs now come from the smaller YouTube Music playlist page, with the playlist RSS feed as a fallback and Play album as the last resort; the player's volume is a small popover on the speaker icon instead of a full-width bar. 480 tests.

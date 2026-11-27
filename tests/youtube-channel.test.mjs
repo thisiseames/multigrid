@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadYouTubeChannel, readYouTubeChannel, readYouTubePlaylist, readYouTubePlaylists, readYouTubeShorts, readYouTubeVideos } from '../src/youtube-channel.js';
+import { loadYouTubeChannel, loadYouTubePlaylist, readYouTubeChannel, readYouTubeFeed, readYouTubeMusicPlaylist, readYouTubePlaylist, readYouTubePlaylists, readYouTubeShorts, readYouTubeVideos } from '../src/youtube-channel.js';
 
 const CHANNEL = `UC${'a'.repeat(22)}`;
 const page = (data) => `<!doctype html><html><body><script>var ytInitialData = ${JSON.stringify(data)};</script></body></html>`;
@@ -216,4 +216,89 @@ test('a current playlist page (lockup rows) becomes the same song list', () => {
     ['ddddddddddd', 'Another song', '2:10'],
   ]);
   assert.deepEqual(data.tracks.map((track) => track.cover), ['https://example.test/ccccccccccc.jpg', 'https://example.test/ddddddddddd.jpg']);
+});
+
+
+const musicRow = (id, title, length, index) => ({
+  musicResponsiveListItemRenderer: {
+    index: { runs: [{ text: String(index) }] },
+    playlistItemData: { videoId: id },
+    flexColumns: [
+      { musicResponsiveListItemFlexColumnRenderer: { text: { runs: [{ text: title }] } } },
+      { musicResponsiveListItemFlexColumnRenderer: { text: { runs: [{ text: 'Test Artist' }] } } },
+    ],
+    fixedColumns: [{ musicResponsiveListItemFixedColumnRenderer: { text: { runs: [{ text: length }] } } }],
+  },
+});
+
+test('a YouTube Music album page becomes a song list in order', () => {
+  const album = {
+    microformat: { microformatDataRenderer: {
+      title: 'Test Album',
+      thumbnail: { thumbnails: [{ url: 'https://example.test/album.jpg', width: 544, height: 544 }] },
+    } },
+    contents: { twoColumnBrowseResultsRenderer: { secondaryContents: { sectionListRenderer: { contents: [
+      { musicShelfRenderer: { contents: [
+        musicRow('aaaaaaaaaaa', 'First song', '6:07', 1),
+        musicRow('bbbbbbbbbbb', 'Second song', '4:28', 2),
+      ] } },
+    ] } } } },
+  };
+  const literal = JSON.stringify(album).replace(/'/g, "\\'");
+  const html = `<script>const initialData = [];initialData.push({path: '\\/browse', params: JSON.parse('{}'), data: '${literal}'});</script>`;
+  const data = readYouTubeMusicPlaylist(html);
+  assert.equal(data.title, 'Test Album');
+  assert.equal(data.poster, 'https://example.test/album.jpg');
+  assert.deepEqual(data.tracks.map((track) => [track.id, track.title, track.length, track.index]), [
+    ['aaaaaaaaaaa', 'First song', '6:07', 1],
+    ['bbbbbbbbbbb', 'Second song', '4:28', 2],
+  ]);
+  assert.equal(readYouTubeMusicPlaylist('<html>no data</html>'), null);
+});
+
+const FEED = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <title>Test Album</title>
+ <entry>
+  <id>yt:video:aaaaaaaaaaa</id>
+  <yt:videoId>aaaaaaaaaaa</yt:videoId>
+  <title>First &amp; Song</title>
+  <media:thumbnail url="https://example.test/1.jpg" width="480" height="360"/>
+ </entry>
+ <entry>
+  <id>yt:video:bbbbbbbbbbb</id>
+  <yt:videoId>bbbbbbbbbbb</yt:videoId>
+  <title>Second song</title>
+  <media:thumbnail url="https://example.test/2.jpg" width="480" height="360"/>
+ </entry>
+</feed>`;
+
+test('a playlist RSS feed becomes a song list with its pictures', () => {
+  const data = readYouTubeFeed(FEED);
+  assert.equal(data.title, 'Test Album');
+  assert.deepEqual(data.tracks.map((track) => [track.id, track.title, track.cover]), [
+    ['aaaaaaaaaaa', 'First & Song', 'https://example.test/1.jpg'],
+    ['bbbbbbbbbbb', 'Second song', 'https://example.test/2.jpg'],
+  ]);
+  assert.equal(readYouTubeFeed('<html>no data</html>'), null);
+});
+
+test('a playlist page failure falls back to the RSS feed', async () => {
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+    if (String(url).includes('/feeds/videos.xml')) return new Response(FEED, { status: 200 });
+    return new Response('nope', { status: 500 });
+  };
+  try {
+    const data = await loadYouTubePlaylist('OLAK5uy_feedfallbacktest', { force: true });
+    assert.equal(data.title, 'Test Album');
+    assert.deepEqual(data.tracks.map((track) => track.id), ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
+    assert.equal(calls.length, 2);
+    assert.match(calls[0], /music\.youtube\.com\/playlist/);
+    assert.match(calls[1], /feeds\/videos\.xml/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

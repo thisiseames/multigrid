@@ -93,3 +93,4 @@ other artist/album favourites added to the MUSIC folder:
 - `~/.local/node22/bin/node --test tests/*.test.mjs`.
 - Nov 27: Built, tested at laptop 1440 and phone 390, Sound card, podcast hand-off and paused reload; 477 tests.
 - Nov 27: Live at multigrid.club in 39e3db1. Laptop and phone menus, artist/album/song, dock, Sound card and paused restore verified.
+- Nov 27: Follow-up from owner testing. Album lists now read the YouTube Music page (smaller and complete), fall back to the playlist RSS feed (up to 15 songs), then to Play album; the player's volume is a popover on the speaker icon. 480 tests.
