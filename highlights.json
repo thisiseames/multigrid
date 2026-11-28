@@ -1,5 +1,5 @@
 {
- "updated": 1795844924569,
+ "updated": 1795846468224,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -489,7 +489,13 @@
    "title": "Spurs 99–96 Lakers",
    "start": 1795833000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "L_lhywuFSXs",
+     "title": "LAKERS at SPURS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401909334": {
    "league": "NBA",
@@ -523,6 +529,11 @@
    "start": 1795833000000,
    "sources": "feeds",
    "videos": [
+    {
+     "id": "xstiIpuJ4Ks",
+     "title": "WARRIORS at TRAIL BLAZERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    },
     {
      "id": "mJxRRUCGtJc",
      "title": "Game Highlights: Portland Trail Blazers 116, Golden State Warriors 94 | Nov. 27, 2026",
@@ -876,82 +887,40 @@
  "club": {
   "360": [
    {
-    "id": "D24trdSnkkI",
-    "title": "Mauricio Pochettino hits back at criticism of his demeanour & reveals Bruno Fernandes illness",
-    "published": 1795803428000,
-    "source": "Sky Sports News"
+    "id": "8gSv1DBkzAc",
+    "title": "Academy Graduate Shares His Emotional Story | Together Against Suicide",
+    "published": 1795780904000,
+    "source": "Man Utd"
    },
    {
-    "id": "fnbWpLsOhGY",
-    "title": "KG & EX PRAY FOR CITY WIN & COOK CHELSEA FANS! | Best Of Enemies!",
-    "published": 1795803303000,
-    "source": "DR Sports"
+    "id": "qTzWbe9ALZI",
+    "title": "\"Never A Red Card!\" | Nani Exclusive | Inside Carrington: S2 Ep 12",
+    "published": 1795719606000,
+    "source": "Man Utd"
    },
    {
-    "id": "9CQd_CbjAdE",
-    "title": "Manchester United activate Bruno Fernandes contract extension clause",
-    "published": 1795789849000,
-    "source": "Sky Sports News"
+    "id": "C02Vp7ZJb4w",
+    "title": "Sporting 2-2 Man Utd | Highlights | UEFA Champions League",
+    "published": 1795716002000,
+    "source": "Man Utd"
    },
    {
-    "id": "WxrMbJ9d0yk",
-    "title": "'The Easiest Prediction This Weekend!' Can Liverpool SMOKE Everton!",
-    "published": 1795728614000,
-    "source": "DR Sports"
+    "id": "cICYhxnmWHA",
+    "title": "Sporting U19s 2-2 Man Utd U19s | Highlights | UEFA Youth League",
+    "published": 1795688971000,
+    "source": "Man Utd"
    },
    {
-    "id": "eMg0ErSypfY",
-    "title": "'We Can Win This One!' Flex PRAYS For Man United Win!",
-    "published": 1795723202000,
-    "source": "DR Sports"
+    "id": "niK6ZqdZpx0",
+    "title": "Mauricio Pochettino Post-Sporting | Press Conference",
+    "published": 1795650914000,
+    "source": "Man Utd"
    },
    {
-    "id": "zhH68Wz781Y",
-    "title": "'CITY ARE CHEATS! I'm Backing Arsenal!' Rivals DISCUSS Arsenal v Man City",
-    "published": 1795713606000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "ozXSMZdbGgw",
-    "title": "\"It's not been good enough\" - Reaction after Mauricio Pochettino denied first win at Man Utd",
-    "published": 1795690830000,
-    "source": "Sky Sports News"
-   },
-   {
-    "id": "aAC5KPrmWDE",
-    "title": "Man Utd’s defensive crisis: what is going wrong? | Soccer Special",
-    "published": 1795638669000,
-    "source": "Sky Sports News"
-   },
-   {
-    "id": "kTOSsJebpaI",
-    "title": "\"Every penny needs to go on helping Poch rebuild the team\" Christian Purslow on Man Utd rebuild",
-    "published": 1795618478000,
-    "source": "Sky Sports News"
-   },
-   {
-    "id": "XU6dSJHqHlg",
-    "title": "'WE NEED BETTER FROM GYOKERES!' Arsenal 1-1 BVB REACTION",
-    "published": 1795562503000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "D_tlhlwHxFI",
-    "title": "Pochettino reacts as Leny Yoro’s red card is overturned by FA | Full Man Utd press conference",
-    "published": 1795561930000,
-    "source": "Sky Sports News"
-   },
-   {
-    "id": "gFjwCLOoat8",
-    "title": "WHO RULES THE HEAVYWEIGHT DIVISION?! Fury, AJ, Wilder & Kabayel DEBATE!",
-    "published": 1795543214000,
-    "source": "DR Sports"
-   },
-   {
-    "id": "kLspAajSQ9Q",
-    "title": "QUICK FIRE FOOTBALL! Biggest HERO, Biggest FRAUD & Most EMBARRASSING Club?!",
-    "published": 1795520930000,
-    "source": "DR Sports"
+    "id": "O-ZDgtGic50",
+    "title": "Pochettino, Fernandes & Zirkzee Post-Sporting",
+    "published": 1795647880000,
+    "source": "Man Utd"
    }
   ]
  }
