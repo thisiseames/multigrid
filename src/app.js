@@ -9436,7 +9436,8 @@ function youtubeChannelOverlay(tile, source, name, player) {
       meta: 'YouTube channel',
       mark: 'play',
       logo,
-    }));
+    }))
+    .sort(byName);
   return {
     kind: 'youtube',
     tab: 'CHANNELS',
