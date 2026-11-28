@@ -1,5 +1,5 @@
 {
- "updated": 1795865165420,
+ "updated": 1795874531689,
  "team": "Man Utd",
  "fx": 0.83504,
  "players": [
@@ -216,9 +216,9 @@
    "contract": "",
    "value": "",
    "photo": "https://resources.premierleague.com/premierleague/photos/players/110x140/p141746.png",
-   "status": "d",
-   "news": "Illness - 75% chance of playing",
-   "chance": 75,
+   "status": "a",
+   "news": "",
+   "chance": 100,
    "minutes": 900,
    "goals": 4,
    "assists": 2,
