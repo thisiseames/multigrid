@@ -14,8 +14,10 @@ export const YOUTUBE_CATEGORIES = [
   { id: 'shows', name: 'Shows', api: '43' },
 ];
 
-/** YouTube Shorts now run to three minutes, so keep anything comfortably longer. */
+/** Long-form first: YouTube Shorts now run to three minutes, so keep anything comfortably longer. */
 export const MIN_SECONDS = 181;
+/** When a category is thin, fill it with the longest one-to-three-minute clips, not one-minute Shorts. */
+export const MIN_FALLBACK_SECONDS = 61;
 
 /** "PT1H2M3S" → 3723. "P0D" and anything malformed → 0. */
 export function durationSeconds(value) {
@@ -41,13 +43,13 @@ const thumb = (snippet) => {
   return /^https:\/\//.test(url) ? url : '';
 };
 
-/** One API video as a home card, or null for a Short, live/upcoming item, or bad row. */
-export function videoRow(item) {
+/** One API video as a home card, or null below the chosen minimum, live/upcoming, or bad row. */
+export function videoRow(item, { minSeconds = MIN_SECONDS } = {}) {
   const id = String(item?.id || '');
   const title = decode(item?.snippet?.title);
   if (!/^[\w-]{11}$/.test(id) || !title) return null;
   const duration = durationSeconds(item?.contentDetails?.duration);
-  if (duration < MIN_SECONDS) return null;
+  if (duration < minSeconds) return null;
   const live = item?.snippet?.liveBroadcastContent;
   if (live === 'live' || live === 'upcoming') return null;
   return {
@@ -61,16 +63,26 @@ export function videoRow(item) {
   };
 }
 
-/** The best rows from one mostPopular answer, Shorts and live items removed. */
-export function categoryRows(items, limit = 12) {
-  const seen = new Set();
+const collect = (items, minSeconds, seen) => {
   const rows = [];
   for (const item of Array.isArray(items) ? items : []) {
-    const row = videoRow(item);
+    const row = videoRow(item, { minSeconds });
     if (!row || seen.has(row.id)) continue;
     seen.add(row.id);
     rows.push(row);
-    if (rows.length >= limit) break;
   }
   return rows;
+};
+
+/**
+ * Long videos first. If a category has fewer than `limit`, fill the rest with its longest
+ * one-to-three-minute clips, so Sports and Entertainment do not collapse to a single card.
+ */
+export function categoryRows(items, limit = 12) {
+  const seen = new Set();
+  const long = collect(items, MIN_SECONDS, seen).slice(0, limit);
+  if (long.length >= limit) return long;
+  const short = collect(items, MIN_FALLBACK_SECONDS, seen)
+    .sort((a, b) => b.duration - a.duration);
+  return [...long, ...short].slice(0, limit);
 }

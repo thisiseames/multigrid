@@ -1,7 +1,8 @@
 // Makes youtube-trending.json for the Home row. YouTube's official Data API supplies the US
 // mostPopular chart for each chosen category. The API key lives in the GitHub secret
-// YOUTUBE_API_KEY. Videos shorter than three minutes (Shorts) and live/upcoming items are left
-// out. A category that fails keeps its previous rows; if everything fails the old file stays.
+// YOUTUBE_API_KEY. Long videos come first; thin categories are filled with their longest
+// one-to-three-minute clips, and live/upcoming items are always left out. A category that
+// fails keeps its previous rows; if everything fails the old file stays.
 // Run by .github/workflows/youtube-trending.yml.
 //   YOUTUBE_API_KEY=... node tools/build-youtube-trending.mjs
 
@@ -38,7 +39,7 @@ async function chart(category) {
   }
   const answer = await response.json();
   const rows = categoryRows(answer.items?.length ? answer.items : []);
-  if (!rows.length) throw new Error('no videos longer than three minutes');
+  if (!rows.length) throw new Error('no usable videos');
   return rows;
 }
 

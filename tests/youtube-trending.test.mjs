@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MIN_SECONDS, YOUTUBE_CATEGORIES, categoryRows, durationSeconds, videoRow } from '../tools/youtube-trending-rows.mjs';
+import { MIN_FALLBACK_SECONDS, MIN_SECONDS, YOUTUBE_CATEGORIES, categoryRows, durationSeconds, videoRow } from '../tools/youtube-trending-rows.mjs';
 
 const video = (id, overrides = {}) => ({
   id,
@@ -37,6 +37,21 @@ test('a valid video becomes a tidy card and short/live/bad rows are dropped', ()
   assert.equal(videoRow(video('abcdefghijk', { snippet: { liveBroadcastContent: 'live' } })), null);
   assert.equal(videoRow(video('short', {})), null);
   assert.equal(videoRow({ ...video('abcdefghijk'), snippet: { ...video('abcdefghijk').snippet, title: '' } }), null);
+});
+
+test('a thin category fills with its longest one-to-three-minute clips', () => {
+  const row = (id, duration) => video(id, { contentDetails: { duration } });
+  const items = [
+    row('abcdefghij1', 'PT10M'),
+    row('abcdefghij2', 'PT1M30S'),
+    row('abcdefghij3', 'PT2M20S'),
+    row('abcdefghij4', 'PT1M10S'),
+    row('abcdefghij5', 'PT45S'),
+    video('abcdefghij6', { contentDetails: { duration: 'PT8M' }, snippet: { liveBroadcastContent: 'live' } }),
+  ];
+  const rows = categoryRows(items, 6);
+  assert.deepEqual(rows.map((item) => item.id), ['abcdefghij1', 'abcdefghij3', 'abcdefghij2', 'abcdefghij4']);
+  assert.equal(videoRow(row('abcdefghij7', 'PT2M'), { minSeconds: MIN_FALLBACK_SECONDS })?.duration, 120);
 });
 
 test('categoryRows removes duplicates and keeps the best 12', () => {

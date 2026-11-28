@@ -1,7 +1,8 @@
 # Refreshes youtube-trending.json every three hours: the US mostPopular chart for each approved
-# YouTube category, through the official Data API. Shorts (under three minutes) and live/upcoming
-# items are left out. A category that fails keeps its previous rows; if everything fails the old
-# file stays, and the Home row hides when there is no file.
+# YouTube category, through the official Data API. Long videos come first; thin categories are
+# filled with their longest one-to-three-minute clips, and live/upcoming items are left out.
+# A category that fails keeps its previous rows; if everything fails the old file stays, and the
+# Home row hides when there is no file.
 name: youtube-trending
 
 on:
