@@ -1,5 +1,5 @@
 {
- "updated": 1795834011549,
+ "updated": 1795835561997,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -368,36 +368,39 @@
     }
    ]
   },
-  "401910044": {
+  "401909326": {
    "league": "NBA",
-   "title": "Lakers 109–94 Jazz",
-   "start": 1795489200000,
+   "title": "Knicks 105–108 Heat",
+   "start": 1795824000000,
    "sources": "feeds",
    "videos": [
     {
-     "id": "Iqsnel9aWHg",
-     "title": "JAZZ at LAKERS | FULL GAME HIGHLIGHTS | November 23, 2026",
+     "id": "kon85l31x1M",
+     "title": "HEAT at KNICKS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
      "rank": 3.5
     }
    ]
   },
-  "401910045": {
+  "401909327": {
    "league": "NBA",
-   "title": "Kings 107–123 Spurs",
-   "start": 1795489200000,
+   "title": "Pistons 113–98 Bucks",
+   "start": 1795825800000,
    "sources": "feeds",
-   "videos": [
-    {
-     "id": "UXfAWMZHGtc",
-     "title": "SPURS at KINGS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "mOCNLq2mKgI",
-     "title": "HIGHLIGHTS: SPURS REMAIN UNDEFEATED ON THE ROAD WITH THIRD STRAIGHT WIN VS. KINGS",
-     "rank": 1.5
-    }
-   ]
+   "videos": []
+  },
+  "401909328": {
+   "league": "NBA",
+   "title": "Pacers 87–111 76ers",
+   "start": 1795825800000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401909329": {
+   "league": "NBA",
+   "title": "Raptors 124–100 Nets",
+   "start": 1795825800000,
+   "sources": "feeds",
+   "videos": []
   },
   "401915291": {
    "league": "Champions League",
