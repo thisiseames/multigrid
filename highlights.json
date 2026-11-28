@@ -1,5 +1,5 @@
 {
- "updated": 1795826248563,
+ "updated": 1795827797728,
  "games": {
   "401873078": {
    "league": "NFL",
@@ -373,42 +373,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910041": {
-   "league": "NBA",
-   "title": "Bulls 122–108 Cavaliers",
-   "start": 1795482000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "fPuiys2IFmk",
-     "title": "CAVALIERS at BULLS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    }
-   ]
-  },
-  "401910042": {
-   "league": "NBA",
-   "title": "Pelicans 119–123 Suns",
-   "start": 1795482000000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "z4VWpaPbTGM",
-     "title": "Phoenix Suns beat New Orleans Pelicans 123-119 | Game Highlights 11-23-26",
-     "rank": 2
-    },
-    {
-     "id": "mhYQxD1Qp8k",
-     "title": "Jordan Poole First Half Highlights vs. Phoenix Suns 11/23/2026",
-     "rank": 1
-    },
-    {
-     "id": "2JSpu2YsJRs",
-     "title": "Jordan Poole Highlights vs. Phoenix Suns 11/23/2026",
-     "rank": 1
     }
    ]
   },
