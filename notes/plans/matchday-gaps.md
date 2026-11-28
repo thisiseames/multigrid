@@ -85,8 +85,8 @@ on a pitch, attacking share and heatmap from FotMob.
 - [x] SofaScore-blocked test: xG, ratings, momentum and referee come from FotMob, labelled FotMob.
 - [x] 526 tests pass.
 - [x] Local browser at 1440 and 390: laptop Game mode column, phone Matchday sheet, line-ups board.
-- [ ] Deploy to main.
-- [ ] Check live at multigrid.club at both widths.
+- [x] Deploy to main (`963655b`).
+- [x] Check live at multigrid.club at both widths; 528 tests.
 
 ## Gotchas found while building
 - SofaScore search returns `{ type: 'event', entity: { id, homeTeam, awayTeam, startTimestamp } }`.
@@ -104,5 +104,5 @@ on a pitch, attacking share and heatmap from FotMob.
   `content.lineup[].performance.rating` and `content.momentum.main.data` fill the same gaps when it is down.
 
 ## Status
-Built locally, all tests pass, and checked at 1440 and 390 against the live Man Utd v Brentford
-match on Nov 28. The first deploy is live; the FotMob fallback is being redeployed.
+DONE, live Nov 28. SofaScore is tried first; when it returned 403, the live check showed the same
+gaps labelled FotMob, with the shot map and zones. 528 tests.
