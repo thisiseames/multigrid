@@ -1,5 +1,5 @@
 {
- "updated": 1795835561997,
+ "updated": 1795837124073,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -386,19 +386,54 @@
    "title": "Pistons 113–98 Bucks",
    "start": 1795825800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "ps8mYgSrs6A",
+     "title": "BUCKS at PISTONS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "AQXSFztTyDg",
+     "title": "Highlights: Bucks 98 - Pistons 113 | 11.27.26",
+     "rank": 1.5
+    }
+   ]
   },
   "401909328": {
    "league": "NBA",
    "title": "Pacers 87–111 76ers",
    "start": 1795825800000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "oGJfE7fET-A",
+     "title": "76ERS at PACERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
   },
   "401909329": {
    "league": "NBA",
    "title": "Raptors 124–100 Nets",
    "start": 1795825800000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "y1Y-9H-tVEk",
+     "title": "NETS at RAPTORS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    },
+    {
+     "id": "HvGkrts-x8o",
+     "title": "Brooklyn Nets vs. Toronto Raptors | NBA Highlights",
+     "rank": 3
+    }
+   ]
+  },
+  "401909330": {
+   "league": "NBA",
+   "title": "Celtics 86–87 Hawks",
+   "start": 1795827600000,
    "sources": "feeds",
    "videos": []
   },
