@@ -8126,12 +8126,24 @@ function favoriteArt(item, source, highRes = false) {
   }
   quiet();
   if (source.kind === 'twitch' && source.twitch?.type === 'channel') {
-    // Live: Twitch's widescreen picture of the stream. Offline: the icon stays.
+    // Offline: the channel's own avatar. Live: Twitch's widescreen stream picture replaces
+    // it. Whichever finishes last only wins if it has a better picture to show.
+    let livePreview = '';
+    const showPicture = (url) => {
+      const img = el('img', { src: url, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
+      img.addEventListener('error', () => { if (img.isConnected) quiet(); }, { once: true });
+      art.className = 'fart is-picture';
+      art.replaceChildren(img);
+    };
     twitchPreview(source.twitch.id).then((url) => {
       if (!url) return;
-      art.className = 'fart is-picture';
-      artPicture(art, url, quiet);
-    });
+      livePreview = url;
+      showPicture(url);
+    }).catch(() => {});
+    twitchStatus(source.twitch.id).then((status) => {
+      if (livePreview || !status?.logo) return;
+      showPicture(status.logo);
+    }).catch(() => {});
     return art;
   }
   const pictureShow = showPictureFor(item.name);
