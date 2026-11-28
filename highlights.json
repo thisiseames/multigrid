@@ -1,5 +1,5 @@
 {
- "updated": 1795823137840,
+ "updated": 1795824692099,
  "games": {
   "401873078": {
    "league": "NFL",
@@ -116,6 +116,11 @@
      "id": "Pd07_PcdukQ",
      "title": "Nottingham Forest vs. Chelsea FC | PREMIER LEAGUE HIGHLIGHTS | Week 12 | Fubo Canada",
      "rank": 3.5
+    },
+    {
+     "id": "500ohy7vj38",
+     "title": "Nottingham Forest 3-2 Chelsea | Premier League | Highlights 🎬",
+     "rank": 2.5
     }
    ]
   },
@@ -368,52 +373,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910036": {
-   "league": "NBA",
-   "title": "Hornets 111–117 Grizzlies",
-   "start": 1795478400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "gVFIS7Qn7Ig",
-     "title": "GRIZZLIES at HORNETS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "zWsIz8il8KI",
-     "title": "Game Highlights | Hornets vs Grizzlies | 11/23/2026",
-     "rank": 2.5
-    },
-    {
-     "id": "cl2m95lzYyY",
-     "title": "Ty Jerome points Highlights vs Charlotte Hornets",
-     "rank": 1.5
-    }
-   ]
-  },
-  "401910037": {
-   "league": "NBA",
-   "title": "76ers 111–128 Trail Blazers",
-   "start": 1795478400000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "pBPOSWsVZU0",
-     "title": "TRAIL BLAZERS at 76ERS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "nt6yDMcEcSI",
-     "title": "Game Highlights: Portland Trail Blazers 128, Philadelphia 76ers 111 | Nov. 23, 2026",
-     "rank": 2
-    },
-    {
-     "id": "fBR_ldPZIfk",
-     "title": "Deni Avdija Highlights (31 Points, 7 Assists) | Trail Blazers 128,  76ers 111 | Nov. 23, 2026",
-     "rank": 0.5
     }
    ]
   },
@@ -901,6 +860,12 @@
  },
  "club": {
   "360": [
+   {
+    "id": "8SMViS6RrOM",
+    "title": "Xabi Alonso Might Be A FRAUD! Chelsea Is In Trouble!",
+    "published": 1795823460000,
+    "source": "Adikastakes"
+   },
    {
     "id": "CuEbDX4olp0",
     "title": "We Need To Talk About Xabi Alonso & Chelsea..",
