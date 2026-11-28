@@ -1,6 +1,6 @@
 # Dock unpinned additions and pin order
 
-**Status: DONE, live Nov 27 (befea49; desktop strip bookmark deployed after).**
+**Status: DONE, live Nov 27 (befea49; desktop strip bookmark 998edd4).**
 
 ## Goal
 
