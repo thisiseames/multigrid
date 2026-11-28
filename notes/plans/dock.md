@@ -27,7 +27,7 @@ listed in `hidden` and skipped by the automatic picks until added again.
 ## Pinning and adding
 ⋯ on a dock item (and right-click) → Pin / Unpin, with Move left / Move right for pins. Drag one
 pin onto another to reorder; a white line shows before/after. Favorite card ⋯ → Pin to Dock /
-Unpin from Dock. Tile ⋯ → Add to Dock (unpinned, no favorite saved) / Remove from Dock. Pins plus
+Unpin from Dock. Tile strip bookmark → Add to Dock (unpinned, no favorite saved) / Remove from Dock. Pins plus
 manual additions reserve the 12 slots; when none is free, the action says the Dock is full.
 See notes/plans/dock-add.md for the Nov 27 additions.
 

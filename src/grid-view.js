@@ -481,6 +481,9 @@ class TileView {
     this.fullButton.classList.add('strip-full');
     this.starButton = this.source.ok && !isNote ? iconButton('star', 'Add to favorites', () => handlers.onEditFavorite(this.id, this.starButton)) : null;
     this.starButton?.classList.add('strip-star');
+    this.dockButton = this.source.ok && !isNote && this.source.kind !== 'file' && handlers.onDock
+      ? iconButton('saved', 'Add to Dock', () => handlers.onDock(this.id)) : null;
+    this.dockButton?.classList.add('strip-dock');
     this.cropButton = this.source.ok && !isNote && !isRoom ? iconButton('crop', 'Crop', () => this.editCrop()) : null;
     this.cinemaButton = this.source.ok && !isNote && !isRoom ? iconButton('film', 'Cinema: fill the tile with a wide film, no black bars', () => this.toggleCinema()) : null;
     this.cinemaButton?.classList.add('strip-cinema');
@@ -507,6 +510,7 @@ class TileView {
     const actions = el('div', { class: 'strip-actions' },
       this.primaryButton,
       this.starButton,
+      this.dockButton,
       this.cinemaButton,
       this.cropButton,
       this.muteButton,
@@ -599,6 +603,16 @@ class TileView {
       this.popButton.classList.toggle('is-on', popped);
     }
     this.syncFullscreen();
+  }
+
+  /** The bookmark on the desktop strip: add/remove this tile's unpinned Dock slot. */
+  syncDockButton(added = false, pinned = false) {
+    if (!this.dockButton) return;
+    this.dockButton.hidden = pinned;
+    this.dockButton.classList.toggle('is-docked', added && !pinned);
+    const label = added ? 'Remove from Dock' : 'Add to Dock';
+    this.dockButton.title = label;
+    this.dockButton.setAttribute('aria-label', label);
   }
 
   syncFullscreen() {
@@ -921,6 +935,7 @@ class TileView {
     this.muteButton = null;
     this.fullButton = null;
     this.starButton = null;
+    this.dockButton = null;
     this.cropButton = null;
     this.cinemaButton = null;
     this.popButton = null;

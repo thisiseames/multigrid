@@ -281,6 +281,10 @@ const grid = new GridView($('grid'), $('stage'), env, {
   onCast: (id) => castStream(id),
   // Picture in picture: the small screen becomes the big one.
   onStreamMenu: (id, anchor) => togglePopover(anchor, $('stream-menu'), () => buildStreamMenu(id)),
+  onDock: (id) => {
+    const tile = tileById(id);
+    if (tile) toggleTileDock(tile);
+  },
   onAccountMenu: (id, anchor) => togglePopover(anchor, $('account-menu'), () => buildAccountMenu(id, anchor)),
   favoriteName: (input) => favoriteNameOfTile(ws.tiles.find((tile) => tile.input === input) || { input }),
   onEditFavorite(id, anchor) {
@@ -3083,6 +3087,7 @@ function render() {
   $('stage').style.alignItems = '';
   if (showWelcome) renderFavorites($('welcome-favorites'), () => ({ mode: 'add' }));
   grid.render(ws);
+  syncDockButtons();
 
   const custom = ws.presetId === 'custom';
   const preset = presetById(ws.presetId) ?? presetById('equal');
@@ -4597,6 +4602,21 @@ function removeTileFromDock(tile) {
   toast(`${name} is off the Dock.`);
 }
 
+/** The bookmark on a tile: add it unpinned, or take its manual slot away. */
+function toggleTileDock(tile) {
+  const data = loadDock();
+  if (isDockAdded(data, tile.input)) removeTileFromDock(tile);
+  else addTileToDock(tile);
+}
+
+function syncDockButtons() {
+  const data = loadDock();
+  for (const tile of ws.tiles) {
+    if (!tile.input) continue;
+    grid.viewFor(tile.id)?.syncDockButton?.(isDockAdded(data, tile.input), isDockPinned(data, tile.input));
+  }
+}
+
 function dockSources() {
   const favorites = listFavorites().filter((item) => !isPodcastShowInput(item.input) && !item.input.startsWith('local:'));
   const recent = [...listRecent().map((item) => item.input), ...listPlaces(12).map((place) => place.input)];
@@ -4604,6 +4624,7 @@ function dockSources() {
 }
 
 function drawDock() {
+  syncDockButtons();
   const dock = document.getElementById('dock');
   if (!dock) return;
   const { favorites, recent } = dockSources();

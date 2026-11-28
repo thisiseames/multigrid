@@ -981,6 +981,7 @@ body.is-phone .following-box { width: calc(100vw - 24px); }
 .dialog h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
 .dialog textarea { display: block; resize: vertical; min-height: 72px; line-height: 1.4; font-size: max(13px, 16px); }
 .strip-actions button.is-favorite { color: var(--accent); }
+.strip-actions button.is-docked { color: var(--accent); }
 .strip-actions button.is-primary { color: #f5c451; }
 .dialog .favorites { margin-bottom: 10px; }
 .favorites-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; }

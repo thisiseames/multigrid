@@ -1,16 +1,16 @@
 # Dock unpinned additions and pin order
 
-**Status: DONE, live Nov 27 (befea49).**
+**Status: DONE, live Nov 27 (befea49; desktop strip bookmark deployed after).**
 
 ## Goal
 
-A tile's ⋯ menu can add that tile to the Dock without saving it to Favorites. It
+A bookmark in a tile's strip can add that tile to the Dock without saving it to Favorites. It
 takes the next unpinned slot: after pins, before the automatic picks. The Dock
 stays at 12 items. Pins can be rearranged.
 
 ## Defaults
 
-- Tile ⋯ **Add to Dock** on laptop only; local files and phone are excluded.
+- Tile strip **Dock bookmark** on laptop only; local files and phone are excluded. The tile ⋯ menu is a phone-only sheet, so the bookmark is the desktop entry point.
 - Order: pins → added tiles → most opened → recent → remaining favorites.
 - Pins plus added tiles reserve the 12 slots. If all 12 are reserved, Add to Dock
   says the Dock is full. Automatic picks can fill the rest.
@@ -29,7 +29,8 @@ stays at 12 items. Pins can be rearranged.
 ## Checklist
 
 - [x] dock.js order, manual additions, capacity, remove/hidden, move/reorder + tests.
-- [x] tile Add to Dock / Remove from Dock.
+- [x] tile strip bookmark Add to Dock / Remove from Dock; hidden when pinned.
+- [x] tile ⋯ Add to Dock remains on the phone sheet path.
 - [x] dock item Pin/Unpin, Remove, Move left/right.
 - [x] drag pin onto pin with insertion line; drag onto tile unchanged.
 - [x] phone has no Dock actions.
