@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findFotmobFixture, fotmobShots, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobHeatmap, parseFotmobPage, parseFotmobStats, parseFotmobWeather, sameTeam } from '../src/fotmob.js';
+import { findFotmobFixture, fotmobShots, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobHeatmap, parseFotmobPage, parseFotmobStats, parseFotmobWeather, sameTeam, shotPitchX } from '../src/fotmob.js';
 
 const props = {
   fallback: {
@@ -105,6 +105,11 @@ test('FotMob gaps carry ratings, momentum, referee and weather separately', () =
   assert.deepEqual(gaps.momentum, [[1, 0], [2, 24]]);
   assert.equal(gaps.event.referee.name, 'Robert Jones');
   assert.equal(gaps.event.attendance, null);
+});
+
+test('FotMob shots face opposite goals', () => {
+  assert.equal(shotPitchX({ side: 'home', x: 96.4 }), 96.4);
+  assert.ok(Math.abs(shotPitchX({ side: 'away', x: 86.9 }) - 13.1) < 0.001);
 });
 
 test('FotMob page payload and shot map', () => {

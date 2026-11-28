@@ -99,6 +99,8 @@ on a pitch, attacking share and heatmap from FotMob.
 - The heatmap's SVG template has a `{{circles__placeholder}}`; fill it only with plain circle tags
   from `players`, and reject templates containing scripts.
 - The second half starts at 0.00 xG; hide a half until its xG or big chances are non-trivial.
+- FotMob normalizes every shot toward the right-hand goal. Mirror the away side with `100 − x`
+  so both teams attack opposite ends; do not draw both teams at the same net.
 - SofaScore returned 403 from every origin during the build. It later recovered, so it stays the primary
   source, but its poll runs on 45–60 s caches and a one-minute failure backoff. FotMob's `content.stats`,
   `content.lineup[].performance.rating` and `content.momentum.main.data` fill the same gaps when it is down.

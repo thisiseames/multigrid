@@ -33,7 +33,7 @@ import { chanceText, loadOdds, oddsFor, oddsUrl, parseOdds } from './odds.js';
 import { MY_LEAGUES } from './leagues.js';
 import { addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeHoldUntil, isCalledOff, isFulltimeHold, loadChances, markFulltime, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
 import { loadSofascoreGaps, normalizeName as sofaName } from './sofascore.js';
-import { fotmobShots, loadFotmobHeatmap, loadFotmobMatch, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobWeather } from './fotmob.js';
+import { fotmobShots, loadFotmobHeatmap, loadFotmobMatch, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobWeather, shotPitchX } from './fotmob.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { artFor } from './artwork.js';
 import { loadBlueskyTopics } from './bluesky.js';
@@ -11626,7 +11626,7 @@ function mdShotMap(match) {
   if (!shots.length) return null;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const mark = (shot) => {
-    const cx = (clamp(shot.x, 0, 100) * 1.05).toFixed(2);
+    const cx = (clamp(shotPitchX(shot), 0, 100) * 1.05).toFixed(2);
     const cy = (clamp(shot.y, 0, 100) * 0.68).toFixed(2);
     const radius = shot.goal ? 2.5 : shot.onTarget ? 1.9 : 1.4;
     const state = shot.goal ? ' is-goal' : shot.onTarget ? ' is-target' : ' is-off';

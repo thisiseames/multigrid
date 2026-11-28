@@ -86,6 +86,9 @@ export function fotmobShots(payload) {
   });
 }
 
+/** FotMob plots every shot toward the right-hand goal; the away side attacks the left one. */
+export const shotPitchX = (shot) => (shot?.side === 'home' ? Number(shot.x) : 100 - Number(shot.x));
+
 /** The same player-name normalization SofaScore uses, so ratings match ESPN names. */
 const playerName = (value) => normalize(value)
   .replace(/\b(fc|afc|cf|sc|the)\b/g, ' ')
