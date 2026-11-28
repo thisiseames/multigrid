@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findFotmobFixture, fotmobShots, parseFotmobAttackingZones, parseFotmobHeatmap, parseFotmobPage, parseFotmobWeather, sameTeam } from '../src/fotmob.js';
+import { findFotmobFixture, fotmobShots, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobHeatmap, parseFotmobPage, parseFotmobStats, parseFotmobWeather, sameTeam } from '../src/fotmob.js';
 
 const props = {
   fallback: {
@@ -60,6 +60,51 @@ test('FotMob heatmap fills only plain circles into the template', () => {
   assert.doesNotMatch(svg, /script/);
   assert.equal(parseFotmobHeatmap({ template: '<svg></svg>', players: {} }), '');
   assert.equal(parseFotmobHeatmap({ template: '<svg><script></script></svg>', players: { a: '<circle cx="1" cy="2" r="3"/>' } }), '');
+});
+
+test('FotMob gap stats survive duplicate empty rows and periods', () => {
+  const item = (key, home, away, raw = true) => ({ key, stats: [home, away], rawStats: raw ? [{ value: home }, { value: away }] : [null, null] });
+  const payload = { content: { stats: { Periods: {
+    All: { stats: [{ stats: [
+      item('expected_goals', null, null, false),
+      item('expected_goals', '1.32', '1.06'),
+      item('expected_goals_on_target', '0.56', '0.43'),
+      item('big_chance', 3, 1),
+      item('shots_inside_box', 8, 3),
+    ] }] },
+    FirstHalf: { stats: [{ stats: [item('expected_goals', '1.32', '1.06'), item('big_chance', 3, 1)] }] },
+    SecondHalf: { stats: [{ stats: [item('expected_goals', '0.00', '0.02')] }] },
+  } } } };
+  const stats = parseFotmobStats(payload);
+  assert.equal(stats.source, 'FotMob');
+  assert.deepEqual(stats.all.map((row) => [row.key, row.home, row.away]), [
+    ['Expected goals', 1.32, 1.06],
+    ['Expected goals on target', 0.56, 0.43],
+    ['Big chances', 3, 1],
+    ['Shots inside box', 8, 3],
+  ]);
+  assert.equal(stats.first.length, 2);
+  assert.deepEqual(stats.second, [{ key: 'Expected goals', label: 'xG', home: 0, away: 0.02, decimals: 2 }]);
+});
+
+test('FotMob gaps carry ratings, momentum, referee and weather separately', () => {
+  const payload = { content: {
+    lineup: {
+      homeTeam: { starters: [{ name: 'Senne Lammens', performance: { rating: 4.6 } }, { name: 'Bruno Fernandes', performance: {} }] },
+      awayTeam: { starters: [{ name: 'Callum Wilson', performance: { rating: 8.58 } }] },
+    },
+    stats: { Periods: { All: { stats: [{ stats: [{ key: 'big_chance', stats: [3, 1], rawStats: [{ value: 3 }, { value: 1 }] }] }] } } },
+    momentum: { main: { data: [{ minute: 1, value: 0 }, { minute: 2, value: 24 }, { minute: null, value: 3 }] } },
+    matchFacts: { infoBox: { Referee: { text: 'Robert Jones' }, Attendance: null } },
+  } };
+  const gaps = parseFotmobGaps(payload);
+  assert.equal(gaps.source, 'FotMob');
+  assert.equal(gaps.ratings.home.get('senne lammens'), 4.6);
+  assert.equal(gaps.ratings.home.has('bruno fernandes'), false);
+  assert.equal(gaps.ratings.away.get('callum wilson'), 8.58);
+  assert.deepEqual(gaps.momentum, [[1, 0], [2, 24]]);
+  assert.equal(gaps.event.referee.name, 'Robert Jones');
+  assert.equal(gaps.event.attendance, null);
 });
 
 test('FotMob page payload and shot map', () => {

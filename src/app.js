@@ -33,7 +33,7 @@ import { chanceText, loadOdds, oddsFor, oddsUrl, parseOdds } from './odds.js';
 import { MY_LEAGUES } from './leagues.js';
 import { addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeHoldUntil, isCalledOff, isFulltimeHold, loadChances, markFulltime, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
 import { loadSofascoreGaps, normalizeName as sofaName } from './sofascore.js';
-import { fotmobShots, loadFotmobHeatmap, loadFotmobMatch, parseFotmobAttackingZones, parseFotmobWeather } from './fotmob.js';
+import { fotmobShots, loadFotmobHeatmap, loadFotmobMatch, parseFotmobAttackingZones, parseFotmobGaps, parseFotmobWeather } from './fotmob.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { artFor } from './artwork.js';
 import { loadBlueskyTopics } from './bluesky.js';
@@ -11044,8 +11044,8 @@ function lineupPitch(side) {
   // line-up board the app opens for other games.
   const mine = lineupMatch?.id === mdMatch()?.id;
   const sideKey = side.home ? 'home' : 'away';
-  const ratingMap = mine ? md.gaps?.ratings?.[sideKey] : null;
-  const positionMap = mine ? md.gaps?.positions?.[sideKey] : null;
+  const ratingMap = mine ? mdGapRatings()?.[sideKey] : null;
+  const positionMap = mine ? mdGapPositions()?.[sideKey] : null;
   pitch.append(
     el('span', { class: 'lp-half' }),
     el('span', { class: 'lp-circle' }),
@@ -11275,7 +11275,7 @@ function highlightsButton(match) {
 // var, not const: Game mode and the ticker can ask before this part of the file has run.
 var md = { team: matchdayTeam(), // eslint-disable-line no-var
   match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off', hold: false,
-  gaps: null, gapsAt: 0, fotmob: null, fotmobAt: 0, heat: '', heatShown: false };
+  gaps: null, gapsAt: 0, fotmob: null, fotmobGaps: null, fotmobAt: 0, heat: '', heatShown: false };
 var mdTimer = null; // eslint-disable-line no-var
 const MD_SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=';
 
@@ -11283,6 +11283,13 @@ function mdMatch() { return md ? md.data?.match ?? md.match : null; }
 function mdSide(match = mdMatch()) { return match?.home.id === md.team.id ? 'home' : 'away'; }
 function mdOther(match = mdMatch()) { return mdSide(match) === 'home' ? 'away' : 'home'; }
 function mdPhase(now = Date.now()) { return md ? phaseOf(mdMatch(), now, md.broadcast?.start) : 'off'; }
+
+/* SofaScore first; when it is blocked, the already-loaded FotMob JSON fills the same gaps. */
+const mdGapStats = () => (md?.gaps?.stats?.all?.length ? md.gaps.stats : md?.fotmobGaps?.stats);
+const mdGapRatings = () => ((md?.gaps?.ratings?.home?.size || md?.gaps?.ratings?.away?.size) ? md.gaps.ratings : md?.fotmobGaps?.ratings);
+const mdGapPositions = () => ((md?.gaps?.positions?.home?.size || md?.gaps?.positions?.away?.size) ? md.gaps.positions : md?.fotmobGaps?.positions);
+const mdGapMomentum = () => (md?.gaps?.momentum?.length ? md.gaps.momentum : md?.fotmobGaps?.momentum);
+const mdGapEvent = () => ((md?.gaps?.event?.referee?.name || md?.gaps?.event?.attendance) ? md.gaps.event : md?.fotmobGaps?.event);
 
 /** Today's game and the next one, from your teams' schedules (the same answer the home screen uses). */
 function findMatchday(sections, now = Date.now()) {
@@ -11298,6 +11305,7 @@ function findMatchday(sections, now = Date.now()) {
     md.gaps = null;
     md.gapsAt = 0;
     md.fotmob = null;
+    md.fotmobGaps = null;
     md.fotmobAt = 0;
     md.heat = '';
     md.heatShown = false;
@@ -11378,6 +11386,7 @@ async function matchdayTick(force = false) {
           loadFotmobMatch(extra).then((fotmob) => {
             if (mdMatch()?.id !== extra.id) return;
             md.fotmob = fotmob;
+            md.fotmobGaps = fotmob ? parseFotmobGaps(fotmob) : null;
             if (fotmob) drawMatchdayViews();
           }).catch(() => {});
         }
@@ -11528,17 +11537,18 @@ function mdSplitRow(label, stats) {
 
 function mdStats(match, data, limit = Infinity) {
   const stats = (data?.stats ?? []).slice(0, limit);
-  const gaps = md.gaps?.stats?.all ?? [];
+  const gapStats = mdGapStats();
+  const gaps = gapStats?.all ?? [];
   if (!stats.length && !gaps.length) return null;
   const statsBlock = stats.length ? el('div', { class: 'md-stats' }, ...stats.map((stat) => mdStatRow(match, stat))) : null;
   const extras = [];
   if (limit === Infinity && gaps.length) {
     extras.push(el('div', { class: 'md-stats-gap' },
-      el('p', { class: 'md-source-tag', textContent: 'SofaScore' }),
+      el('p', { class: 'md-source-tag', textContent: gapStats.source || 'SofaScore' }),
       el('div', { class: 'md-stats' }, ...gaps.map((stat) => mdStatRow(match, stat)))));
   }
-  const first = md.gaps?.stats?.first ?? [];
-  const second = md.gaps?.stats?.second ?? [];
+  const first = gapStats?.first ?? [];
+  const second = gapStats?.second ?? [];
   if (limit === Infinity && first.length && second.length) {
     const splits = [mdSplitRow('1st half', first), mdSplitRow('2nd half', second)].filter(Boolean);
     if (splits.length) extras.push(el('div', { class: 'md-splits' }, ...splits));
@@ -11768,7 +11778,7 @@ function mdLineup(match, data) {
   const side = (data?.lineups ?? []).find((item) => item.home === (mdSide(match) === 'home'));
   if (!side) return null;
   const gone = new Set((data?.timeline ?? []).filter((item) => item.kind === 'red' || item.kind === 'sub').map((item) => (item.kind === 'sub' ? item.off : item.player)));
-  const pitch = mdPitch(side, gone, md.gaps?.ratings, md.gaps?.positions);
+  const pitch = mdPitch(side, gone, mdGapRatings(), mdGapPositions());
   return el('div', { class: 'md-xi' },
     el('div', { class: 'md-xi-head' }, el('b', { textContent: `${match[mdSide(match)].name} XI` }), el('span', { textContent: side.formation })),
     pitch,
@@ -12052,7 +12062,8 @@ function refreshMatchdayHero() {
   const hasXi = Boolean(layer?.querySelector('.md-xi'));
   const wantXi = (phase === 'buildup' || phase === 'live') && (md.data?.lineups ?? []).length > 0;
   const hasRatings = Boolean(layer?.querySelector('.mdp-rating'));
-  const wantRatings = Boolean(md.gaps?.ratings?.home?.size || md.gaps?.ratings?.away?.size);
+  const ratings = mdGapRatings();
+  const wantRatings = Boolean(ratings?.home?.size || ratings?.away?.size);
   if (layer && (hasXi !== wantXi || hasRatings !== wantRatings)) { heroKey = ''; showHero(item); }
 }
 
@@ -12093,10 +12104,11 @@ function matchCentre() {
     el('div', { class: 'md-score' }, el('b', { textContent: match.state === 'pre' ? 'v' : `${match.home.score}–${match.away.score}` }), status),
     score('away'));
   const section = (title, body) => (body ? el('section', { class: 'md-section' }, el('h4', { class: 'md-section-title', textContent: title }), body) : null);
-  const attendance = Number(md.gaps?.event?.attendance);
+  const gapEvent = mdGapEvent();
+  const attendance = Number(gapEvent?.attendance);
   const facts = [
     data?.match?.venue || match.venue,
-    md.gaps?.event?.referee?.name ? `Referee ${md.gaps.event.referee.name}` : '',
+    gapEvent?.referee?.name ? `Referee ${gapEvent.referee.name}` : '',
     Number.isFinite(attendance) && attendance > 0 ? `Attendance ${attendance.toLocaleString('en-GB')}` : '',
     mdWeather(),
   ].filter(Boolean);
@@ -12120,7 +12132,7 @@ function matchCentre() {
     if (chance) analysis.push(section('Win chance', chance));
     const timeline = mdTimeline(match, data);
     if (timeline) analysis.push(section('Timeline', timeline));
-    const momentum = mdMomentum(match, md.gaps?.momentum);
+    const momentum = mdMomentum(match, mdGapMomentum());
     if (momentum) analysis.push(section('Momentum', momentum));
     const stats = mdStats(match, data);
     if (stats) analysis.push(section('Stats', stats));
@@ -12148,7 +12160,7 @@ function matchCentre() {
   } else {
     parts.push(section('Win chance', mdChanceGraph(match) || mdChances(match, md.odds)));
     parts.push(section('Timeline', mdTimeline(match, data)));
-    const momentum = mdMomentum(match, md.gaps?.momentum);
+    const momentum = mdMomentum(match, mdGapMomentum());
     if (momentum) parts.push(section('Momentum', momentum));
     parts.push(section('Stats', mdStats(match, data)));
     const shots = mdShotMap(match);

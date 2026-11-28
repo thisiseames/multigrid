@@ -33,7 +33,8 @@ const sameName = (a, b) => {
 const json = (path, ttl = 30000) => {
   const at = Date.now();
   const known = asks.get(path);
-  if (known && at - known.at < ttl) return known.ask;
+  // A failure waits at most a minute, even when the successful answer is cached longer.
+  if (known && at - known.at < (known.failed ? Math.min(ttl, 60000) : ttl)) return known.ask;
   const ask = fetch(`${BASE}${path}`, {
     cache: 'no-store',
     headers: { accept: 'application/json' },
@@ -42,9 +43,8 @@ const json = (path, ttl = 30000) => {
     .then((response) => (response.ok ? response.json() : null))
     .catch(() => null);
   asks.set(path, { at, ask });
-  // A failure is not kept for the whole TTL; the next tick may try again.
   ask.then((value) => {
-    if (!value && asks.get(path)?.ask === ask) asks.set(path, { at: Date.now() - ttl, ask: Promise.resolve(null) });
+    if (!value && asks.get(path)?.ask === ask) asks.set(path, { at: Date.now(), ask: Promise.resolve(null), failed: true });
   });
   return ask;
 };
@@ -133,6 +133,7 @@ export function parseSofascoreStats(answer) {
     return [{ key: name, label, home, away, decimals }];
   });
   return {
+    source: 'SofaScore',
     all: rows('ALL'),
     first: rows('1ST'),
     second: rows('2ND'),
@@ -185,10 +186,10 @@ export async function loadSofascoreGaps(match) {
   const found = await findSofascoreEvent(match);
   if (!found) return null;
   const [stats, lineups, momentum, positions] = await Promise.all([
-    json(`/event/${found.id}/statistics`, 20000),
-    json(`/event/${found.id}/lineups`, 60000),
-    json(`/event/${found.id}/graph/momentum`, 20000),
-    json(`/event/${found.id}/average-positions`, 60000),
+    json(`/event/${found.id}/statistics`, 45000),
+    json(`/event/${found.id}/lineups`, 5 * 60000),
+    json(`/event/${found.id}/graph/momentum`, 45000),
+    json(`/event/${found.id}/average-positions`, 5 * 60000),
   ]);
   return {
     eventId: found.id,

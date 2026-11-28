@@ -60,6 +60,7 @@ on a pitch, attacking share and heatmap from FotMob.
    enough to draw it.
 5. Momentum uses SofaScore's signed values: positive is the home side.
 6. Weather is one short phrase beside the venue, not a panel.
+7. If SofaScore is blocked, the same xG/ratings/momentum gaps come from the FotMob JSON already loaded for the shot map, and the Stats label says FotMob. SofaScore is still tried first.
 
 ## Verification
 - Unit tests for SofaScore parsing (stats by period, ratings, momentum) and FotMob parsing
@@ -81,6 +82,7 @@ on a pitch, attacking share and heatmap from FotMob.
 - [x] Live shot map and attacking zones; on-demand grayscale heatmap.
 - [x] Referee and attendance in the venue line.
 - [x] Failure test: both new hosts blocked, ESPN stats still render with no errors.
+- [x] SofaScore-blocked test: xG, ratings, momentum and referee come from FotMob, labelled FotMob.
 - [x] 526 tests pass.
 - [x] Local browser at 1440 and 390: laptop Game mode column, phone Matchday sheet, line-ups board.
 - [ ] Deploy to main.
@@ -97,7 +99,10 @@ on a pitch, attacking share and heatmap from FotMob.
 - The heatmap's SVG template has a `{{circles__placeholder}}`; fill it only with plain circle tags
   from `players`, and reject templates containing scripts.
 - The second half starts at 0.00 xG; hide a half until its xG or big chances are non-trivial.
+- SofaScore returned 403 from every origin during the build. It later recovered, so it stays the primary
+  source, but its poll runs on 45–60 s caches and a one-minute failure backoff. FotMob's `content.stats`,
+  `content.lineup[].performance.rating` and `content.momentum.main.data` fill the same gaps when it is down.
 
 ## Status
 Built locally, all tests pass, and checked at 1440 and 390 against the live Man Utd v Brentford
-match on Nov 28. Not deployed yet.
+match on Nov 28. The first deploy is live; the FotMob fallback is being redeployed.

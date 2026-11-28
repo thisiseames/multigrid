@@ -86,6 +86,110 @@ export function fotmobShots(payload) {
   });
 }
 
+/** The same player-name normalization SofaScore uses, so ratings match ESPN names. */
+const playerName = (value) => normalize(value)
+  .replace(/\b(fc|afc|cf|sc|the)\b/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const FOTMOB_GAP_STATS = [
+  ['Expected goals', 'xG', 2],
+  ['Expected goals on target', 'xG on target', 2],
+  ['Big chances', 'Big chances', 0],
+  ['Big chances missed', 'Big chances missed', 0],
+  ['Shots inside box', 'Shots in box', 0],
+  ['Shots outside box', 'Shots outside box', 0],
+];
+const FOTMOB_STAT_KEYS = {
+  'Expected goals': 'expected_goals',
+  'Expected goals on target': 'expected_goals_on_target',
+  'Big chances': 'big_chance',
+  'Big chances missed': 'big_chance_missed_title',
+  'Shots inside box': 'shots_inside_box',
+  'Shots outside box': 'shots_outside_box',
+};
+
+const readPeriod = (period) => {
+  const found = new Map();
+  for (const group of period?.stats ?? []) {
+    for (const item of group?.stats ?? []) {
+      if (!item?.key || found.has(item.key)) continue;
+      const rawHome = item.rawStats?.[0]?.value ?? item.stats?.[0];
+      const rawAway = item.rawStats?.[1]?.value ?? item.stats?.[1];
+      if (rawHome == null || rawAway == null || rawHome === '' || rawAway === '') continue;
+      const home = Number(rawHome);
+      const away = Number(rawAway);
+      if (!Number.isFinite(home) || !Number.isFinite(away)) continue;
+      found.set(item.key, { home, away });
+    }
+  }
+  return found;
+};
+
+const gapRows = (period) => {
+  const found = readPeriod(period);
+  return FOTMOB_GAP_STATS.flatMap(([name, label, decimals]) => {
+    const value = found.get(FOTMOB_STAT_KEYS[name]);
+    return value ? [{ key: name, label, home: value.home, away: value.away, decimals }] : [];
+  });
+};
+
+/** FotMob's stats in the same shape as SofaScore's, for when SofaScore is blocked. */
+export function parseFotmobStats(payload) {
+  const periods = payload?.content?.stats?.Periods ?? {};
+  return {
+    source: 'FotMob',
+    all: gapRows(periods.All ?? periods.FirstHalf),
+    first: gapRows(periods.FirstHalf),
+    second: gapRows(periods.SecondHalf),
+  };
+}
+
+/** FotMob's player ratings from the line-up, keyed by normalized name. */
+export function parseFotmobRatings(payload) {
+  const side = (team) => {
+    const ratings = new Map();
+    for (const entry of [...(team?.starters ?? []), ...(team?.subs ?? [])]) {
+      const rating = Number(entry?.performance?.rating);
+      if (!entry?.name || !Number.isFinite(rating) || rating <= 0) continue;
+      ratings.set(playerName(entry.name), rating);
+    }
+    return ratings;
+  };
+  return { home: side(payload?.content?.lineup?.homeTeam), away: side(payload?.content?.lineup?.awayTeam) };
+}
+
+/** FotMob's momentum points, positive for the home side. */
+export function parseFotmobMomentum(payload) {
+  return (payload?.content?.momentum?.main?.data ?? [])
+    .filter((point) => Number.isFinite(point?.minute) && Number.isFinite(point?.value))
+    .map((point) => [Number(point.minute), Number(point.value)]);
+}
+
+/** Referee and attendance from FotMob's match facts. */
+export function parseFotmobFacts(payload) {
+  const info = payload?.content?.matchFacts?.infoBox;
+  const raw = info?.Attendance;
+  const attendance = Number(typeof raw === 'object' && raw !== null ? raw.value ?? raw.attendance : raw);
+  return {
+    referee: { name: String(info?.Referee?.text || '').trim() },
+    attendance: Number.isFinite(attendance) && attendance > 0 ? attendance : null,
+  };
+}
+
+/** The fallback gap set, used only when SofaScore has nothing. */
+export function parseFotmobGaps(payload) {
+  if (!payload?.content) return null;
+  return {
+    source: 'FotMob',
+    event: parseFotmobFacts(payload),
+    stats: parseFotmobStats(payload),
+    ratings: parseFotmobRatings(payload),
+    positions: { home: new Map(), away: new Map() },
+    momentum: parseFotmobMomentum(payload),
+  };
+}
+
 /** The short weather phrase beside the venue: Rain, 9°C. */
 export function parseFotmobWeather(payload) {
   const weather = payload?.content?.weather;
