@@ -1,5 +1,5 @@
 {
- "updated": 1795882335427,
+ "updated": 1795883891292,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -142,6 +142,13 @@
     }
    ]
   },
+  "401884719": {
+   "league": "Bundesliga",
+   "title": "Paderborn 8–1 Schalke",
+   "start": 1795876200000,
+   "sources": "feeds",
+   "videos": []
+  },
   "401884720": {
    "league": "Bundesliga",
    "title": "Bremen 3–3 Gladbach",
@@ -154,6 +161,27 @@
      "rank": 3
     }
    ]
+  },
+  "401884721": {
+   "league": "Bundesliga",
+   "title": "Cologne 5–0 Elversberg",
+   "start": 1795876200000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401884722": {
+   "league": "Bundesliga",
+   "title": "Hamburg 0–0 Bayern",
+   "start": 1795876200000,
+   "sources": "feeds",
+   "videos": []
+  },
+  "401884723": {
+   "league": "Bundesliga",
+   "title": "Mainz 2–1 Union Berlin",
+   "start": 1795876200000,
+   "sources": "feeds",
+   "videos": []
   },
   "401909314": {
    "league": "NBA",
@@ -920,10 +948,18 @@
   "ucl:494": "",
   "ucl:102": "",
   "nfl:14": "UCyJ6yZdVUkBvt2vl4R03jcA",
-  "nfl:9": "UCJtI-l6La0zniodFtSHYrBg"
+  "nfl:9": "UCJtI-l6La0zniodFtSHYrBg",
+  "bundesliga:122": "",
+  "bundesliga:132": "UCZkcxFIsqW5htimoUQKA0iA"
  },
  "club": {
   "360": [
+   {
+    "id": "kz1FKuVdYTQ",
+    "title": "Callum Wilson bags brace for Brentford against Manchester United | Premier League",
+    "published": 1795882898000,
+    "source": "NBC Sports"
+   },
    {
     "id": "TulE4N_6sfM",
     "title": "Callum Wilson rifles Brentford 1-0 in front of Manchester United | Premier League",
@@ -1235,12 +1271,6 @@
     "title": "WHO RULES THE HEAVYWEIGHT DIVISION?! Fury, AJ, Wilder & Kabayel DEBATE!",
     "published": 1795543214000,
     "source": "DR Sports"
-   },
-   {
-    "id": "u6QyQ5obBVk",
-    "title": "Senegal Defeat Morocco In Court To Win AFCON. FOOTBALL WON!",
-    "published": 1795537974000,
-    "source": "Adikastakes"
    }
   ]
  }
