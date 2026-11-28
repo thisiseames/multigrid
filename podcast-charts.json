@@ -1,5 +1,5 @@
 {
-  "updated": 1795807690000,
+  "updated": 1795833638000,
   "country": "ca",
   "shows": [
     {
@@ -67,21 +67,21 @@
     },
     {
       "rank": 8,
-      "id": "1112425552",
-      "name": "Spittin Chiclets",
-      "author": "Barstool Sports",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/bf/ee/de/bfeedeee-11a2-6eda-c42b-e2d2abf631fd/mza_18403270500742374126.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/spittin-chiclets/id1112425552",
-      "genre": "Sports"
-    },
-    {
-      "rank": 9,
       "id": "1345682353",
       "name": "Armchair Expert with Dax Shepard",
       "author": "Armchair Umbrella",
       "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f0/13/8f/f0138f4b-8bc3-0a64-2c11-ef566840f60f/mza_3062409012210474882.jpeg/600x600bb.jpg",
       "appleUrl": "https://podcasts.apple.com/ca/podcast/armchair-expert-with-dax-shepard/id1345682353",
       "genre": "Comedy"
+    },
+    {
+      "rank": 9,
+      "id": "1112425552",
+      "name": "Spittin Chiclets",
+      "author": "Barstool Sports",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/bf/ee/de/bfeedeee-11a2-6eda-c42b-e2d2abf631fd/mza_18403270500742374126.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/spittin-chiclets/id1112425552",
+      "genre": "Sports"
     },
     {
       "rank": 10,
@@ -130,21 +130,21 @@
     },
     {
       "rank": 15,
-      "id": "1646101002",
-      "name": "The Mel Robbins Podcast",
-      "author": "Mel Robbins",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/ab/66/a5/ab66a5f5-b52b-c70a-227b-0721bd9dc660/mza_13546984924981879479.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-mel-robbins-podcast/id1646101002",
-      "genre": "Education"
-    },
-    {
-      "rank": 16,
       "id": "1795483480",
       "name": "Good Hang with Amy Poehler",
       "author": "The Ringer",
       "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/2b/94/bb/2b94bb6e-44f1-9d57-7748-b7456072806d/mza_1064202164981856225.jpg/600x600bb.jpg",
       "appleUrl": "https://podcasts.apple.com/ca/podcast/good-hang-with-amy-poehler/id1795483480",
       "genre": "Comedy"
+    },
+    {
+      "rank": 16,
+      "id": "1646101002",
+      "name": "The Mel Robbins Podcast",
+      "author": "Mel Robbins",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/ab/66/a5/ab66a5f5-b52b-c70a-227b-0721bd9dc660/mza_13546984924981879479.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-mel-robbins-podcast/id1646101002",
+      "genre": "Education"
     },
     {
       "rank": 17,
@@ -157,15 +157,6 @@
     },
     {
       "rank": 18,
-      "id": "987967575",
-      "name": "20/20",
-      "author": "ABC News",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/81/6c/5d/816c5d57-7c3f-3df9-1557-08e17469dfe4/mza_1433648970787567135.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/20-20/id987967575",
-      "genre": "True Crime"
-    },
-    {
-      "rank": 19,
       "id": "1379959217",
       "name": "Morbid",
       "author": "Ash Kelley & Alaina Urquhart",
@@ -174,7 +165,25 @@
       "genre": "True Crime"
     },
     {
+      "rank": 19,
+      "id": "1536352412",
+      "name": "Giggly Squad",
+      "author": "Hannah Berner & Paige DeSorbo",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/e8/09/a6/e809a65d-03c3-82ce-383b-5586f49acc5b/mza_10887220202918113929.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/giggly-squad/id1536352412",
+      "genre": "Comedy"
+    },
+    {
       "rank": 20,
+      "id": "987967575",
+      "name": "20/20",
+      "author": "ABC News",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/81/6c/5d/816c5d57-7c3f-3df9-1557-08e17469dfe4/mza_1433648970787567135.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/20-20/id987967575",
+      "genre": "True Crime"
+    },
+    {
+      "rank": 21,
       "id": "1608813794",
       "name": "MrBallen Podcast: Strange, Dark & Mysterious Stories",
       "author": "Ballen Studios",
@@ -183,7 +192,7 @@
       "genre": "True Crime"
     },
     {
-      "rank": 21,
+      "rank": 22,
       "id": "135067274",
       "name": "Global News Podcast",
       "author": "BBC World Service",
@@ -192,31 +201,22 @@
       "genre": "News"
     },
     {
-      "rank": 22,
-      "id": "1588452517",
-      "name": "Real Kyper & Bourne",
-      "author": "Sportsnet",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts116/v4/e1/05/25/e10525d7-b3c2-f693-62be-906cd2ce738a/mza_8525585301678298539.jpg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/real-kyper-bourne/id1588452517",
-      "genre": "Sports"
-    },
-    {
       "rank": 23,
-      "id": "1510240831",
-      "name": "The MeidasTouch Podcast",
-      "author": "MeidasTouch Network",
-      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts122/v4/73/32/80/733280d2-330a-2f24-c600-bc1088f9f899/mza_17833502176263457882.jpeg/600x600bb.jpg",
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-meidastouch-podcast/id1510240831",
-      "genre": "News"
-    },
-    {
-      "rank": 24,
       "id": "1615637724",
       "name": "Betrayal Season 6",
       "author": "iHeartPodcasts | Glass Podcasts",
       "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/45/c0/ce/45c0cec7-f08f-a48c-505f-0796c7f75401/mza_6343213902657514244.jpg/600x600bb.jpg",
       "appleUrl": "https://podcasts.apple.com/ca/podcast/betrayal-season-6/id1615637724",
       "genre": "True Crime"
+    },
+    {
+      "rank": 24,
+      "id": "1478036186",
+      "name": "The Bridge with Peter Mansbridge",
+      "author": "Manscorp Media Services",
+      "art": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts126/v4/54/3b/35/543b3570-4e5e-4faa-d860-cb5ee3ed05d0/mza_15972333512142077354.jpg/600x600bb.jpg",
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/the-bridge-with-peter-mansbridge/id1478036186",
+      "genre": "News"
     },
     {
       "rank": 25,
@@ -264,28 +264,6 @@
     },
     {
       "rank": 4,
-      "id": "1000804371275",
-      "title": "Manifestation et Kraft Dinner, un guide de 86 pages sur l’aménagement d’une cour d’école et Céline au Centre Bell?",
-      "source": "La revue de presse de Paul Arcand",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/42/80/9f/42809fb8-5ad1-046d-f01c-fd520a37ffad/mza_8957382231770415124.jpg/600x600bb.jpg",
-      "audio": "https://traffic.omny.fm/d/clips/71f91b22-0f54-48f2-9bd7-aa5c001f5faa/f2ec612e-be7d-4267-a990-ac2400f084ff/b4eac3d1-b078-45ec-ae8d-b50f00b688ca/audio.mp3?utm_source=Podcast&in_playlist=104dc898-cc96-47af-943a-ac2400f085fa",
-      "length": 1537,
-      "time": 1795777440000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/manifestation-et-kraft-dinner-un-guide-de-86-pages/id1529516768?i=1000804371275&uo=4"
-    },
-    {
-      "rank": 5,
-      "id": "1000804344187",
-      "title": "Does Carney's major projects bill go too far?",
-      "source": "At Issue",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/f4/6f/40/f46f4039-a96c-3927-afa8-1d5d25020de9/mza_2441264666776849816.jpg/600x600bb.jpg",
-      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_ATISSUE_P/media/atissue/atissue-d8smyUci-20261127.mp3",
-      "length": 1468,
-      "time": 1795770600000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/does-carneys-major-projects-bill-go-too-far/id1310502047?i=1000804344187&uo=4"
-    },
-    {
-      "rank": 6,
       "id": "1000804245399",
       "title": "#2587 - Anthony Kim",
       "source": "The Joe Rogan Experience",
@@ -296,29 +274,7 @@
       "appleUrl": "https://podcasts.apple.com/ca/podcast/2587-anthony-kim/id360084272?i=1000804245399&uo=4"
     },
     {
-      "rank": 7,
-      "id": "1000804368135",
-      "title": "Thanksgiving Storm Aftermath, Black Friday Economy, Eisenkot's Coalition Talks",
-      "source": "Up First from NPR",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/0e/35/25/0e352569-e694-81d9-ea55-5f935981c15a/mza_1788275989855583986.png/600x600bb.jpg",
-      "audio": "https://prfx.byspotify.com/e/play.podtrac.com/npr-510318/npr.simplecastaudio.com/d52bee4a-b10a-40f8-9417-45064e6b8632/episodes/a275f0a7-48cf-4f04-96fe-c3202580075b/audio/128/default.mp3?awCollectionId=d52bee4a-b10a-40f8-9417-45064e6b8632&awEpisodeId=a275f0a7-48cf-4f04-96fe-c3202580075b&feed=HMwRVgVt&t=podcast&e=nx-s1-6055516&p=510318&d=743&size=11896835",
-      "length": 743,
-      "time": 1795776627000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/thanksgiving-storm-aftermath-black-friday-economy-eisenkots/id1222114325?i=1000804368135&uo=4"
-    },
-    {
-      "rank": 8,
-      "id": "1000804343050",
-      "title": "Can the global climate fight get back on track?",
-      "source": "Front Burner",
-      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/f5/98/d7/f598d7be-5128-ce93-696a-8499c5aa9980/mza_16407923696697140760.jpg/600x600bb.jpg",
-      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_FRONTBURNER_P/media/frontburner/frontburner-6EDafLM9-20261127.mp3",
-      "length": 1762,
-      "time": 1795770600000,
-      "appleUrl": "https://podcasts.apple.com/ca/podcast/can-the-global-climate-fight-get-back-on-track/id1439621628?i=1000804343050&uo=4"
-    },
-    {
-      "rank": 9,
+      "rank": 5,
       "id": "1000804339106",
       "title": "Armchair Anonymous: Medical Mix Up",
       "source": "Armchair Expert with Dax Shepard",
@@ -329,7 +285,40 @@
       "appleUrl": "https://podcasts.apple.com/ca/podcast/armchair-anonymous-medical-mix-up/id1345682353?i=1000804339106&uo=4"
     },
     {
-      "rank": 10,
+      "rank": 6,
+      "id": "1000804344187",
+      "title": "Does Carney's major projects bill go too far?",
+      "source": "At Issue",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/f4/6f/40/f46f4039-a96c-3927-afa8-1d5d25020de9/mza_2441264666776849816.jpg/600x600bb.jpg",
+      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_ATISSUE_P/media/atissue/atissue-d8smyUci-20261127.mp3",
+      "length": 1468,
+      "time": 1795770600000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/does-carneys-major-projects-bill-go-too-far/id1310502047?i=1000804344187&uo=4"
+    },
+    {
+      "rank": 7,
+      "id": "1000804343050",
+      "title": "Can the global climate fight get back on track?",
+      "source": "Front Burner",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/f5/98/d7/f598d7be-5128-ce93-696a-8499c5aa9980/mza_16407923696697140760.jpg/600x600bb.jpg",
+      "audio": "https://mgln.ai/e/12/cbc.mc.tritondigital.com/CBC_FRONTBURNER_P/media/frontburner/frontburner-6EDafLM9-20261127.mp3",
+      "length": 1762,
+      "time": 1795770600000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/can-the-global-climate-fight-get-back-on-track/id1439621628?i=1000804343050&uo=4"
+    },
+    {
+      "rank": 8,
+      "id": "1000804371275",
+      "title": "Manifestation et Kraft Dinner, un guide de 86 pages sur l’aménagement d’une cour d’école et Céline au Centre Bell?",
+      "source": "La revue de presse de Paul Arcand",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/42/80/9f/42809fb8-5ad1-046d-f01c-fd520a37ffad/mza_8957382231770415124.jpg/600x600bb.jpg",
+      "audio": "https://traffic.omny.fm/d/clips/71f91b22-0f54-48f2-9bd7-aa5c001f5faa/f2ec612e-be7d-4267-a990-ac2400f084ff/b4eac3d1-b078-45ec-ae8d-b50f00b688ca/audio.mp3?utm_source=Podcast&in_playlist=104dc898-cc96-47af-943a-ac2400f085fa",
+      "length": 1537,
+      "time": 1795777440000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/manifestation-et-kraft-dinner-un-guide-de-86-pages/id1529516768?i=1000804371275&uo=4"
+    },
+    {
+      "rank": 9,
       "id": "1000804043137",
       "title": "#2586 - Jocko Willink",
       "source": "The Joe Rogan Experience",
@@ -338,6 +327,17 @@
       "length": 9414,
       "time": 1795629600000,
       "appleUrl": "https://podcasts.apple.com/ca/podcast/2586-jocko-willink/id360084272?i=1000804043137&uo=4"
+    },
+    {
+      "rank": 10,
+      "id": "1000804168315",
+      "title": "Thanksgiving Bonus: Estranged Parents And The Newspapers That Love Them",
+      "source": "Maintenance Phase",
+      "image": "https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/d3/23/3c/d3233ce4-e1e6-710c-141a-dad45b263c7d/mza_17331100152243008221.jpg/600x600bb.jpg",
+      "audio": "https://www.buzzsprout.com/1411126/episodes/20183019-thanksgiving-bonus-estranged-parents-and-the-newspapers-that-love-them.mp3",
+      "length": 6003,
+      "time": 1795687200000,
+      "appleUrl": "https://podcasts.apple.com/ca/podcast/thanksgiving-bonus-estranged-parents-and-the/id1535408667?i=1000804168315&uo=4"
     }
   ]
 }
