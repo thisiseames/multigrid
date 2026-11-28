@@ -86,7 +86,11 @@ import { PAUSE_MS, liveGame, momentOf, noteChance, pickBig } from './redzone.js'
 import { findScore, normTitle, scoreLine, shardKey, votesText } from './scores.js';
 import { musicAlbumTitle, musicArtistGroups } from './music.js';
 import { loadYouTubePlaylist } from './youtube-channel.js';
-import { dockItems, isPinned as isDockPinned, loadDock, noteOpen as noteDockOpen, pin as dockPin, saveDock, unpin as dockUnpin } from './dock.js';
+import {
+  addToDock, canPinToDock, dockItems, freeDockSlots, isAdded as isDockAdded, isPinned as isDockPinned,
+  loadDock, movePin as moveDockPin, noteOpen as noteDockOpen, pin as dockPin, removeFromDock,
+  reorderPin as reorderDockPin, saveDock, unpin as dockUnpin,
+} from './dock.js';
 import { agoText, episodeUrl, parseEpisode, parseShow, previousNumber, replayClips, scoringPlays, showSearchUrl, winChance } from './xray.js';
 import { atlanticLink, atlanticTitle, castQuery, filmQuery, knownFor, parseCast, parseFilm, parseIntro, parsePerson, parsePersonId, parseSummary as parseWikiSummary, parseWikiImages, personByNameQuery, personInfoQuery, personWorksQuery, runtimeText, sparqlUrl, wikiImagesUrl, wikiIntroUrl, wikiSummaryUrl } from './films.js';
 import { PAIR_MINUTES, isSyncing, joinWithCode, lastSynced, offerCode, restartSync, setSyncsSocial, startSync, stopSync, syncsSocial } from './sync.js';
@@ -484,6 +488,10 @@ function buildStreamMenu(id) {
   const redraw = () => buildStreamMenu(id);
   const then = (action) => () => { closePopovers(); action(); };
   const favorite = favoriteNameOfTile(tile) !== null;
+  const dockable = !onPhoneScreen() && Boolean(tile.input) && !String(tile.input).startsWith('local:');
+  const dock = dockable ? loadDock() : null;
+  const dockAdded = dock ? isDockAdded(dock, tile.input) : false;
+  const dockPinned = dock ? isDockPinned(dock, tile.input) : false;
   const room = view.source?.kind === 'youtubechannel';
   const live = view.source?.kind === 'tiktoklive';
   const feed = view.player?.stripButtons;
@@ -493,6 +501,7 @@ function buildStreamMenu(id) {
     view.cinemaButton ? bigButton('film', 'Cinema', then(() => view.toggleCinema()), { on: Boolean(getCinema(tile.input)) }) : null,
     view.cropButton ? bigButton('crop', 'Crop', then(() => view.editCrop())) : null,
     view.starButton ? bigButton(favorite ? 'starFilled' : 'star', favorite ? 'Favorite' : 'Add to favorites', then(() => editFavorite(favoriteInputOf(tile), labelOf(tile), null)), { on: favorite }) : null,
+    dock && !dockPinned ? bigButton('saved', dockAdded ? 'Remove from Dock' : 'Add to Dock', then(() => (dockAdded ? removeTileFromDock(tile) : addTileToDock(tile))), { on: dockAdded }) : null,
     feed && !feed[0].hidden ? bigButton('back', feedLabels[0], () => feed[0].click()) : null,
     feed && !feed[2].hidden ? bigButton('next', feedLabels[1], () => feed[2].click()) : null,
     bigButton('back', 'Previous channel', then(() => surfChannels(-1, id))),
@@ -4547,11 +4556,57 @@ function hideDockSoon() {
   }, 1000);
 }
 
+const DOCK_FULL = 'The Dock is full. Unpin or remove a tile first.';
+
+/** Pins or unpins a dock item; a new pin needs a free slot. */
+function setDockPin(item) {
+  const data = loadDock();
+  if (isDockPinned(data, item.input)) {
+    saveDock(dockUnpin(data, item.input));
+    drawDock();
+    toast(`${item.name} is unpinned.`);
+    return;
+  }
+  if (!canPinToDock(data, item.input)) {
+    toast(DOCK_FULL);
+    return;
+  }
+  saveDock(dockPin(data, item.input));
+  drawDock();
+  toast(`${item.name} is pinned to the Dock.`);
+}
+
+/** Adds the tile to the unpinned part of the Dock without saving it to Favorites. */
+function addTileToDock(tile) {
+  const data = loadDock();
+  const name = labelOf(tile);
+  if (isDockPinned(data, tile.input) || isDockAdded(data, tile.input)) return;
+  if (!freeDockSlots(data)) {
+    toast(DOCK_FULL);
+    return;
+  }
+  saveDock(addToDock(data, tile.input, name));
+  drawDock();
+  toast(`${name} is in the Dock.`);
+}
+
+function removeTileFromDock(tile) {
+  const name = labelOf(tile);
+  saveDock(removeFromDock(loadDock(), tile.input));
+  drawDock();
+  toast(`${name} is off the Dock.`);
+}
+
+function dockSources() {
+  const favorites = listFavorites().filter((item) => !isPodcastShowInput(item.input) && !item.input.startsWith('local:'));
+  const recent = [...listRecent().map((item) => item.input), ...listPlaces(12).map((place) => place.input)];
+  return { favorites, recent };
+}
+
 function drawDock() {
   const dock = document.getElementById('dock');
   if (!dock) return;
-  const favorites = listFavorites().filter((item) => !isPodcastShowInput(item.input) && !item.input.startsWith('local:'));
-  const recent = [...listRecent().map((item) => item.input), ...listPlaces(12).map((place) => place.input)];
+  const { favorites, recent } = dockSources();
   const items = dockItems(loadDock(), favorites, recent);
   dock.replaceChildren(...items.map((item) => dockItem(item)));
 }
@@ -4560,44 +4615,80 @@ function dockItem(item) {
   const source = parseSource(item.input);
   const listing = nowAndNext(item.name, source);
   const live = Boolean(listing?.current?.live);
+  const slot = el('div', { class: 'dock-slot' });
+  slot.dataset.input = item.input;
+  slot.dataset.pinned = String(item.pinned);
   const button = el('button', {
     type: 'button',
     class: `dock-item${item.pinned ? ' is-pinned' : ''}`,
     title: [item.name, listing?.current?.title].filter(Boolean).join(' · '),
     aria: { label: `${item.name}${listing?.current ? `, on now: ${listing.current.title}` : ''}` },
   }, favoriteArt(item, source), live ? el('span', { class: 'dock-live', textContent: 'LIVE' }) : null, el('span', { class: 'dock-name', textContent: item.name }));
-  // Press and drag onto a tile to swap it, or just click to add.
+  // Press and drag onto a tile to swap it, onto another pin to reorder, or just click to add.
   button.addEventListener('dragstart', (event) => event.preventDefault());
   button.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
     // Pictures would start the browser's own image drag, which cancels this one.
     event.preventDefault();
+    document.getElementById('dock')?.querySelector('.dock-menu')?.remove();
     const startX = event.clientX;
     const startY = event.clientY;
     let dragging = false;
     let target = null;
+    let reorderTarget = null;
+    let reorderAfter = false;
     const ghost = el('div', { class: 'dock-ghost' }, favoriteArt(item, source));
+    const clearReorder = () => {
+      reorderTarget?.classList.remove('is-reorder-before', 'is-reorder-after');
+      reorderTarget = null;
+    };
     button.setPointerCapture(event.pointerId);
     const move = (moveEvent) => {
       if (!dragging && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 6) return;
       if (!dragging) { dragging = true; dockDragging = true; coverage.add(); document.body.append(ghost); }
       ghost.style.left = `${moveEvent.clientX}px`;
       ghost.style.top = `${moveEvent.clientY}px`;
-      const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest('.tile');
-      if (under !== target) { target?.classList.remove('dock-target'); target = under; target?.classList.add('dock-target'); }
+      const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const underSlot = item.pinned ? under?.closest('.dock-slot') : null;
+      const nextReorder = underSlot && underSlot !== slot && underSlot.dataset.pinned === 'true' && underSlot.dataset.input
+        ? underSlot : null;
+      if (nextReorder !== reorderTarget) {
+        clearReorder();
+        reorderTarget = nextReorder;
+        if (reorderTarget) {
+          target?.classList.remove('dock-target');
+          target = null;
+        }
+      }
+      if (reorderTarget) {
+        const rect = reorderTarget.getBoundingClientRect();
+        reorderAfter = moveEvent.clientX > rect.left + rect.width / 2;
+        reorderTarget.classList.toggle('is-reorder-before', !reorderAfter);
+        reorderTarget.classList.toggle('is-reorder-after', reorderAfter);
+      }
+      const underTile = reorderTarget ? null : under?.closest('.tile');
+      if (underTile !== target) { target?.classList.remove('dock-target'); target = underTile; target?.classList.add('dock-target'); }
     };
     const up = (upEvent) => {
       button.removeEventListener('pointermove', move);
       button.removeEventListener('pointerup', up);
       button.removeEventListener('pointercancel', up);
+      const droppedSlot = reorderTarget;
+      const droppedAfter = reorderAfter;
+      clearReorder();
       target?.classList.remove('dock-target');
       ghost.remove();
       if (dragging) {
         coverage.remove();
         dockDragging = false;
-        const tile = target ? ws.tiles.find((candidate) => grid.viewFor(candidate.id)?.root === target) : null;
-        if (tile) addStream(item.input, { mode: tile.input ? 'replace' : 'fill', id: tile.id });
-        hideDockSoon();
+        if (droppedSlot) {
+          saveDock(reorderDockPin(loadDock(), item.input, droppedSlot.dataset.input, droppedAfter));
+          drawDock();
+        } else if (target) {
+          const tile = ws.tiles.find((candidate) => grid.viewFor(candidate.id)?.root === target);
+          if (tile) addStream(item.input, { mode: tile.input ? 'replace' : 'fill', id: tile.id });
+          hideDockSoon();
+        }
       } else if (upEvent.type === 'pointerup') {
         // A press without a drag is a click: add it. A cancelled press does nothing.
         addStream(item.input);
@@ -4609,15 +4700,39 @@ function dockItem(item) {
   });
   button.addEventListener('contextmenu', (event) => { event.preventDefault(); dockMenu(button, item); });
   const more = el('button', { type: 'button', class: 'dock-more', title: `Options for ${item.name}`, aria: { label: `Options for ${item.name}` }, on: { click(event) { event.stopPropagation(); dockMenu(button, item); } } }, icon('more', 12));
-  return el('div', { class: 'dock-slot' }, button, more);
+  slot.append(button, more);
+  return slot;
 }
 
 function dockMenu(button, item) {
   const dock = document.getElementById('dock');
   dock.querySelector('.dock-menu')?.remove();
-  const pinned = isDockPinned(loadDock(), item.input);
-  const menu = el('div', { class: 'dock-menu' },
-    el('button', { type: 'button', textContent: pinned ? 'Unpin from Dock' : 'Pin to Dock', on: { click() { saveDock(pinned ? dockUnpin(loadDock(), item.input) : dockPin(loadDock(), item.input)); menu.remove(); drawDock(); } } }));
+  const data = loadDock();
+  const pinned = isDockPinned(data, item.input);
+  const manual = isDockAdded(data, item.input);
+  const order = data.pins.indexOf(item.input);
+  const menu = el('div', { class: 'dock-menu' });
+  const choice = (label, run) => menu.append(el('button', {
+    type: 'button', textContent: label,
+    on: { click() { menu.remove(); run(); } },
+  }));
+  if (pinned) {
+    if (order > 0) choice('Move left', () => { saveDock(moveDockPin(loadDock(), item.input, -1)); drawDock(); });
+    if (order >= 0 && order < data.pins.length - 1) choice('Move right', () => { saveDock(moveDockPin(loadDock(), item.input, 1)); drawDock(); });
+    choice('Unpin from Dock', () => setDockPin(item));
+    if (manual) choice('Remove from Dock', () => {
+      saveDock(removeFromDock(loadDock(), item.input));
+      drawDock();
+      toast(`${item.name} is off the Dock.`);
+    });
+  } else {
+    choice('Pin to Dock', () => setDockPin(item));
+    if (manual) choice('Remove from Dock', () => {
+      saveDock(removeFromDock(loadDock(), item.input));
+      drawDock();
+      toast(`${item.name} is off the Dock.`);
+    });
+  }
   const rect = button.getBoundingClientRect();
   const box = dock.getBoundingClientRect();
   menu.style.left = `${rect.left - box.left + rect.width / 2}px`;
@@ -8923,12 +9038,13 @@ function favoriteCard(item, holder, { plain = false } = {}) {
       return button;
     };
     const pinned = isDockPinned(loadDock(), item.input);
-    const normal = () => box.replaceChildren(
+    const normal = () => box.replaceChildren(...[
       el('span', { class: 'fcard-ask', textContent: item.name }),
       action('pencil', `Edit ${item.name}`, '', () => { closeMenu(); editFavorite(item.input, item.name, card); }),
-      action('saved', pinned ? `Remove ${item.name} from the Dock` : `Add ${item.name} to the Dock`, pinned ? 'is-on' : '', () => { saveDock(pinned ? dockUnpin(loadDock(), item.input) : dockPin(loadDock(), item.input)); closeMenu(); toast(pinned ? `${item.name} is off the Dock.` : `${item.name} is on the Dock.`); drawDock(); }),
+      onPhoneScreen() ? null : action('saved', pinned ? `Unpin ${item.name} from the Dock` : `Pin ${item.name} to the Dock`, pinned ? 'is-on' : '', () => { closeMenu(); setDockPin(item); }),
       action('trash', `Remove ${item.name}`, 'is-danger', confirm),
-      action('close', 'Cancel', 'is-quiet', closeMenu));
+      action('close', 'Cancel', 'is-quiet', closeMenu),
+    ].filter(Boolean));
     const confirm = () => box.replaceChildren(
       el('span', { class: 'fcard-ask', textContent: 'Remove?' }),
       el('button', { type: 'button', class: 'is-danger is-word', textContent: 'Remove', on: { click() { removeFavorite(item.input); refreshFavorites(); } } }),

@@ -9,26 +9,32 @@ If you are picking this up: read this file, then `notes/owner-rules.md` (standin
 
 ## What it is
 Laptop only (phone unchanged). Move the mouse to the very bottom edge of the screen → a slim
-black-glass dock slides up with 12 favorites (logo/poster art via `favoriteArt`), a white LIVE
-mark when live, "on now" on hover (`nowAndNext`). Click = add to grid. Drag onto a tile = replace
+black-glass dock slides up with up to 12 items: favorites and tiles added explicitly (logo/poster
+art via `favoriteArt`), a white LIVE mark when live, "on now" on hover (`nowAndNext`). Click = add to grid. Drag onto a tile = replace
 it (`addStream(input, { mode: 'replace', id })`); drag onto an empty slot = fill it
 (`{ mode: 'fill', id }`); target tile gets a white outline. Hides 1 s after the mouse leaves.
 Sits above the ticker when the ticker is on; never covers a stream except while open.
 Never opens while a divider/tile is being dragged.
 
 ## Order of items
-1. Pinned favorites (in pin order). 2. Favorites opened most in the last 30 days (new counter,
-counted when a stream is added via `addStream`). 3. Fill from Recently watched (`listRecent`) and
-Continue watching (`listPlaces`) when still short. 4. Then the rest of the favorites in their own order, so it's always full. Max 12. Hidden favorites (podcast shows,
-local files) excluded.
+1. Pinned items (in pin order). 2. Tiles added explicitly from a tile's ⋯ **Add to Dock**
+(in add order). 3. Favorites opened most in the last 30 days (new counter, counted when a stream
+is added via `addStream`). 4. Fill from Recently watched (`listRecent`) and Continue watching
+(`listPlaces`) when still short. 5. Then the rest of the favorites in their own order, so it's
+always full. Max 12. Hidden favorites (podcast shows, local files) excluded. Removed items are
+listed in `hidden` and skipped by the automatic picks until added again.
 
-## Pinning
-⋯ on a dock item (and right-click) → Pin / Unpin. Favorite card ⋯ menu gets "Add to Dock" /
-"Remove from Dock".
+## Pinning and adding
+⋯ on a dock item (and right-click) → Pin / Unpin, with Move left / Move right for pins. Drag one
+pin onto another to reorder; a white line shows before/after. Favorite card ⋯ → Pin to Dock /
+Unpin from Dock. Tile ⋯ → Add to Dock (unpinned, no favorite saved) / Remove from Dock. Pins plus
+manual additions reserve the 12 slots; when none is free, the action says the Dock is full.
+See notes/plans/dock-add.md for the Nov 27 additions.
 
 ## Storage
-`multigrid.dock.v1` = { pins: [input…], opens: { input: [timestamps…] } } (timestamps older
-than 30 days dropped on write).
+`multigrid.dock.v1` = { pins: [input…], added: [{ input, name }…], hidden: [input…], opens:
+{ input: [timestamps…] } }. Opens older than 30 days are dropped on write. `hidden` keeps a
+removed tile out of the automatic picks; Add to Dock removes it from `hidden`.
 
 ## Drag method (important)
 Same as tile drag in `src/grid-view.js` `attachTileDrag`: `setPointerCapture` on pointerdown,
@@ -47,6 +53,7 @@ bounce), white LIVE text. No new colours (never periwinkle).
 - [x] styles (laptop only; above ticker)
 - [x] index.html files list + CSP hash; tests pass
 - [x] Chrome check 1280: reveal, click add, drag onto YouTube + embed tile, empty slot, pin/unpin, hide, ticker on; 390: no dock
+- [x] Nov 27: unpinned tile adds, 12-slot capacity, remove/hidden, pin reorder by drag and arrows; 1440 and 390 checks
 - [x] push main + branch; verify on multigrid.club; notes/history.md entry; tick this list
 
 
