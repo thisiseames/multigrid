@@ -1,5 +1,5 @@
 {
- "updated": 1795883932095,
+ "updated": 1795888652515,
  "team": "Man Utd",
  "fx": 0.83504,
  "players": [
@@ -15,10 +15,10 @@
    "status": "a",
    "news": "",
    "chance": null,
-   "minutes": 1066,
+   "minutes": 1080,
    "goals": 0,
    "assists": 0,
-   "points": 24
+   "points": 23
   },
   {
    "name": "Darlow",
@@ -100,10 +100,10 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 523,
+   "minutes": 537,
    "goals": 0,
    "assists": 0,
-   "points": 9
+   "points": 8
   },
   {
    "name": "Dalot",
@@ -117,10 +117,10 @@
    "status": "a",
    "news": "",
    "chance": null,
-   "minutes": 878,
+   "minutes": 892,
    "goals": 0,
    "assists": 0,
-   "points": 17
+   "points": 16
   },
   {
    "name": "De Ligt",
@@ -185,10 +185,10 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 456,
+   "minutes": 470,
    "goals": 0,
    "assists": 1,
-   "points": 13
+   "points": 12
   },
   {
    "name": "Maguire",
@@ -202,10 +202,10 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 999,
+   "minutes": 1013,
    "goals": 0,
    "assists": 1,
-   "points": 20
+   "points": 18
   },
   {
    "name": "B.Fernandes",
@@ -219,10 +219,10 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 976,
+   "minutes": 990,
    "goals": 4,
    "assists": 2,
-   "points": 49
+   "points": 51
   },
   {
    "name": "Bendito Mantato",
@@ -287,7 +287,7 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 728,
+   "minutes": 742,
    "goals": 0,
    "assists": 1,
    "points": 36
@@ -355,10 +355,10 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 189,
+   "minutes": 196,
    "goals": 0,
    "assists": 0,
-   "points": 7
+   "points": 8
   },
   {
    "name": "Tielemans",
@@ -372,7 +372,7 @@
    "status": "a",
    "news": "",
    "chance": 100,
-   "minutes": 793,
+   "minutes": 799,
    "goals": 1,
    "assists": 1,
    "points": 37
@@ -389,7 +389,7 @@
    "status": "a",
    "news": "",
    "chance": null,
-   "minutes": 52,
+   "minutes": 66,
    "goals": 0,
    "assists": 0,
    "points": 4
@@ -474,7 +474,7 @@
    "status": "a",
    "news": "",
    "chance": null,
-   "minutes": 761,
+   "minutes": 775,
    "goals": 1,
    "assists": 4,
    "points": 47
@@ -491,7 +491,7 @@
    "status": "a",
    "news": "",
    "chance": null,
-   "minutes": 944,
+   "minutes": 958,
    "goals": 4,
    "assists": 1,
    "points": 48

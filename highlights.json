@@ -1,5 +1,5 @@
 {
- "updated": 1795887047103,
+ "updated": 1795888613604,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -186,7 +186,13 @@
    "title": "Paderborn 8–1 Schalke",
    "start": 1795876200000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "GcSX5WUGQQU",
+     "title": "8 GOALS! Paderborn Go Crazy! | SC PADERBORN - SCHALKE 04 | Highlights | Matchday 11 – Bundesliga",
+     "rank": 3
+    }
+   ]
   },
   "401884720": {
    "league": "Bundesliga",
@@ -732,19 +738,6 @@
     }
    ]
   },
-  "401915300": {
-   "league": "Champions League",
-   "title": "Galatasaray 1–0 Aston Villa",
-   "start": 1795542300000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "03q4mhgwBts",
-     "title": "Galatasaray 1-0 Aston Villa | UEFA Champions League Highlights",
-     "rank": 2
-    }
-   ]
-  },
   "401915373": {
    "league": "Champions League",
    "title": "Sporting 2–2 Man Utd",
@@ -820,13 +813,6 @@
    "league": "Champions League",
    "title": "Man City 2–2 Napoli",
    "start": 1795550400000,
-   "sources": "feeds",
-   "videos": []
-  },
-  "401915380": {
-   "league": "Champions League",
-   "title": "Bodo/Glimt 1–0 LASK Linz",
-   "start": 1795542300000,
    "sources": "feeds",
    "videos": []
   }
@@ -1000,6 +986,30 @@
  },
  "club": {
   "360": [
+   {
+    "id": "M5Ll8lOPJKc",
+    "title": "Manchester United Will Get Relegated.",
+    "published": 1795887945000,
+    "source": "Culture Cams"
+   },
+   {
+    "id": "ZUNIU9wILqw",
+    "title": "Manchester United v. Brentford | PREMIER LEAGUE HIGHLIGHTS | 11/28/2026",
+    "published": 1795887366000,
+    "source": "NBC Sports"
+   },
+   {
+    "id": "8JL0kzUMRP0",
+    "title": "Full-time scenes & reaction as Man Utd lose 4-0 Brentford at Old Trafford",
+    "published": 1795887208000,
+    "source": "Sky Sports Premier League"
+   },
+   {
+    "id": "-1-QAWHgBQ4",
+    "title": "We Are Going Down! United 0-4 Brentford Review ",
+    "published": 1795887188000,
+    "source": "Stephen Howson"
+   },
    {
     "id": "pSQAr2Vu9sY",
     "title": "Kevin Schade dinks Brentford 4-0 up over Manchester United | Premier League",
