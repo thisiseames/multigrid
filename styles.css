@@ -1296,8 +1296,9 @@ body.is-phone .gdetail-actions .match-watch { height: 44px; padding: 0 18px; fon
 .lp-six { left: 37%; right: 37%; bottom: 0; height: 7%; border: 1px solid rgba(255,255,255,.3); border-bottom: 0; }
 .lp-goal { left: 42%; right: 42%; bottom: 0; height: 1.8%; border: 1px solid rgba(255,255,255,.4); border-bottom: 0; }
 .lp-player { position: absolute; z-index: 2; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; transform: translate(-50%, -50%); }
-.lp-shirt { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--team, var(--accent)); color: #fff; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lp-shirt { position: relative; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--team, var(--accent)); color: #fff; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.45); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .lp-name { max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 600; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.95); }
+.lp-rating { position: absolute; top: -5px; right: -7px; min-width: 19px; height: 15px; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; border-radius: 999px; background: #0b0b0d; border: 1px solid rgba(255, 255, 255, .5); color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .lineup-label { margin: 14px 2px 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
 .lineup-subs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 14px; }
 .lineup-sub { display: flex; align-items: center; gap: 7px; min-width: 0; min-height: 28px; font-size: 12px; }
@@ -3748,6 +3749,55 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .md-stat-bar { display: flex; gap: 3px; height: 4px; margin-top: 4px; }
 .md-stat-bar span { min-width: 2px; border-radius: 2px; background: rgba(255, 255, 255, .26); }
 .md-stat-bar span.is-mine { background: #f5f5f7; }
+.md-stats-all { display: flex; flex-direction: column; gap: 10px; }
+.md-stats-gap { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .07); }
+.md-source-tag { margin: 0; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .4); }
+.md-splits { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .07); }
+.md-split { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text-2); }
+.md-split-label { flex: none; font-weight: 700; color: rgba(255, 255, 255, .55); }
+.md-split-values { text-align: right; font-variant-numeric: tabular-nums; }
+.md-momentum { display: flex; flex-direction: column; gap: 5px; }
+.md-momentum-head { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
+.md-momentum-head b { color: #fff; font-weight: 650; }
+.md-momentum-svg { width: 100%; height: 60px; overflow: visible; }
+.md-momentum-line { fill: none; stroke-width: 1.8; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.md-momentum-line.is-home { stroke: #f5f5f7; }
+.md-momentum-line.is-away { stroke: rgba(255, 255, 255, .38); }
+.md-momentum-zero { stroke: rgba(255, 255, 255, .12); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.md-momentum-foot { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255, 255, 255, .45); }
+.md-visual { display: flex; flex-direction: column; gap: 8px; }
+.md-shotmap-svg { width: 100%; height: auto; display: block; background: #0e0e10; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.md-pitch-line { fill: none; stroke: rgba(255, 255, 255, .14); stroke-width: .35; }
+.md-pitch-spot { fill: rgba(255, 255, 255, .25); }
+.md-shot.is-home { fill: #f5f5f7; }
+.md-shot.is-away { fill: #83838a; }
+.md-shot.is-target { stroke: #fff; stroke-width: .9; vector-effect: non-scaling-stroke; }
+.md-shot.is-goal { stroke: #fff; stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+.md-shot.is-off { opacity: .55; }
+.md-shot-legend { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 11px; color: rgba(255, 255, 255, .6); }
+.md-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.md-key-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.md-key-dot.is-home { background: #f5f5f7; }
+.md-key-dot.is-away { background: #83838a; }
+.md-legend-hint { margin-left: auto; color: rgba(255, 255, 255, .4); }
+.md-heat-row { display: flex; justify-content: flex-start; }
+.md-heat-button { font-size: 12px; }
+.md-heat:not(:empty) { display: block; margin-top: 2px; border-radius: 10px; overflow: hidden; background: #0e0e10; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.md-heat-frame { position: relative; aspect-ratio: 105 / 68; }
+.md-heat-pitch { position: absolute; inset: 0; width: 100%; height: 100%; }
+.md-heat-frame .md-heat-svg { position: absolute; inset: 0; width: 100%; height: 100%; filter: grayscale(1); opacity: .8; }
+.md-zones { display: flex; flex-direction: column; gap: 6px; }
+.md-zone-axis { display: flex; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .38); }
+.md-zone-axis span { flex: 1; }
+.md-zone-axis span:nth-child(2) { text-align: center; }
+.md-zone-axis span:last-child { text-align: right; }
+.md-zone-row { display: flex; align-items: center; gap: 10px; }
+.md-zone-team { flex: none; width: 38px; font-size: 11px; font-weight: 800; color: var(--text-2); }
+.md-zone-bar { flex: 1; display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; }
+.md-zone-seg { display: flex; align-items: center; justify-content: center; min-width: 0; font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.md-zone-seg.is-home { background: #f5f5f7; color: #0b0b0d; }
+.md-zone-seg.is-away { background: rgba(255, 255, 255, .34); color: #fff; }
+.md-visual-note { margin: 0; font-size: 11px; color: rgba(255, 255, 255, .4); }
 .md-graph { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 460px; }
 .md-graph-head { display: flex; justify-content: space-between; font-size: 12.5px; color: rgba(255, 255, 255, .65); }
 .md-graph-head b { color: #fff; }
@@ -3832,8 +3882,9 @@ body.is-wall .topbar { background: #000; border-bottom-color: transparent; box-s
 .mdp-box { left: 22%; right: 22%; bottom: 0; height: 17%; border-bottom: 0; }
 .mdp-six { left: 37%; right: 37%; bottom: 0; height: 7%; border-bottom: 0; }
 .mdp-player { position: absolute; z-index: 1; width: 23%; display: flex; flex-direction: column; align-items: center; gap: 3px; transform: translate(-50%, -50%); text-align: center; }
-.mdp-shirt { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f5f5f7; color: #0b0b0d; font-size: 12px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.mdp-shirt { position: relative; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #f5f5f7; color: #0b0b0d; font-size: 12px; font-weight: 800; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
 .mdp-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 600; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.mdp-rating { position: absolute; top: -4px; right: -5px; min-width: 18px; height: 14px; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; border-radius: 999px; background: #0b0b0d; border: 1px solid rgba(255, 255, 255, .5); color: #fff; font-size: 8px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .md-art .md-xi { width: 236px; top: 50%; }
 .md-art .md-xi .md-pitch { aspect-ratio: 1 / 1; }
 .md-art .md-xi .mdp-shirt { width: 24px; height: 24px; font-size: 11px; }

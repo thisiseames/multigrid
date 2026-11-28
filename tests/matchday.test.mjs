@@ -91,6 +91,11 @@ test("ESPN's match file during a game: timeline, stats, commentary newest first,
   assert.ok(data.stats.find((stat) => stat.name === 'possessionPct'));
   const shots = data.stats.find((stat) => stat.name === 'totalShots');
   assert.ok(Number.isFinite(shots.home) && Number.isFinite(shots.away));
+  // ESPN gives pass accuracy as 0.5, which must read as 50%, not 1%.
+  const passing = data.stats.find((stat) => stat.name === 'passPct');
+  assert.equal(passing.home, 50);
+  assert.equal(passing.away, 90);
+  assert.ok(['accuratePasses', 'totalCrosses', 'totalTackles', 'interceptions', 'effectiveClearance', 'blockedShots', 'offsides', 'yellowCards', 'redCards'].every((name) => data.stats.some((stat) => stat.name === name)));
   const minutes = data.commentary.map((line) => line.minute);
   assert.ok(data.commentary.length > 0 && minutes[0] !== '');
   assert.equal(data.lineups.length, 2);

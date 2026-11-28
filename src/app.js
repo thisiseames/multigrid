@@ -32,6 +32,8 @@ import { boxScoreInput } from './boxscore.js';
 import { chanceText, loadOdds, oddsFor, oddsUrl, parseOdds } from './odds.js';
 import { MY_LEAGUES } from './leagues.js';
 import { addChance, chancePath, clubVideos, countdownText, findBroadcast, fulltimeHoldUntil, isCalledOff, isFulltimeHold, loadChances, markFulltime, matchdayTeam, parseSummary, phaseOf, pickMatches, positionBefore, rememberPosition, saveChances, tableMove } from './matchday.js';
+import { loadSofascoreGaps, normalizeName as sofaName } from './sofascore.js';
+import { fotmobShots, loadFotmobHeatmap, loadFotmobMatch, parseFotmobAttackingZones, parseFotmobWeather } from './fotmob.js';
 import { avatarFor, forgetAvatar } from './avatars.js';
 import { artFor } from './artwork.js';
 import { loadBlueskyTopics } from './bluesky.js';
@@ -11038,6 +11040,12 @@ function lineupsButton(match) {
 
 function lineupPitch(side) {
   const pitch = el('div', { class: 'lineup-pitch', style: `--team:${side.match.color || 'var(--accent)'}` });
+  // SofaScore's ratings and average positions only belong to the Matchday match, not to every
+  // line-up board the app opens for other games.
+  const mine = lineupMatch?.id === mdMatch()?.id;
+  const sideKey = side.home ? 'home' : 'away';
+  const ratingMap = mine ? md.gaps?.ratings?.[sideKey] : null;
+  const positionMap = mine ? md.gaps?.positions?.[sideKey] : null;
   pitch.append(
     el('span', { class: 'lp-half' }),
     el('span', { class: 'lp-circle' }),
@@ -11049,12 +11057,15 @@ function lineupPitch(side) {
     // Rows run from the goalkeeper (bottom) to the attack (top); players spread left to right.
     const y = rows.length === 1 ? 50 : 86 - (rowIndex / (rows.length - 1)) * 74;
     row.forEach((player, index) => {
+      const average = playerValue(positionMap, player);
+      const left = pitchLeft(row.length, index, average);
+      const rating = playerValue(ratingMap, player);
       pitch.append(el('span', {
         class: 'lp-player',
-        style: `left:${rowY(row.length, index)}%;top:${y}%`,
-        title: [player.name, player.position].filter(Boolean).join(' · '),
+        style: `left:${left}%;top:${y}%`,
+        title: [player.name, player.position, rating ? `SofaScore ${rating.toFixed(1)}` : ''].filter(Boolean).join(' · '),
       },
-      el('span', { class: 'lp-shirt', textContent: player.jersey || '•' }),
+      el('span', { class: 'lp-shirt' }, player.jersey || '•', rating != null ? el('span', { class: 'lp-rating', textContent: rating.toFixed(1) }) : null),
       el('small', { class: 'lp-name', textContent: player.short || player.name })));
     });
   });
@@ -11263,7 +11274,8 @@ function highlightsButton(match) {
    full-time card tells the story for the rest of the day; other days a slim line counts down. */
 // var, not const: Game mode and the ticker can ask before this part of the file has run.
 var md = { team: matchdayTeam(), // eslint-disable-line no-var
-  match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off', hold: false };
+  match: null, next: null, last: null, data: null, odds: null, chances: [], broadcast: null, found: 0, fetched: 0, oddsAt: 0, phase: 'off', hold: false,
+  gaps: null, gapsAt: 0, fotmob: null, fotmobAt: 0, heat: '', heatShown: false };
 var mdTimer = null; // eslint-disable-line no-var
 const MD_SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=';
 
@@ -11283,6 +11295,12 @@ function findMatchday(sections, now = Date.now()) {
     md.fetched = 0;
     md.oddsAt = 0;
     md.broadcast = null;
+    md.gaps = null;
+    md.gapsAt = 0;
+    md.fotmob = null;
+    md.fotmobAt = 0;
+    md.heat = '';
+    md.heatShown = false;
     md.chances = today ? loadChances(today.id) : [];
   }
   // A fresher state from the match file wins over the schedule's.
@@ -11340,6 +11358,28 @@ async function matchdayTick(force = false) {
           md.fetched = now;
           const place = data.positions[mdSide(data.match)];
           if (data.match.state === 'pre' && place?.rank) rememberPosition(match.id, place.rank);
+        }
+      }
+      // The gaps ESPN does not carry. SofaScore supplies xG, big chances, ratings and momentum;
+      // FotMob supplies the shot map, attacking zones, heatmap and weather. Both are optional:
+      // if either is slow or blocked, its blocks stay out and the ESPN match centre is unchanged.
+      const extra = md.data?.match ?? null;
+      if (extra && (phase === 'live' || phase === 'fulltime')) {
+        if (force || now - md.gapsAt >= (phase === 'live' ? 30000 : 120000)) {
+          md.gapsAt = now;
+          loadSofascoreGaps(extra).then((gaps) => {
+            if (mdMatch()?.id !== extra.id) return;
+            md.gaps = gaps;
+            drawMatchdayViews();
+          }).catch(() => {});
+        }
+        if (force || now - md.fotmobAt >= (phase === 'live' ? 180000 : 600000)) {
+          md.fotmobAt = now;
+          loadFotmobMatch(extra).then((fotmob) => {
+            if (mdMatch()?.id !== extra.id) return;
+            md.fotmob = fotmob;
+            if (fotmob) drawMatchdayViews();
+          }).catch(() => {});
         }
       }
       // Win chances: every minute live, every five before; a finished game's market is closed.
@@ -11459,16 +11499,211 @@ function mdTimeline(match, data, limit = Infinity) {
     el('span', { class: 'md-moment-text' }, el('b', { textContent: text(item) }), item.side ? el('small', { textContent: match[item.side].name }) : null))));
 }
 
-function mdStats(match, data, limit = 6) {
+const statNumber = (value, decimals = 0) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  return decimals ? number.toFixed(decimals) : String(Math.round(number));
+};
+
+function mdStatRow(match, { label, home, away, unit = '', decimals = 0 }) {
+  const total = home + away;
+  const share = total ? home / total : 0.5;
+  return el('div', { class: 'md-stat' },
+    el('div', { class: 'md-stat-line' }, el('b', { textContent: `${statNumber(home, decimals)}${unit}` }), el('span', { textContent: label }), el('b', { textContent: `${statNumber(away, decimals)}${unit}` })),
+    el('div', { class: 'md-stat-bar' }, el('span', { class: `is-home${mdSide(match) === 'home' ? ' is-mine' : ''}`, style: `flex:${share.toFixed(3)}` }), el('span', { class: `is-away${mdSide(match) === 'away' ? ' is-mine' : ''}`, style: `flex:${(1 - share).toFixed(3)}` })));
+}
+
+/** xG and big chances for a half, when SofaScore has both halves. */
+function mdSplitRow(label, stats) {
+  const xg = stats.find((stat) => stat.key === 'Expected goals');
+  const big = stats.find((stat) => stat.key === 'Big chances');
+  // At the start of a half the period is nearly empty; do not show a noisy 0.00–0.02 line.
+  const useful = (stat) => stat && (Math.abs(stat.home) + Math.abs(stat.away) >= (stat.decimals ? 0.1 : 1));
+  if (![xg, big].some(useful)) return null;
+  const pair = (stat) => `${statNumber(stat.home, stat.decimals)}–${statNumber(stat.away, stat.decimals)}`;
+  return el('div', { class: 'md-split' },
+    el('span', { class: 'md-split-label', textContent: label }),
+    el('span', { class: 'md-split-values', textContent: [xg ? `xG ${pair(xg)}` : '', big ? `Big chances ${pair(big)}` : ''].filter(Boolean).join(' · ') }));
+}
+
+function mdStats(match, data, limit = Infinity) {
   const stats = (data?.stats ?? []).slice(0, limit);
-  if (!stats.length) return null;
-  return el('div', { class: 'md-stats' }, ...stats.map((stat) => {
-    const total = stat.home + stat.away;
-    const share = total ? stat.home / total : 0.5;
-    return el('div', { class: 'md-stat' },
-      el('div', { class: 'md-stat-line' }, el('b', { textContent: `${stat.home}${stat.unit}` }), el('span', { textContent: stat.label }), el('b', { textContent: `${stat.away}${stat.unit}` })),
-      el('div', { class: 'md-stat-bar' }, el('span', { class: `is-home${mdSide(match) === 'home' ? ' is-mine' : ''}`, style: `flex:${share.toFixed(3)}` }), el('span', { class: `is-away${mdSide(match) === 'away' ? ' is-mine' : ''}`, style: `flex:${(1 - share).toFixed(3)}` })));
-  }));
+  const gaps = md.gaps?.stats?.all ?? [];
+  if (!stats.length && !gaps.length) return null;
+  const statsBlock = stats.length ? el('div', { class: 'md-stats' }, ...stats.map((stat) => mdStatRow(match, stat))) : null;
+  const extras = [];
+  if (limit === Infinity && gaps.length) {
+    extras.push(el('div', { class: 'md-stats-gap' },
+      el('p', { class: 'md-source-tag', textContent: 'SofaScore' }),
+      el('div', { class: 'md-stats' }, ...gaps.map((stat) => mdStatRow(match, stat)))));
+  }
+  const first = md.gaps?.stats?.first ?? [];
+  const second = md.gaps?.stats?.second ?? [];
+  if (limit === Infinity && first.length && second.length) {
+    const splits = [mdSplitRow('1st half', first), mdSplitRow('2nd half', second)].filter(Boolean);
+    if (splits.length) extras.push(el('div', { class: 'md-splits' }, ...splits));
+  }
+  if (!extras.length) return statsBlock;
+  return el('div', { class: 'md-stats-all' }, statsBlock, ...extras);
+}
+
+/** The momentum line: home above the middle, away below. */
+function mdMomentum(match, points) {
+  const list = (points ?? [])
+    .filter((point) => Number.isFinite(point?.[0]) && Number.isFinite(point?.[1]))
+    .map(([minute, value]) => [Number(minute), Number(value)])
+    .sort((a, b) => a[0] - b[0]);
+  if (list.length < 2) return null;
+  const width = 300;
+  const height = 58;
+  const middle = height / 2;
+  const lastMinute = Math.max(45, list.at(-1)[0]);
+  const x = (minute) => 2 + (minute / lastMinute) * (width - 4);
+  const y = (value) => middle - (Math.max(-100, Math.min(100, value)) / 100) * (middle - 5);
+  const paths = { home: '', away: '' };
+  const segment = (a, b) => {
+    if (a[1] === 0 && b[1] === 0) return;
+    const key = a[1] + b[1] >= 0 ? 'home' : 'away';
+    paths[key] += `${paths[key] ? 'L' : 'M'}${x(a[0]).toFixed(1)},${y(a[1]).toFixed(1)}L${x(b[0]).toFixed(1)},${y(b[1]).toFixed(1)}`;
+  };
+  for (let index = 1; index < list.length; index++) {
+    const a = list[index - 1];
+    const b = list[index];
+    if ((a[1] >= 0) !== (b[1] >= 0)) {
+      const cross = a[1] / (a[1] - b[1]);
+      const zero = [a[0] + (b[0] - a[0]) * cross, 0];
+      segment(a, zero);
+      segment(zero, b);
+    } else {
+      segment(a, b);
+    }
+  }
+  const svg = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="md-momentum-svg"><line x1="2" x2="${width - 2}" y1="${middle}" y2="${middle}" class="md-momentum-zero"/><path d="${paths.home}" class="md-momentum-line is-home"/><path d="${paths.away}" class="md-momentum-line is-away"/></svg>`, 'image/svg+xml').documentElement;
+  return el('div', { class: 'md-momentum' },
+    el('div', { class: 'md-momentum-head' }, el('b', { textContent: match.home.name }), el('b', { textContent: match.away.name })),
+    svg,
+    el('div', { class: 'md-momentum-foot' }, el('span', { textContent: 'Kick-off' }), el('span', { textContent: `${lastMinute}'` })));
+}
+
+const shotAttr = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const PITCH_MARKUP = `
+  <rect x="0.5" y="0.5" width="104" height="67" class="md-pitch-line"/>
+  <line x1="52.5" y1="0.5" x2="52.5" y2="67.5" class="md-pitch-line"/>
+  <circle cx="52.5" cy="34" r="9.15" class="md-pitch-line"/>
+  <rect x="0.5" y="13.84" width="16.5" height="40.32" class="md-pitch-line"/>
+  <rect x="0.5" y="24.84" width="5.5" height="18.32" class="md-pitch-line"/>
+  <rect x="88" y="13.84" width="16.5" height="40.32" class="md-pitch-line"/>
+  <rect x="99" y="24.84" width="5.5" height="18.32" class="md-pitch-line"/>
+  <circle cx="11.5" cy="34" r=".45" class="md-pitch-spot"/>
+  <circle cx="93.5" cy="34" r=".45" class="md-pitch-spot"/>`;
+
+/** The FotMob heatmap SVG, with only its pitch-sized frame and heat blobs. */
+function mdHeatNode(svg) {
+  if (!svg) return null;
+  try {
+    const root = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
+    if (!root || root.nodeName.toLowerCase() !== 'svg') return null;
+    root.setAttribute('class', 'md-heat-svg');
+    return document.importNode(root, true);
+  } catch {
+    return null;
+  }
+}
+
+/** Every shot on one horizontal pitch: home white, away grey, goals larger, on target ringed. */
+function mdShotMap(match) {
+  const shots = fotmobShots(md.fotmob);
+  if (!shots.length) return null;
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const mark = (shot) => {
+    const cx = (clamp(shot.x, 0, 100) * 1.05).toFixed(2);
+    const cy = (clamp(shot.y, 0, 100) * 0.68).toFixed(2);
+    const radius = shot.goal ? 2.5 : shot.onTarget ? 1.9 : 1.4;
+    const state = shot.goal ? ' is-goal' : shot.onTarget ? ' is-target' : ' is-off';
+    const label = `${shot.minute}' ${shot.player}${shot.goal ? ' · goal' : shot.onTarget ? ' · on target' : ' · off target'}${shot.xg ? ` · ${shot.xg.toFixed(2)} xG` : ''}`;
+    return `<circle cx="${cx}" cy="${cy}" r="${radius}" class="md-shot${shot.side === 'home' ? ' is-home' : ' is-away'}${state}"><title>${shotAttr(label)}</title></circle>`;
+  };
+  const svg = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105 68" class="md-shotmap-svg">${PITCH_MARKUP}${shots.map(mark).join('')}</svg>`, 'image/svg+xml').documentElement;
+  const home = shots.filter((shot) => shot.side === 'home').length;
+  const away = shots.length - home;
+  const goals = shots.filter((shot) => shot.goal).length;
+  const heat = el('div', { class: 'md-heat' });
+  const paint = () => {
+    const node = mdHeatNode(md.heat);
+    if (!node) return false;
+    const field = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105 68" class="md-heat-pitch">${PITCH_MARKUP}</svg>`, 'image/svg+xml').documentElement;
+    heat.replaceChildren(el('div', { class: 'md-heat-frame' }, document.importNode(field, true), node));
+    return true;
+  };
+  let button;
+  const toggle = () => {
+    if (md.heatShown) {
+      md.heatShown = false;
+      heat.replaceChildren();
+      button.textContent = 'Show heatmap';
+      return;
+    }
+    if (md.heat && paint()) {
+      md.heatShown = true;
+      button.textContent = 'Hide heatmap';
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Loading heatmap…';
+    loadFotmobHeatmap(md.fotmob).then((svgText) => {
+      if (!svgText) {
+        button.textContent = 'Heatmap unavailable';
+        return;
+      }
+      md.heat = svgText;
+      if (paint()) {
+        md.heatShown = true;
+        button.textContent = 'Hide heatmap';
+      }
+    }).catch(() => { button.textContent = 'Heatmap unavailable'; })
+      .finally(() => { button.disabled = false; });
+  };
+  button = el('button', { type: 'button', class: 'md-link md-heat-button', on: { click: toggle } }, md.heatShown && md.heat ? 'Hide heatmap' : 'Show heatmap');
+  if (md.heatShown && md.heat) paint();
+  return el('div', { class: 'md-visual' },
+    svg,
+    el('div', { class: 'md-shot-legend' },
+      el('span', { class: 'md-legend-item' }, el('span', { class: 'md-key-dot is-home' }), `${match.home.abbr || match.home.name} ${home}`),
+      el('span', { class: 'md-legend-item' }, el('span', { class: 'md-key-dot is-away' }), `${match.away.abbr || match.away.name} ${away}`),
+      el('span', { class: 'md-legend-hint', textContent: `${goals} goal${goals === 1 ? '' : 's'}` })),
+    el('div', { class: 'md-heat-row' }, button),
+    heat);
+}
+
+/** FotMob's left / centre / right share of each team's attacks. */
+function mdZones(match) {
+  const zones = parseFotmobAttackingZones(md.fotmob);
+  if (!zones) return null;
+  const row = (key) => {
+    const value = zones[key]?.total;
+    if (!value) return null;
+    const total = value.left + value.center + value.right || 1;
+    return el('div', { class: 'md-zone-row' },
+      el('span', { class: 'md-zone-team', textContent: match[key].abbr || match[key].name }),
+      el('div', { class: 'md-zone-bar' }, ...['left', 'center', 'right'].map((zone) => el('span', {
+        class: `md-zone-seg is-${key}`,
+        style: `flex:${Math.max(0.01, value[zone] / total)}`,
+        textContent: `${Math.round(value[zone])}%`,
+      }))));
+  };
+  const rows = [row('home'), row('away')].filter(Boolean);
+  if (!rows.length) return null;
+  return el('div', { class: 'md-zones' },
+    el('div', { class: 'md-zone-axis' }, el('span', { textContent: 'Left' }), el('span', { textContent: 'Centre' }), el('span', { textContent: 'Right' })),
+    ...rows,
+    el('p', { class: 'md-visual-note', textContent: 'Share of attacks' }));
+}
+
+/** "Rain, 9°C" from FotMob's match page, or ''. */
+function mdWeather() {
+  const weather = parseFotmobWeather(md.fotmob);
+  if (!weather) return '';
+  return [weather.description, weather.temperature != null ? `${weather.temperature}°C` : ''].filter(Boolean).join(', ');
 }
 
 function mdScorers(match, data) {
@@ -11478,8 +11713,31 @@ function mdScorers(match, data) {
   return el('div', { class: 'md-scorers' }, ...['home', 'away'].map((key) => (side(key) ? el('p', {}, el('b', { textContent: `${match[key].name} ` }), side(key)) : null)).filter(Boolean));
 }
 
+/** The formation's spot, nudged toward the player's real average position without collapsing the shape. */
+const pitchLeft = (count, index, average) => {
+  const base = rowY(count, index);
+  // SofaScore's Y runs right-to-left for the team; the board runs left-to-right.
+  return average ? base * 0.7 + Math.max(8, Math.min(92, 100 - average.y)) * 0.3 : base;
+};
+
+/** A SofaScore value for an ESPN player, by full name, then by last name. */
+function playerValue(map, player) {
+  if (!map?.size) return null;
+  const full = sofaName(player?.name);
+  if (full && map.has(full)) return map.get(full);
+  const last = full.split(' ').pop();
+  if (!last) return null;
+  for (const [name, value] of map) {
+    if (name === last || name.endsWith(` ${last}`)) return value;
+  }
+  return null;
+}
+
 /** A starting XI on an upright pitch: the goalkeeper at the bottom, the strikers at the top. */
-function mdPitch(side, gone = new Set()) {
+function mdPitch(side, gone = new Set(), ratings = null, positions = null) {
+  const sideKey = side.home ? 'home' : 'away';
+  const ratingMap = ratings?.[sideKey];
+  const positionMap = positions?.[sideKey];
   const pitch = el('div', { class: 'md-pitch' },
     el('span', { class: 'mdp-half' }), el('span', { class: 'mdp-circle' }),
     el('span', { class: 'mdp-box' }), el('span', { class: 'mdp-six' }));
@@ -11490,12 +11748,15 @@ function mdPitch(side, gone = new Set()) {
     row.forEach((player, index) => {
       // Sent off or substituted: still shown where they started, faded.
       const off = player.subbedOut || gone.has(player.short) || gone.has(player.name);
+      const average = playerValue(positionMap, player);
+      const left = pitchLeft(row.length, index, average);
+      const rating = playerValue(ratingMap, player);
       pitch.append(el('span', {
         class: `mdp-player${off ? ' is-off' : ''}`,
-        style: `left:${rowY(row.length, index)}%;top:${y}%`,
-        title: [player.name, player.position].filter(Boolean).join(' · '),
+        style: `left:${left}%;top:${y}%`,
+        title: [player.name, player.position, rating ? `SofaScore ${rating.toFixed(1)}` : ''].filter(Boolean).join(' · '),
       },
-      el('span', { class: 'mdp-shirt', textContent: player.jersey || '•' }),
+      el('span', { class: 'mdp-shirt' }, player.jersey || '•', rating != null ? el('span', { class: 'mdp-rating', textContent: rating.toFixed(1) }) : null),
       el('small', { class: 'mdp-name', textContent: (player.short || player.name).replace(/^[A-Z]\.\s+/, '') })));
     });
   });
@@ -11507,7 +11768,7 @@ function mdLineup(match, data) {
   const side = (data?.lineups ?? []).find((item) => item.home === (mdSide(match) === 'home'));
   if (!side) return null;
   const gone = new Set((data?.timeline ?? []).filter((item) => item.kind === 'red' || item.kind === 'sub').map((item) => (item.kind === 'sub' ? item.off : item.player)));
-  const pitch = mdPitch(side, gone);
+  const pitch = mdPitch(side, gone, md.gaps?.ratings, md.gaps?.positions);
   return el('div', { class: 'md-xi' },
     el('div', { class: 'md-xi-head' }, el('b', { textContent: `${match[mdSide(match)].name} XI` }), el('span', { textContent: side.formation })),
     pitch,
@@ -11790,7 +12051,9 @@ function refreshMatchdayHero() {
   const layer = hero.querySelector('.hero-layer.is-on');
   const hasXi = Boolean(layer?.querySelector('.md-xi'));
   const wantXi = (phase === 'buildup' || phase === 'live') && (md.data?.lineups ?? []).length > 0;
-  if (layer && hasXi !== wantXi) { heroKey = ''; showHero(item); }
+  const hasRatings = Boolean(layer?.querySelector('.mdp-rating'));
+  const wantRatings = Boolean(md.gaps?.ratings?.home?.size || md.gaps?.ratings?.away?.size);
+  if (layer && (hasXi !== wantXi || hasRatings !== wantRatings)) { heroKey = ''; showHero(item); }
 }
 
 /** What Matchday adds to the home screen: { hero, row, strip } for the phase it is. */
@@ -11830,7 +12093,14 @@ function matchCentre() {
     el('div', { class: 'md-score' }, el('b', { textContent: match.state === 'pre' ? 'v' : `${match.home.score}–${match.away.score}` }), status),
     score('away'));
   const section = (title, body) => (body ? el('section', { class: 'md-section' }, el('h4', { class: 'md-section-title', textContent: title }), body) : null);
-  const parts = [head, data?.match?.venue || match.venue ? el('p', { class: 'md-venue', textContent: data?.match?.venue || match.venue }) : null];
+  const attendance = Number(md.gaps?.event?.attendance);
+  const facts = [
+    data?.match?.venue || match.venue,
+    md.gaps?.event?.referee?.name ? `Referee ${md.gaps.event.referee.name}` : '',
+    Number.isFinite(attendance) && attendance > 0 ? `Attendance ${attendance.toLocaleString('en-GB')}` : '',
+    mdWeather(),
+  ].filter(Boolean);
+  const parts = [head, facts.length ? el('p', { class: 'md-venue', textContent: facts.join(' · ') }) : null];
   if (md.broadcast && phase !== 'fulltime') {
     parts.push(el('div', { class: 'md-watch' }, mdTvLine(match), el('button', { type: 'button', class: 'md-watch-button', on: { click: mdWatch } }, icon('play', 14), 'Watch')));
   }
@@ -11850,8 +12120,14 @@ function matchCentre() {
     if (chance) analysis.push(section('Win chance', chance));
     const timeline = mdTimeline(match, data);
     if (timeline) analysis.push(section('Timeline', timeline));
+    const momentum = mdMomentum(match, md.gaps?.momentum);
+    if (momentum) analysis.push(section('Momentum', momentum));
     const stats = mdStats(match, data);
     if (stats) analysis.push(section('Stats', stats));
+    const shots = mdShotMap(match);
+    if (shots) analysis.push(section('Shot map', shots));
+    const zones = mdZones(match);
+    if (zones) analysis.push(section('Attacking zones', zones));
     const place = data?.positions?.[mdSide(match)];
     if (place?.rank && !isCalledOff(match)) {
       analysis.push(section('Table', el('p', { class: 'md-quiet', textContent: `${match[mdSide(match)].name}: ${tableMove(positionBefore(match.id), place.rank)} · ${place.points} pts` })));
@@ -11872,7 +12148,13 @@ function matchCentre() {
   } else {
     parts.push(section('Win chance', mdChanceGraph(match) || mdChances(match, md.odds)));
     parts.push(section('Timeline', mdTimeline(match, data)));
+    const momentum = mdMomentum(match, md.gaps?.momentum);
+    if (momentum) parts.push(section('Momentum', momentum));
     parts.push(section('Stats', mdStats(match, data)));
+    const shots = mdShotMap(match);
+    if (shots) parts.push(section('Shot map', shots));
+    const zones = mdZones(match);
+    if (zones) parts.push(section('Attacking zones', zones));
     if ((data?.lineups ?? []).length) parts.push(el('button', { type: 'button', class: 'md-link', on: { click: () => openLineups(match) } }, icon('pitch', 14), 'Line-ups and subs'));
     const lines = data?.commentary ?? [];
     if (lines.length) {
@@ -11883,7 +12165,8 @@ function matchCentre() {
       parts.push(section('Commentary', el('div', {}, list, more)));
     }
   }
-  parts.push(el('p', { class: 'md-source', textContent: `ESPN · Polymarket${md.fetched ? ` · Updated ${clock(md.fetched)}` : ''}` }));
+  const hasSofa = Boolean(md.gaps && (md.gaps.stats?.all?.length || md.gaps.momentum?.length || md.gaps.ratings?.home?.size));
+  parts.push(el('p', { class: 'md-source', textContent: `ESPN${hasSofa ? ' · SofaScore' : ''}${md.fotmob ? ' · FotMob' : ''} · Polymarket${md.fetched ? ` · Updated ${clock(md.fetched)}` : ''}` }));
   return el('div', { class: 'md-centre' }, ...parts.filter(Boolean));
 }
 

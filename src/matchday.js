@@ -113,7 +113,17 @@ const STATS = [
   ['shotsOnTarget', 'On target', ''],
   ['wonCorners', 'Corners', ''],
   ['foulsCommitted', 'Fouls', ''],
+  ['yellowCards', 'Yellow cards', ''],
+  ['redCards', 'Red cards', ''],
   ['saves', 'Saves', ''],
+  ['passPct', 'Pass accuracy', '%', 100],
+  ['accuratePasses', 'Passes completed', ''],
+  ['totalCrosses', 'Crosses', ''],
+  ['totalTackles', 'Tackles', ''],
+  ['interceptions', 'Interceptions', ''],
+  ['effectiveClearance', 'Clearances', ''],
+  ['blockedShots', 'Blocked shots', ''],
+  ['offsides', 'Offsides', ''],
 ];
 
 const https = (url) => (typeof url === 'string' && /^https:\/\//.test(url) ? url : '');
@@ -166,9 +176,10 @@ export function parseSummary(answer) {
   const statsOf = (id) => Object.fromEntries((teams.find((team) => String(team.team?.id) === id)?.statistics ?? []).map((stat) => [stat.name, stat.displayValue]));
   const homeStats = statsOf(homeId);
   const awayStats = statsOf(match.away.id);
-  const stats = STATS.filter(([name]) => homeStats[name] != null && awayStats[name] != null).map(([name, label, unit]) => {
-    const home = Number(homeStats[name]) || 0;
-    const away = Number(awayStats[name]) || 0;
+  const stats = STATS.filter(([name]) => homeStats[name] != null && awayStats[name] != null).map(([name, label, unit, scale = 1]) => {
+    // ESPN gives pass accuracy as a fraction (0.8), not a percentage.
+    const home = (Number(homeStats[name]) || 0) * scale;
+    const away = (Number(awayStats[name]) || 0) * scale;
     return { name, label, home: unit === '%' ? Math.round(home) : home, away: unit === '%' ? Math.round(away) : away, unit };
   });
 
