@@ -3,8 +3,8 @@
 //     Streaming TV Top 100, read through r.jina.ai (IMDb answers direct requests with a challenge).
 //   · Rotten Tomatoes' Certified Fresh and Verified Hot browse pages, its two "Best of the year"
 //     guides, and its Most Popular TV page, read from the public pages themselves.
-//   · Landscape backdrops and one-line stories from JustWatch's public search, matched by title,
-//     kind and year; no match leaves a text card instead of wrong art.
+//   · Landscape backdrops, one-line stories and IMDb/Rotten Tomatoes scores from JustWatch's
+//     public search, matched by title, kind and year; no match leaves a text card instead of wrong art.
 // No key and no backend. A list that fails keeps its last good copy; a run that changes nothing
 // leaves the file alone, so the Action only commits when the lists really moved.
 // Run by .github/workflows/lists.yml.

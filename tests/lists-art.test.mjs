@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addJustWatchArt, bestJustWatchMatch, rowKey } from '../tools/lists-art.mjs';
 
-const node = (title, year, kind = 'MOVIE', backdrop = '/backdrop/1/{profile}/x.{format}', desc = 'About it', clips = []) => ({
+const node = (title, year, kind = 'MOVIE', backdrop = '/backdrop/1/{profile}/x.{format}', desc = 'About it', clips = [], scoring = null) => ({
   objectType: kind,
-  content: { title, originalReleaseYear: year, shortDescription: desc, backdrops: backdrop ? [{ backdropUrl: backdrop }] : [], clips },
+  content: {
+    title, originalReleaseYear: year, shortDescription: desc,
+    backdrops: backdrop ? [{ backdropUrl: backdrop }] : [], clips,
+    ...(scoring ? { scoring } : {}),
+  },
 });
 const answer = (...nodes) => ({ data: { searchTitles: { edges: nodes.map((n) => ({ node: n })) } } });
 
@@ -45,6 +49,17 @@ test('RT rows accept the exact title when the list date is not the release year'
   });
 });
 
+test('JustWatch ratings come with the art', () => {
+  const scored = node('The Odyssey', 2026, 'MOVIE', '/backdrop/9/{profile}/odyssey.{format}', 'Nolan’s Odyssey', [], {
+    imdbScore: 8.3, imdbVotes: 597552, tomatoMeter: 94, certifiedFresh: true,
+  });
+  const found = bestJustWatchMatch(answer(scored), { title: 'The Odyssey', year: 2026, kind: 'film' });
+  assert.equal(found.imdb, 8.3);
+  assert.equal(found.imdbVotes, 597552);
+  assert.equal(found.rt, 94);
+  assert.equal(found.fresh, true);
+});
+
 test('the first official trailer is kept, not a teaser or another site', () => {
   const clips = [
     { provider: 'YOUTUBE', externalId: 'zzz123YYY45', name: 'Official Teaser' },
@@ -56,7 +71,7 @@ test('the first official trailer is kept, not a teaser or another site', () => {
 });
 
 test('art already found is reused; missing art asks JustWatch once per title', async () => {
-  const previous = [{ title: 'The Odyssey', year: 2026, kind: 'film', image: 'https://images.justwatch.com/old.jpg', desc: 'Kept' }];
+  const previous = [{ title: 'The Odyssey', year: 2026, kind: 'film', image: 'https://images.justwatch.com/old.jpg', desc: 'Kept', imdb: 8.3, rt: 94 }];
   const entries = [
     { title: 'The Odyssey', year: 2026, kind: 'film' },
     { title: 'Landman', year: 2024, kind: 'show' },
@@ -68,10 +83,25 @@ test('art already found is reused; missing art asks JustWatch once per title', a
   assert.equal(asked, 1);
   assert.equal(result.entries[0].image, 'https://images.justwatch.com/old.jpg');
   assert.equal(result.entries[0].desc, 'Kept');
+  assert.equal(result.entries[0].imdb, 8.3);
   assert.equal(result.entries[1].image, 'https://images.justwatch.com/landman.jpg');
   assert.equal(result.entries[2].image, 'https://images.justwatch.com/landman.jpg');
   assert.equal(result.found, 1);
   assert.equal(rowKey(entries[1]), 'show|landman|2024');
+});
+
+test('old art stays while JustWatch fills in missing ratings', async () => {
+  const previous = [{ title: 'The Odyssey', year: 2026, kind: 'film', image: 'https://images.justwatch.com/old.jpg', desc: 'Kept' }];
+  let asked = 0;
+  const result = await addJustWatchArt([{ title: 'The Odyssey', year: 2026, kind: 'film' }], {
+    previous,
+    lookup: async () => { asked += 1; return { imdb: 8.3, rt: 94, fresh: true }; },
+  });
+  assert.equal(asked, 1);
+  assert.equal(result.entries[0].image, 'https://images.justwatch.com/old.jpg');
+  assert.equal(result.entries[0].imdb, 8.3);
+  assert.equal(result.entries[0].rt, 94);
+  assert.equal(result.entries[0].fresh, true);
 });
 
 test('a JustWatch miss leaves the row without art instead of borrowing the wrong picture', async () => {

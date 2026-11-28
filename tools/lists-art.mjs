@@ -10,6 +10,7 @@ export const JUSTWATCH_SEARCH = `query($country: Country!, $language: Language!,
       objectType
       content(country: $country, language: $language) {
         title originalReleaseYear shortDescription backdrops { backdropUrl }
+        scoring { imdbScore imdbVotes tomatoMeter certifiedFresh }
         clips(country: $country, language: $language) { sourceUrl externalId provider name }
       }
     } }
@@ -48,6 +49,26 @@ const trailerOf = (content) => {
   }).filter(Boolean).sort((a, b) => a.rank - b.rank)[0]?.id || '';
 };
 
+const scoresOf = (content) => {
+  const scoring = content?.scoring ?? {};
+  const imdb = Number.isFinite(scoring.imdbScore) && scoring.imdbScore > 0
+    ? Math.round(scoring.imdbScore * 10) / 10 : null;
+  return {
+    ...(imdb != null ? { imdb } : {}),
+    ...(Number.isFinite(scoring.imdbVotes) && scoring.imdbVotes > 0 ? { imdbVotes: scoring.imdbVotes } : {}),
+    ...(Number.isFinite(scoring.tomatoMeter) ? { rt: scoring.tomatoMeter } : {}),
+    ...(scoring.certifiedFresh === true ? { fresh: true } : {}),
+  };
+};
+
+const flatScores = (entry) => ({
+  ...(Number.isFinite(entry?.imdb) ? { imdb: entry.imdb } : {}),
+  ...(Number.isFinite(entry?.imdbVotes) && entry.imdbVotes > 0 ? { imdbVotes: entry.imdbVotes } : {}),
+  ...(Number.isFinite(entry?.rt) ? { rt: entry.rt } : {}),
+  ...(entry?.fresh === true ? { fresh: true } : {}),
+});
+const hasScores = (entry) => Number.isFinite(entry?.imdb) || Number.isFinite(entry?.rt);
+
 /**
  * The one JustWatch result that is the same title and kind, or null. IMDb rows know the release
  * year, so they only accept a near year. RT's list date is often the article or streaming date,
@@ -70,6 +91,7 @@ export function bestJustWatchMatch(answer, entry, { strictYear = true } = {}) {
       image: backdropOf(node.content),
       desc: String(node.content?.shortDescription || '').trim().slice(0, 400),
       trailer: trailerOf(node.content),
+      ...scoresOf(node.content),
     }))
     .filter((found) => found.title === wantedTitle)
     .filter((found) => !strictYear || !wantedYear || !found.year || Math.abs(found.year - wantedYear) <= 1);
@@ -83,7 +105,7 @@ export function bestJustWatchMatch(answer, entry, { strictYear = true } = {}) {
     return b.year - a.year;
   });
   const best = exact[0];
-  return { image: best.image, desc: best.desc, year: best.year, trailer: best.trailer };
+  return { image: best.image, desc: best.desc, year: best.year, trailer: best.trailer, ...scoresOf(best.node.content) };
 }
 
 /** Ask JustWatch's public search for one title. */
@@ -112,16 +134,19 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
     const key = rowKey(entry);
     if (!cache.has(key)) {
       const kept = reuse && !refresh ? old.get(key) : null;
-      if (kept?.image) {
-        cache.set(key, { image: kept.image, desc: kept.desc || '', year: kept.year || 0, trailer: kept.trailer || '' });
+      if (kept?.image && hasScores(kept)) {
+        cache.set(key, { image: kept.image, desc: kept.desc || '', year: kept.year || 0, trailer: kept.trailer || '', ...flatScores(kept) });
       } else {
         try {
           const art = await lookup(entry);
-          cache.set(key, art || {});
+          cache.set(key, {
+            ...(kept?.image ? { image: kept.image, desc: kept.desc || '', year: kept.year || 0, trailer: kept.trailer || '' } : {}),
+            ...(art || {}),
+          });
           asked += 1;
           if (art?.image) found += 1;
         } catch {
-          cache.set(key, {});
+          cache.set(key, kept ? { image: kept.image, desc: kept.desc || '', year: kept.year || 0, trailer: kept.trailer || '', ...flatScores(kept) } : {});
           asked += 1;
         }
       }
@@ -133,6 +158,7 @@ export async function addJustWatchArt(entries, { previous = [], lookup = askJust
       ...(art.image ? { image: art.image } : {}),
       ...(art.desc ? { desc: art.desc } : {}),
       ...(art.trailer ? { trailer: art.trailer } : {}),
+      ...flatScores(art),
     });
   }
   return { entries: out, asked, found };

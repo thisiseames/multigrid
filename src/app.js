@@ -8696,6 +8696,7 @@ async function drawHome() {
           kind: entry.kind,
           year: entry.year || 0,
           rank: entry.rank,
+          scores: entry,
           backdrop: entry.image || '',
           desc: entry.desc || '',
           meta: [entry.year || '', entry.kind === 'film' ? 'Film' : 'Series', list.source].filter(Boolean).join(' · '),
