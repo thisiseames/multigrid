@@ -1,5 +1,5 @@
 {
- "updated": 1795841796382,
+ "updated": 1795843360941,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -476,11 +476,50 @@
    "title": "Suns 109–113 Mavericks",
    "start": 1795831200000,
    "sources": "feeds",
+   "videos": [
+    {
+     "id": "8hq4Hkr-mIk",
+     "title": "MAVERICKS at SUNS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401909333": {
+   "league": "NBA",
+   "title": "Spurs 99–96 Lakers",
+   "start": 1795833000000,
+   "sources": "feeds",
    "videos": []
   },
   "401909334": {
    "league": "NBA",
    "title": "Jazz 107–120 Nuggets",
+   "start": 1795833000000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "KVmlKZ_Tfs0",
+     "title": "NUGGETS at JAZZ | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401909335": {
+   "league": "NBA",
+   "title": "Clippers 104–105 Pelicans",
+   "start": 1795833000000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "4tm1xEoj8wk",
+     "title": "PELICANS at CLIPPERS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401909336": {
+   "league": "NBA",
+   "title": "Trail Blazers 116–94 Warriors",
    "start": 1795833000000,
    "sources": "feeds",
    "videos": []
