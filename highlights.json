@@ -1,5 +1,5 @@
 {
- "updated": 1795824692099,
+ "updated": 1795826248563,
  "games": {
   "401873078": {
    "league": "NFL",
@@ -373,60 +373,6 @@
      "id": "a18OjcZy5ZM",
      "title": "Game Highlights: Portland Trail Blazers 116, San Antonio Spurs 111 | Nov. 25, 2026",
      "rank": 2.5
-    }
-   ]
-  },
-  "401910038": {
-   "league": "NBA",
-   "title": "Pacers 125–120 Thunder",
-   "start": 1795480200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "PHx8pJV7Qss",
-     "title": "THUNDER at PACERS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "XmChuwuFBvU",
-     "title": "Jalen Slawson Shines Off Bench In Pacers Win Over Thunder | Full Game Highlights",
-     "rank": 2.5
-    }
-   ]
-  },
-  "401910039": {
-   "league": "NBA",
-   "title": "Raptors 111–116 Bucks",
-   "start": 1795480200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "R2MWX8N1HO4",
-     "title": "BUCKS at RAPTORS | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
-    },
-    {
-     "id": "90rT_Q1c2Lg",
-     "title": "Milwaukee Bucks vs. Toronto Raptors | NBA Highlights",
-     "rank": 3
-    },
-    {
-     "id": "JKrJL8Vqwxc",
-     "title": "Highlights: Bucks 116 - Raptors 111 | 11.23.26",
-     "rank": 1.5
-    }
-   ]
-  },
-  "401910040": {
-   "league": "NBA",
-   "title": "Timberwolves 142–116 Nets",
-   "start": 1795480200000,
-   "sources": "feeds",
-   "videos": [
-    {
-     "id": "vGau3yaLQ7s",
-     "title": "NETS at TIMBERWOLVES | FULL GAME HIGHLIGHTS | November 23, 2026",
-     "rank": 3.5
     }
    ]
   },
