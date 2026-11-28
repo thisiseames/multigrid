@@ -11284,6 +11284,13 @@ function mdSide(match = mdMatch()) { return match?.home.id === md.team.id ? 'hom
 function mdOther(match = mdMatch()) { return mdSide(match) === 'home' ? 'away' : 'home'; }
 function mdPhase(now = Date.now()) { return md ? phaseOf(mdMatch(), now, md.broadcast?.start) : 'off'; }
 
+/** Man Utd's colour is the accent; the opponent stays neutral so the two sets never merge. */
+function syncMatchdayColour() {
+  const match = mdMatch();
+  const raw = match?.[mdSide(match)]?.color;
+  document.documentElement.style.setProperty('--md-team', /^#[0-9a-f]{6}$/i.test(raw || '') ? raw : '#da291c');
+}
+
 /* SofaScore first; when it is blocked, the already-loaded FotMob JSON fills the same gaps. */
 const mdGapStats = () => (md?.gaps?.stats?.all?.length ? md.gaps.stats : md?.fotmobGaps?.stats);
 const mdGapRatings = () => ((md?.gaps?.ratings?.home?.size || md?.gaps?.ratings?.away?.size) ? md.gaps.ratings : md?.fotmobGaps?.ratings);
@@ -11416,6 +11423,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && Da
 
 /** Whatever shows Matchday is redrawn: the home banner and rows, the Game mode tab, the phone sheet. */
 function drawMatchdayViews() {
+  syncMatchdayColour();
   const phase = mdPhase();
   const match = mdMatch();
   const hold = phase === 'fulltime'
@@ -11502,7 +11510,7 @@ function mdTimeline(match, data, limit = Infinity) {
     if (item.kind === 'break') return item.label;
     return `${item.player}${item.note ? ` · ${item.note}` : ''}`;
   };
-  return el('ol', { class: 'md-timeline' }, ...list.slice().reverse().slice(0, limit).map((item) => el('li', { class: `md-moment is-${item.kind} is-${item.side || 'none'}` },
+  return el('ol', { class: 'md-timeline' }, ...list.slice().reverse().slice(0, limit).map((item) => el('li', { class: `md-moment is-${item.kind} is-${item.side || 'none'}${item.side === mdSide(match) ? ' is-mine' : ''}` },
     el('span', { class: 'md-minute', textContent: item.minute }),
     item.kind === 'break' ? null : el('span', { class: `md-mark is-${item.kind}` }, item.kind === 'yellow' || item.kind === 'red' ? el('span', { class: 'md-card' }) : icon(mark[item.kind] || 'live', 14)),
     el('span', { class: 'md-moment-text' }, el('b', { textContent: text(item) }), item.side ? el('small', { textContent: match[item.side].name }) : null))));
@@ -11588,7 +11596,8 @@ function mdMomentum(match, points) {
       segment(a, b);
     }
   }
-  const svg = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="md-momentum-svg"><line x1="2" x2="${width - 2}" y1="${middle}" y2="${middle}" class="md-momentum-zero"/><path d="${paths.home}" class="md-momentum-line is-home"/><path d="${paths.away}" class="md-momentum-line is-away"/></svg>`, 'image/svg+xml').documentElement;
+  const mine = mdSide(match) === 'home' ? 'home' : 'away';
+  const svg = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="md-momentum-svg"><line x1="2" x2="${width - 2}" y1="${middle}" y2="${middle}" class="md-momentum-zero"/><path d="${paths.home}" class="md-momentum-line is-home${mine === 'home' ? ' is-mine' : ''}"/><path d="${paths.away}" class="md-momentum-line is-away${mine === 'away' ? ' is-mine' : ''}"/></svg>`, 'image/svg+xml').documentElement;
   return el('div', { class: 'md-momentum' },
     el('div', { class: 'md-momentum-head' }, el('b', { textContent: match.home.name }), el('b', { textContent: match.away.name })),
     svg,
@@ -11631,7 +11640,7 @@ function mdShotMap(match) {
     const radius = shot.goal ? 2.5 : shot.onTarget ? 1.9 : 1.4;
     const state = shot.goal ? ' is-goal' : shot.onTarget ? ' is-target' : ' is-off';
     const label = `${shot.minute}' ${shot.player}${shot.goal ? ' · goal' : shot.onTarget ? ' · on target' : ' · off target'}${shot.xg ? ` · ${shot.xg.toFixed(2)} xG` : ''}`;
-    return `<circle cx="${cx}" cy="${cy}" r="${radius}" class="md-shot${shot.side === 'home' ? ' is-home' : ' is-away'}${state}"><title>${shotAttr(label)}</title></circle>`;
+    return `<circle cx="${cx}" cy="${cy}" r="${radius}" class="md-shot${shot.side === 'home' ? ' is-home' : ' is-away'}${shot.side === mdSide(match) ? ' is-mine' : ''}${state}"><title>${shotAttr(label)}</title></circle>`;
   };
   const svg = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 105 68" class="md-shotmap-svg">${PITCH_MARKUP}${shots.map(mark).join('')}</svg>`, 'image/svg+xml').documentElement;
   const home = shots.filter((shot) => shot.side === 'home').length;
@@ -11678,8 +11687,8 @@ function mdShotMap(match) {
   return el('div', { class: 'md-visual' },
     svg,
     el('div', { class: 'md-shot-legend' },
-      el('span', { class: 'md-legend-item' }, el('span', { class: 'md-key-dot is-home' }), `${match.home.abbr || match.home.name} ${home}`),
-      el('span', { class: 'md-legend-item' }, el('span', { class: 'md-key-dot is-away' }), `${match.away.abbr || match.away.name} ${away}`),
+      el('span', { class: 'md-legend-item' }, el('span', { class: `md-key-dot is-home${mdSide(match) === 'home' ? ' is-mine' : ''}` }), `${match.home.abbr || match.home.name} ${home}`),
+      el('span', { class: 'md-legend-item' }, el('span', { class: `md-key-dot is-away${mdSide(match) === 'away' ? ' is-mine' : ''}` }), `${match.away.abbr || match.away.name} ${away}`),
       el('span', { class: 'md-legend-hint', textContent: `${goals} goal${goals === 1 ? '' : 's'}` })),
     el('div', { class: 'md-heat-row' }, button),
     heat);
@@ -11696,7 +11705,7 @@ function mdZones(match) {
     return el('div', { class: 'md-zone-row' },
       el('span', { class: 'md-zone-team', textContent: match[key].abbr || match[key].name }),
       el('div', { class: 'md-zone-bar' }, ...['left', 'center', 'right'].map((zone) => el('span', {
-        class: `md-zone-seg is-${key}`,
+        class: `md-zone-seg is-${key}${key === mdSide(match) ? ' is-mine' : ''}`,
         style: `flex:${Math.max(0.01, value[zone] / total)}`,
         textContent: `${Math.round(value[zone])}%`,
       }))));

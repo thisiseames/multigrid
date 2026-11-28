@@ -61,6 +61,7 @@ on a pitch, attacking share and heatmap from FotMob.
 5. Momentum uses SofaScore's signed values: positive is the home side.
 6. Weather is one short phrase beside the venue, not a panel.
 7. If SofaScore is blocked, the same xG/ratings/momentum gaps come from the FotMob JSON already loaded for the shot map, and the Stats label says FotMob. SofaScore is still tried first.
+8. Man Utd red is the match accent: their stat bars, win chance, momentum, goal markers, shots, attacking zones and XI shirts. The opponent stays white/grey so the two sets never merge.
 
 ## Verification
 - Unit tests for SofaScore parsing (stats by period, ratings, momentum) and FotMob parsing
