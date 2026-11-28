@@ -1,6 +1,6 @@
 # Dock unpinned additions and pin order
 
-**Status: built locally, live check pending.**
+**Status: DONE, live Nov 27 (befea49).**
 
 ## Goal
 
@@ -35,4 +35,6 @@ stays at 12 items. Pins can be rearranged.
 - [x] phone has no Dock actions.
 - [x] Full tests (512).
 - [x] Local 1440 and 390 checks.
-- [ ] Live site check, then mark DONE.
+- [x] Live site check, then mark DONE.
+
+Live: Add to Dock put a tile after the three pins and before the automatic Delta; Remove hid it from the dock; Move left and drag reorder changed the pin order; a 12-pin dock refused a new add with the full message.
