@@ -1,5 +1,5 @@
 {
- "updated": 1795837124073,
+ "updated": 1795838684962,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -435,7 +435,36 @@
    "title": "Celtics 86–87 Hawks",
    "start": 1795827600000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "q1wH55FVPRY",
+     "title": "HAWKS at CELTICS | EMIRATES NBA CUP 🏆 | FULL GAME HIGHLIGHTS | November 27, 2026",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401909331": {
+   "league": "NBA",
+   "title": "Timberwolves 109–114 Grizzlies",
+   "start": 1795829400000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "Lb6yj5EWghU",
+     "title": "Memphis Grizzlies Highlights vs Minnesota Timberwolves",
+     "rank": 0.5
+    },
+    {
+     "id": "mRqXLi5Pd5E",
+     "title": "Cedric Coward Highlights vs. Minnesota Timberwolves",
+     "rank": 0.5
+    },
+    {
+     "id": "kjg6Nl8l6s4",
+     "title": "Ty Jerome Highlights vs. Minnesota Timberwolves",
+     "rank": 0.5
+    }
+   ]
   },
   "401915291": {
    "league": "Champions League",
