@@ -1,5 +1,5 @@
 {
- "updated": 1795877638754,
+ "updated": 1795879203257,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -125,6 +125,19 @@
     {
      "id": "bpCtUyLXPuc",
      "title": "LEVANTE UD 1 - 3 R. RACING CLUB | RESUMEN LALIGA EA SPORTS",
+     "rank": 3.5
+    }
+   ]
+  },
+  "401882796": {
+   "league": "LaLiga",
+   "title": "Betis 0–1 Rayo",
+   "start": 1795870800000,
+   "sources": "feeds",
+   "videos": [
+    {
+     "id": "4U1IOIvERUE",
+     "title": "REAL BETIS 0 - 1 RAYO VALLECANO | RESUMEN LALIGA EA SPORTS",
      "rank": 3.5
     }
    ]
