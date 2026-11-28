@@ -1,5 +1,5 @@
 {
- "updated": 1795843360941,
+ "updated": 1795844924569,
  "games": {
   "401873079": {
    "league": "NFL",
@@ -522,7 +522,18 @@
    "title": "Trail Blazers 116–94 Warriors",
    "start": 1795833000000,
    "sources": "feeds",
-   "videos": []
+   "videos": [
+    {
+     "id": "mJxRRUCGtJc",
+     "title": "Game Highlights: Portland Trail Blazers 116, Golden State Warriors 94 | Nov. 27, 2026",
+     "rank": 2.5
+    },
+    {
+     "id": "qZog-1Prm2I",
+     "title": "Scoot Henderson Highlights (18 Points, 7 Assists) | Trail Blazers 116, Warriors 94 | Nov. 27, 2026",
+     "rank": 1
+    }
+   ]
   },
   "401915291": {
    "league": "Champions League",
@@ -865,42 +876,6 @@
  "club": {
   "360": [
    {
-    "id": "8SMViS6RrOM",
-    "title": "Xabi Alonso Might Be A FRAUD! Chelsea Is In Trouble!",
-    "published": 1795823460000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "CuEbDX4olp0",
-    "title": "We Need To Talk About Xabi Alonso & Chelsea..",
-    "published": 1795821263000,
-    "source": "Lyes"
-   },
-   {
-    "id": "1Ezr57F03Bg",
-    "title": "The Problems At Chelsea Run DEEPER Than Xabi Alonso...",
-    "published": 1795820005000,
-    "source": "Culture Cams"
-   },
-   {
-    "id": "UPJtrt7bpfQ",
-    "title": "Mauricio Pochettino: I'm Not Nice, I'm Good",
-    "published": 1795814280000,
-    "source": "No Question About That"
-   },
-   {
-    "id": "sgOfjuBwHkw",
-    "title": "Jamie Redknapp & Michael Dawson discuss Bruno Fernandes' Man Utd contract extension",
-    "published": 1795807537000,
-    "source": "Sky Sports Premier League"
-   },
-   {
-    "id": "7yjNiO0CCjI",
-    "title": "WE NEED TO WIN! Manchester United Vs Brentford | Match Preview",
-    "published": 1795806021000,
-    "source": "Stretford Paddock"
-   },
-   {
     "id": "D24trdSnkkI",
     "title": "Mauricio Pochettino hits back at criticism of his demeanour & reveals Bruno Fernandes illness",
     "published": 1795803428000,
@@ -913,46 +888,10 @@
     "source": "DR Sports"
    },
    {
-    "id": "e-2b7jX77dk",
-    "title": "Man United To REPLACE Bruno With Nico Paz?!",
-    "published": 1795802393000,
-    "source": "Lyes"
-   },
-   {
-    "id": "aKzlg-wGMaQ",
-    "title": "Weekend Predictions - Episode 12!",
-    "published": 1795799599000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "EQPDerUwVoE",
-    "title": "Bruno Fernandes Illness CONCERN! Pochettino Home DEBUT! Man United vs Brentford Preview",
-    "published": 1795793421000,
-    "source": "Stephen Howson"
-   },
-   {
     "id": "9CQd_CbjAdE",
     "title": "Manchester United activate Bruno Fernandes contract extension clause",
     "published": 1795789849000,
     "source": "Sky Sports News"
-   },
-   {
-    "id": "x9BD68HCIRY",
-    "title": "Nico Paz Is Interested In Joining Man United. WHAT THE HELL???",
-    "published": 1795786518000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "Hy5hpCla5KM",
-    "title": "Bruno Fernandes NOT in training ❌ | Update from Manchester United training session",
-    "published": 1795782430000,
-    "source": "Sky Sports Premier League"
-   },
-   {
-    "id": "8gSv1DBkzAc",
-    "title": "Academy Graduate Shares His Emotional Story | Together Against Suicide",
-    "published": 1795780904000,
-    "source": "Man Utd"
    },
    {
     "id": "WxrMbJ9d0yk",
@@ -967,154 +906,16 @@
     "source": "DR Sports"
    },
    {
-    "id": "R4aa3ivRk34",
-    "title": "Sporting 2-2 Manchester United | Ref Howler, Poch's Changes Show Promise",
-    "published": 1795719880000,
-    "source": "No Question About That"
-   },
-   {
-    "id": "qTzWbe9ALZI",
-    "title": "\"Never A Red Card!\" | Nani Exclusive | Inside Carrington: S2 Ep 12",
-    "published": 1795719606000,
-    "source": "Man Utd"
-   },
-   {
-    "id": "k2DNH-z7YC4",
-    "title": "Mauricio Pochettino Is BUILT For The Champions League! | Uncensored",
-    "published": 1795719600000,
-    "source": "Stretford Paddock"
-   },
-   {
-    "id": "C02Vp7ZJb4w",
-    "title": "Sporting 2-2 Man Utd | Highlights | UEFA Champions League",
-    "published": 1795716002000,
-    "source": "Man Utd"
-   },
-   {
     "id": "zhH68Wz781Y",
     "title": "'CITY ARE CHEATS! I'm Backing Arsenal!' Rivals DISCUSS Arsenal v Man City",
     "published": 1795713606000,
     "source": "DR Sports"
    },
    {
-    "id": "ZIu9DQoM-_I",
-    "title": "Rating Manchester Uniteds January Transfer Targets",
-    "published": 1795710686000,
-    "source": "MinaFootball"
-   },
-   {
-    "id": "3fX5Lbtcd7o",
-    "title": "Mauricio Pochettino Is Doing ALL The Right Things At Manchester United! | Off The Bar",
-    "published": 1795709144000,
-    "source": "Stretford Paddock"
-   },
-   {
-    "id": "SrE5QTB8m4c",
-    "title": "Leny Yoro STANDOUT Performance! | Player Ratings",
-    "published": 1795705208000,
-    "source": "Stephen Howson"
-   },
-   {
-    "id": "RoyQ6d-ap7g",
-    "title": "\"WE WERE ROBBED!\" Man United Referee Disgrace & Player Errors Cost Us Again!",
-    "published": 1795696596000,
-    "source": "Rio Ferdinand Presents"
-   },
-   {
-    "id": "T1HNFinQ4G4",
-    "title": "Lammens = NOT A PROBLEM! Poch Got It RIGHT! 5 Things We Learned... Sporting 2-2 Man United",
-    "published": 1795696238000,
-    "source": "Stephen Howson"
-   },
-   {
     "id": "ozXSMZdbGgw",
     "title": "\"It's not been good enough\" - Reaction after Mauricio Pochettino denied first win at Man Utd",
     "published": 1795690830000,
     "source": "Sky Sports News"
-   },
-   {
-    "id": "cICYhxnmWHA",
-    "title": "Sporting U19s 2-2 Man Utd U19s | Highlights | UEFA Youth League",
-    "published": 1795688971000,
-    "source": "Man Utd"
-   },
-   {
-    "id": "L0nh3KPv4sI",
-    "title": "Robbed! 🤬",
-    "published": 1795683808000,
-    "source": "Stephen Howson"
-   },
-   {
-    "id": "jvWksSbRL0A",
-    "title": "Unai Emery Just ENDED Alejandro Garnacho...",
-    "published": 1795681834000,
-    "source": "Culture Cams"
-   },
-   {
-    "id": "Nn0pji_TpnE",
-    "title": "Why Pochettino's Tactics Saved Us from Referee DISASTER! | Paddock Analysis",
-    "published": 1795652404000,
-    "source": "Stretford Paddock"
-   },
-   {
-    "id": "niK6ZqdZpx0",
-    "title": "Mauricio Pochettino Post-Sporting | Press Conference",
-    "published": 1795650914000,
-    "source": "Man Utd"
-   },
-   {
-    "id": "e2AKMm4hOtw",
-    "title": "\"That Sums Up Our Season!\" | Andy Tate REACTS! | Sporting CP 2-2 Manchester United",
-    "published": 1795650563000,
-    "source": "Stretford Paddock"
-   },
-   {
-    "id": "c7TixgYRmtY",
-    "title": "Manchester United Are CURSED.",
-    "published": 1795649950000,
-    "source": "Lyes"
-   },
-   {
-    "id": "6fpp8dkhyls",
-    "title": "MAN UNITED WERE ROBBED! THIS IS CORRUPTION!",
-    "published": 1795649493000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "r5kFspNfwjg",
-    "title": "PSG, We Are Coming For You! Liverpool Is Back!!!",
-    "published": 1795648312000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "O-ZDgtGic50",
-    "title": "Pochettino, Fernandes & Zirkzee Post-Sporting",
-    "published": 1795647880000,
-    "source": "Man Utd"
-   },
-   {
-    "id": "JxyDC2fPCrE",
-    "title": "Manchester United Remain WINLESS Under Pochettino... | Sporting 2-2 United.",
-    "published": 1795647293000,
-    "source": "Culture Cams"
-   },
-   {
-    "id": "gv2ru2iiDyI",
-    "title": "PROUD POCH! Pochettino Reacts to Man United’s Draw Against Sporting",
-    "published": 1795647062000,
-    "source": "TNT Sports"
-   },
-   {
-    "id": "c6HQBUNGdjg",
-    "title": "Bruno Fernandes delivers an honest assessment of Man Utd's controversial draw with Sporting 😤",
-    "published": 1795645633000,
-    "source": "TNT Sports"
-   },
-   {
-    "id": "E-8L8RzaTrs",
-    "title": "We Need To Talk About The Officiating! | Sporting 2-2 Manchester United (REACTION)",
-    "published": 1795644955000,
-    "source": "MinaFootball"
    },
    {
     "id": "aAC5KPrmWDE",
@@ -1129,30 +930,6 @@
     "source": "Sky Sports News"
    },
    {
-    "id": "FeEAyav2-48",
-    "title": "Time For An Uncomfortable Conversation...",
-    "published": 1795608030000,
-    "source": "Stephen Howson"
-   },
-   {
-    "id": "NHTsAszPHl0",
-    "title": "Pochettino's European Test! | Sporting vs Man United | Match Preview | Champions League",
-    "published": 1795599031000,
-    "source": "Stretford Paddock"
-   },
-   {
-    "id": "XppLLMAxrZY",
-    "title": "How bad it’s got… 😑",
-    "published": 1795598754000,
-    "source": "Stephen Howson"
-   },
-   {
-    "id": "TILvfkk3dD0",
-    "title": "Real Madrid Can Stop PSG From Winning The UCL. They Look Scary!",
-    "published": 1795564782000,
-    "source": "Adikastakes"
-   },
-   {
     "id": "XU6dSJHqHlg",
     "title": "'WE NEED BETTER FROM GYOKERES!' Arsenal 1-1 BVB REACTION",
     "published": 1795562503000,
@@ -1165,46 +942,16 @@
     "source": "Sky Sports News"
    },
    {
-    "id": "_-uluZO4WZ0",
-    "title": "The January Transfer Targets Tasked With Saving Man United's Season!",
-    "published": 1795546825000,
-    "source": "Stretford Paddock"
-   },
-   {
     "id": "gFjwCLOoat8",
     "title": "WHO RULES THE HEAVYWEIGHT DIVISION?! Fury, AJ, Wilder & Kabayel DEBATE!",
     "published": 1795543214000,
     "source": "DR Sports"
    },
    {
-    "id": "u6QyQ5obBVk",
-    "title": "Senegal Defeat Morocco In Court To Win AFCON. FOOTBALL WON!",
-    "published": 1795537974000,
-    "source": "Adikastakes"
-   },
-   {
-    "id": "lHCdh7Juy3I",
-    "title": "Santos Starts?! Pochettino's Era Starts NOW! | Sporting Lisbon vs Man United",
-    "published": 1795530443000,
-    "source": "Stephen Howson"
-   },
-   {
-    "id": "92G1Ot28utM",
-    "title": "Here's My Starting XI For Sporting vs Manchester United",
-    "published": 1795526655000,
-    "source": "MinaFootball"
-   },
-   {
     "id": "kLspAajSQ9Q",
     "title": "QUICK FIRE FOOTBALL! Biggest HERO, Biggest FRAUD & Most EMBARRASSING Club?!",
     "published": 1795520930000,
     "source": "DR Sports"
-   },
-   {
-    "id": "W2ep3W_te00",
-    "title": "Less than £50m Transfer Budget!? 🤬",
-    "published": 1795512955000,
-    "source": "Stephen Howson"
    }
   ]
  }
